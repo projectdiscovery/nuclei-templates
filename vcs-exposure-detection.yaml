@@ -1,0 +1,63 @@
+id: vcs-exposure-detection
+
+info:
+  name: Version Control System Exposure
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    Detects publicly exposed version control system directories and metadata files, potentially revealing sensitive information like internal configurations or repository details.
+  tags: vcs, information-disclosure
+
+http:
+  - raw:
+      - |
+        GET /{{path}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Nuclei-VCS-Scanner
+
+    payloads:
+      path:
+        - ".svn/"
+        - ".svn/entries"
+        - ".svn/wc.db"
+        - ".svn/pristine/"
+        - ".svn/text-base/"
+        - ".svn/tmp/"
+        - ".svn/format"
+        - ".hg/"
+        - ".hg/hgrc"
+        - ".hg/store/"
+        - ".hg/dirstate"
+        - ".hg/branch"
+        - ".hg/cache"
+        - ".hg/undo"
+        - ".bzr/"
+        - ".bzr/branch/"
+        - ".bzr/checkout/"
+        - ".bzr/repository/"
+        - ".bzr/branch/last-revision"
+        - ".bzr/branch/branch.conf"
+
+    attack: batteringram
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+
+      - type: regex
+        regex:
+          - "(?i)<entry name=\\\".*\\\" revision=\\\"[0-9]+\\\" />"
+          - "(?i)Index of /.hg/"
+          - "(?i)Index of /.bzr/"
+          - "(?i)\\[paths\\]\\ndefault = https?://.*"
+
+    extractors:
+      - type: regex
+        name: exposed-file
+        part: body
+        regex:
+          - "(?i)<entry name=\\\"(.*?)\\\" revision=\\\"[0-9]+\\\" />"
+          - "(?i)\\[paths\\]\\ndefault = (https?://.*?)\\n"
