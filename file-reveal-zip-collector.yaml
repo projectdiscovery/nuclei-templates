@@ -1,0 +1,72 @@
+id: file-reveal-zip-collector
+
+info:
+  name: File Reveal and Collector
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template detects the presence of sensitive files on a website. If accessible, it retrieves their contents and creates a zip file containing all found files.
+  tags: file,reveal,disclosure,collection
+
+variables:
+  zip_name: "{{BaseURL | url_encode}}_sensitive_files.zip"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.git/config"
+      - "{{BaseURL}}/wp-config.php"
+      - "{{BaseURL}}/config.php"
+      - "{{BaseURL}}/backup.zip"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "DB_PASSWORD"
+          - "DB_USER"
+        part: body
+      - type: regex
+        regex:
+          - "\\[core\\]"
+          - "\\$db_name"
+        part: body
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: sensitive_content
+        regex:
+          - "(?i)(DB_PASSWORD=.*)"
+          - "(?i)(DB_USER=.*)"
+        part: body
+        internal: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/zip_files"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "zip_name": "{{zip_name}}",
+        "files": [
+          "{{BaseURL}}/.env",
+          "{{BaseURL}}/.git/config",
+          "{{BaseURL}}/wp-config.php",
+          "{{BaseURL}}/config.php",
+          "{{BaseURL}}/backup.zip"
+        ]
+      }
+
+    matchers:
+      - type: status
+        status:
+          - 201
+
+    stop-at-first-match: true
