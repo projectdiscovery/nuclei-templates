@@ -1,0 +1,58 @@
+id: exposed-weglot-api-key
+info:
+  name: Exposed Weglot API Key Detection
+  author: ProjectDiscoveryAI
+  severity: low
+  description: |
+    Detects exposed Weglot API keys in the source code of a target website.
+  tags: weglot, api, exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "api_key_translate"
+          - "wg_"
+      - type: regex
+        regex:
+          - "wg_[a-fA-F0-9]{32}"
+
+    extractors:
+      - type: regex
+        name: weglot_api_key
+        part: body
+        internal: false
+        regex:
+          - "wg_[a-fA-F0-9]{32}"
+
+  - raw:
+      - |
+        POST /translate HTTP/1.1
+        Host: api.weglot.com
+        Content-Type: application/json
+
+        {
+          "api_key": "{{weglot_api_key}}",
+          "l_from": "en",
+          "l_to": "fr",
+          "text": "Test this translation."
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "to_words"
+          - "Il s'agit d'une voiture bleue"
+      - type: status
+        status:
+          - 200
+
+    stop-at-first-match: true
