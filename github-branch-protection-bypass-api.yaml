@@ -1,0 +1,40 @@
+id: github-branch-protection-bypass-api
+
+info:
+  name: GitHub Branch Protection Bypass Detection (API)
+  author: BugHunterX
+  severity: high
+  description: |
+    Detects weak GitHub branch protection settings using API responses.
+  tags: github, branch-protection, security
+
+http:
+  - method: GET
+    path:
+      - "https://api.github.com/repos/{{repository}}/branches/main/protection"
+      - "https://api.github.com/repos/{{repository}}/branches/main/protection/enforce_admins"
+      - "https://api.github.com/repos/{{repository}}/branches/main/protection/restrictions"
+      - "https://api.github.com/repos/{{repository}}/actions/workflows"
+
+    headers:
+      Authorization: "token {{github_token}}"
+      Accept: "application/vnd.github.v3+json"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"allow_force_pushes": true'
+          - '"required_status_checks": null'
+          - '"enforce_admins": false'
+          - '"workflow permissions": "read-write"'
+          - '"bypass branch protection": true'
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.allow_force_pushes'
+          - '.enforce_admins'
+          - '.required_status_checks'
