@@ -1,0 +1,42 @@
+id: api-backup-verification
+
+info:
+  name: API Backup Verification
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    Verifies if the /api/backup endpoint exposes an encrypted backup ZIP file and extracts the AES-256 key and IV from the X-Backup-Security header.
+  tags: backup,api,encryption
+
+http:
+  - raw:
+      - |
+        GET /api/backup HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: header
+        words:
+          - "Content-Type: application/zip"
+          - "Content-Disposition: attachment"
+          - "X-Backup-Security"
+    extractors:
+      - type: regex
+        name: aes_key
+        part: header
+        internal: true
+        regex:
+          - "X-Backup-Security:\\s([a-zA-Z0-9+/=]{43}=):([a-zA-Z0-9+/=]{22})"
+        group: 1
+      - type: regex
+        name: aes_iv
+        part: header
+        internal: true
+        regex:
+          - "X-Backup-Security:\\s([a-zA-Z0-9+/=]{43}=):([a-zA-Z0-9+/=]{22})"
+        group: 2
