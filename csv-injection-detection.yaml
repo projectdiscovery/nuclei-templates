@@ -1,0 +1,50 @@
+id: csv-injection-detection
+
+info:
+  name: CSV Injection Detection
+  author: ProjectDiscoveryAI,ChatGPT
+  severity: medium
+  description: |
+    Detects potential CSV/Spreadsheet injection payloads in HTTP response bodies.
+    Attackers can embed formulas that invoke system commands, web requests, or 
+    code execution helpers (e.g. `=DDE(...)`, `=cmd|...`, `=HYPERLINK("http://...")`).
+    When opened in Excel, LibreOffice, or Google Sheets, these payloads may lead 
+    to data exfiltration or remote code execution.
+  tags: csv,injection
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/example-path" # Adjust the path according to the application
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "(?im)^[\\s\"']{0,3}(?:=|\\+|\\-|@)\\s*(?:DDE\\(|HYPERLINK\\(|SUM\\(|IMPORTDATA\\(|WEBSERVICE\\(|cmd\\|)"
+          - "(?i)=(?:cmd\\|[^\\n\\r]{1,200})"
+          - "(?i)=(?:cmd\\||\\+cmd\\||\\-cmd\\|).*?(?:powershell|cmd\\.exe|rundll32\\.exe|mshta\\.exe|cscript\\.exe|wscript\\.exe|certutil\\.exe)"
+          - "(?i)=DDE\\([^\\)]{1,500}\\)"
+          - "(?i)=HYPERLINK\\([^\\)]{1,500}\\)"
+          - "(?i)=SUM\\([^\\)]*\\)\\*cmd\\|"
+
+      - type: word
+        part: body
+        words:
+          - "=DDE("
+          - "=HYPERLINK("
+          - "=IMPORTDATA("
+          - "=WEBSERVICE("
+          - "=SUM("
+          - "cmd|"
+          - "rundll32.exe"
+          - "powershell"
+          - "mshta.exe"
+
+    extractors:
+      - type: regex
+        part: body
+        name: suspicious_payload
+        regex:
+          - "(?im)([\\r\\n\\s\"']{0,3}(?:=|\\+|\\-|@)[^\\r\\n]{1,300})"
