@@ -1,0 +1,44 @@
+id: ir21-data-exposure
+
+info:
+  name: IR.21 Data Exposure
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template identifies publicly accessible IR.21 forms, which may expose sensitive information such as IP ranges, TADIG codes, DNS configurations, and email server details. IR.21 exposure can lead to severe security risks, including unauthorized network access and intelligence gathering.
+  reference:
+    - https://example.com/ir21-exposure
+  tags: ir21, telecom, sensitive-data
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/*.pdf" # Scans for PDF files
+      - "{{BaseURL}}/*.docx" # Scans for DOCX files
+      - "{{BaseURL}}/*.doc" # Scans for older Word files
+      - "{{BaseURL}}/path/to/ir21/form" # Specific path example
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "IR.21"
+          - "TADIG"
+          - "IP ranges"
+          - "DNS configuration"
+          - "Email servers"
+      - type: regex
+        regex:
+          - "([0-9]{1,3}\\.){3}[0-9]{1,3}" # Matches IPv4 addresses
+          - "[A-Z]{5}" # Matches TADIG codes (5 uppercase letters)
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" # Matches email addresses
+
+    extractors:
+      - type: regex
+        regex:
+          - "([0-9]{1,3}\\.){3}[0-9]{1,3}" # Extract IP addresses
+          - "[A-Z]{5}" # Extract TADIG codes
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" # Extract email addresses
