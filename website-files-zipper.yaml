@@ -1,0 +1,43 @@
+id: website-files-zipper
+
+info:
+  name: Website Files Zipper
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    This template fetches files from a website and creates a zip archive of the retrieved content.
+
+variables:
+  output_file: "website_files.zip"
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: file_links
+        group: 1
+        regex:
+          - href="([^"]+\.\w+)"
+
+  - raw:
+      - |
+        GET {{BaseURL}}{{file_path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      file_path:
+        - '{{file_links}}'
+
+    matchers:
+      - type: status
+        status:
+          - 200
