@@ -1,0 +1,34 @@
+id: same-origin-policy-violation
+info:
+  name: Same-Origin Policy Violation
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    This template identifies same-origin policy violation vulnerabilities that allow attackers to read sensitive local files and communicate with remote servers. This vulnerability could lead to the exposure of user credentials, unauthorized data exfiltration, and compromise sensitive information from local systems.
+  remediation: |
+    Ensure that web applications strictly adhere to the Same-Origin Policy by implementing proper CORS headers. Validate and sanitize all input sources to prevent unauthorized access to local files. Additionally, ensure that no sensitive files are exposed through misconfigured endpoints.
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+        Accept: */*
+        Referer: {{BaseURL}}
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "file://"
+          - "Access-Control-Allow-Origin: *"
+        part: header
+      - type: regex
+        regex:
+          - "file\\://[a-zA-Z0-9\\/\\._-]*"  # Properly escaped regex to match file:// and paths
+        part: body
+
+
