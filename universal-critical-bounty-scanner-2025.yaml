@@ -1,0 +1,96 @@
+id: universal-critical-bounty-scanner-2025
+
+info:
+  name: Universal Critical Bug Bounty Scanner 2025
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template is designed to identify critical vulnerabilities for universal bug bounty programs. It utilizes advanced matchers, dynamic variable generation, and multi-step workflows to adapt to modern attack vectors.
+  tags: bug-bounty, vulnerability, dynamic, critical,intrusive
+variables:
+  random_path: "{{rand_text_alphanumeric(8)}}"
+  timestamp: "{{unix_time()}}"
+
+http:
+  - raw:
+      - |
+        GET /{{random_path}}?test={{timestamp}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept: application/json
+
+    extractors:
+      - type: regex
+        name: test_extractor
+        internal: true
+        group: 1
+        regex:
+          - "/vulnerablePath/([a-f0-9]{32})"
+      - type: regex
+        name: session_id
+        internal: true
+        group: 1
+        regex:
+          - "session_id=([a-zA-Z0-9_-]{20,})"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "vulnerability-confirmation"
+      - type: word
+        words:
+          - "Critical Bug Identified!"
+
+  - raw:
+      - |
+        POST /submit HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0
+
+        {
+          "payload": "{{test_extractor}}",
+          "timestamp": "{{timestamp}}",
+          "session": "{{session_id}}"
+        }
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - "Submission Successful"
+      - type: word
+        words:
+          - "Processed Payload"
+
+    extractors:
+      - type: json
+        name: response_code
+        internal: true
+        json:
+          - ".response_code"
+
+  - raw:
+      - |
+        PUT /endpoint HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0
+
+        id={{response_code}}&data={{test_extractor}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+      - type: regex
+        regex:
+          - "Resource Created"
+      - type: word
+        words:
+          - "Creation Successful"
