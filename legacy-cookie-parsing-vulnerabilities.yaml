@@ -1,0 +1,51 @@
+id: legacy-cookie-parsing-vulnerabilities
+
+info:
+  name: Legacy Cookie Parsing Vulnerabilities
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Exploits legacy cookie parsing vulnerabilities by crafting specially designed cookies that may be accepted by legacy parsers but misunderstood by modern parsers, leading to unexpected behavior or bypass of security controls.
+    Potential issues include Session Fixation, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF).
+  remediation: |
+    Ensure that the web application uses modern cookie parsers that follow the latest standards. Implement secure cookie attributes such as HttpOnly and Secure, validate and sanitize cookie values, and enforce strict SameSite cookie policies to prevent CSRF attacks.
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: sessionid=malicious-session-id; path=/; domain=.{{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Set-Cookie"
+        part: header
+
+      - type: regex
+        regex:
+          - "(?i)sessionid=malicious-session-id"
+        part: header
+
+  - raw:
+      - |
+        POST /vulnerable-endpoint HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: sessionid=malicious-session-id; path=/; domain=.{{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        param=<script>alert('XSS')</script>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Set-Cookie"
+        part: header
+
+      - type: regex
+        regex:
+          - "<script>alert\\('XSS'\\)</script>"
+        part: body
