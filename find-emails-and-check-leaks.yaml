@@ -1,0 +1,45 @@
+id: find-emails-and-check-leaks
+
+info:
+  name: Find Emails and Check Leaks
+  author: ProjectDiscoveryAI
+  severity: info
+  description: |
+    This template extracts all email addresses from a website, checks them through HaveIBeenPwned.com for breaches, and reveals all associated leaked data.
+  tags: email, leak, security
+
+http:
+  - id: extract-emails
+    method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        regex:
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+
+    extractors:
+      - type: regex
+        name: email
+        group: 0
+        regex:
+          - "([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})"
+        internal: true
+
+  - id: check-breach
+    method: GET
+    path:
+      - "https://haveibeenpwned.com/api/v3/breachedaccount/{{email}}"
+    headers:
+      hibp-api-key: "your-api-key" # Replace with your actual API key
+    matchers:
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: breach_data
+        json:
+          - '.[] | {Title: .Title, Domain: .Domain, BreachDate: .BreachDate}'
