@@ -1,0 +1,57 @@
+id: idor-ai-model-training
+
+info:
+  name: Insecure Direct Object References in AI Model Training APIs
+  author: akm626
+  severity: high
+  description: |
+    Detects insecure direct object references in AI model training data APIs where user-specific model identifiers or dataset paths can be manipulated through direct parameter substitution. Focuses on endpoints that accept model version strings and return raw training data without proper access controls.
+  tags: idor, ai, model, training
+
+http:
+  - raw:
+      - |
+        GET /api/models?version={{version}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+    payloads:
+      version:
+        - "v1"
+        - "v2"
+        - "v3"
+        - "v4"
+
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '\\{"label":"[^"]*","features":\\[[^\\]]*\\]\\}'
+          - '"model_components":"serialized"'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '\\{"label":"([^"]*)","features":\\[([^\\]]*)\\]\\}'
+      - type: regex
+        part: body
+        regex:
+          - '"model_components":"(serialized)"'
+
+    stop-at-first-match: true
+    cookie-reuse: true
+    redirects: true
+    max-redirects: 5
