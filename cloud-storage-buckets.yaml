@@ -1,0 +1,123 @@
+id: cloud-storage-buckets
+
+info:
+  name: Cloud Storage Buckets in JavaScript Files
+  author: xpltr
+  severity: info
+  description: Detects cloud storage bucket URLs in JavaScript files that could lead to information disclosure
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: exposure,js,cloud,buckets,aws,gcp,azure,digitalocean
+  reference:
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html
+    - https://cloud.google.com/storage/docs/naming-buckets
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/javascript"
+          - "text/javascript"
+          - "application/x-javascript"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          # AWS S3 Buckets (various formats)
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3\.amazonaws\.com'
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3-[a-z0-9\-]+\.amazonaws\.com'
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.amazonaws\.com'
+          - 's3://[a-zA-Z0-9.\-_]{1,63}'
+          - 's3\.amazonaws\.com/[a-zA-Z0-9.\-_]{1,63}'
+          - 's3-[a-z0-9\-]+\.amazonaws\.com/[a-zA-Z0-9.\-_]{1,63}'
+          
+          # Google Cloud Storage
+          - '[a-zA-Z0-9.\-_]{1,63}\.storage\.googleapis\.com'
+          - 'storage\.googleapis\.com/[a-zA-Z0-9.\-_]{1,63}'
+          - 'gs://[a-zA-Z0-9.\-_]{1,63}'
+          - '[a-zA-Z0-9.\-_]{1,63}\.storage\.cloud\.google\.com'
+          - 'storage\.cloud\.google\.com/[a-zA-Z0-9.\-_]{1,63}'
+          
+          # Azure Blob Storage
+          - '[a-zA-Z0-9]{3,24}\.blob\.core\.windows\.net'
+          - '[a-zA-Z0-9]{3,24}\.blob\.core\.cloudapi\.de'
+          - '[a-zA-Z0-9]{3,24}\.blob\.core\.chinacloudapi\.cn'
+          - '[a-zA-Z0-9]{3,24}\.blob\.core\.usgovcloudapi\.net'
+          
+          # DigitalOcean Spaces
+          - '[a-zA-Z0-9.\-_]{1,63}\.digitaloceanspaces\.com'
+          - '[a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.digitaloceanspaces\.com'
+          
+          # Alibaba Cloud Object Storage Service (OSS)
+          - '[a-zA-Z0-9.\-_]{1,63}\.oss-[a-z0-9\-]+\.aliyuncs\.com'
+          - '[a-zA-Z0-9.\-_]{1,63}\.oss\.aliyuncs\.com'
+          
+          # IBM Cloud Object Storage
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.cloud-object-storage\.appdomain\.cloud'
+          
+          # Oracle Cloud Infrastructure Object Storage
+          - '[a-zA-Z0-9.\-_]{1,63}\.compat\.objectstorage\.[a-z0-9\-]+\.oraclecloud\.com'
+          
+          # Backblaze B2
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.backblazeb2\.com'
+          
+          # Wasabi
+          - '[a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.wasabisys\.com'
+          
+          # Linode Object Storage
+          - '[a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.linodeobjects\.com'
+          
+          # Vultr Object Storage
+          - '[a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.vultrobjects\.com'
+          
+          # Generic cloud storage patterns (catch-all)
+          - 'https?://[a-zA-Z0-9.\-_]{1,63}\.s3[a-zA-Z0-9.\-]*\.com'
+          - 'https?://[a-zA-Z0-9.\-_]{1,63}\.blob[a-zA-Z0-9.\-]*\.com'
+          - 'https?://[a-zA-Z0-9.\-_]{1,63}\.storage[a-zA-Z0-9.\-]*\.com'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          # AWS S3 extractors
+          - '([a-zA-Z0-9.\-_]{1,63}\.s3\.amazonaws\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.s3-[a-z0-9\-]+\.amazonaws\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.amazonaws\.com)'
+          - '(s3://[a-zA-Z0-9.\-_]{1,63})'
+          - '(s3\.amazonaws\.com/[a-zA-Z0-9.\-_]{1,63})'
+          
+          # Google Cloud Storage extractors
+          - '([a-zA-Z0-9.\-_]{1,63}\.storage\.googleapis\.com)'
+          - '(storage\.googleapis\.com/[a-zA-Z0-9.\-_]{1,63})'
+          - '(gs://[a-zA-Z0-9.\-_]{1,63})'
+          - '([a-zA-Z0-9.\-_]{1,63}\.storage\.cloud\.google\.com)'
+          
+          # Azure Blob Storage extractors
+          - '([a-zA-Z0-9]{3,24}\.blob\.core\.windows\.net)'
+          - '([a-zA-Z0-9]{3,24}\.blob\.core\.cloudapi\.de)'
+          - '([a-zA-Z0-9]{3,24}\.blob\.core\.chinacloudapi\.cn)'
+          
+          # DigitalOcean Spaces extractors
+          - '([a-zA-Z0-9.\-_]{1,63}\.digitaloceanspaces\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.digitaloceanspaces\.com)'
+          
+          # Other cloud providers extractors
+          - '([a-zA-Z0-9.\-_]{1,63}\.oss-[a-z0-9\-]+\.aliyuncs\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.linodeobjects\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.[a-z0-9\-]+\.vultrobjects\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.backblazeb2\.com)'
+          - '([a-zA-Z0-9.\-_]{1,63}\.s3\.[a-z0-9\-]+\.wasabisys\.com)'
