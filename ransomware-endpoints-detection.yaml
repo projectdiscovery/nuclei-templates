@@ -1,0 +1,82 @@
+id: ransomware-endpoints-detection
+
+info:
+  name: Ransomware Endpoint Detection
+  author: akm626
+  severity: high
+  description: |
+    This template detects endpoints commonly targeted or exploited by ransomware. It scans for typical patterns and tricky endpoints that might be indicative of ransomware activity or a vulnerable WAF configuration.
+  tags: ransomware,waf,security
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/backup.zip"
+      - "{{BaseURL}}/database.sql"
+      - "{{BaseURL}}/admin/config.php"
+      - "{{BaseURL}}/wp-config.php"
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/hidden/.key"
+      - "{{BaseURL}}/private/.htpasswd"
+      - "{{BaseURL}}/backup.tar.gz"
+      - "{{BaseURL}}/secret/.shadow"
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "ENCRYPTED"
+          - "ransomware"
+        part: body
+      - type: regex
+        regex:
+          - "(?i)(backup|database|config|key|htpasswd|shadow)"
+      - type: word
+        words:
+          - "application/zip"
+          - "text/plain"
+        part: header
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/restore"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "restore": "{{to_base64('ransomware_test')}}"
+      }
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+      - type: regex
+        regex:
+          - "restoration failed"
+          - "unauthorized access"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "token=(\\w+)"
+        group: 1
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/logs/errors.log"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "unauthorized access"
+          - "ransomware detected"
+        part: body
