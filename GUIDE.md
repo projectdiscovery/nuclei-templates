@@ -6,7 +6,22 @@ The templates are written in `YAML` which specifies a simple human readable form
 
 Let's start with the basics and define our own workflow file for detecting the presence of a `.git/config` file on a webserver and take it from there.
 
-[TOC]
+Table of Contents
+=================
+
+   * [Templating Guide](#templating-guide)
+      * [Template Details](#template-details)
+         * [<strong>Info</strong>](#info)
+         * [<strong>Requests</strong>](#requests)
+            * [<strong>Method</strong>](#method)
+            * [<strong>Path</strong>](#path)
+            * [<strong>Headers</strong>](#headers)
+            * [<strong>Body</strong>](#body)
+            * [<strong>Matchers</strong>](#matchers)
+               * [<strong>Types</strong>](#types)
+               * [<strong>Conditions</strong>](#conditions)
+               * [<strong>Matched Parts</strong>](#matched-parts)
+               * [<strong>Example Template</strong>](#example-template)
 
 ## Template Details
 
