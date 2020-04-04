@@ -1,4 +1,4 @@
-## Templating Guide
+# Templating Guide
 
 **Nuclei** is based on the concepts of `YAML` based template files that define how the requests will be sent and processed. This allows easy extensibility capabilities to nuclei.
 
