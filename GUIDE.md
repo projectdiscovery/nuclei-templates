@@ -78,10 +78,10 @@ Requests can be fine tuned to perform the exact tasks as desired. Nuclei request
    ```yaml
    # headers contains the headers for the request
    headers:
-   	# Custom user-agent header
-   	User-Agent: Some-Random-User-Agent
-   	# Custom request origin
-   	Origin: https://google.com
+    # Custom user-agent header
+    User-Agent: Some-Random-User-Agent
+    # Custom request origin
+    Origin: https://google.com
    ```
 
 4. **Body** specifies a body to be sent along with the request. For instance - 
@@ -106,12 +106,12 @@ Requests can be fine tuned to perform the exact tasks as desired. Nuclei request
 
    ```yaml
    matcher:
-   	 # match the status codes
-   	 - type: status
-   	 # some status codes we want to match
-   	 status: 
-   		 - 200
-   		 - 302
+    # match the status codes
+    - type: status
+      # some status codes we want to match
+      status: 
+       - 200
+       - 302
    ```
 
    To match size, similar structure can be followed. If the status code of response from the site matches any single one specified in the matcher, the request is marked as successful.
@@ -135,16 +135,16 @@ Requests can be fine tuned to perform the exact tasks as desired. Nuclei request
 
    ```yaml
    matcher:
-   	 # match the body word
-   	 - type: word
-   	 # some words we want to match
-   	 words: 
-   		 - "[core]"
-   		 - "[config]"
-   	 # both words must be found in the response body
-   	 condition: and
-   	 #  we want to match request body (default)
-   	 part: body
+     # match the body word
+     - type: word
+      # some words we want to match
+      words: 
+        - "[core]"
+        - "[config]"
+      # both words must be found in the response body
+      condition: and
+      #  we want to match request body (default)
+      part: body
    ```
 
 Similarly, matchers can be written to match anything that you want to find in the response body allowing unlimited creativity and extensibility.
