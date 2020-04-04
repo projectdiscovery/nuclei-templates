@@ -116,7 +116,7 @@ Requests can be fine tuned to perform the exact tasks as desired. Nuclei request
 
    To match size, similar structure can be followed. If the status code of response from the site matches any single one specified in the matcher, the request is marked as successful.
 
-   **Word** and **Regex **matchers can be further configured depending on the needs of the users. 
+   **Word** and **Regex** matchers can be further configured depending on the needs of the users. 
 
    Multiple words and regexes can be specified in a single matcher and can be configured with different conditions like **AND** and **OR**. 
 
