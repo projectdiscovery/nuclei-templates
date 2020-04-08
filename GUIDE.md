@@ -189,7 +189,7 @@ Similarly, matchers can be written to match anything that you want to find in th
 
 Extractors are another important feature of nuclei. Extractors can be used to extract and display in results a match from the response body or headers based on a regular expression.
 
-Currently on `regex` type extractors are supported. A sample extractor for extracting API keys from the response body is as follows - 
+Currently only `regex` type extractors are supported. A sample extractor for extracting API keys from the response body is as follows - 
 
 ```yaml
 # A list of extractors for text extraction
