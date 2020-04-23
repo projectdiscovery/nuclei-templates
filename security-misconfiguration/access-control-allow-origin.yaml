@@ -1,0 +1,92 @@
+# Make sure to replace all mentions of [REPLACE] vefore running the template.
+id: access-control-allow-origin
+
+info:
+  name: Access control allow credentials CORS potential misconfigurations
+  author: NkxxKN https://twitter.com/NkkxN
+  severity: high
+
+# [REPLACE] Copy paths that return sensitive information.
+paths: &paths
+  - "{{BaseURL}}/accountDetails"
+
+# [REPLACE] with your authentication cookies.
+# DO NOT LEAVE IT HERE AFETERWARDS!!!."
+# DO NOT PUSH IT TO GITHUB!!!."
+session: &session
+  Cookie:
+  Authorization:
+
+requests:
+  - method: GET
+    path: *paths
+    headers:
+      <<: *session
+      Origin: "null"
+    matchers:
+      - type: word
+        words:
+          - "Access-Control-Allow-Credentials: true"
+          - "Access-Control-Allow-Origin: null"
+        name: "whitelisted-null-origin-value"
+        part: header
+  - method: GET
+    path: *paths
+    headers:
+      <<: *session
+      Origin: "{{Hostname}}.example.com"
+    matchers:
+      - type: word
+        words:
+          - "Access-Control-Allow-Credentials: true"
+          - "Access-Control-Allow-Origin: {{Hostname}}.example.com"
+        name: "subdomain-of-example.com"
+        part: header
+  - method: GET
+    path: *paths
+    headers:
+      <<: *session
+      Origin: "pre{{Hostname}}"
+    matchers:
+      - type: word
+        words:
+          - "Access-Control-Allow-Credentials: true"
+          - "Access-Control-Allow-Origin: pre{{Hostname}}"
+        name: "prefixed-origin"
+        part: header
+  - method: GET
+    path: *paths
+    headers:
+      <<: *session
+      Origin: "sub.{{Hostname}}"
+    matchers:
+      - type: word
+        words:
+          - "Access-Control-Allow-Credentials: true"
+          - "Access-Control-Allow-Origin: sub.{{Hostname}}"
+        name: "subdomain-trusted-origin" # Go find an XSS on a subdomain now!
+        part: header
+  - method: GET
+    path: *paths
+    headers:
+      <<: *session
+      Origin: "{{Hostname}}x"
+    matchers:
+      - type: word
+        words:
+          - "Access-Control-Allow-Credentials: true"
+          - "Access-Control-Allow-Origin: {{Hostname}}x" 
+        name: "tld-suffix"
+        part: header
+        # If above worked:  that means that changing the TLD of the domain could result in CORS misconfigurations.
+        # wget http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+        # cat tlds-alpha-by-domain.txt | grep -E '^COM' (Replace COM with current TLD) => 
+        # COM
+        # COMCAST
+        # COMMBANK
+        # COMMUNITY
+        # COMPANY
+        # COMPARE
+        # COMPUTER
+        # COMSEC
+        # Go buy the cheapest :)
