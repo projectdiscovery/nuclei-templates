@@ -21,6 +21,7 @@ Table of Contents
                * [<strong>Types</strong>](#types)
                * [<strong>Conditions</strong>](#conditions)
                * [<strong>Matched Parts</strong>](#matched-parts)
+               * [<strong>Multiple Matchers</strong>](#multiple-matchers)
             * [Extractors](#extractors)
       * [<strong>Example Template</strong>](#example-template)
 
@@ -198,6 +199,36 @@ matcher:
 ```
 
 Similarly, matchers can be written to match anything that you want to find in the response body allowing unlimited creativity and extensibility.
+
+##### **Multiple Matchers** 
+
+Multiple matchers can be used in a single template to fingerprint multiple conditions with a single request. 
+
+Here is an example of syntax for multiple matchers.
+
+```yaml
+    matchers:
+      - type: word
+        name: php
+        words:
+          - "X-Powered-By: PHP"
+          - "PHPSESSID"
+        part: header
+      - type: word
+        name: node
+        words:
+          - "Server: NodeJS"
+          - "X-Powered-By: nodejs"
+        condition: or
+        part: header
+      - type: word
+        name: python
+        words:
+          - "Python/2."
+          - "Python/3."
+        condition: or
+        part: header
+```
 
 #### Extractors
 
