@@ -154,7 +154,8 @@ matchers:
       - type: binary
         binary:
         - "504B0304" # zip
-        - "425A68" # bz2
+        - "526172211A070100" # rar RAR archive version 5.0
+        - "FD377A585A0000" # xz tar.xz
         condition: or
         part: body
 ```
