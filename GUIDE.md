@@ -125,7 +125,7 @@ Matchers are the core of nuclei. They are what make the tool so powerful. Multip
 
 ##### **Types**
 
-Multiple matchers can be specified in a request. There are basically 4 types of matchers - 
+Multiple matchers can be specified in a request. There are basically 5 types of matchers - 
 
 | Matcher Type | Part Matched               |
 | ------------ | -------------------------- |
@@ -133,6 +133,7 @@ Multiple matchers can be specified in a request. There are basically 4 types of 
 | size         | Content Length of Response |
 | word         | Response body or headers   |
 | regex        | Response body or headers   |
+| binary       | Response body              |
 
 To match status codes for responses, you can use the following syntax.
 
@@ -144,6 +145,19 @@ matcher:
     status:
       - 200
       - 302
+```
+
+To match binary for hexadecimal responses, you can use the following syntax.
+
+```yaml
+matchers:
+      - type: binary
+        binary:
+        - "504B0304" # zip
+        - "526172211A070100" # rar RAR archive version 5.0
+        - "FD377A585A0000" # xz tar.xz
+        condition: or
+        part: body
 ```
 
 To match size, similar structure can be followed. If the status code of response from the site matches any single one specified in the matcher, the request is marked as successful.
