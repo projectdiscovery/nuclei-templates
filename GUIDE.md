@@ -12,7 +12,7 @@ Table of Contents
    * [Templating Guide](#templating-guide)
       * [Template Details](#template-details)
          * [<strong>Info</strong>](#info)
-         * [<strong>Requests</strong>](#requests)
+         * [<strong>HTTP Requests</strong>](#http-requests)
             * [<strong>Method</strong>](#method)
             * [<strong>Path</strong>](#path)
             * [<strong>Headers</strong>](#headers)
@@ -23,7 +23,15 @@ Table of Contents
                * [<strong>Matched Parts</strong>](#matched-parts)
                * [<strong>Multiple Matchers</strong>](#multiple-matchers)
             * [Extractors](#extractors)
-      * [<strong>Example Template</strong>](#example-template)
+            * [<strong>Example HTTP Template</strong>](#example-http-template)
+         * [<strong>DNS Requests</strong>](#dns-requests)
+            * [<strong>Type</strong>](#type)
+            * [<strong>Name</strong>](#name)
+            * [<strong>Class</strong>](#class)
+            * [<strong>Recursion</strong>](#recursion)
+            * [<strong>Retries</strong>](#retries)
+            * [<strong>Matchers</strong>](#matchers)
+            * [<strong>Example DNS Template</strong>](#example-dns-template)
 
 ## Template Details
 
@@ -57,9 +65,9 @@ info:
 
 Actual requests and corresponding matchers are placed below the info block and they perform the task of making requests to target servers and finding if the template request was succesful.
 
-Each template file can contain multiple requests to be made. The template is iterated and one by one the desired HTTP requests are made to the target sites.
+Each template file can contain multiple requests to be made. The template is iterated and one by one the desired HTTP/DNS requests are made to the target sites.
 
-### **Requests**
+### **HTTP Requests**
 
 Requests start with a request block which specifies the start of the requests for the template. 
 
@@ -248,7 +256,7 @@ extractors:
       - "(A3T[A-Z0-9]|AKIA|AGPA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}"
 ```
 
-## **Example Template**
+#### **Example HTTP Template**
 
 The final template file for the `.git/config` file mentioned above is as follows - 
 
@@ -268,4 +276,112 @@ requests:
       - type: word
         words:
           - "[core]"
+```
+
+### **DNS Requests**
+
+Requests start with a dns block which specifies the start of the requests for the template. 
+
+```yaml
+# start the requests for the template right here
+dns:
+```
+
+DNS requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers.
+
+#### **Type**
+
+First thing in the request is <u>**type**</u>. Request type can be **A**, **NS**, **CNAME**, **SOA**, **PTR**, **MX**, **TXT**, **AAAA**. 
+
+```yaml
+# type is the type for the dns request
+type: A
+```
+
+#### **Name**
+
+The next part of the requests is the **name** of the request path. Dynamic variables can be placed in the path to modify its value on runtime. Variables start with `{{` and end with `}}` and are case-sensitive. 
+
+1. **FQDN** - variable is replaced by the hostname/fqdn of the target on runtime.
+
+Some sample dynamic variable replacement examples - 
+
+```yaml
+name: {{FQDN}}.com
+# this value will be replaced on execution with FQDN
+# When FQDN = https://this.is.an.example
+# name will get replaced to the following - 
+this.is.an.example.com
+```
+
+As of now the tool supports only one question per request.
+
+#### **Class**
+
+Class type can be **INET**, **CSNET**, **CHAOS**, **HESIOD**, **NONE**, **ANY**. Usually it's enough to just leave it as **INET**
+
+```yaml
+# method is the class for the dns request
+class: inet
+```
+
+#### **Recursion** 
+
+Recursion is a boolean value, and determines if the resolver should only return cached results, or traverse the whole dns root tree to retrieve fresh results. Generally it's better to leave it as **true** 
+
+```yaml
+# recursion is a boolean determining if the request is recursive
+recursion: true
+```
+
+#### **Retries** 
+
+Retries is the number of attempts a dns query is retried before giving up among different resolvers. It's recommended a reasonable value, like **3**. 
+
+```yaml
+# retries is a number of retries before giving up on dns resolution
+retries: 3
+```
+
+#### **Matchers** 
+
+Matchers are just equal to HTTP, but the search is performed on the whole dns response, therefore it's not necessary to specify the **part**. Multiple type of combinations and checks can be added to ensure that the results you get are free from false positives.
+
+##### **Types**
+
+Multiple matchers can be specified in a request. There are basically 5 types of matchers - 
+
+| Matcher Type | Part Matched               |
+| ------------ | -------------------------- |
+| size         | Response size              |
+| word         | Response                   |
+| regex        | Response                   |
+| binary       | Response                   |
+
+## **Example DNS Template**
+
+The final example template file for performing `A` query, and check if CNAME and A records are in the response is as follows - 
+
+```yaml
+id: dummy-cname-a
+
+info:
+  name: Dummy A dns request
+  author: mzack9999
+  severity: none
+
+dns:
+    - name: "{{FQDN}}"
+      type: A
+      class: inet
+      recursion: true
+      retries: 3
+      matchers:
+      - type: word
+        words:
+          # The response must contains a CNAME record
+          - "IN\tCNAME"
+          # and also at least 1 A record
+          - "IN\tA"
+        condition: and
 ```
