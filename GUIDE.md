@@ -179,7 +179,7 @@ Complex matchers of type **Dsl** allows to build more elaborated expressions wit
 ```yaml
 matchers:
       - type: dsl
-        binary:
+        dsl:
         - "len(body)<1024 && status_code==200" # Body length less than 1024 and 200 status code
         - "contains(toupper(body), md5(cookie))" # check if the md5 of cookies is contained in the uppercase body
 ```
