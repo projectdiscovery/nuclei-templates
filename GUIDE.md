@@ -134,7 +134,7 @@ Matchers are the core of nuclei. They are what make the tool so powerful. Multip
 
 ##### **Types**
 
-Multiple matchers can be specified in a request. There are basically 5 types of matchers - 
+Multiple matchers can be specified in a request. There are basically 6 types of matchers - 
 
 | Matcher Type | Part Matched               |
 | ------------ | -------------------------- |
@@ -290,6 +290,26 @@ Here is an example of syntax for multiple matchers.
           - "Python/3."
         condition: or
         part: header
+```
+
+##### **Matchers Condition** 
+
+While using multiple matchers the default condition is to follow OR operation in between all the matchers, AND operation can be used to make sure return the result if all matchers returns true. 
+
+```yaml
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "X-Powered-By: PHP"
+          - "PHPSESSID"
+        condition: or
+        part: header
+        
+      - type: word
+        words:
+          - "PHP"
+        part: body
 ```
 
 #### Extractors
