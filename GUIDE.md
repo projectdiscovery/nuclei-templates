@@ -14,6 +14,7 @@ Table of Contents
          * [<strong>Info</strong>](#info)
          * [<strong>HTTP Requests</strong>](#http-requests)
             * [<strong>Method</strong>](#method)
+            * [<strong>Redirects</strong>](#redirects)
             * [<strong>Path</strong>](#path)
             * [<strong>Headers</strong>](#headers)
             * [<strong>Body</strong>](#body)
@@ -86,6 +87,22 @@ First thing in the request is <u>**method**</u>. Request method can be **GET**, 
 # method is the method for the request
 method: GET
 ```
+
+#### **Redirects**
+
+Redirection conditions can be specified per each template. By default, redirects are not followed. However, if desired, they can be enabled with `redirects: true` in request details. 10 Redirects are followed at max by default which should be good enough for most use cases. More fine grained control can be excercised over number of redirects followed by using `max-redirects` field.
+
+An example of the usage - 
+
+```yaml
+requests:
+  - method: GET
+    path: 
+      - "{{BaseURL}}/login.php
+    redirects: true
+    max-redirects: 3
+```
+
 
 #### **Path**
 
