@@ -14,6 +14,7 @@ Table of Contents
          * [<strong>Info</strong>](#info)
          * [<strong>HTTP Requests</strong>](#http-requests)
             * [<strong>Method</strong>](#method)
+            * [<strong>Redirects</strong>](#redirects)
             * [<strong>Path</strong>](#path)
             * [<strong>Headers</strong>](#headers)
             * [<strong>Body</strong>](#body)
@@ -87,6 +88,22 @@ First thing in the request is <u>**method**</u>. Request method can be **GET**, 
 method: GET
 ```
 
+#### **Redirects**
+
+Redirection conditions can be specified per each template. By default, redirects are not followed. However, if desired, they can be enabled with `redirects: true` in request details. 10 Redirects are followed at max by default which should be good enough for most use cases. More fine grained control can be excercised over number of redirects followed by using `max-redirects` field.
+
+An example of the usage - 
+
+```yaml
+requests:
+  - method: GET
+    path: 
+      - "{{BaseURL}}/login.php
+    redirects: true
+    max-redirects: 3
+```
+
+
 #### **Path**
 
 The next part of the requests is the **path** of the request path. Dynamic variables can be placed in the path to modify its behaviour on runtime. Variables start with `{{` and end with `}}` and are case-sensitive. 
@@ -134,7 +151,7 @@ Matchers are the core of nuclei. They are what make the tool so powerful. Multip
 
 ##### **Types**
 
-Multiple matchers can be specified in a request. There are basically 5 types of matchers - 
+Multiple matchers can be specified in a request. There are basically 6 types of matchers - 
 
 | Matcher Type | Part Matched               |
 | ------------ | -------------------------- |
@@ -290,6 +307,26 @@ Here is an example of syntax for multiple matchers.
           - "Python/3."
         condition: or
         part: header
+```
+
+##### **Matchers Condition** 
+
+While using multiple matchers the default condition is to follow OR operation in between all the matchers, AND operation can be used to make sure return the result if all matchers returns true. 
+
+```yaml
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "X-Powered-By: PHP"
+          - "PHPSESSID"
+        condition: or
+        part: header
+        
+      - type: word
+        words:
+          - "PHP"
+        part: body
 ```
 
 #### Extractors
