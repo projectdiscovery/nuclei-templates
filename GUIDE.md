@@ -77,7 +77,26 @@ Requests start with a request block which specifies the start of the requests fo
 requests:
 ```
 
-Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers.
+At this point you can define raw requests like the following ones (as of now it's suggested to leave the `Host` header as in the example with the variable `{{Hostname}}`). Later on DSL language and helper functions will be added in order to manipulate the request content at runtime:
+
+```yaml
+requests:
+  - raw:
+    - | 
+        GET /path1/ HTTP/1.1
+        User-Agent: chrome
+        Host: {{Hostname}}
+        Accept: a1/b1
+    - | 
+        POST /path2/ HTTP/1.1
+        User-Agent: chrome
+        Host: {{Hostname}}
+        Accept: a2/b2
+
+        This is the request Body
+```
+
+Otherwise you can define structured requests as described in the following paragraphs. Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers.
 
 #### **Method**
 
