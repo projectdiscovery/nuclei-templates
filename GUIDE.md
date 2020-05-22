@@ -258,8 +258,15 @@ The helper functions are:
 | trimsuffix      | Trim specified suffix                     | trimsuffix("aaHelloaa", "aa") // Result: "aaHello"                                             |
 | base64          | Encode string to base64                   | base64("Hello") // Result: "SGVsbG8="                                                          |
 | base64_decode   | Decode string from base64                 | base64_decode("SGVsbG8=") // Result: "Hello"                                                   |
+| url_encode   | URL encode a string                 | url_encode("https://projectdiscovery.io/test?a=1") // Result: "https:%2F%2Fprojectdiscovery.io%3Ftest=1"     |
+| url_decode   | URL decode a string                 | url_decode("https:%2F%2Fprojectdiscovery.io%3Ftest=1") // Result: "https://projectdiscovery.io/test?a=1"     |
+| hex_encode   | Hex encode a string                 | hex_encode("aa") // Result: "6161"     |
+| hex_decode   | Hex decode a string                 | hex_decode("6161") // Result: "aa"     |
+| html_escape   | Hex encode a string                 | html_escape("<html><body>test</body></html>") // Result: "&lt;html&gt;&lt;body&gt;test&lt;/body&gt;&lt;/html&gt;"     |
+| html_unescape   | Hex decode a string                 | html_unescape("&lt;html&gt;&lt;body&gt;test&lt;/body&gt;&lt;/html&gt;") // Result: "<html><body>test</body></html>"     |
 | md5             | Calculate md5 of string                   | md5("Hello") // Result: "8b1a9953c4611296a827abf8c47804d7"                                     |
 | sha256          | Calculate sha256 of string                | sha256("Hello") // Result: "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969"  |
+| sha1          | Calculate sha1 of string                | sha1("Hello") // Result: "f7ff9e8b7bb2e09b70935a5d785e0cc5d9d0abf0"  |
 | contains        | Verify if a string contains another one   | contains("Hello", "lo") // Result: True                                                        |
 | regex           | Verify a regex versus a string            | regex("H([a-z]+)o", "Hello") // Result: True                                                   |
 
