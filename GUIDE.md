@@ -77,7 +77,7 @@ Requests start with a request block which specifies the start of the requests fo
 requests:
 ```
 
-At this point you can define raw requests like the following ones (as of now it's suggested to leave the `Host` header as in the example with the variable `{{Hostname}}`). Later on DSL language and helper functions will be added in order to manipulate the request content at runtime:
+At this point you can define raw requests like the following ones (as of now it's suggested to leave the `Host` header as in the example with the variable `{{Hostname}}`).
 
 ```yaml
 requests:
@@ -96,7 +96,49 @@ requests:
         This is the request Body
 ```
 
-Otherwise you can define structured requests as described in the following paragraphs. Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers.
+Otherwise you can define structured requests as described in the following paragraphs. Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers. A recent addition in raw requests has been the introduction of intruder-like functionailities. It's possible to define placeholders as `{{placeholder}}`, and perform Sniper, Pitchfork and ClusterBomb attacks. The wordlist for these attacks needs to be defined during the request definition under the `Payload` field. Finally all DSL functionalities are fully available and supported, and can be used to manipulate the final values. Here follows an example:
+
+```yaml
+id: dummy-raw
+info:
+  name: Example-Fuzzing 
+
+requests:
+  - payloads:
+      param_a: /home/user/wordlist_param_a.txt
+      param_b: /home/user/wordlist_param_b.txt
+    attack: clusterbomb # sniper, pitchfork, clusterbomb
+    raw:
+      # Request with simple param and header manipulation with DSL functions
+      - | 
+          POST /?param_a={{param_a}}&paramb={{param_b}} HTTP/1.1
+          User-Agent: {{param_a}}
+          Host: {{Hostname}}
+          another_header: {{base64(param_b)}}
+          Accept: */*
+
+          This is the Body
+      # Request with body manipulation
+      - | 
+          DELETE / HTTP/1.1
+          User-Agent: nuclei
+          Host: {{Hostname}}
+          
+          This is the body {{sha256(param_a)}}
+      # Yet another one
+      - | 
+          PUT / HTTP/1.1
+          Host: {{Hostname}}
+          
+          This is again the request body {{html_escape(param_a)}} + {{hex_encode(param_b))}}
+    matchers:
+      - type: word
+        words: 
+          - "title"
+          - "body"
+```
+
+This functionality is **not optimized** for speed as the internal http library needs to be set explicitly with connection reuse policy.
 
 #### **Method**
 
@@ -258,8 +300,15 @@ The helper functions are:
 | trimsuffix      | Trim specified suffix                     | trimsuffix("aaHelloaa", "aa") // Result: "aaHello"                                             |
 | base64          | Encode string to base64                   | base64("Hello") // Result: "SGVsbG8="                                                          |
 | base64_decode   | Decode string from base64                 | base64_decode("SGVsbG8=") // Result: "Hello"                                                   |
+| url_encode   | URL encode a string                 | url_encode("https://projectdiscovery.io/test?a=1") // Result: "https:%2F%2Fprojectdiscovery.io%3Ftest=1"     |
+| url_decode   | URL decode a string                 | url_decode("https:%2F%2Fprojectdiscovery.io%3Ftest=1") // Result: "https://projectdiscovery.io/test?a=1"     |
+| hex_encode   | Hex encode a string                 | hex_encode("aa") // Result: "6161"     |
+| hex_decode   | Hex decode a string                 | hex_decode("6161") // Result: "aa"     |
+| html_escape   | Hex encode a string                 | html_escape("<html><body>test</body></html>") // Result: "&lt;html&gt;&lt;body&gt;test&lt;/body&gt;&lt;/html&gt;"     |
+| html_unescape   | Hex decode a string                 | html_unescape("&lt;html&gt;&lt;body&gt;test&lt;/body&gt;&lt;/html&gt;") // Result: "<html><body>test</body></html>"     |
 | md5             | Calculate md5 of string                   | md5("Hello") // Result: "8b1a9953c4611296a827abf8c47804d7"                                     |
 | sha256          | Calculate sha256 of string                | sha256("Hello") // Result: "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969"  |
+| sha1          | Calculate sha1 of string                | sha1("Hello") // Result: "f7ff9e8b7bb2e09b70935a5d785e0cc5d9d0abf0"  |
 | contains        | Verify if a string contains another one   | contains("Hello", "lo") // Result: True                                                        |
 | regex           | Verify a regex versus a string            | regex("H([a-z]+)o", "Hello") // Result: True                                                   |
 
