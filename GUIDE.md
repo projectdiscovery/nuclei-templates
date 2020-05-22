@@ -77,7 +77,7 @@ Requests start with a request block which specifies the start of the requests fo
 requests:
 ```
 
-At this point you can define raw requests like the following ones (as of now it's suggested to leave the `Host` header as in the example with the variable `{{Hostname}}`). Later on DSL language and helper functions will be added in order to manipulate the request content at runtime:
+At this point you can define raw requests like the following ones (as of now it's suggested to leave the `Host` header as in the example with the variable `{{Hostname}}`).
 
 ```yaml
 requests:
@@ -96,7 +96,49 @@ requests:
         This is the request Body
 ```
 
-Otherwise you can define structured requests as described in the following paragraphs. Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers.
+Otherwise you can define structured requests as described in the following paragraphs. Requests can be fine tuned to perform the exact tasks as desired. Nuclei requests are fully configurable meaning you can configure and define each and every single thing about the requests that will be sent to the target servers. A recent addition in raw requests has been the introduction of intruder-like functionailities. It's possible to define placeholders as `{{placeholder}}`, and perform Sniper, Pitchfork and ClusterBomb attacks. The wordlist for these attacks needs to be defined during the request definition under the `Payload` field. Finally all DSL functionalities are fully available and supported, and can be used to manipulate the final values. Here follows an example:
+
+```yaml
+id: dummy-raw
+info:
+  name: Example-Fuzzing 
+
+requests:
+  - payloads:
+      param_a: /home/user/wordlist_param_a.txt
+      param_b: /home/user/wordlist_param_b.txt
+    attack: clusterbomb # sniper, pitchfork, clusterbomb
+    raw:
+      # Request with simple param and header manipulation with DSL functions
+      - | 
+          POST /?param_a={{param_a}}&paramb={{param_b}} HTTP/1.1
+          User-Agent: {{param_a}}
+          Host: {{Hostname}}
+          another_header: {{base64(param_b)}}
+          Accept: */*
+
+          This is the Body
+      # Request with body manipulation
+      - | 
+          DELETE / HTTP/1.1
+          User-Agent: nuclei
+          Host: {{Hostname}}
+          
+          This is the body {{sha256(param_a)}}
+      # Yet another one
+      - | 
+          PUT / HTTP/1.1
+          Host: {{Hostname}}
+          
+          This is again the request body {{html_escape(param_a)}} + {{hex_encode(param_b))}}
+    matchers:
+      - type: word
+        words: 
+          - "title"
+          - "body"
+```
+
+This functionality is **not optimized** for speed as the internal http library needs to be set explicitly with connection reuse policy.
 
 #### **Method**
 
