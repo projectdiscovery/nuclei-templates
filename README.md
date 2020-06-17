@@ -2,6 +2,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 Please [read this detailed guide](https://github.com/projectdiscovery/nuclei-templates/blob/master/GUIDE.md) to build new and your own custom templates.
 
+------
 **Notes:** 
 1. Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/)) to validate new templates when sending pull requests.
 2. Use YAML Formatter (e.g. [jsonformatter](https://jsonformatter.org/yaml-formatter)) to format new templates when sending pull requests.
