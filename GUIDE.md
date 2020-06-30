@@ -570,14 +570,7 @@ variables:
 
 logic: 
     |
-
- # defening conditional templates. 
- 
   if jira() {
-
- # if the above condition returns true, run all the below templates. 
- # if the above condition fails, no templates will be executed. 
- 
     jira-cve-1()
     jira-cve-2()
     jira-cve-3()
@@ -601,21 +594,13 @@ variables:
   # relative path support is now added into the nuclei engine for better UX. 
 
   jira: panels/detect-jira.yaml
+  jira-pwn: my-jira-templates/
 
  # defining directory to run all the templates
- 
-  jira-pwn: my-jira-templates/
 
 logic: 
     |
-
- # defening conditional templates. 
- 
   if jira() {
-
- # if the above condition returns true, run all templates from directory.
- # if the above condition fails, no templates will be executed. 
- 
     jira-pwn()
 
   }
