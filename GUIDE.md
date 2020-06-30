@@ -546,6 +546,8 @@ dns:
 
 It's also possible to create conditional templates which executes after matching the condition from the previous templates, mostly useful for vulnerability detection and exploitation and tech based detection and exploitation, single, multiple along with directory based templates can be executed in chained workflow template.  
 
+Chained workflow supports both HTTP and DNS request based templates. 
+
 Example of running single / multiple templates only if `detect-jira.yaml` is detected host running Jira application. 
 
 ```yaml
