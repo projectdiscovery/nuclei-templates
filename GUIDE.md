@@ -558,6 +558,10 @@ info:
 
 variables:
 
+  # defining templates using variables. 
+  # variables names as user-defined, it could be anything.  
+  # relative path support is now added into the nuclei engine for better UX. 
+  
   jira: panels/detect-jira.yaml
   jira-cve-1: cves/CVE-2018-20824.yaml
   jira-cve-2: cves/CVE-2019-3399.yaml
@@ -567,8 +571,13 @@ variables:
 logic: 
     |
 
+ # defening conditional templates. 
+ 
   if jira() {
 
+ # if the above condition returns true, run all the below templates. 
+ # if the above condition fails, no templates will be executed. 
+ 
     jira-cve-1()
     jira-cve-2()
     jira-cve-3()
@@ -587,13 +596,26 @@ info:
 
 variables:
 
+  # defining templates using variables. 
+  # variables names as user-defined, it could be anything.  
+  # relative path support is now added into the nuclei engine for better UX. 
+
   jira: panels/detect-jira.yaml
+
+ # defining directory to run all the templates
+ 
   jira-pwn: my-jira-templates/
 
 logic: 
     |
 
+ # defening conditional templates. 
+ 
   if jira() {
+
+ # if the above condition returns true, run all templates from directory.
+ # if the above condition fails, no templates will be executed. 
+ 
     jira-pwn()
 
   }
