@@ -32,6 +32,7 @@ Let's start with the basics and define our own workflow file for detecting the p
             * [<strong>Retries</strong>](#retries)
             * [<strong>Matchers</strong>](#matchers)
             * [<strong>Example DNS Template</strong>](#example-dns-template)
+         * [<strong>Chained workflow</strong>](#dns-requests)
 
 ## Template Details
 
@@ -540,3 +541,59 @@ dns:
           - "IN\tA"
         condition: and
 ```
+
+# Chained workflow
+
+It's also possible to create conditional templates which executes after matching the condition from the previous templates, mostly useful for vulnerability detection and exploitation and tech based detection and exploitation, single, multiple along with directory based templates can be executed in chained workflow template.  
+
+Example of running single / multiple templates only if `detect-jira.yaml` is detected host running Jira application. 
+
+```yaml
+id: workflow-example
+info:
+  name: Jira-Pawner
+  author: mzack9999
+
+variables:
+
+  jira: panels/detect-jira.yaml
+  jira-cve-1: cves/CVE-2018-20824.yaml
+  jira-cve-2: cves/CVE-2019-3399.yaml
+  jira-cve-3: cves/CVE-2019-11581.yaml
+  jira-cve-4: cves/CVE-2017-18101.yaml
+
+logic: 
+    |
+
+  if jira() {
+
+    jira-cve-1()
+    jira-cve-2()
+    jira-cve-3()
+    jira-cve-4()
+
+  }
+```
+
+Example of running directory based templates when `detect-jira.yaml` is detected host running Jira application, based on this you can define your own workflow to run scans based on any or specific stacks. 
+
+```yaml
+id: workflow-example
+info:
+  name: Jira-Pawner
+  author: mzack9999
+
+variables:
+
+  jira: panels/detect-jira.yaml
+  jira-pwn: my-jira-templates/
+
+logic: 
+    |
+
+  if jira() {
+    jira-pwn()
+
+  }
+```
+
