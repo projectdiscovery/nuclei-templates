@@ -32,7 +32,7 @@ Let's start with the basics and define our own workflow file for detecting the p
             * [<strong>Retries</strong>](#retries)
             * [<strong>Matchers</strong>](#matchers)
             * [<strong>Example DNS Template</strong>](#example-dns-template)
-         * [<strong>Chained workflow</strong>](#dns-requests)
+         * [<strong>Chained workflow</strong>](#chained-workflow)
 
 ## Template Details
 
