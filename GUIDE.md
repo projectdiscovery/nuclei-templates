@@ -61,6 +61,8 @@ info:
   author: Ice3man
   # Severity is the severity for the template.
   severity: medium
+  #  Description optionally describes the template.
+  description: Searches for the pattern /.git/config on passed URLs.
 ```
 
 Actual requests and corresponding matchers are placed below the info block and they perform the task of making requests to target servers and finding if the template request was successful.
@@ -423,6 +425,7 @@ info:
   name: Git Config File
   author: Ice3man
   severity: medium
+  description: Searches for the pattern /.git/config on passed URLs.
 
 requests:
   - method: GET
@@ -525,6 +528,7 @@ info:
   name: Dummy A dns request
   author: mzack9999
   severity: none
+  description: Checks if CNAME and A record is returned.
 
 dns:
   - name: "{{FQDN}}"
@@ -555,6 +559,7 @@ id: workflow-example
 info:
   name: Jira-Pawner
   author: mzack9999
+  description: Detect Jira and if found; then check for CVEs in list.
 
 variables:
 
@@ -586,6 +591,7 @@ id: workflow-example
 info:
   name: Jira-Pawner
   author: mzack9999
+  description: Detect Jira and if found; perform custom pwn.
 
 variables:
 
