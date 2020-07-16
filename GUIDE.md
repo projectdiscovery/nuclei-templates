@@ -23,6 +23,7 @@ Let's start with the basics and define our own workflow file for detecting the p
                * [<strong>Matched Parts</strong>](#matched-parts)
                * [<strong>Multiple Matchers</strong>](#multiple-matchers)
             * [Extractors](#extractors)
+               * [<strong>Types</strong>](#types-1)
             * [<strong>Example HTTP Template</strong>](#example-http-template)
          * [<strong>DNS Requests</strong>](#dns-requests)
             * [<strong>Type</strong>](#type)
@@ -398,14 +399,23 @@ While using multiple matchers the default condition is to follow OR operation in
 
 #### Extractors
 
-Extractors are another important feature of nuclei. Extractors can be used to extract and display in results a match from the response body or headers based on a regular expression.
+Extractors are another important feature of nuclei. Extractors can be used to extract and display in results a match from the response body or headers based on a regular expression and other available extractors types. 
 
-Currently only `regex` type extractors are supported. A sample extractor for extracting API keys from the response body is as follows:
+##### Types
+
+Multiple extractors can be specified in a request. As of now there are basically two types of extractors:
+
+| Extractor Type | Part Matched               |
+| -------------- | -------------------------- |
+| regex          | Response body or headers   |
+| kval           | Response headers or cookie |
+
+To match a regular expression for responses, you can use the following syntax.
 
 ```yaml
-# A list of extractors for text extraction
+# An example of extractors for text extraction using regex type
 extractors:
-  # type of the extractor, only regex for now.
+  # type of the extractor
   - type: regex
     # part of the response to extract (can be headers, all too)
     part: body
@@ -413,6 +423,23 @@ extractors:
     regex:
       - "(A3T[A-Z0-9]|AKIA|AGPA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}"
 ```
+
+`kval` supports `key:value` and `key=value` format, to match any key and value formatted data for responses header and cookie, you can use the following syntax.
+
+````yaml
+# An example of extractors for text extraction using kval type
+extractors:
+  # type of the extractor
+  - type: kval
+    # part of the response to extract (if not used, default set to header)
+    # kval can extract values from header and cookies
+    part: header
+    # kval to use for extraction.
+    # prints the value of server header.
+    # replace "server" with any other cookie name you want to print. 
+    kval:
+      - server
+````
 
 #### **Example HTTP Template**
 
@@ -611,4 +638,3 @@ logic:
 
   }
 ```
-
