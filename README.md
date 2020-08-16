@@ -1,16 +1,16 @@
+[![GitHub Release](https://img.shields.io/github/release/projectdiscovery/nuclei-templates)](https://github.com/projectdiscovery/nuclei-templates/releases)
+[![GitHub Release Date](https://img.shields.io/github/release-date/projectdiscovery/nuclei-templates)](https://github.com/projectdiscovery/nuclei-templates/releases/latest)
+[![Follow on Twitter](https://img.shields.io/twitter/follow/pdnuclei.svg?logo=twitter)](https://twitter.com/pdnuclei)
+[![Chat on Discord](https://img.shields.io/discord/695645237418131507.svg?logo=discord)](https://discord.gg/KECAGdH)
+
 Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** and grow the list.
 
 <details>
 <summary>Template Directory</summary>
 
 ```
-├── LICENSE
+├── LICENSE.md
 ├── README.md
-├── basic-detections
-│   ├── basic-xss-prober.yaml
-│   └── general-tokens.yaml
-├── brute-force
-│   └── tomcat-manager-bruteforce.yaml
 ├── cves
 │   ├── CVE-2017-10075.yaml
 │   ├── CVE-2017-7529.yaml
@@ -39,6 +39,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2019-14322.yaml
 │   ├── CVE-2019-14974.yaml
 │   ├── CVE-2019-15043.yaml
+│   ├── CVE-2019-16759-1.yaml
 │   ├── CVE-2019-16759.yaml
 │   ├── CVE-2019-17382.yaml
 │   ├── CVE-2019-18394.yaml
@@ -50,15 +51,18 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2019-3396.yaml
 │   ├── CVE-2019-3799.yaml
 │   ├── CVE-2019-5418.yaml
+│   ├── CVE-2019-7609.yaml
 │   ├── CVE-2019-8449.yaml
 │   ├── CVE-2019-8451.yaml
 │   ├── CVE-2019-8903.yaml
 │   ├── CVE-2019-8982.yaml
+│   ├── CVE-2019-9978.yaml
 │   ├── CVE-2020-10199.yaml
 │   ├── CVE-2020-10204.yaml
 │   ├── CVE-2020-1147.yaml
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
+│   ├── CVE-2020-13379.yaml
 │   ├── CVE-2020-2096.yaml
 │   ├── CVE-2020-3187.yaml
 │   ├── CVE-2020-3452.yaml
@@ -78,6 +82,10 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2020-8982.yaml
 │   ├── CVE-2020-9484.yaml
 │   └── CVE-2020-9757.yaml
+├── default-credentials
+│   ├── grafana-default-credential.yaml
+│   ├── rabbitmq-default-admin.yaml
+│   └── tomcat-manager-default.yaml
 ├── dns
 │   ├── azure-takeover-detection.yaml
 │   ├── cname-service-detector.yaml
@@ -114,6 +122,10 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── wordpress-user-enumeration.yaml
 │   ├── wp-xmlrpc.yaml
 │   └── zip-backup-files.yaml
+├── generic-detections
+│   ├── basic-xss-prober.yaml
+│   ├── general-tokens.yaml
+│   └── top-15-xss.yaml
 ├── panels
 │   ├── atlassian-crowd-panel.yaml
 │   ├── cisco-asa-panel.yaml
@@ -151,10 +163,10 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── jira-unauthenticated-popular-filters.yaml
 │   ├── jira-unauthenticated-projects.yaml
 │   ├── jira-unauthenticated-user-picker.yaml
-│   ├── rabbitmq-default-admin.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── springboot-detect.yaml
-│   └── wamp-xdebug-detect.yaml
+│   ├── wamp-xdebug-detect.yaml
+│   └── wordpress-accessible-wpconfig.yaml
 ├── subdomain-takeover
 │   ├── detect-all-takeovers.yaml
 │   └── s3-subtakeover.yaml
@@ -215,17 +227,20 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   └── x-forwarded-host-injection.yaml
 └── workflows
     ├── bigip-pwner-workflow.yaml
+    ├── grafana-workflow.yaml
     ├── jira-exploitaiton-workflow.yaml
     ├── liferay-rce-workflow.yaml
     ├── netsweeper-preauth-rce-workflow.yaml
     ├── rabbitmq-workflow.yaml
     ├── sap-netweaver-workflow.yaml
-    └── springboot-pwner-workflow.yaml
+    ├── springboot-pwner-workflow.yaml
+    ├── vbulletin-workflow.yaml
+    └── wordpress-workflow.yaml
 ```
 
 </details>
 
-13 directories, **204 templates**. 
+13 directories, **214 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
