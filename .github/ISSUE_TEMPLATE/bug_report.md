@@ -7,16 +7,26 @@ assignees: ''
 
 ---
 
+**Nuclei version**
+
+```
+nuclei -version 
+```
+
+**Nuclei template version**
+
+```
+cat ~/.nuclei-config.json
+```
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
 **Commands to reproduce**
 
-Commands to reproduce the behavior:
-
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+```
+nuclei -t xxx -target xxx
+```
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
