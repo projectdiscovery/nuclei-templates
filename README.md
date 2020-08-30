@@ -12,10 +12,10 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 <summary>Template Directory</summary>
 
 ```
-├── LICENSE.md
-├── README.md
 ├── cves
 │   ├── CVE-2017-10075.yaml
+│   ├── CVE-2017-14849.yaml
+│   ├── CVE-2017-5638.yaml
 │   ├── CVE-2017-7529.yaml
 │   ├── CVE-2017-9506.yaml
 │   ├── CVE-2017-9841.yaml
@@ -37,7 +37,9 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2018-5230.yaml
 │   ├── CVE-2018-7490.yaml
 │   ├── CVE-2019-10475.yaml
+│   ├── CVE-2019-11248.yaml
 │   ├── CVE-2019-11510.yaml
+│   ├── CVE-2019-11580.yaml
 │   ├── CVE-2019-12314.yaml
 │   ├── CVE-2019-14322.yaml
 │   ├── CVE-2019-14974.yaml
@@ -51,9 +53,11 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2019-19908.yaml
 │   ├── CVE-2019-19985.yaml
 │   ├── CVE-2019-2588.yaml
+│   ├── CVE-2019-2725.yaml
 │   ├── CVE-2019-3396.yaml
 │   ├── CVE-2019-3799.yaml
 │   ├── CVE-2019-5418.yaml
+│   ├── CVE-2019-6112.yaml
 │   ├── CVE-2019-7609.yaml
 │   ├── CVE-2019-8449.yaml
 │   ├── CVE-2019-8451.yaml
@@ -66,6 +70,8 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
 │   ├── CVE-2020-13379.yaml
+│   ├── CVE-2020-17505.yaml
+│   ├── CVE-2020-17506.yaml
 │   ├── CVE-2020-2096.yaml
 │   ├── CVE-2020-3187.yaml
 │   ├── CVE-2020-3452.yaml
@@ -78,12 +84,14 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2020-7961.yaml
 │   ├── CVE-2020-8091.yaml
 │   ├── CVE-2020-8115.yaml
+│   ├── CVE-2020-8163.yaml
 │   ├── CVE-2020-8191.yaml
 │   ├── CVE-2020-8193.yaml
 │   ├── CVE-2020-8194.yaml
 │   ├── CVE-2020-8512.yaml
 │   ├── CVE-2020-8982.yaml
 │   ├── CVE-2020-9484.yaml
+│   ├── CVE-2020-9496.yaml
 │   └── CVE-2020-9757.yaml
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
@@ -97,10 +105,11 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 ├── files
 │   ├── apc-info.yaml
 │   ├── cgi-test-page.yaml
-│   ├── debug-pprof.yaml
 │   ├── dir-listing.yaml
 │   ├── docker-registry.yaml
+│   ├── druid-monitor.yaml
 │   ├── drupal-install.yaml
+│   ├── ds_store.yaml
 │   ├── elasticsearch.yaml
 │   ├── exposed-kibana.yaml
 │   ├── exposed-svn.yaml
@@ -144,6 +153,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── kubernetes-pods.yaml
 │   ├── mongo-express-web-gui.yaml
 │   ├── parallels-html-client.yaml
+│   ├── pfsense-web-gui.yaml
 │   ├── phpmyadmin-panel.yaml
 │   ├── pulse-secure-panel.yaml
 │   ├── rabbitmq-dashboard.yaml
@@ -153,8 +163,10 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── supervpn-panel.yaml
 │   ├── swagger-panel.yaml
 │   ├── tikiwiki-cms.yaml
+│   ├── traefik-dashboard
 │   ├── weave-scope-dashboard-detect.yaml
-│   └── webeditors.yaml
+│   ├── webeditors.yaml
+│   └── workspaceone-uem-airWatch-dashboard-detect.yaml
 ├── payloads
 │   └── CVE-2020-6287.xml
 ├── security-misconfiguration
@@ -166,6 +178,8 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── jira-unauthenticated-popular-filters.yaml
 │   ├── jira-unauthenticated-projects.yaml
 │   ├── jira-unauthenticated-user-picker.yaml
+│   ├── missing-x-frame-options.yaml
+│   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── springboot-detect.yaml
 │   ├── wamp-xdebug-detect.yaml
@@ -174,10 +188,12 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── detect-all-takeovers.yaml
 │   └── s3-subtakeover.yaml
 ├── technologies
+│   ├── artica-web-proxy-detect.yaml
 │   ├── bigip-config-utility-detect.yaml
 │   ├── citrix-vpn-detect.yaml
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
+│   ├── favicon-detection.yaml
 │   ├── github-enterprise-detect.yaml
 │   ├── gitlab-detect.yaml
 │   ├── graphql.yaml
@@ -188,7 +204,6 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── linkerd-badrule-detect.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── netsweeper-webadmin-detect.yaml
-│   ├── ntlm-directories.yaml
 │   ├── prometheus-exposed-panel.yaml
 │   ├── s3-detect.yaml
 │   ├── sap-netweaver-as-java-detect.yaml
@@ -200,6 +215,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 ├── tokens
 │   ├── amazon-mws-auth-token-value.yaml
 │   ├── aws-access-key-value.yaml
+│   ├── credentials-disclosure.yaml
 │   ├── google-api-key.yaml
 │   ├── http-username-password.yaml
 │   ├── mailchimp-api-key.yaml
@@ -209,6 +225,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── couchdb-adminparty.yaml
 │   ├── crlf-injection.yaml
 │   ├── discourse-xss.yaml
+│   ├── eclipse-help-system-xss.yaml
 │   ├── git-config-nginxoffbyslash.yaml
 │   ├── ibm-infoprint-directory-traversal.yaml
 │   ├── microstrategy-ssrf.yaml
@@ -220,16 +237,20 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── pdf-signer-ssti-to-rce.yaml
 │   ├── rce-shellshock-user-agent.yaml
 │   ├── rce-via-java-deserialization.yaml
+│   ├── sick-beard-xss.yaml
 │   ├── springboot-actuators-jolokia-xxe.yaml
 │   ├── symfony-debugmode.yaml
 │   ├── tikiwiki-reflected-xss.yaml
 │   ├── tomcat-manager-pathnormalization.yaml
 │   ├── twig-php-ssti.yaml
+│   ├── wems-manager-xss.yaml
 │   ├── wordpress-duplicator-path-traversal.yaml
 │   ├── wordpress-wordfence-xss.yaml
 │   └── x-forwarded-host-injection.yaml
 └── workflows
+    ├── artica-web-proxy-workflow.yaml
     ├── bigip-pwner-workflow.yaml
+    ├── cisco-asa-workflow.yaml
     ├── grafana-workflow.yaml
     ├── jira-exploitaiton-workflow.yaml
     ├── liferay-rce-workflow.yaml
@@ -243,7 +264,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 </details>
 
-13 directories, **214 templates**. 
+13 directories, **235 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
