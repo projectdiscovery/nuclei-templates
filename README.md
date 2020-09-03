@@ -6,7 +6,28 @@
 [![Follow on Twitter](https://img.shields.io/twitter/follow/pdnuclei.svg?logo=twitter)](https://twitter.com/pdnuclei)
 [![Chat on Discord](https://img.shields.io/discord/695645237418131507.svg?logo=discord)](https://discord.gg/KECAGdH)
 
-Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** and grow the list.
+Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** or [Github issue](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) and grow the list.
+
+An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
+
+### nuclei templates `v6.0.7`
+
+| Template Directory      	| Number of Templates      | Number of HTTP/DNS requests  |
+|---------------------------|--------------------------|------------------------------|
+| cves                     	|86                        |131                           |
+| default-credentials       |03                        |04                            |
+| dns                     	|04                        |04                            |
+| files                     |34                        |111                           |
+| generic-detections        |03                        |03                            |
+| panels                    |28                        |82                            |
+| security-misconfiguration |16                  	   |93                            |
+| subdomain-takeover        |02           			   |02                            |
+| technologies              |24      				   |43                            |
+| tokens                    |07                        |07                            |
+| vulnerabilities           |26          			   |55                            |
+| workflows                 |12              		   |12*                           |
+
+### nuclei templates `v6.0.7` tree overview 
 
 <details>
 <summary>Template Directory</summary>
@@ -16,6 +37,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2017-10075.yaml
 │   ├── CVE-2017-14849.yaml
 │   ├── CVE-2017-5638.yaml
+│   ├── CVE-2017-7391.yaml
 │   ├── CVE-2017-7529.yaml
 │   ├── CVE-2017-9506.yaml
 │   ├── CVE-2017-9841.yaml
@@ -41,9 +63,11 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2019-11510.yaml
 │   ├── CVE-2019-11580.yaml
 │   ├── CVE-2019-12314.yaml
+│   ├── CVE-2019-12461.yaml
 │   ├── CVE-2019-14322.yaml
 │   ├── CVE-2019-14974.yaml
 │   ├── CVE-2019-15043.yaml
+│   ├── CVE-2019-16278.yaml
 │   ├── CVE-2019-16759-1.yaml
 │   ├── CVE-2019-16759.yaml
 │   ├── CVE-2019-17382.yaml
@@ -70,14 +94,18 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
 │   ├── CVE-2020-13379.yaml
+│   ├── CVE-2020-15920.yaml
 │   ├── CVE-2020-17505.yaml
 │   ├── CVE-2020-17506.yaml
 │   ├── CVE-2020-2096.yaml
+│   ├── CVE-2020-2140.yaml
+│   ├── CVE-2020-24223.yaml
 │   ├── CVE-2020-3187.yaml
 │   ├── CVE-2020-3452.yaml
 │   ├── CVE-2020-5284.yaml
 │   ├── CVE-2020-5405.yaml
 │   ├── CVE-2020-5410.yaml
+│   ├── CVE-2020-5412.yaml
 │   ├── CVE-2020-5902.yaml
 │   ├── CVE-2020-6287.yaml
 │   ├── CVE-2020-7209.yaml
@@ -111,6 +139,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── drupal-install.yaml
 │   ├── ds_store.yaml
 │   ├── elasticsearch.yaml
+│   ├── error-logs.yaml
 │   ├── exposed-kibana.yaml
 │   ├── exposed-svn.yaml
 │   ├── filezilla.yaml
@@ -123,6 +152,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── lazy-file.yaml
 │   ├── phpinfo.yaml
 │   ├── public-tomcat-instance.yaml
+│   ├── robots.txt.yaml
 │   ├── security.txt.yaml
 │   ├── server-status-localhost.yaml
 │   ├── telerik-dialoghandler-detect.yaml
@@ -130,6 +160,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── tomcat-scripts.yaml
 │   ├── wadl-files.yaml
 │   ├── web-config.yaml
+│   ├── wordpress-debug-log.yaml
 │   ├── wordpress-directory-listing.yaml
 │   ├── wordpress-user-enumeration.yaml
 │   ├── wp-xmlrpc.yaml
@@ -164,6 +195,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 │   ├── swagger-panel.yaml
 │   ├── tikiwiki-cms.yaml
 │   ├── traefik-dashboard
+│   ├── traefik-dashboard.yaml
 │   ├── weave-scope-dashboard-detect.yaml
 │   ├── webeditors.yaml
 │   └── workspaceone-uem-airWatch-dashboard-detect.yaml
@@ -172,6 +204,8 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 ├── security-misconfiguration
 │   ├── basic-cors-flash.yaml
 │   ├── basic-cors.yaml
+│   ├── drupal-user-enum-ajax.yaml
+│   ├── drupal-user-enum-redirect.yaml
 │   ├── front-page-misconfig.yaml
 │   ├── jira-service-desk-signup.yaml
 │   ├── jira-unauthenticated-dashboards.yaml
@@ -264,7 +298,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 </details>
 
-13 directories, **235 templates**. 
+13 directories, **250 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
@@ -274,3 +308,4 @@ Please navigate to https://nuclei.projectdiscovery.io for detailed documentation
 2. Use YAML Formatter (e.g. [jsonformatter](https://jsonformatter.org/yaml-formatter)) to format new templates when sending pull requests.
 
 Thanks again for your contribution and keeping the community vibrant. :heart:
+
