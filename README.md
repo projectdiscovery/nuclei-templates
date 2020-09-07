@@ -10,7 +10,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### nuclei templates `v6.0.7`
+### nuclei templates `v7.0.0`
 
 | Template Directory      	| Number of Templates      | Number of HTTP/DNS requests  |
 |---------------------------|--------------------------|------------------------------|
@@ -27,7 +27,7 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities           |26          			   |55                            |
 | workflows                 |12              		   |12*                           |
 
-### nuclei templates `v6.0.7` tree overview 
+### nuclei templates `v7.0.0` tree overview 
 
 <details>
 <summary>Template Directory</summary>
@@ -35,6 +35,7 @@ An overview of the nuclei template directory including number of templates and H
 ```
 ├── cves
 │   ├── CVE-2017-10075.yaml
+│   ├── CVE-2017-14537.yaml
 │   ├── CVE-2017-14849.yaml
 │   ├── CVE-2017-5638.yaml
 │   ├── CVE-2017-7391.yaml
@@ -58,19 +59,24 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2018-3760.yaml
 │   ├── CVE-2018-5230.yaml
 │   ├── CVE-2018-7490.yaml
+│   ├── CVE-2019-1010287.yaml
 │   ├── CVE-2019-10475.yaml
+│   ├── CVE-2019-11043.yaml
 │   ├── CVE-2019-11248.yaml
 │   ├── CVE-2019-11510.yaml
 │   ├── CVE-2019-11580.yaml
 │   ├── CVE-2019-12314.yaml
 │   ├── CVE-2019-12461.yaml
+│   ├── CVE-2019-12593.yaml
 │   ├── CVE-2019-14322.yaml
+│   ├── CVE-2019-14696.yaml
 │   ├── CVE-2019-14974.yaml
 │   ├── CVE-2019-15043.yaml
 │   ├── CVE-2019-16278.yaml
 │   ├── CVE-2019-16759-1.yaml
 │   ├── CVE-2019-16759.yaml
 │   ├── CVE-2019-17382.yaml
+│   ├── CVE-2019-17558.yaml
 │   ├── CVE-2019-18394.yaml
 │   ├── CVE-2019-19368.yaml
 │   ├── CVE-2019-19781.yaml
@@ -90,6 +96,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-9978.yaml
 │   ├── CVE-2020-10199.yaml
 │   ├── CVE-2020-10204.yaml
+│   ├── CVE-2020-11034.yaml
 │   ├── CVE-2020-1147.yaml
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
@@ -106,6 +113,8 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-5405.yaml
 │   ├── CVE-2020-5410.yaml
 │   ├── CVE-2020-5412.yaml
+│   ├── CVE-2020-5776.yaml
+│   ├── CVE-2020-5777.yaml
 │   ├── CVE-2020-5902.yaml
 │   ├── CVE-2020-6287.yaml
 │   ├── CVE-2020-7209.yaml
@@ -155,6 +164,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── robots.txt.yaml
 │   ├── security.txt.yaml
 │   ├── server-status-localhost.yaml
+│   ├── sql-dump.yaml
 │   ├── telerik-dialoghandler-detect.yaml
 │   ├── telerik-fileupload-detect.yaml
 │   ├── tomcat-scripts.yaml
@@ -179,6 +189,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── fortinet-fortigate-panel.yaml
 │   ├── globalprotect-panel.yaml
 │   ├── grafana-detect.yaml
+│   ├── iomega-lenovo-emc-shared-nas-detect.yaml
 │   ├── jenkins-asyncpeople.yaml
 │   ├── jmx-console.yaml
 │   ├── kubernetes-pods.yaml
@@ -186,6 +197,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── parallels-html-client.yaml
 │   ├── pfsense-web-gui.yaml
 │   ├── phpmyadmin-panel.yaml
+│   ├── polycom-admin-detect.yaml
 │   ├── pulse-secure-panel.yaml
 │   ├── rabbitmq-dashboard.yaml
 │   ├── sap-netweaver-detect.yaml
@@ -200,6 +212,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── webeditors.yaml
 │   └── workspaceone-uem-airWatch-dashboard-detect.yaml
 ├── payloads
+│   ├── CVE-2020-5776.csv
 │   └── CVE-2020-6287.xml
 ├── security-misconfiguration
 │   ├── basic-cors-flash.yaml
@@ -237,6 +250,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── liferay-portal-detect.yaml
 │   ├── linkerd-badrule-detect.yaml
 │   ├── linkerd-ssrf-detect.yaml
+│   ├── magmi-detect.yaml
 │   ├── netsweeper-webadmin-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
 │   ├── s3-detect.yaml
@@ -288,6 +302,7 @@ An overview of the nuclei template directory including number of templates and H
     ├── grafana-workflow.yaml
     ├── jira-exploitaiton-workflow.yaml
     ├── liferay-rce-workflow.yaml
+    ├── magmi-workflow.yaml
     ├── netsweeper-preauth-rce-workflow.yaml
     ├── rabbitmq-workflow.yaml
     ├── sap-netweaver-workflow.yaml
@@ -298,7 +313,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-13 directories, **250 templates**. 
+13 directories, **263 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
