@@ -1,3 +1,4 @@
+
 # Nuclei Templates
 
 [![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
@@ -10,27 +11,24 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### nuclei templates `v7.0.0`
+### nuclei templates `7.0.0`
 
-| Template Directory      	| Number of Templates      | Number of HTTP/DNS requests  |
-|---------------------------|--------------------------|------------------------------|
-| cves                     	|86                        |131                           |
-| default-credentials       |03                        |04                            |
-| dns                     	|04                        |04                            |
-| files                     |34                        |111                           |
-| generic-detections        |03                        |03                            |
-| panels                    |28                        |82                            |
-| security-misconfiguration |16                  	   |93                            |
-| subdomain-takeover        |02           			   |02                            |
-| technologies              |24      				   |43                            |
-| tokens                    |07                        |07                            |
-| vulnerabilities           |26          			   |55                            |
-| workflows                 |12              		   |12*                           |
+| Template Directory | Number of Templates |
+|----|----|
+| cves | 98 |
+| default-credentials | 3 |
+| dns | 4 |
+| files | 35 |
+| generic-detections | 3 |
+| panels | 28 |
+| security-misconfiguration | 16 |
+| subdomain-takeover | 2 |
+| technologies | 25 |
+| tokens | 7 |
+| vulnerabilities | 27 |
+| workflows | 13 |
 
-### nuclei templates `v7.0.0` tree overview 
-
-<details>
-<summary>Template Directory</summary>
+### nuclei templates `7.0.0` tree overview 
 
 ```
 ├── cves
@@ -51,6 +49,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2018-13379.yaml
 │   ├── CVE-2018-14728.yaml
 │   ├── CVE-2018-16341.yaml
+│   ├── CVE-2018-16763.yaml
 │   ├── CVE-2018-18069.yaml
 │   ├── CVE-2018-19439.yaml
 │   ├── CVE-2018-20824.yaml
@@ -88,6 +87,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-3799.yaml
 │   ├── CVE-2019-5418.yaml
 │   ├── CVE-2019-6112.yaml
+│   ├── CVE-2019-7256.yaml
 │   ├── CVE-2019-7609.yaml
 │   ├── CVE-2019-8449.yaml
 │   ├── CVE-2019-8451.yaml
@@ -193,9 +193,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── jenkins-asyncpeople.yaml
 │   ├── jmx-console.yaml
 │   ├── kubernetes-pods.yaml
-│   ├── mongo-express-web-gui.yaml
 │   ├── parallels-html-client.yaml
-│   ├── pfsense-web-gui.yaml
 │   ├── phpmyadmin-panel.yaml
 │   ├── polycom-admin-detect.yaml
 │   ├── pulse-secure-panel.yaml
@@ -206,11 +204,10 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── supervpn-panel.yaml
 │   ├── swagger-panel.yaml
 │   ├── tikiwiki-cms.yaml
-│   ├── traefik-dashboard
 │   ├── traefik-dashboard.yaml
 │   ├── weave-scope-dashboard-detect.yaml
 │   ├── webeditors.yaml
-│   └── workspaceone-uem-airWatch-dashboard-detect.yaml
+│   └── workspaceone-uem-airwatch-dashboard-detect.yaml
 ├── payloads
 │   ├── CVE-2020-5776.csv
 │   └── CVE-2020-6287.xml
@@ -269,6 +266,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── mailchimp-api-key.yaml
 │   └── slack-access-token.yaml
 ├── vulnerabilities
+│   ├── bullwark-momentum-series-directory-traversal.yaml
 │   ├── cached-aem-pages.yaml
 │   ├── couchdb-adminparty.yaml
 │   ├── crlf-injection.yaml
@@ -311,9 +309,7 @@ An overview of the nuclei template directory including number of templates and H
     └── wordpress-workflow.yaml
 ```
 
-</details>
-
-13 directories, **263 templates**. 
+13 directories, 265 files.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
@@ -323,4 +319,3 @@ Please navigate to https://nuclei.projectdiscovery.io for detailed documentation
 2. Use YAML Formatter (e.g. [jsonformatter](https://jsonformatter.org/yaml-formatter)) to format new templates when sending pull requests.
 
 Thanks again for your contribution and keeping the community vibrant. :heart:
-
