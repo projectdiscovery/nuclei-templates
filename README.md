@@ -27,7 +27,7 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities           |31          			   |
 | workflows                 |15              		   |
 
-### nuclei templates `v7.0.5` tree overview 
+### nuclei templates `v7.0.8` tree overview 
 
 <details>
 <summary>Template Directory</summary>
@@ -36,6 +36,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── cves
 │   ├── CVE-2005-2428.yaml
 │   ├── CVE-2017-10075.yaml
+│   ├── CVE-2017-11444.yaml
 │   ├── CVE-2017-14537.yaml
 │   ├── CVE-2017-14849.yaml
 │   ├── CVE-2017-5638.yaml
@@ -53,6 +54,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2018-14728.yaml
 │   ├── CVE-2018-16341.yaml
 │   ├── CVE-2018-16763.yaml
+│   ├── CVE-2018-17431.yaml
 │   ├── CVE-2018-18069.yaml
 │   ├── CVE-2018-19386.yaml
 │   ├── CVE-2018-19439.yaml
@@ -75,6 +77,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-14696.yaml
 │   ├── CVE-2019-14974.yaml
 │   ├── CVE-2019-15043.yaml
+│   ├── CVE-2019-15107.yaml
 │   ├── CVE-2019-16278.yaml
 │   ├── CVE-2019-16662.yaml
 │   ├── CVE-2019-16759-1.yaml
@@ -107,6 +110,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
 │   ├── CVE-2020-13379.yaml
+│   ├── CVE-2020-14179.yaml
 │   ├── CVE-2020-15129.yaml
 │   ├── CVE-2020-15505.yaml
 │   ├── CVE-2020-15920.yaml
@@ -204,6 +208,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── docker-api.yaml
 │   ├── fortinet-fortigate-panel.yaml
 │   ├── globalprotect-panel.yaml
+│   ├── go-anywhere-client.yaml
 │   ├── grafana-detect.yaml
 │   ├── iomega-lenovo-emc-shared-nas-detect.yaml
 │   ├── jenkins-asyncpeople.yaml
@@ -212,6 +217,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── mobileiron-login.yaml
 │   ├── mongo-express-web-gui.yaml
 │   ├── netscaler-gateway.yaml
+│   ├── network-camera-detect.yaml
 │   ├── parallels-html-client.yaml
 │   ├── pfsense-web-gui.yaml
 │   ├── phpmyadmin-panel.yaml
@@ -227,6 +233,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── tikiwiki-cms.yaml
 │   ├── traefik-dashboard
 │   ├── traefik-dashboard.yaml
+│   ├── virtual-ema-detect.yaml
 │   ├── weave-scope-dashboard-detect.yaml
 │   ├── webeditors.yaml
 │   └── workspaceone-uem-airWatch-dashboard-detect.yaml
@@ -261,6 +268,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── detect-all-takeovers.yaml
 │   └── s3-subtakeover.yaml
 ├── technologies
+│   ├── apache-detect.yaml
 │   ├── artica-web-proxy-detect.yaml
 │   ├── bigip-config-utility-detect.yaml
 │   ├── citrix-vpn-detect.yaml
@@ -286,6 +294,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── shiro-detect.yaml
 │   ├── sql-server-reporting.yaml
 │   ├── tech-detect.yaml
+│   ├── tomcat-detect.yaml
 │   ├── weblogic-detect.yaml
 │   └── werkzeug-debugger-detect.yaml
 ├── tokens
@@ -326,6 +335,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── wems-manager-xss.yaml
 │   ├── wordpress-duplicator-path-traversal.yaml
 │   ├── wordpress-emails-verification-for-woocommerce.yaml
+│   ├── wordpress-social-metrics-tracker.yaml
 │   ├── wordpress-wordfence-xss.yaml
 │   └── x-forwarded-host-injection.yaml
 └── workflows
@@ -348,7 +358,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-13 directories, **298 templates**. 
+13 directories, **308 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
