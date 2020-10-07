@@ -10,24 +10,25 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### nuclei templates `v7.0.5`
+### nuclei templates `v7.1.2`
 
 | Template Directory      	| Number of Templates      |
 |---------------------------|--------------------------|
-| cves                     	|106                       |
+| cves                     	|125                       |
 | default-credentials       |03                        |
 | dns                     	|04                        |
-| files                     |40                        |
+| files                     |44                        |
+| fuzzing                   |02                        |
 | generic-detections        |03                        |
-| panels                    |35                        |
-| security-misconfiguration |23                  	   |
+| panels                    |39                        |
+| security-misconfiguration |25                  	   |
 | subdomain-takeover        |02           			   |
-| technologies              |27      				   |
-| tokens                    |07                        |
-| vulnerabilities           |31          			   |
+| technologies              |32      				   |
+| tokens                    |08                        |
+| vulnerabilities           |33          			   |
 | workflows                 |15              		   |
 
-### nuclei templates `v7.0.8` tree overview 
+### nuclei templates `v7.1.2` tree overview 
 
 <details>
 <summary>Template Directory</summary>
@@ -35,6 +36,7 @@ An overview of the nuclei template directory including number of templates and H
 ```
 ├── cves
 │   ├── CVE-2005-2428.yaml
+│   ├── CVE-2014-6271.yaml
 │   ├── CVE-2017-10075.yaml
 │   ├── CVE-2017-11444.yaml
 │   ├── CVE-2017-14537.yaml
@@ -42,6 +44,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2017-5638.yaml
 │   ├── CVE-2017-7391.yaml
 │   ├── CVE-2017-7529.yaml
+│   ├── CVE-2017-7615.yaml
 │   ├── CVE-2017-9506.yaml
 │   ├── CVE-2017-9841.yaml
 │   ├── CVE-2018-0296.yaml
@@ -50,6 +53,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2018-11759.yaml
 │   ├── CVE-2018-1247.yaml
 │   ├── CVE-2018-1271.yaml
+│   ├── CVE-2018-1273.yaml
 │   ├── CVE-2018-13379.yaml
 │   ├── CVE-2018-14728.yaml
 │   ├── CVE-2018-16341.yaml
@@ -78,10 +82,13 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-14974.yaml
 │   ├── CVE-2019-15043.yaml
 │   ├── CVE-2019-15107.yaml
+│   ├── CVE-2019-15858.yaml
 │   ├── CVE-2019-16278.yaml
+│   ├── CVE-2019-1653.yaml
 │   ├── CVE-2019-16662.yaml
 │   ├── CVE-2019-16759-1.yaml
 │   ├── CVE-2019-16759.yaml
+│   ├── CVE-2019-16920.yaml
 │   ├── CVE-2019-17382.yaml
 │   ├── CVE-2019-17558.yaml
 │   ├── CVE-2019-18394.yaml
@@ -98,6 +105,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-6715.yaml
 │   ├── CVE-2019-7256.yaml
 │   ├── CVE-2019-7609.yaml
+│   ├── CVE-2019-8442.yaml
 │   ├── CVE-2019-8449.yaml
 │   ├── CVE-2019-8451.yaml
 │   ├── CVE-2019-8903.yaml
@@ -107,19 +115,24 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-10204.yaml
 │   ├── CVE-2020-11034.yaml
 │   ├── CVE-2020-1147.yaml
+│   ├── CVE-2020-12116.yaml
 │   ├── CVE-2020-12720.yaml
 │   ├── CVE-2020-13167.yaml
 │   ├── CVE-2020-13379.yaml
 │   ├── CVE-2020-14179.yaml
+│   ├── CVE-2020-14181.yaml
 │   ├── CVE-2020-15129.yaml
 │   ├── CVE-2020-15505.yaml
 │   ├── CVE-2020-15920.yaml
 │   ├── CVE-2020-16139.yaml
 │   ├── CVE-2020-17505.yaml
 │   ├── CVE-2020-17506.yaml
+│   ├── CVE-2020-2034.yaml
 │   ├── CVE-2020-2096.yaml
 │   ├── CVE-2020-2140.yaml
 │   ├── CVE-2020-24223.yaml
+│   ├── CVE-2020-24312.yaml
+│   ├── CVE-2020-2551.yaml
 │   ├── CVE-2020-25540.yaml
 │   ├── CVE-2020-3187.yaml
 │   ├── CVE-2020-3452.yaml
@@ -141,9 +154,12 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-8194.yaml
 │   ├── CVE-2020-8512.yaml
 │   ├── CVE-2020-8982.yaml
+│   ├── CVE-2020-9047.yaml
 │   ├── CVE-2020-9484.yaml
 │   ├── CVE-2020-9496.yaml
-│   └── CVE-2020-9757.yaml
+│   ├── CVE-2020-9757.yaml
+│   ├── cve-2019-9733.yaml
+│   └── cve-2020-0618.yaml
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
 │   ├── rabbitmq-default-admin.yaml
@@ -158,6 +174,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── cgi-test-page.yaml
 │   ├── dir-listing.yaml
 │   ├── docker-registry.yaml
+│   ├── domcfg-page.yaml
 │   ├── druid-monitor.yaml
 │   ├── drupal-install.yaml
 │   ├── ds_store.yaml
@@ -174,11 +191,13 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── laravel-env.yaml
 │   ├── lazy-file.yaml
 │   ├── ntlm-directories.yaml
+│   ├── php-errors.yaml
 │   ├── phpinfo.yaml
 │   ├── public-tomcat-instance.yaml
 │   ├── robots.txt.yaml
 │   ├── security.txt.yaml
 │   ├── server-status-localhost.yaml
+│   ├── shell-history.yaml
 │   ├── sql-dump.yaml
 │   ├── telerik-dialoghandler-detect.yaml
 │   ├── telerik-fileupload-detect.yaml
@@ -193,13 +212,18 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── wordpress-tmm-db-migrate.yaml
 │   ├── wordpress-user-enumeration.yaml
 │   ├── wp-xmlrpc.yaml
+│   ├── wsdl-detect.yaml
 │   └── zip-backup-files.yaml
+├── fuzzing
+│   ├── arbitrary-file-read.yaml
+│   └── directory-traversal.yaml
 ├── generic-detections
 │   ├── basic-xss-prober.yaml
 │   ├── general-tokens.yaml
 │   └── top-15-xss.yaml
 ├── panels
 │   ├── adminer-panel.yaml
+│   ├── aims-password-mgmt-client.yaml
 │   ├── atlassian-crowd-panel.yaml
 │   ├── cisco-asa-panel.yaml
 │   ├── citrix-adc-gateway-detect.yaml
@@ -252,12 +276,14 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── jira-unauthenticated-popular-filters.yaml
 │   ├── jira-unauthenticated-projects.yaml
 │   ├── jira-unauthenticated-user-picker.yaml
+│   ├── jupyter-ipython-unauth.yaml
 │   ├── larvel-debug.yaml
 │   ├── missing-csp.yaml
 │   ├── missing-hsts.yaml
 │   ├── missing-x-frame-options.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
+│   ├── sidekiq-dashboard.yaml
 │   ├── springboot-detect.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-jenkin-dashboard.yaml
@@ -287,6 +313,8 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── lotus-domino-version.yaml
 │   ├── magmi-detect.yaml
 │   ├── netsweeper-webadmin-detect.yaml
+│   ├── nifi-detech.yaml
+│   ├── prometheus-exporter-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
 │   ├── s3-detect.yaml
 │   ├── sap-netweaver-as-java-detect.yaml
@@ -296,11 +324,14 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── tech-detect.yaml
 │   ├── tomcat-detect.yaml
 │   ├── weblogic-detect.yaml
-│   └── werkzeug-debugger-detect.yaml
+│   ├── werkzeug-debugger-detect.yaml
+│   └── what-waf-detect.yaml
+├── test.yaml
 ├── tokens
 │   ├── amazon-mws-auth-token-value.yaml
 │   ├── aws-access-key-value.yaml
 │   ├── credentials-disclosure.yaml
+│   ├── fcm-server-key.yaml
 │   ├── google-api-key.yaml
 │   ├── http-username-password.yaml
 │   ├── mailchimp-api-key.yaml
@@ -332,6 +363,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── tikiwiki-reflected-xss.yaml
 │   ├── tomcat-manager-pathnormalization.yaml
 │   ├── twig-php-ssti.yaml
+│   ├── w3c-total-cache-ssrf.yaml
 │   ├── wems-manager-xss.yaml
 │   ├── wordpress-duplicator-path-traversal.yaml
 │   ├── wordpress-emails-verification-for-woocommerce.yaml
@@ -358,7 +390,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-13 directories, **308 templates**. 
+14 directories, **338 templates**. 
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
