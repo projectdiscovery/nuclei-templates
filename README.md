@@ -390,7 +390,7 @@ An overview of the nuclei template directory including number of templates and H
     ├── bigip-pwner-workflow.yaml
     ├── cisco-asa-workflow.yaml
     ├── grafana-workflow.yaml
-    ├── jira-exploitaiton-workflow.yaml
+    ├── jira-exploitation-workflow.yaml
     ├── liferay-rce-workflow.yaml
     ├── lotus-domino-workflow.yaml
     ├── magmi-workflow.yaml
