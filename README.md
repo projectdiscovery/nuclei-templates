@@ -1,5 +1,4 @@
 
-
 # Nuclei Templates
 
 [![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
@@ -29,7 +28,7 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities | 39 |
 | workflows | 16 |
 
-### Nuclei templates `v7.2.6` tree overview 
+### Nuclei templates `v7.2.6` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -424,9 +423,10 @@ An overview of the nuclei template directory including number of templates and H
     ├── vbulletin-workflow.yaml
     └── wordpress-workflow.yaml
 ```
+
 </details>
 
-**15 directories, 373 files**
+**15 directories, 373 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
