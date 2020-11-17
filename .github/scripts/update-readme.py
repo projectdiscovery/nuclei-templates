@@ -15,5 +15,5 @@ if __name__ == "__main__":
 
 	print(template)
 	f = open("README.md", "w")
-	f.write(readme)
+	f.write(template)
 	f.close()
