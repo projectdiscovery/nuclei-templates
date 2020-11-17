@@ -15,6 +15,7 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	readme = f"""
+
 # Nuclei Templates
 
 [![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
@@ -27,7 +28,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### nuclei templates `{args.tag}`
+### Nuclei templates `{args.tag}`
 
 | Template Directory | Number of Templates |
 |----|----|
@@ -44,13 +45,17 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities | {countTpl("vulnerabilities")} |
 | workflows | {countTpl("workflows")} |
 
-### nuclei templates `{args.tag}` tree overview 
+### Nuclei templates `{args.tag}` tree overview 
+
+<details>
+<summary> Nuclei templates </summary>
 
 ```
 {command("tree", 1, -2)}
 ```
+</details>
 
-{command("tree", -2, None)}.
+**{command("tree", -2, None)}**
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
