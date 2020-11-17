@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import os
 import subprocess
 
@@ -11,7 +10,7 @@ def command(args, start=None, end=None):
 
 if __name__ == "__main__":
 	version = command(["git", "describe", "--tags", "--abbrev=0"])
-	template = eval(open('.github/scripts/README.tmpl', 'r').read())
+	template = eval(open(".github/scripts/README.tmpl", "r").read())
 
 	print(template)
 	f = open("README.md", "w")
