@@ -1,3 +1,4 @@
+
 # Nuclei Templates
 
 [![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
@@ -12,30 +13,26 @@ An overview of the nuclei template directory including number of templates and H
 
 ### nuclei templates `v7.2.6`
 
-| Template Directory      	| Number of Templates      |
-|---------------------------|--------------------------|
-| cves                     	|135                       |
-| default-credentials       |04                        |
-| dns                     	|07                        |
-| files                     |47                        |
-| fuzzing                   |06                        |
-| generic-detections        |04                        |
-| panels                    |41                        |
-| security-misconfiguration |30                  	   |
-| subdomain-takeover        |03           			   |
-| technologies              |40      				   |
-| tokens                    |09                        |
-| vulnerabilities           |41          			   |
-| workflows                 |18              		   |
-| payloads                  |03                        |
-| wordlists                 |02                        |
+| Template Directory | Number of Templates |
+|----|----|
+| cves | 134 |
+| default-credentials | 3 |
+| dns | 6 |
+| files | 46 |
+| generic-detections | 3 |
+| panels | 40 |
+| security-misconfiguration | 28 |
+| subdomain-takeover | 2 |
+| technologies | 38 |
+| tokens | 8 |
+| vulnerabilities | 39 |
+| workflows | 16 |
 
 ### nuclei templates `v7.2.6` tree overview 
 
-<details>
-<summary>Template Directory</summary>
-
 ```
+├── LICENSE.md
+├── README.md
 ├── cves
 │   ├── CVE-2005-2428.yaml
 │   ├── CVE-2013-2251.yaml
@@ -168,6 +165,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-9484.yaml
 │   ├── CVE-2020-9496.yaml
 │   ├── CVE-2020-9757.yaml
+│   ├── cve-2017-12637.yaml
 │   ├── cve-2019-9733.yaml
 │   └── cve-2020-0618.yaml
 ├── default-credentials
@@ -423,9 +421,7 @@ An overview of the nuclei template directory including number of templates and H
     └── wordpress-workflow.yaml
 ```
 
-</details>
-
-14 directories, **370 templates**. 
+15 directories, 373 files.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
