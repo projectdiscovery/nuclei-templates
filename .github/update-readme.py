@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
-
+import argparse
 import os
 import subprocess
 
-
-def numberOfTemplates(path):
+def countTpl(path):
     return len(os.listdir(path))
 
-tree = "\n".join( \
-    subprocess.check_output("tree", shell=True). \
-    decode("utf-8").split("\n")[3:-3])
+def command(args, start, end):
+	return "\n".join(subprocess.run(args, shell=True, text=True, capture_output=True).stdout.split("\n")[start:end])[:-1]
 
-resume = "\n".join( \
-    subprocess.check_output("tree", shell=True). \
-    decode("utf-8").split("\n")[-3:]).strip()
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--tag", help="Current repository tag", required=True)
+	args = parser.parse_args()
 
-version = "7.0.0"
-
-readme = f"""
+	readme = f"""
 # Nuclei Templates
 
 [![License](https://img.shields.io/badge/license-MIT-_red.svg)](https://opensource.org/licenses/MIT)
@@ -30,30 +27,30 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### nuclei templates `v{version}`
+### nuclei templates `{args.tag}`
 
 | Template Directory | Number of Templates |
 |----|----|
-| cves | {numberOfTemplates("cves")} |
-| default-credentials | {numberOfTemplates("default-credentials")} |
-| dns | {numberOfTemplates("dns")} |
-| files | {numberOfTemplates("files")} |
-| generic-detections | {numberOfTemplates("generic-detections")} |
-| panels | {numberOfTemplates("panels")} |
-| security-misconfiguration | {numberOfTemplates("security-misconfiguration")} |
-| subdomain-takeover | {numberOfTemplates("subdomain-takeover")} |
-| technologies | {numberOfTemplates("technologies")} |
-| tokens | {numberOfTemplates("tokens")} |
-| vulnerabilities | {numberOfTemplates("vulnerabilities")} |
-| workflows | {numberOfTemplates("workflows")} |
+| cves | {countTpl("cves")} |
+| default-credentials | {countTpl("default-credentials")} |
+| dns | {countTpl("dns")} |
+| files | {countTpl("files")} |
+| generic-detections | {countTpl("generic-detections")} |
+| panels | {countTpl("panels")} |
+| security-misconfiguration | {countTpl("security-misconfiguration")} |
+| subdomain-takeover | {countTpl("subdomain-takeover")} |
+| technologies | {countTpl("technologies")} |
+| tokens | {countTpl("tokens")} |
+| vulnerabilities | {countTpl("vulnerabilities")} |
+| workflows | {countTpl("workflows")} |
 
-### nuclei templates `v{version}` tree overview 
+### nuclei templates `{args.tag}` tree overview 
 
 ```
-{tree}
+{command("tree", 1, -2)}
 ```
 
-{resume}.
+{command("tree", -2, None)}.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
@@ -64,6 +61,8 @@ Please navigate to https://nuclei.projectdiscovery.io for detailed documentation
 
 Thanks again for your contribution and keeping the community vibrant. :heart:
 """
+
+print(readme)
 f = open("README.md", "w")
 f.write(readme)
 f.close()
