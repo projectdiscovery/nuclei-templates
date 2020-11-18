@@ -11,22 +11,19 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.2.6`
+### Nuclei templates `v7.2.6` overview
 
-| Template Directory | Number of Templates |
-|----|----|
-| cves | 134 |
-| default-credentials | 3 |
-| dns | 6 |
-| files | 46 |
-| generic-detections | 3 |
-| panels | 40 |
-| security-misconfiguration | 28 |
-| subdomain-takeover | 2 |
-| technologies | 38 |
-| tokens | 8 |
-| vulnerabilities | 39 |
-| workflows | 16 |
+| Templates | Counts | Templates | Counts |
+|----|----|----|----|
+| cves | 134 | files | 46 |
+| vulnerabilities | 39 | panels | 40 |
+| technologies | 38 | security-misconfiguration | 28 |
+| workflows | 16 | tokens | 8 |
+| dns | 6 | fuzzing | 5 |
+| generic-detections | 3 | default-credentials | 3 |
+| subdomain-takeover | 2 | payloads | 2 |
+| wordlists | 1 |
+
 
 ### Nuclei templates `v7.2.6` tree overview
 
