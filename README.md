@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 136 | files | 46 |
 | vulnerabilities | 39 | panels | 40 |
-| technologies | 37 | security-misconfiguration | 28 |
+| technologies | 38 | security-misconfiguration | 28 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 5 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -322,6 +322,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── citrix-vpn-detect.yaml
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
+│   ├── favicon-detection.yaml
 │   ├── github-enterprise-detect.yaml
 │   ├── gitlab-detect.yaml
 │   ├── google-storage.yaml
@@ -424,7 +425,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 374 files**.
+**15 directories, 375 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
