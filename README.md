@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 136 | files | 46 |
 | vulnerabilities | 39 | panels | 40 |
-| technologies | 38 | security-misconfiguration | 28 |
+| technologies | 38 | security-misconfiguration | 29 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 5 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -290,6 +290,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── drupal-user-enum-ajax.yaml
 │   ├── drupal-user-enum-redirect.yaml
 │   ├── front-page-misconfig.yaml
+│   ├── iis-shortname.yaml
 │   ├── jira-service-desk-signup.yaml
 │   ├── jira-unauthenticated-dashboards.yaml
 │   ├── jira-unauthenticated-popular-filters.yaml
@@ -425,7 +426,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 375 files**.
+**15 directories, 376 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
