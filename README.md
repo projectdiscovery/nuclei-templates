@@ -409,18 +409,18 @@ An overview of the nuclei template directory including number of templates and H
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── basic-auth-workflow.yaml
-    ├── bigip-pwner-workflow.yaml
+    ├── bigip-workflow.yaml
     ├── cisco-asa-workflow.yaml
     ├── grafana-workflow.yaml
-    ├── jira-exploitation-workflow.yaml
-    ├── liferay-rce-workflow.yaml
+    ├── jira-workflow.yaml
+    ├── liferay-workflow.yaml
     ├── lotus-domino-workflow.yaml
     ├── magmi-workflow.yaml
     ├── mida-eframework-workflow.yaml
-    ├── netsweeper-preauth-rce-workflow.yaml
+    ├── netsweeper-workflow.yaml
     ├── rabbitmq-workflow.yaml
     ├── sap-netweaver-workflow.yaml
-    ├── springboot-pwner-workflow.yaml
+    ├── springboot-workflow.yaml
     ├── vbulletin-workflow.yaml
     └── wordpress-workflow.yaml
 ```
