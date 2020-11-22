@@ -39,6 +39,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2014-6271.yaml
 │   ├── CVE-2017-10075.yaml
 │   ├── CVE-2017-11444.yaml
+│   ├── CVE-2017-12637.yaml
 │   ├── CVE-2017-14537.yaml
 │   ├── CVE-2017-14849.yaml
 │   ├── CVE-2017-5638.yaml
@@ -113,7 +114,9 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-8903.yaml
 │   ├── CVE-2019-8982.yaml
 │   ├── CVE-2019-9670.yaml
+│   ├── CVE-2019-9733.yaml
 │   ├── CVE-2019-9978.yaml
+│   ├── CVE-2020-0618.yaml
 │   ├── CVE-2020-10199.yaml
 │   ├── CVE-2020-10204.yaml
 │   ├── CVE-2020-11034.yaml
@@ -167,10 +170,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-9344.yaml
 │   ├── CVE-2020-9484.yaml
 │   ├── CVE-2020-9496.yaml
-│   ├── CVE-2020-9757.yaml
-│   ├── cve-2017-12637.yaml
-│   ├── cve-2019-9733.yaml
-│   └── cve-2020-0618.yaml
+│   └── CVE-2020-9757.yaml
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
 │   ├── rabbitmq-default-admin.yaml
