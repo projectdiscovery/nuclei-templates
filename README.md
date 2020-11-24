@@ -18,7 +18,7 @@ An overview of the nuclei template directory including number of templates and H
 | cves | 138 | files | 46 |
 | vulnerabilities | 39 | panels | 40 |
 | technologies | 39 | security-misconfiguration | 28 |
-| workflows | 16 | tokens | 8 |
+| workflows | 16 | tokens | 9 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
 | subdomain-takeover | 2 | payloads | 2 |
@@ -365,7 +365,8 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── google-api-key.yaml
 │   ├── http-username-password.yaml
 │   ├── mailchimp-api-key.yaml
-│   └── slack-access-token.yaml
+│   ├── slack-access-token.yaml
+│   └── unencrypted-bigip-ltm-cookie.yaml
 ├── vulnerabilities
 │   ├── bullwark-momentum-series-directory-traversal.yaml
 │   ├── cached-aem-pages.yaml
@@ -429,7 +430,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 379 files**.
+**15 directories, 380 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
