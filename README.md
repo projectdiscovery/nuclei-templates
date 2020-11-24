@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 137 | files | 46 |
+| cves | 138 | files | 46 |
 | vulnerabilities | 39 | panels | 40 |
 | technologies | 38 | security-misconfiguration | 28 |
 | workflows | 16 | tokens | 8 |
@@ -55,6 +55,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2018-1271.yaml
 │   ├── CVE-2018-1273.yaml
 │   ├── CVE-2018-13379.yaml
+│   ├── CVE-2018-13380.yaml
 │   ├── CVE-2018-14728.yaml
 │   ├── CVE-2018-16341.yaml
 │   ├── CVE-2018-16763.yaml
@@ -427,7 +428,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 377 files**.
+**15 directories, 378 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
