@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 138 | files | 46 |
 | vulnerabilities | 39 | panels | 40 |
-| technologies | 38 | security-misconfiguration | 28 |
+| technologies | 39 | security-misconfiguration | 28 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -352,6 +352,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── shiro-detect.yaml
 │   ├── sql-server-reporting.yaml
 │   ├── tech-detect.yaml
+│   ├── terraform-detect.yaml
 │   ├── tomcat-detect.yaml
 │   ├── waf-detect.yaml
 │   ├── weblogic-detect.yaml
@@ -428,7 +429,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 378 files**.
+**15 directories, 379 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
