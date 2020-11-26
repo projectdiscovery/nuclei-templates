@@ -15,10 +15,10 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 138 | files | 46 |
+| cves | 138 | files | 40 |
 | vulnerabilities | 39 | panels | 40 |
-| technologies | 40 | security-misconfiguration | 28 |
-| workflows | 16 | tokens | 9 |
+| technologies | 40 | security-misconfiguration | 24 |
+| workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
 | subdomain-takeover | 2 | payloads | 2 |
@@ -186,7 +186,6 @@ An overview of the nuclei template directory including number of templates and H
 ├── files
 │   ├── apc-info.yaml
 │   ├── cgi-test-page.yaml
-│   ├── dir-listing.yaml
 │   ├── docker-registry.yaml
 │   ├── domcfg-page.yaml
 │   ├── druid-monitor.yaml
@@ -200,18 +199,14 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── filezilla.yaml
 │   ├── firebase-detect.yaml
 │   ├── git-config.yaml
-│   ├── htaccess-config.yaml
 │   ├── jkstatus-manager.yaml
 │   ├── jolokia.yaml
 │   ├── laravel-env.yaml
 │   ├── lazy-file.yaml
 │   ├── magento-config.yaml
-│   ├── ntlm-directories.yaml
 │   ├── php-errors.yaml
 │   ├── phpinfo.yaml
 │   ├── public-tomcat-instance.yaml
-│   ├── robots.txt.yaml
-│   ├── security.txt.yaml
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sql-dump.yaml
@@ -227,7 +222,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── wordpress-installer-log.yaml
 │   ├── wordpress-tmm-db-migrate.yaml
 │   ├── wordpress-user-enumeration.yaml
-│   ├── wp-xmlrpc.yaml
 │   ├── wsdl-detect.yaml
 │   └── zip-backup-files.yaml
 ├── fuzzing
@@ -241,6 +235,19 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── basic-xss-prober.yaml
 │   ├── general-tokens.yaml
 │   └── top-15-xss.yaml
+├── misc
+│   ├── basic-cors-flash.yaml
+│   ├── dir-listing.yaml
+│   ├── htaccess-config.yaml
+│   ├── missing-csp.yaml
+│   ├── missing-hsts.yaml
+│   ├── missing-x-frame-options.yaml
+│   ├── ntlm-directories.yaml
+│   ├── robots.txt.yaml
+│   ├── security.txt.yaml
+│   ├── unencrypted-bigip-ltm-cookie.yaml
+│   ├── wp-xmlrpc.yaml
+│   └── xml-schema-detect.yaml
 ├── panels
 │   ├── adminer-panel.yaml
 │   ├── aims-password-mgmt-client.yaml
@@ -287,7 +294,6 @@ An overview of the nuclei template directory including number of templates and H
 │   └── CVE-2020-6287.xml
 ├── security-misconfiguration
 │   ├── apache-tomcat-snoop.yaml
-│   ├── basic-cors-flash.yaml
 │   ├── basic-cors.yaml
 │   ├── django-debug-detect.yaml
 │   ├── drupal-user-enum-ajax.yaml
@@ -301,9 +307,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── jupyter-ipython-unauth.yaml
 │   ├── larvel-debug.yaml
 │   ├── manage-engine-ad-search.yaml
-│   ├── missing-csp.yaml
-│   ├── missing-hsts.yaml
-│   ├── missing-x-frame-options.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── salesforce-aura-misconfig.yaml
@@ -366,8 +369,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── google-api-key.yaml
 │   ├── http-username-password.yaml
 │   ├── mailchimp-api-key.yaml
-│   ├── slack-access-token.yaml
-│   └── unencrypted-bigip-ltm-cookie.yaml
+│   └── slack-access-token.yaml
 ├── vulnerabilities
 │   ├── bullwark-momentum-series-directory-traversal.yaml
 │   ├── cached-aem-pages.yaml
@@ -431,7 +433,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**15 directories, 381 files**.
+**16 directories, 382 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
