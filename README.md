@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 138 | files | 40 |
+| cves | 138 | files | 41 |
 | vulnerabilities | 39 | panels | 40 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
@@ -207,6 +207,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── php-errors.yaml
 │   ├── phpinfo.yaml
 │   ├── public-tomcat-instance.yaml
+│   ├── redmine-db-config.yaml
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sql-dump.yaml
@@ -433,7 +434,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 382 files**.
+**16 directories, 383 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
