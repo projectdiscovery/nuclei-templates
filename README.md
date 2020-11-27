@@ -11,11 +11,11 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.2.8` overview
+### Nuclei templates `v7.2.9` overview
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 138 | files | 41 |
+| cves | 138 | files | 42 |
 | vulnerabilities | 39 | panels | 40 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists | 1 |
 
 
-### Nuclei templates `v7.2.8` tree overview
+### Nuclei templates `v7.2.9` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -208,6 +208,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── phpinfo.yaml
 │   ├── public-tomcat-instance.yaml
 │   ├── redmine-db-config.yaml
+│   ├── server-private-keys.yaml
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sql-dump.yaml
@@ -434,7 +435,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 383 files**.
+**16 directories, 384 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
