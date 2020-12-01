@@ -22,7 +22,7 @@ An overview of the nuclei template directory including number of templates and H
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
 | subdomain-takeover | 2 | payloads | 2 |
-| wordlists | 1 |
+| wordlists | 1 | misc | 12 |
 
 
 ### Nuclei templates `v7.2.9` tree overview
