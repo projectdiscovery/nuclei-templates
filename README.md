@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 139 | files | 42 |
 | vulnerabilities | 39 | panels | 40 |
-| technologies | 40 | security-misconfiguration | 24 |
+| technologies | 41 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -349,6 +349,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── netsweeper-webadmin-detect.yaml
 │   ├── nifi-detech.yaml
 │   ├── oidc-detect.yaml
+│   ├── oipm-detect.yaml
 │   ├── pi-hole-detect.yaml
 │   ├── prometheus-exporter-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
@@ -436,7 +437,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 385 files**.
+**16 directories, 386 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
