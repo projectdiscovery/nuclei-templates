@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 139 | files | 42 |
+| cves | 139 | files | 43 |
 | vulnerabilities | 39 | panels | 40 |
 | technologies | 41 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
@@ -200,6 +200,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── filezilla.yaml
 │   ├── firebase-detect.yaml
 │   ├── git-config.yaml
+│   ├── htpasswd-detection.yaml
 │   ├── jkstatus-manager.yaml
 │   ├── jolokia.yaml
 │   ├── laravel-env.yaml
@@ -437,7 +438,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 386 files**.
+**16 directories, 387 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
