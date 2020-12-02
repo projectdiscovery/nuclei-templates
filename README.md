@@ -22,7 +22,7 @@ An overview of the nuclei template directory including number of templates and H
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
 | subdomain-takeover | 2 | payloads | 2 |
-| wordlists | 1 | misc | 12 |
+| wordlists | 1 | misc | 13 |
 
 
 ### Nuclei templates `v7.3.0` tree overview
@@ -249,6 +249,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── ntlm-directories.yaml
 │   ├── robots.txt.yaml
 │   ├── security.txt.yaml
+│   ├── trace-method.yaml
 │   ├── unencrypted-bigip-ltm-cookie.yaml
 │   ├── wp-xmlrpc.yaml
 │   └── xml-schema-detect.yaml
@@ -438,7 +439,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 387 files**.
+**16 directories, 388 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
