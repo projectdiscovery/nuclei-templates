@@ -16,8 +16,8 @@ An overview of the nuclei template directory including number of templates and H
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 139 | files | 43 |
-| vulnerabilities | 39 | panels | 40 |
-| technologies | 41 | security-misconfiguration | 24 |
+| vulnerabilities | 39 | panels | 45 |
+| technologies | 37 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -259,13 +259,17 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── atlassian-crowd-panel.yaml
 │   ├── cisco-asa-panel.yaml
 │   ├── citrix-adc-gateway-detect.yaml
+│   ├── citrix-vpn-detect.yaml
 │   ├── compal.yaml
 │   ├── crxde.yaml
 │   ├── docker-api.yaml
 │   ├── fortinet-fortigate-panel.yaml
+│   ├── github-enterprise-detect.yaml
+│   ├── gitlab-detect.yaml
 │   ├── globalprotect-panel.yaml
 │   ├── go-anywhere-client.yaml
 │   ├── grafana-detect.yaml
+│   ├── identityguard-selfservice-entrust.yaml
 │   ├── iomega-lenovo-emc-shared-nas-detect.yaml
 │   ├── jenkins-asyncpeople.yaml
 │   ├── jmx-console.yaml
@@ -274,6 +278,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── mobileiron-login.yaml
 │   ├── netscaler-gateway.yaml
 │   ├── network-camera-detect.yaml
+│   ├── oipm-detect.yaml
 │   ├── parallels-html-client.yaml
 │   ├── phpmyadmin-panel.yaml
 │   ├── polycom-admin-detect.yaml
@@ -330,12 +335,9 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── artica-web-proxy-detect.yaml
 │   ├── basic-auth-detection.yaml
 │   ├── bigip-config-utility-detect.yaml
-│   ├── citrix-vpn-detect.yaml
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
 │   ├── favicon-detection.yaml
-│   ├── github-enterprise-detect.yaml
-│   ├── gitlab-detect.yaml
 │   ├── google-storage.yaml
 │   ├── graphql.yaml
 │   ├── home-assistant.yaml
@@ -351,7 +353,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── netsweeper-webadmin-detect.yaml
 │   ├── nifi-detech.yaml
 │   ├── oidc-detect.yaml
-│   ├── oipm-detect.yaml
 │   ├── pi-hole-detect.yaml
 │   ├── prometheus-exporter-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
@@ -439,7 +440,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 388 files**.
+**16 directories, 389 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
