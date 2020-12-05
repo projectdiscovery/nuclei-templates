@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 139 | files | 43 |
+| cves | 140 | files | 43 |
 | vulnerabilities | 39 | panels | 45 |
 | technologies | 37 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
@@ -172,7 +172,8 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-9344.yaml
 │   ├── CVE-2020-9484.yaml
 │   ├── CVE-2020-9496.yaml
-│   └── CVE-2020-9757.yaml
+│   ├── CVE-2020-9757.yaml
+│   └── cve-2019-11581.yaml
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
 │   ├── rabbitmq-default-admin.yaml
@@ -440,7 +441,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 389 files**.
+**16 directories, 390 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
