@@ -11,11 +11,11 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.0` overview
+### Nuclei templates `v7.2.3` overview
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 139 | files | 43 |
+| cves | 140 | files | 43 |
 | vulnerabilities | 39 | panels | 45 |
 | technologies | 37 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists | 1 | misc | 13 |
 
 
-### Nuclei templates `v7.3.0` tree overview
+### Nuclei templates `v7.2.3` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -75,6 +75,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2019-11248.yaml
 │   ├── CVE-2019-11510.yaml
 │   ├── CVE-2019-11580.yaml
+│   ├── CVE-2019-11581.yaml
 │   ├── CVE-2019-12314.yaml
 │   ├── CVE-2019-12461.yaml
 │   ├── CVE-2019-12593.yaml
@@ -440,7 +441,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 389 files**.
+**16 directories, 390 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
