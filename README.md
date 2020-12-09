@@ -15,8 +15,8 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 140 | files | 43 |
-| vulnerabilities | 39 | panels | 45 |
+| cves | 141 | files | 43 |
+| vulnerabilities | 40 | panels | 45 |
 | technologies | 37 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -159,6 +159,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-5902.yaml
 │   ├── CVE-2020-6287.yaml
 │   ├── CVE-2020-7209.yaml
+│   ├── CVE-2020-7318.yaml
 │   ├── CVE-2020-7961.yaml
 │   ├── CVE-2020-8091.yaml
 │   ├── CVE-2020-8115.yaml
@@ -387,6 +388,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── eclipse-help-system-xss.yaml
 │   ├── git-config-nginxoffbyslash.yaml
 │   ├── ibm-infoprint-directory-traversal.yaml
+│   ├── mcafee-epo-rce.yaml
 │   ├── microstrategy-ssrf.yaml
 │   ├── mida-eframework-xss.yaml
 │   ├── moodle-filter-jmol-lfi.yaml
@@ -441,7 +443,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 390 files**.
+**16 directories, 392 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
