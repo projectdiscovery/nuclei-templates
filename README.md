@@ -19,7 +19,7 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities | 43 | panels | 40 |
 | technologies | 41 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
-| dns | 6 | fuzzing | 6 |
+| dns | 6 | fuzzing | 7 |
 | generic-detections | 3 | default-credentials | 3 |
 | subdomain-takeover | 2 | payloads | 2 |
 | wordlists | 1 | misc | 12 |
@@ -231,6 +231,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── fuzzing
 │   ├── arbitrary-file-read.yaml
 │   ├── basic-auth-bruteforce.yaml
+│   ├── basic_ssrf.yaml
 │   ├── directory-traversal.yaml
 │   ├── generic-lfi-fuzzing.yaml
 │   ├── iis-shortname.yaml
@@ -442,7 +443,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 391 files**.
+**16 directories, 392 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
