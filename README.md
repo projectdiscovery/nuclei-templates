@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 141 | files | 43 |
 | vulnerabilities | 40 | panels | 45 |
-| technologies | 37 | security-misconfiguration | 24 |
+| technologies | 38 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -358,6 +358,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── pi-hole-detect.yaml
 │   ├── prometheus-exporter-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
+│   ├── prtg-detect.yaml
 │   ├── redmine-cli-detect.yaml
 │   ├── s3-detect.yaml
 │   ├── sap-netweaver-as-java-detect.yaml
@@ -443,7 +444,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 392 files**.
+**16 directories, 393 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
