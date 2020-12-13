@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 141 | files | 43 |
 | vulnerabilities | 40 | panels | 45 |
-| technologies | 38 | security-misconfiguration | 24 |
+| technologies | 39 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 3 |
@@ -352,6 +352,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── lotus-domino-version.yaml
 │   ├── magmi-detect.yaml
+│   ├── mrtg-detect.yaml
 │   ├── netsweeper-webadmin-detect.yaml
 │   ├── nifi-detech.yaml
 │   ├── oidc-detect.yaml
@@ -444,7 +445,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 393 files**.
+**16 directories, 394 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
