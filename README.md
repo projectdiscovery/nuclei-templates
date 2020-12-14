@@ -16,7 +16,7 @@ An overview of the nuclei template directory including number of templates and H
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 141 | files | 43 |
-| vulnerabilities | 41 | panels | 46 |
+| vulnerabilities | 41 | panels | 47 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -286,6 +286,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── polycom-admin-detect.yaml
 │   ├── pulse-secure-panel.yaml
 │   ├── rabbitmq-dashboard.yaml
+│   ├── sap-hana-xsengine-panel.yaml
 │   ├── sap-netweaver-detect.yaml
 │   ├── sap-recon-detect.yaml
 │   ├── sonarqube-login.yaml
@@ -448,7 +449,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 397 files**.
+**16 directories, 398 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
