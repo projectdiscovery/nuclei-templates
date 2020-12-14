@@ -16,7 +16,7 @@ An overview of the nuclei template directory including number of templates and H
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 141 | files | 43 |
-| vulnerabilities | 41 | panels | 45 |
+| vulnerabilities | 41 | panels | 46 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -299,6 +299,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── virtual-ema-detect.yaml
 │   ├── weave-scope-dashboard-detect.yaml
 │   ├── webeditors.yaml
+│   ├── webmin-panel.yaml
 │   ├── workspace-one-uem.yaml
 │   └── workspaceone-uem-airwatch-dashboard-detect.yaml
 ├── payloads
@@ -447,7 +448,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 396 files**.
+**16 directories, 397 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
