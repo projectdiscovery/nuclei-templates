@@ -11,12 +11,12 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.1` overview
+### Nuclei templates `v7.3.2` overview
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 141 | files | 43 |
-| vulnerabilities | 40 | panels | 45 |
+| vulnerabilities | 41 | panels | 45 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists | 1 | misc | 13 |
 
 
-### Nuclei templates `v7.3.1` tree overview
+### Nuclei templates `v7.3.2` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -388,6 +388,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── couchdb-adminparty.yaml
 │   ├── crlf-injection.yaml
 │   ├── discourse-xss.yaml
+│   ├── easy-wp-smtp-listing.yaml
 │   ├── eclipse-help-system-xss.yaml
 │   ├── git-config-nginxoffbyslash.yaml
 │   ├── ibm-infoprint-directory-traversal.yaml
@@ -446,7 +447,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 395 files**.
+**16 directories, 396 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
