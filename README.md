@@ -16,7 +16,7 @@ An overview of the nuclei template directory including number of templates and H
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 142 | files | 43 |
-| vulnerabilities | 42 | panels | 47 |
+| vulnerabilities | 42 | panels | 48 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 16 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -290,6 +290,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── sap-hana-xsengine-panel.yaml
 │   ├── sap-netweaver-detect.yaml
 │   ├── sap-recon-detect.yaml
+│   ├── solarwinds-orion.yaml
 │   ├── sonarqube-login.yaml
 │   ├── sonicwall-management-panel.yaml
 │   ├── sonicwall-sslvpn-panel.yaml
@@ -451,7 +452,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 400 files**.
+**16 directories, 401 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
