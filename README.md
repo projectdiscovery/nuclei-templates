@@ -18,9 +18,9 @@ An overview of the nuclei template directory including number of templates and H
 | cves | 143 | files | 43 |
 | vulnerabilities | 42 | panels | 48 |
 | technologies | 40 | security-misconfiguration | 24 |
-| workflows | 16 | tokens | 8 |
+| workflows | 17 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
-| generic-detections | 3 | default-credentials | 3 |
+| generic-detections | 3 | default-credentials | 4 |
 | subdomain-takeover | 2 | payloads | 2 |
 | wordlists | 1 | misc | 13 |
 
@@ -180,6 +180,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
 │   ├── rabbitmq-default-admin.yaml
+│   ├── solarwinds-default-admin.yaml
 │   └── tomcat-manager-default.yaml
 ├── dns
 │   ├── azure-takeover-detection.yaml
@@ -446,6 +447,7 @@ An overview of the nuclei template directory including number of templates and H
     ├── netsweeper-workflow.yaml
     ├── rabbitmq-workflow.yaml
     ├── sap-netweaver-workflow.yaml
+    ├── solarwinds-orion-workflow.yaml
     ├── springboot-workflow.yaml
     ├── vbulletin-workflow.yaml
     └── wordpress-workflow.yaml
@@ -453,7 +455,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 402 files**.
+**16 directories, 404 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
