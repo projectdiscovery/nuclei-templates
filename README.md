@@ -11,12 +11,12 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.3` overview
+### Nuclei templates `v7.3.4` overview
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
 | cves | 143 | files | 45 |
-| vulnerabilities | 43 | panels | 49 |
+| vulnerabilities | 42 | panels | 49 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 17 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists | 1 | misc | 13 |
 
 
-### Nuclei templates `v7.3.3` tree overview
+### Nuclei templates `v7.3.4` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -429,7 +429,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── vpms-auth-bypass.yaml
 │   ├── w3c-total-cache-ssrf.yaml
 │   ├── wems-manager-xss.yaml
-│   ├── wordpress-duplicator-path-traversal.yaml
 │   ├── wordpress-emails-verification-for-woocommerce.yaml
 │   ├── wordpress-social-metrics-tracker.yaml
 │   ├── wordpress-wordfence-xss.yaml
@@ -459,7 +458,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 408 files**.
+**16 directories, 407 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
