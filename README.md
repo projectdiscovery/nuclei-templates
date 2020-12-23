@@ -15,8 +15,8 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 144 | files | 45 |
-| vulnerabilities | 42 | panels | 49 |
+| cves | 143 | files | 45 |
+| vulnerabilities | 43 | panels | 49 |
 | technologies | 40 | security-misconfiguration | 24 |
 | workflows | 17 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
@@ -166,7 +166,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── CVE-2020-8091.yaml
 │   ├── CVE-2020-8115.yaml
 │   ├── CVE-2020-8163.yaml
-│   ├── CVE-2020-8185.yaml
 │   ├── CVE-2020-8191.yaml
 │   ├── CVE-2020-8193.yaml
 │   ├── CVE-2020-8194.yaml
@@ -412,6 +411,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── open-redirect.yaml
 │   ├── oracle-ebs-bispgraph-file-access.yaml
 │   ├── pdf-signer-ssti-to-rce.yaml
+│   ├── rails6-xss.yaml
 │   ├── rce-shellshock-user-agent.yaml
 │   ├── rce-via-java-deserialization.yaml
 │   ├── rconfig-rce.yaml
