@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 |----|----|----|----|
 | cves | 144 | files | 45 |
 | vulnerabilities | 42 | panels | 49 |
-| technologies | 40 | security-misconfiguration | 25 |
+| technologies | 41 | security-misconfiguration | 25 |
 | workflows | 17 | tokens | 8 |
 | dns | 6 | fuzzing | 6 |
 | generic-detections | 3 | default-credentials | 4 |
@@ -381,6 +381,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── tech-detect.yaml
 │   ├── terraform-detect.yaml
 │   ├── tomcat-detect.yaml
+│   ├── tor-socks-proxy.yaml
 │   ├── waf-detect.yaml
 │   ├── weblogic-detect.yaml
 │   └── werkzeug-debugger-detect.yaml
@@ -460,7 +461,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 409 files**.
+**16 directories, 410 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
