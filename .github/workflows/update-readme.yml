@@ -1,0 +1,44 @@
+name: "Auto Update README"
+
+on:
+  push:
+    branches:
+      - master
+  create:
+    tags:
+      - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - name: Install tree
+        run: sudo apt-get install tree -y
+
+      - name: Check out code
+        uses: actions/checkout@master
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: Update README
+        run: |
+          python .github/scripts/update-readme.py
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Auto Update README [$(date)] :robot:" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
