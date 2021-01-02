@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates | Counts | Templates | Counts |
 |----|----|----|----|
-| cves | 145 | files | 46 |
+| cves | 8 | files | 46 |
 | vulnerabilities | 42 | panels | 49 |
 | technologies | 41 | security-misconfiguration | 27 |
 | workflows | 17 | tokens | 8 |
@@ -34,151 +34,159 @@ An overview of the nuclei template directory including number of templates and H
 ├── LICENSE.md
 ├── README.md
 ├── cves
-│   ├── CVE-2005-2428.yaml
-│   ├── CVE-2008-2398.yaml
-│   ├── CVE-2013-2251.yaml
-│   ├── CVE-2014-6271.yaml
-│   ├── CVE-2017-10075.yaml
-│   ├── CVE-2017-11444.yaml
-│   ├── CVE-2017-12637.yaml
-│   ├── CVE-2017-14537.yaml
-│   ├── CVE-2017-14849.yaml
-│   ├── CVE-2017-5638.yaml
-│   ├── CVE-2017-7391.yaml
-│   ├── CVE-2017-7615.yaml
-│   ├── CVE-2017-9506.yaml
-│   ├── CVE-2017-9841.yaml
-│   ├── CVE-2018-0296.yaml
-│   ├── CVE-2018-1000129.yaml
-│   ├── CVE-2018-11409.yaml
-│   ├── CVE-2018-11759.yaml
-│   ├── CVE-2018-1247.yaml
-│   ├── CVE-2018-1271.yaml
-│   ├── CVE-2018-1273.yaml
-│   ├── CVE-2018-13379.yaml
-│   ├── CVE-2018-13380.yaml
-│   ├── CVE-2018-14728.yaml
-│   ├── CVE-2018-16341.yaml
-│   ├── CVE-2018-16763.yaml
-│   ├── CVE-2018-17431.yaml
-│   ├── CVE-2018-18069.yaml
-│   ├── CVE-2018-19386.yaml
-│   ├── CVE-2018-19439.yaml
-│   ├── CVE-2018-20824.yaml
-│   ├── CVE-2018-2791.yaml
-│   ├── CVE-2018-3714.yaml
-│   ├── CVE-2018-3760.yaml
-│   ├── CVE-2018-5230.yaml
-│   ├── CVE-2018-7490.yaml
-│   ├── CVE-2019-1010287.yaml
-│   ├── CVE-2019-10475.yaml
-│   ├── CVE-2019-11248.yaml
-│   ├── CVE-2019-11510.yaml
-│   ├── CVE-2019-11580.yaml
-│   ├── CVE-2019-11581.yaml
-│   ├── CVE-2019-11869.yaml
-│   ├── CVE-2019-12314.yaml
-│   ├── CVE-2019-12461.yaml
-│   ├── CVE-2019-12593.yaml
-│   ├── CVE-2019-12725.yaml
-│   ├── CVE-2019-14322.yaml
-│   ├── CVE-2019-14696.yaml
-│   ├── CVE-2019-14974.yaml
-│   ├── CVE-2019-15043.yaml
-│   ├── CVE-2019-15107.yaml
-│   ├── CVE-2019-15858.yaml
-│   ├── CVE-2019-16278.yaml
-│   ├── CVE-2019-1653.yaml
-│   ├── CVE-2019-16662.yaml
-│   ├── CVE-2019-16759-1.yaml
-│   ├── CVE-2019-16759.yaml
-│   ├── CVE-2019-16920.yaml
-│   ├── CVE-2019-17382.yaml
-│   ├── CVE-2019-17558.yaml
-│   ├── CVE-2019-18394.yaml
-│   ├── CVE-2019-19368.yaml
-│   ├── CVE-2019-19781.yaml
-│   ├── CVE-2019-19908.yaml
-│   ├── CVE-2019-19985.yaml
-│   ├── CVE-2019-20141.yaml
-│   ├── CVE-2019-2588.yaml
-│   ├── CVE-2019-2725.yaml
-│   ├── CVE-2019-3396.yaml
-│   ├── CVE-2019-3402.yaml
-│   ├── CVE-2019-3799.yaml
-│   ├── CVE-2019-5418.yaml
-│   ├── CVE-2019-6112.yaml
-│   ├── CVE-2019-6340.yaml
-│   ├── CVE-2019-6715.yaml
-│   ├── CVE-2019-7256.yaml
-│   ├── CVE-2019-7609.yaml
-│   ├── CVE-2019-8442.yaml
-│   ├── CVE-2019-8449.yaml
-│   ├── CVE-2019-8451.yaml
-│   ├── CVE-2019-8903.yaml
-│   ├── CVE-2019-8982.yaml
-│   ├── CVE-2019-9670.yaml
-│   ├── CVE-2019-9733.yaml
-│   ├── CVE-2019-9978.yaml
-│   ├── CVE-2020-0618.yaml
-│   ├── CVE-2020-10148.yaml
-│   ├── CVE-2020-10199.yaml
-│   ├── CVE-2020-10204.yaml
-│   ├── CVE-2020-11034.yaml
-│   ├── CVE-2020-1147.yaml
-│   ├── CVE-2020-11738.yaml
-│   ├── CVE-2020-12116.yaml
-│   ├── CVE-2020-12720.yaml
-│   ├── CVE-2020-13167.yaml
-│   ├── CVE-2020-13942.yaml
-│   ├── CVE-2020-14179.yaml
-│   ├── CVE-2020-14181.yaml
-│   ├── CVE-2020-14864.yaml
-│   ├── CVE-2020-14882.yaml
-│   ├── CVE-2020-15129.yaml
-│   ├── CVE-2020-15505.yaml
-│   ├── CVE-2020-15920.yaml
-│   ├── CVE-2020-16139.yaml
-│   ├── CVE-2020-16846.yaml
-│   ├── CVE-2020-16952.yaml
-│   ├── CVE-2020-17505.yaml
-│   ├── CVE-2020-17506.yaml
-│   ├── CVE-2020-2096.yaml
-│   ├── CVE-2020-2140.yaml
-│   ├── CVE-2020-23972.yaml
-│   ├── CVE-2020-24223.yaml
-│   ├── CVE-2020-24312.yaml
-│   ├── CVE-2020-2551.yaml
-│   ├── CVE-2020-25540.yaml
-│   ├── CVE-2020-26214.yaml
-│   ├── CVE-2020-3187.yaml
-│   ├── CVE-2020-3452.yaml
-│   ├── CVE-2020-4463.yaml
-│   ├── CVE-2020-5284.yaml
-│   ├── CVE-2020-5405.yaml
-│   ├── CVE-2020-5410.yaml
-│   ├── CVE-2020-5412.yaml
-│   ├── CVE-2020-5776.yaml
-│   ├── CVE-2020-5777.yaml
-│   ├── CVE-2020-5902.yaml
-│   ├── CVE-2020-6287.yaml
-│   ├── CVE-2020-7209.yaml
-│   ├── CVE-2020-7318.yaml
-│   ├── CVE-2020-7961.yaml
-│   ├── CVE-2020-8091.yaml
-│   ├── CVE-2020-8115.yaml
-│   ├── CVE-2020-8163.yaml
-│   ├── CVE-2020-8191.yaml
-│   ├── CVE-2020-8193.yaml
-│   ├── CVE-2020-8194.yaml
-│   ├── CVE-2020-8209.yaml
-│   ├── CVE-2020-8512.yaml
-│   ├── CVE-2020-8982.yaml
-│   ├── CVE-2020-9047.yaml
-│   ├── CVE-2020-9344.yaml
-│   ├── CVE-2020-9484.yaml
-│   ├── CVE-2020-9496.yaml
-│   └── CVE-2020-9757.yaml
+│   ├── 2005
+│   │   └── CVE-2005-2428.yaml
+│   ├── 2008
+│   │   └── CVE-2008-2398.yaml
+│   ├── 2013
+│   │   └── CVE-2013-2251.yaml
+│   ├── 2014
+│   │   └── CVE-2014-6271.yaml
+│   ├── 2017
+│   │   ├── CVE-2017-10075.yaml
+│   │   ├── CVE-2017-11444.yaml
+│   │   ├── CVE-2017-12637.yaml
+│   │   ├── CVE-2017-14537.yaml
+│   │   ├── CVE-2017-14849.yaml
+│   │   ├── CVE-2017-5638.yaml
+│   │   ├── CVE-2017-7391.yaml
+│   │   ├── CVE-2017-7615.yaml
+│   │   ├── CVE-2017-9506.yaml
+│   │   └── CVE-2017-9841.yaml
+│   ├── 2018
+│   │   ├── CVE-2018-0296.yaml
+│   │   ├── CVE-2018-1000129.yaml
+│   │   ├── CVE-2018-11409.yaml
+│   │   ├── CVE-2018-11759.yaml
+│   │   ├── CVE-2018-1247.yaml
+│   │   ├── CVE-2018-1271.yaml
+│   │   ├── CVE-2018-1273.yaml
+│   │   ├── CVE-2018-13379.yaml
+│   │   ├── CVE-2018-13380.yaml
+│   │   ├── CVE-2018-14728.yaml
+│   │   ├── CVE-2018-16341.yaml
+│   │   ├── CVE-2018-16763.yaml
+│   │   ├── CVE-2018-17431.yaml
+│   │   ├── CVE-2018-18069.yaml
+│   │   ├── CVE-2018-19386.yaml
+│   │   ├── CVE-2018-19439.yaml
+│   │   ├── CVE-2018-20824.yaml
+│   │   ├── CVE-2018-2791.yaml
+│   │   ├── CVE-2018-3714.yaml
+│   │   ├── CVE-2018-3760.yaml
+│   │   ├── CVE-2018-5230.yaml
+│   │   └── CVE-2018-7490.yaml
+│   ├── 2019
+│   │   ├── CVE-2019-1010287.yaml
+│   │   ├── CVE-2019-10475.yaml
+│   │   ├── CVE-2019-11248.yaml
+│   │   ├── CVE-2019-11510.yaml
+│   │   ├── CVE-2019-11580.yaml
+│   │   ├── CVE-2019-11581.yaml
+│   │   ├── CVE-2019-11869.yaml
+│   │   ├── CVE-2019-12314.yaml
+│   │   ├── CVE-2019-12461.yaml
+│   │   ├── CVE-2019-12593.yaml
+│   │   ├── CVE-2019-12725.yaml
+│   │   ├── CVE-2019-14322.yaml
+│   │   ├── CVE-2019-14696.yaml
+│   │   ├── CVE-2019-14974.yaml
+│   │   ├── CVE-2019-15043.yaml
+│   │   ├── CVE-2019-15107.yaml
+│   │   ├── CVE-2019-15858.yaml
+│   │   ├── CVE-2019-16278.yaml
+│   │   ├── CVE-2019-1653.yaml
+│   │   ├── CVE-2019-16662.yaml
+│   │   ├── CVE-2019-16759-1.yaml
+│   │   ├── CVE-2019-16759.yaml
+│   │   ├── CVE-2019-16920.yaml
+│   │   ├── CVE-2019-17382.yaml
+│   │   ├── CVE-2019-17558.yaml
+│   │   ├── CVE-2019-18394.yaml
+│   │   ├── CVE-2019-19368.yaml
+│   │   ├── CVE-2019-19781.yaml
+│   │   ├── CVE-2019-19908.yaml
+│   │   ├── CVE-2019-19985.yaml
+│   │   ├── CVE-2019-20141.yaml
+│   │   ├── CVE-2019-2588.yaml
+│   │   ├── CVE-2019-2725.yaml
+│   │   ├── CVE-2019-3396.yaml
+│   │   ├── CVE-2019-3402.yaml
+│   │   ├── CVE-2019-3799.yaml
+│   │   ├── CVE-2019-5418.yaml
+│   │   ├── CVE-2019-6112.yaml
+│   │   ├── CVE-2019-6340.yaml
+│   │   ├── CVE-2019-6715.yaml
+│   │   ├── CVE-2019-7256.yaml
+│   │   ├── CVE-2019-7609.yaml
+│   │   ├── CVE-2019-8442.yaml
+│   │   ├── CVE-2019-8449.yaml
+│   │   ├── CVE-2019-8451.yaml
+│   │   ├── CVE-2019-8903.yaml
+│   │   ├── CVE-2019-8982.yaml
+│   │   ├── CVE-2019-9670.yaml
+│   │   ├── CVE-2019-9733.yaml
+│   │   └── CVE-2019-9978.yaml
+│   └── 2020
+│       ├── CVE-2020-0618.yaml
+│       ├── CVE-2020-10148.yaml
+│       ├── CVE-2020-10199.yaml
+│       ├── CVE-2020-10204.yaml
+│       ├── CVE-2020-11034.yaml
+│       ├── CVE-2020-1147.yaml
+│       ├── CVE-2020-11738.yaml
+│       ├── CVE-2020-12116.yaml
+│       ├── CVE-2020-12720.yaml
+│       ├── CVE-2020-13167.yaml
+│       ├── CVE-2020-13942.yaml
+│       ├── CVE-2020-14179.yaml
+│       ├── CVE-2020-14181.yaml
+│       ├── CVE-2020-14864.yaml
+│       ├── CVE-2020-14882.yaml
+│       ├── CVE-2020-15129.yaml
+│       ├── CVE-2020-15505.yaml
+│       ├── CVE-2020-15920.yaml
+│       ├── CVE-2020-16139.yaml
+│       ├── CVE-2020-16846.yaml
+│       ├── CVE-2020-16952.yaml
+│       ├── CVE-2020-17505.yaml
+│       ├── CVE-2020-17506.yaml
+│       ├── CVE-2020-2096.yaml
+│       ├── CVE-2020-2140.yaml
+│       ├── CVE-2020-23972.yaml
+│       ├── CVE-2020-24223.yaml
+│       ├── CVE-2020-24312.yaml
+│       ├── CVE-2020-2551.yaml
+│       ├── CVE-2020-25540.yaml
+│       ├── CVE-2020-26214.yaml
+│       ├── CVE-2020-3187.yaml
+│       ├── CVE-2020-3452.yaml
+│       ├── CVE-2020-4463.yaml
+│       ├── CVE-2020-5284.yaml
+│       ├── CVE-2020-5405.yaml
+│       ├── CVE-2020-5410.yaml
+│       ├── CVE-2020-5412.yaml
+│       ├── CVE-2020-5776.yaml
+│       ├── CVE-2020-5777.yaml
+│       ├── CVE-2020-5902.yaml
+│       ├── CVE-2020-6287.yaml
+│       ├── CVE-2020-7209.yaml
+│       ├── CVE-2020-7318.yaml
+│       ├── CVE-2020-7961.yaml
+│       ├── CVE-2020-8091.yaml
+│       ├── CVE-2020-8115.yaml
+│       ├── CVE-2020-8163.yaml
+│       ├── CVE-2020-8191.yaml
+│       ├── CVE-2020-8193.yaml
+│       ├── CVE-2020-8194.yaml
+│       ├── CVE-2020-8209.yaml
+│       ├── CVE-2020-8512.yaml
+│       ├── CVE-2020-8982.yaml
+│       ├── CVE-2020-9047.yaml
+│       ├── CVE-2020-9344.yaml
+│       ├── CVE-2020-9484.yaml
+│       ├── CVE-2020-9496.yaml
+│       └── CVE-2020-9757.yaml
 ├── default-credentials
 │   ├── grafana-default-credential.yaml
 │   ├── rabbitmq-default-admin.yaml
@@ -466,7 +474,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**16 directories, 415 files**.
+**24 directories, 415 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
