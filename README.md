@@ -11,6 +11,25 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
+<<<<<<< HEAD
+=======
+### Nuclei templates `v5.0.3` overview
+
+| Templates | Counts | Templates | Counts |
+|----|----|----|----|
+| cves | 139 | files | 43 |
+| vulnerabilities | 43 | panels | 40 |
+| technologies | 41 | security-misconfiguration | 24 |
+| workflows | 16 | tokens | 8 |
+| dns | 6 | fuzzing | 7 |
+| generic-detections | 3 | default-credentials | 3 |
+| subdomain-takeover | 2 | payloads | 2 |
+| wordlists | 1 | misc | 12 |
+
+
+### Nuclei templates `v5.0.3` tree overview
+
+>>>>>>> a379c7b8a78fa86fb300b1d63b3205c25006ed47
 <details>
 <summary> Nuclei templates </summary>
 
@@ -234,6 +253,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── fuzzing
 │   ├── arbitrary-file-read.yaml
 │   ├── basic-auth-bruteforce.yaml
+│   ├── basic_ssrf.yaml
 │   ├── directory-traversal.yaml
 │   ├── generic-lfi-fuzzing.yaml
 │   ├── iis-shortname.yaml
@@ -464,7 +484,11 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
+<<<<<<< HEAD
 **24 directories, 417 files**.
+=======
+**16 directories, 392 files**.
+>>>>>>> a379c7b8a78fa86fb300b1d63b3205c25006ed47
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
