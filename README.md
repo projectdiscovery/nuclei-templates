@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 8               | files                     | 47                     |
+| cves               | 145             | files                     | 47                     |
 | vulnerabilities    | 42    | panels                    | 49                    |
 | technologies       | 41       | security-misconfiguration | 28 |
 | workflows          | 17          | tokens                    | 8                    |
