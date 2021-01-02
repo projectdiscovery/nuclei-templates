@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
 | cves               | 8               | files                     | 47                     |
 | vulnerabilities    | 42    | panels                    | 49                    |
-| technologies       | 41       | security-misconfiguration | 27 |
+| technologies       | 41       | security-misconfiguration | 28 |
 | workflows          | 17          | tokens                    | 8                    |
 | dns                | 6                | fuzzing                   | 6                   |
 | generic-detections | 3 | default-credentials       | 4       |
@@ -329,6 +329,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── security-misconfiguration
 │   ├── aem-groovyconsole.yaml
 │   ├── apache-tomcat-snoop.yaml
+│   ├── aspx-debug-mode.yaml
 │   ├── basic-cors.yaml
 │   ├── django-debug-detect.yaml
 │   ├── drupal-user-enum-ajax.yaml
@@ -475,7 +476,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 416 files**.
+**24 directories, 417 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
