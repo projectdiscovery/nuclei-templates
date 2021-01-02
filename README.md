@@ -13,16 +13,16 @@ An overview of the nuclei template directory including number of templates and H
 
 ### Nuclei templates `v7.3.4` overview
 
-| Templates | Counts | Templates | Counts |
-|----|----|----|----|
-| cves | 8 | files | 46 |
-| vulnerabilities | 42 | panels | 49 |
-| technologies | 41 | security-misconfiguration | 27 |
-| workflows | 17 | tokens | 8 |
-| dns | 6 | fuzzing | 6 |
-| generic-detections | 3 | default-credentials | 4 |
-| subdomain-takeover | 2 | payloads | 2 |
-| wordlists | 1 | misc | 14 |
+| Templates          | Counts                           | Templates                 | Counts                                  |
+| ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
+| cves               | 8               | files                     | 46                     |
+| vulnerabilities    | 42    | panels                    | 49                    |
+| technologies       | 41       | security-misconfiguration | 27 |
+| workflows          | 17          | tokens                    | 8                    |
+| dns                | 6                | fuzzing                   | 6                   |
+| generic-detections | 3 | default-credentials       | 4       |
+| subdomain-takeover | 2 | payloads                  | 2                  |
+| wordlists          | 1          | misc                      | 14                      |
 
 
 ### Nuclei templates `v7.3.4` tree overview
