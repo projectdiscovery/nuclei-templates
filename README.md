@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 8               | files                     | 46                     |
+| cves               | 8               | files                     | 47                     |
 | vulnerabilities    | 42    | panels                    | 49                    |
 | technologies       | 41       | security-misconfiguration | 27 |
 | workflows          | 17          | tokens                    | 8                    |
@@ -202,6 +202,7 @@ An overview of the nuclei template directory including number of templates and H
 ├── files
 │   ├── apc-info.yaml
 │   ├── cgi-test-page.yaml
+│   ├── composer-config.yaml
 │   ├── docker-registry.yaml
 │   ├── domcfg-page.yaml
 │   ├── druid-monitor.yaml
@@ -474,7 +475,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 415 files**.
+**24 directories, 416 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
