@@ -11,8 +11,6 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-<<<<<<< HEAD
-=======
 ### Nuclei templates `v5.0.3` overview
 
 | Templates | Counts | Templates | Counts |
@@ -29,7 +27,6 @@ An overview of the nuclei template directory including number of templates and H
 
 ### Nuclei templates `v5.0.3` tree overview
 
->>>>>>> a379c7b8a78fa86fb300b1d63b3205c25006ed47
 <details>
 <summary> Nuclei templates </summary>
 
@@ -484,11 +481,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-<<<<<<< HEAD
 **24 directories, 417 files**.
-=======
-**16 directories, 392 files**.
->>>>>>> a379c7b8a78fa86fb300b1d63b3205c25006ed47
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
