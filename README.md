@@ -11,12 +11,12 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.6` overview
+### Nuclei templates `v7.3.7` overview
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
 | cves               | 146             | files                     | 48                     |
-| vulnerabilities    | 42    | panels                    | 49                    |
+| vulnerabilities    | 42    | panels                    | 50                    |
 | technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
 | dns                | 6                | fuzzing                   | 6                   |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists          | 1          | misc                      | 14                      |
 
 
-### Nuclei templates `v7.3.6` tree overview
+### Nuclei templates `v7.3.7` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -286,6 +286,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── crxde.yaml
 │   ├── docker-api.yaml
 │   ├── fortinet-fortigate-panel.yaml
+│   ├── fortiweb-panel.yaml
 │   ├── github-enterprise-detect.yaml
 │   ├── gitlab-detect.yaml
 │   ├── globalprotect-panel.yaml
@@ -479,7 +480,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 420 files**.
+**24 directories, 421 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
