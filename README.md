@@ -13,16 +13,16 @@ An overview of the nuclei template directory including number of templates and H
 
 ### Nuclei templates `v7.3.7` overview
 
-| Templates          | Counts | Templates                 | Counts |
-| ------------------ | ------ | ------------------------- | ------ |
-| cves               | 146    | files                     | 48     |
-| vulnerabilities    | 42     | panels                    | 50     |
-| technologies       | 41     | security-misconfiguration | 29     |
-| workflows          | 17     | tokens                    | 8      |
-| dns                | 6      | fuzzing                   | 6      |
-| generic-detections | 3      | default-credentials       | 4      |
-| subdomain-takeover | 2      | payloads                  | 2      |
-| wordlists          | 1      | misc                      | 14     |
+| Templates          | Counts                           | Templates                 | Counts                                  |
+| ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
+| cves               | 147             | files                     | 48                     |
+| vulnerabilities    | 42    | panels                    | 49                    |
+| technologies       | 41       | security-misconfiguration | 30 |
+| workflows          | 17          | tokens                    | 8                    |
+| dns                | 6                | fuzzing                   | 6                   |
+| generic-detections | 3 | default-credentials       | 4       |
+| subdomain-takeover | 2 | payloads                  | 2                  |
+| wordlists          | 1          | misc                      | 14                      |
 
 
 ### Nuclei templates `v7.3.7` tree overview
@@ -151,6 +151,7 @@ An overview of the nuclei template directory including number of templates and H
 │       ├── CVE-2020-16952.yaml
 │       ├── CVE-2020-17505.yaml
 │       ├── CVE-2020-17506.yaml
+│       ├── CVE-2020-17518.yaml
 │       ├── CVE-2020-17519.yaml
 │       ├── CVE-2020-2096.yaml
 │       ├── CVE-2020-2140.yaml
@@ -286,7 +287,6 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── crxde.yaml
 │   ├── docker-api.yaml
 │   ├── fortinet-fortigate-panel.yaml
-│   ├── fortiweb-panel.yaml
 │   ├── github-enterprise-detect.yaml
 │   ├── gitlab-detect.yaml
 │   ├── globalprotect-panel.yaml
@@ -353,6 +353,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── salesforce-aura-misconfig.yaml
 │   ├── sidekiq-dashboard.yaml
 │   ├── springboot-detect.yaml
+│   ├── trace.axd-detect.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-jenkin-dashboard.yaml
 │   ├── unauthenticated-nacos-access.yaml
@@ -480,7 +481,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 421 files**.
+**24 directories, 422 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
@@ -490,4 +491,3 @@ Please navigate to https://nuclei.projectdiscovery.io for detailed documentation
 2. Use YAML Formatter (e.g. [jsonformatter](https://jsonformatter.org/yaml-formatter)) to format new templates when sending pull requests.
 
 Thanks again for your contribution and keeping the community vibrant. :heart:
-
