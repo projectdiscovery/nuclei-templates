@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 147             | files                     | 49                     |
+| cves               | 147             | files                     | 50                     |
 | vulnerabilities    | 42    | panels                    | 50                    |
 | technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
@@ -239,6 +239,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── telerik-dialoghandler-detect.yaml
 │   ├── telerik-fileupload-detect.yaml
 │   ├── tomcat-scripts.yaml
+│   ├── trace-axd-detect.yaml
 │   ├── wadl-files.yaml
 │   ├── web-config.yaml
 │   ├── wordpress-db-backup.yaml
@@ -482,7 +483,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 423 files**.
+**24 directories, 424 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
