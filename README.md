@@ -11,13 +11,13 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.6` overview
+### Nuclei templates `v7.3.7` overview
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 146             | files                     | 48                     |
+| cves               | 147             | files                     | 48                     |
 | vulnerabilities    | 42    | panels                    | 49                    |
-| technologies       | 41       | security-misconfiguration | 29 |
+| technologies       | 41       | security-misconfiguration | 30 |
 | workflows          | 17          | tokens                    | 8                    |
 | dns                | 6                | fuzzing                   | 6                   |
 | generic-detections | 3 | default-credentials       | 4       |
@@ -25,7 +25,7 @@ An overview of the nuclei template directory including number of templates and H
 | wordlists          | 1          | misc                      | 14                      |
 
 
-### Nuclei templates `v7.3.6` tree overview
+### Nuclei templates `v7.3.7` tree overview
 
 <details>
 <summary> Nuclei templates </summary>
@@ -151,6 +151,7 @@ An overview of the nuclei template directory including number of templates and H
 │       ├── CVE-2020-16952.yaml
 │       ├── CVE-2020-17505.yaml
 │       ├── CVE-2020-17506.yaml
+│       ├── CVE-2020-17518.yaml
 │       ├── CVE-2020-17519.yaml
 │       ├── CVE-2020-2096.yaml
 │       ├── CVE-2020-2140.yaml
@@ -352,6 +353,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── salesforce-aura-misconfig.yaml
 │   ├── sidekiq-dashboard.yaml
 │   ├── springboot-detect.yaml
+│   ├── trace.axd-detect.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-jenkin-dashboard.yaml
 │   ├── unauthenticated-nacos-access.yaml
@@ -479,7 +481,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 420 files**.
+**24 directories, 422 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
