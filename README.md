@@ -17,7 +17,7 @@ An overview of the nuclei template directory including number of templates and H
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
 | cves               | 146             | files                     | 48                     |
 | vulnerabilities    | 42    | panels                    | 49                    |
-| technologies       | 41       | security-misconfiguration | 28 |
+| technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
 | dns                | 6                | fuzzing                   | 6                   |
 | generic-detections | 3 | default-credentials       | 4       |
@@ -354,6 +354,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── springboot-detect.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-jenkin-dashboard.yaml
+│   ├── unauthenticated-nacos-access.yaml
 │   ├── wamp-xdebug-detect.yaml
 │   ├── wordpress-accessible-wpconfig.yaml
 │   └── zenphoto-installation-sensitive-info.yaml
@@ -478,7 +479,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 419 files**.
+**24 directories, 420 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
