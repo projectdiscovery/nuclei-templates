@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 147             | files                     | 48                     |
+| cves               | 147             | files                     | 49                     |
 | vulnerabilities    | 42    | panels                    | 50                    |
 | technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
@@ -235,6 +235,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sql-dump.yaml
+│   ├── syfmony-profiler.yaml
 │   ├── telerik-dialoghandler-detect.yaml
 │   ├── telerik-fileupload-detect.yaml
 │   ├── tomcat-scripts.yaml
@@ -481,7 +482,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 422 files**.
+**24 directories, 423 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
