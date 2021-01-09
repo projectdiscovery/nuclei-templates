@@ -15,7 +15,7 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 147             | files                     | 50                     |
+| cves               | 147             | files                     | 51                     |
 | vulnerabilities    | 42    | panels                    | 50                    |
 | technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
@@ -213,6 +213,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── elasticsearch.yaml
 │   ├── elmah-log-file.yaml
 │   ├── error-logs.yaml
+│   ├── exposed-alps-spring.yaml
 │   ├── exposed-kibana.yaml
 │   ├── exposed-svn.yaml
 │   ├── filezilla.yaml
@@ -483,7 +484,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 424 files**.
+**24 directories, 425 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
