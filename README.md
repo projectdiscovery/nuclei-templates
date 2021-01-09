@@ -15,14 +15,14 @@ An overview of the nuclei template directory including number of templates and H
 
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
-| cves               | 147             | files                     | 50                     |
-| vulnerabilities    | 42    | panels                    | 50                    |
-| technologies       | 41       | security-misconfiguration | 29 |
-| workflows          | 17          | tokens                    | 8                    |
+| cves               | 147             | files                     | 0                     |
+| vulnerabilities    | 0    | panels                    | 0                    |
+| technologies       | 44       | security-misconfiguration | 0 |
+| workflows          | 17          | tokens                    | 0                    |
 | dns                | 6                | fuzzing                   | 6                   |
-| generic-detections | 3 | default-credentials       | 4       |
-| subdomain-takeover | 2 | payloads                  | 2                  |
-| wordlists          | 1          | misc                      | 14                      |
+| generic-detections | 0 | default-credentials       | 0       |
+| subdomain-takeover | 0 | payloads                  | 0                  |
+| wordlists          | 0          | misc                      | 0                      |
 
 
 ### Nuclei templates `v7.3.7` tree overview
@@ -189,11 +189,15 @@ An overview of the nuclei template directory including number of templates and H
 │       ├── CVE-2020-9484.yaml
 │       ├── CVE-2020-9496.yaml
 │       └── CVE-2020-9757.yaml
-├── default-credentials
-│   ├── grafana-default-credential.yaml
-│   ├── rabbitmq-default-admin.yaml
-│   ├── solarwinds-default-admin.yaml
-│   └── tomcat-manager-default.yaml
+├── default-logins
+│   ├── apache
+│   │   └── tomcat-manager-default.yaml
+│   ├── grafana
+│   │   └── grafana-default-credential.yaml
+│   ├── rabbitmq
+│   │   └── rabbitmq-default-admin.yaml
+│   └── solarwinds
+│       └── solarwinds-default-admin.yaml
 ├── dns
 │   ├── azure-takeover-detection.yaml
 │   ├── cname-service-detector.yaml
@@ -201,57 +205,106 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── mx-service-detector.yaml
 │   ├── servfail-refused-hosts.yaml
 │   └── spoofable-spf-records-ptr.yaml
-├── files
-│   ├── apc-info.yaml
-│   ├── cgi-test-page.yaml
-│   ├── composer-config.yaml
-│   ├── docker-registry.yaml
-│   ├── domcfg-page.yaml
-│   ├── druid-monitor.yaml
-│   ├── drupal-install.yaml
-│   ├── ds_store.yaml
-│   ├── elasticsearch.yaml
-│   ├── elmah-log-file.yaml
-│   ├── error-logs.yaml
-│   ├── exposed-kibana.yaml
-│   ├── exposed-svn.yaml
-│   ├── filezilla.yaml
-│   ├── firebase-detect.yaml
-│   ├── git-config.yaml
-│   ├── graylog-api-browser.yaml
-│   ├── htpasswd-detection.yaml
-│   ├── jkstatus-manager.yaml
-│   ├── jolokia.yaml
-│   ├── laravel-env.yaml
-│   ├── lazy-file.yaml
-│   ├── magento-config.yaml
-│   ├── owncloud-config.yaml
-│   ├── package-json.yaml
-│   ├── php-errors.yaml
-│   ├── phpinfo.yaml
+├── exposed-panels
+│   ├── adminer-panel.yaml
+│   ├── aims-password-mgmt-client.yaml
+│   ├── atlassian-crowd-panel.yaml
+│   ├── cisco-asa-panel.yaml
+│   ├── citrix-adc-gateway-detect.yaml
+│   ├── citrix-vpn-detect.yaml
+│   ├── compal-panel.yaml
+│   ├── crxde.yaml
+│   ├── fortinet-fortigate-panel.yaml
+│   ├── fortiweb-panel.yaml
+│   ├── github-enterprise-detect.yaml
+│   ├── gitlab-detect.yaml
+│   ├── globalprotect-panel.yaml
+│   ├── go-anywhere-client.yaml
+│   ├── grafana-detect.yaml
+│   ├── identityguard-selfservice-entrust.yaml
+│   ├── iomega-lenovo-emc-shared-nas-detect.yaml
+│   ├── jira-detect.yaml
+│   ├── jmx-console.yaml
+│   ├── manage-engine-admanager-panel.yaml
+│   ├── mobileiron-login.yaml
+│   ├── netscaler-gateway.yaml
+│   ├── network-camera-detect.yaml
+│   ├── oipm-detect.yaml
+│   ├── parallels-html-client.yaml
+│   ├── phpmyadmin-panel.yaml
+│   ├── polycom-admin-detect.yaml
 │   ├── public-tomcat-instance.yaml
-│   ├── redmine-db-config.yaml
-│   ├── server-private-keys.yaml
-│   ├── server-status-localhost.yaml
-│   ├── shell-history.yaml
-│   ├── sql-dump.yaml
-│   ├── syfmony-profiler.yaml
-│   ├── telerik-dialoghandler-detect.yaml
-│   ├── telerik-fileupload-detect.yaml
-│   ├── tomcat-scripts.yaml
-│   ├── trace-axd-detect.yaml
-│   ├── wadl-files.yaml
-│   ├── web-config.yaml
-│   ├── wordpress-db-backup.yaml
-│   ├── wordpress-debug-log.yaml
-│   ├── wordpress-directory-listing.yaml
-│   ├── wordpress-emergency-script.yaml
-│   ├── wordpress-installer-log.yaml
-│   ├── wordpress-tmm-db-migrate.yaml
-│   ├── wordpress-user-enumeration.yaml
-│   ├── wsdl-detect.yaml
-│   ├── xprober-service.yaml
-│   └── zip-backup-files.yaml
+│   ├── pulse-secure-panel.yaml
+│   ├── rabbitmq-dashboard.yaml
+│   ├── rsa-self-service.yaml
+│   ├── sap-hana-xsengine-panel.yaml
+│   ├── sap-netweaver-detect.yaml
+│   ├── sap-recon-detect.yaml
+│   ├── solarwinds-orion.yaml
+│   ├── sonarqube-login.yaml
+│   ├── sonicwall-management-panel.yaml
+│   ├── sonicwall-sslvpn-panel.yaml
+│   ├── sophos-fw-version-detect.yaml
+│   ├── supervpn-panel.yaml
+│   ├── tikiwiki-cms.yaml
+│   ├── tomcat-manager-pathnormalization.yaml
+│   ├── traefik-dashboard.yaml
+│   ├── virtual-ema-detect.yaml
+│   ├── weave-scope-dashboard-detect.yaml
+│   ├── webeditors.yaml
+│   ├── webmin-panel.yaml
+│   ├── workspace-one-uem.yaml
+│   └── workspaceone-uem-airwatch-dashboard-detect.yaml
+├── exposed-tokens
+│   ├── aws
+│   │   ├── amazon-mws-auth-token-value.yaml
+│   │   └── aws-access-key-value.yaml
+│   ├── generic
+│   │   ├── credentials-disclosure.yaml
+│   │   ├── general-tokens.yaml
+│   │   └── http-username-password.yaml
+│   ├── google
+│   │   ├── fcm-server-key.yaml
+│   │   └── google-api-key.yaml
+│   ├── mailchimp
+│   │   └── mailchimp-api-key.yaml
+│   └── slack
+│       └── slack-access-token.yaml
+├── exposures
+│   ├── apis
+│   │   ├── swagger-api.yaml
+│   │   ├── wadl-api.yaml
+│   │   └── wsdl-api.yaml
+│   ├── backups
+│   │   ├── sql-dump.yaml
+│   │   └── zip-backup-files.yaml
+│   ├── configs
+│   │   ├── composer-config.yaml
+│   │   ├── exposed-svn.yaml
+│   │   ├── git-config-nginxoffbyslash.yaml
+│   │   ├── git-config.yaml
+│   │   ├── htpasswd-detection.yaml
+│   │   ├── laravel-env.yaml
+│   │   ├── magento-config.yaml
+│   │   ├── owncloud-config.yaml
+│   │   ├── package-json.yaml
+│   │   ├── phpinfo.yaml
+│   │   ├── redmine-db-config.yaml
+│   │   ├── server-status-localhost.yaml
+│   │   ├── syfmony-profiler.yaml
+│   │   └── web-config.yaml
+│   ├── files
+│   │   ├── domcfg-page.yaml
+│   │   ├── drupal-install.yaml
+│   │   ├── ds_store.yaml
+│   │   ├── filezilla.yaml
+│   │   ├── lazy-file.yaml
+│   │   ├── server-private-keys.yaml
+│   │   └── xprober-service.yaml
+│   └── logs
+│       ├── elmah-log-file.yaml
+│       ├── error-logs.yaml
+│       └── trace-axd-detect.yaml
 ├── fuzzing
 │   ├── arbitrary-file-read.yaml
 │   ├── basic-auth-bruteforce.yaml
@@ -259,11 +312,13 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── generic-lfi-fuzzing.yaml
 │   ├── iis-shortname.yaml
 │   └── wp-plugin-scan.yaml
-├── generic-detections
-│   ├── basic-xss-prober.yaml
-│   ├── general-tokens.yaml
-│   └── top-15-xss.yaml
-├── misc
+├── helpers
+│   ├── payloads
+│   │   ├── CVE-2020-5776.csv
+│   │   └── CVE-2020-6287.xml
+│   └── wordlists
+│       └── wp-plugins.txt
+├── miscellaneous
 │   ├── basic-cors-flash.yaml
 │   ├── dir-listing.yaml
 │   ├── htaccess-config.yaml
@@ -278,93 +333,46 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── unencrypted-bigip-ltm-cookie.yaml
 │   ├── wp-xmlrpc.yaml
 │   └── xml-schema-detect.yaml
-├── panels
-│   ├── adminer-panel.yaml
-│   ├── aims-password-mgmt-client.yaml
-│   ├── atlassian-crowd-panel.yaml
-│   ├── cisco-asa-panel.yaml
-│   ├── citrix-adc-gateway-detect.yaml
-│   ├── citrix-vpn-detect.yaml
-│   ├── compal.yaml
-│   ├── crxde.yaml
-│   ├── docker-api.yaml
-│   ├── fortinet-fortigate-panel.yaml
-│   ├── fortiweb-panel.yaml
-│   ├── github-enterprise-detect.yaml
-│   ├── gitlab-detect.yaml
-│   ├── globalprotect-panel.yaml
-│   ├── go-anywhere-client.yaml
-│   ├── grafana-detect.yaml
-│   ├── identityguard-selfservice-entrust.yaml
-│   ├── iomega-lenovo-emc-shared-nas-detect.yaml
-│   ├── jenkins-asyncpeople.yaml
-│   ├── jmx-console.yaml
-│   ├── kubernetes-pods.yaml
-│   ├── manage-engine-admanager-panel.yaml
-│   ├── mobileiron-login.yaml
-│   ├── netscaler-gateway.yaml
-│   ├── network-camera-detect.yaml
-│   ├── oipm-detect.yaml
-│   ├── parallels-html-client.yaml
-│   ├── phpmyadmin-panel.yaml
-│   ├── polycom-admin-detect.yaml
-│   ├── pulse-secure-panel.yaml
-│   ├── rabbitmq-dashboard.yaml
-│   ├── rsa-self-service.yaml
-│   ├── sap-hana-xsengine-panel.yaml
-│   ├── sap-netweaver-detect.yaml
-│   ├── sap-recon-detect.yaml
-│   ├── solarwinds-orion.yaml
-│   ├── sonarqube-login.yaml
-│   ├── sonicwall-management-panel.yaml
-│   ├── sonicwall-sslvpn-panel.yaml
-│   ├── sophos-fw-version-detect.yaml
-│   ├── supervpn-panel.yaml
-│   ├── swagger-panel.yaml
-│   ├── tikiwiki-cms.yaml
-│   ├── traefik-dashboard.yaml
-│   ├── virtual-ema-detect.yaml
-│   ├── weave-scope-dashboard-detect.yaml
-│   ├── webeditors.yaml
-│   ├── webmin-panel.yaml
-│   ├── workspace-one-uem.yaml
-│   └── workspaceone-uem-airwatch-dashboard-detect.yaml
-├── payloads
-│   ├── CVE-2020-5776.csv
-│   └── CVE-2020-6287.xml
-├── security-misconfiguration
+├── misconfiguration
 │   ├── aem-groovyconsole.yaml
 │   ├── apache-tomcat-snoop.yaml
+│   ├── apc-info.yaml
 │   ├── aspx-debug-mode.yaml
+│   ├── aws-redirect.yaml
 │   ├── basic-cors.yaml
+│   ├── basic-xss-prober.yaml
+│   ├── cgi-test-page.yaml
 │   ├── django-debug-detect.yaml
+│   ├── docker-api.yaml
+│   ├── docker-registry.yaml
+│   ├── druid-monitor.yaml
 │   ├── drupal-user-enum-ajax.yaml
 │   ├── drupal-user-enum-redirect.yaml
+│   ├── elasticsearch.yaml
+│   ├── exposed-kibana.yaml
 │   ├── exposed-service-now.yaml
 │   ├── front-page-misconfig.yaml
-│   ├── jenkins-stack-trace.yaml
-│   ├── jira-service-desk-signup.yaml
-│   ├── jira-unauthenticated-dashboards.yaml
-│   ├── jira-unauthenticated-popular-filters.yaml
-│   ├── jira-unauthenticated-projects.yaml
-│   ├── jira-unauthenticated-user-picker.yaml
+│   ├── jkstatus-manager.yaml
 │   ├── jupyter-ipython-unauth.yaml
+│   ├── kubernetes-pods.yaml
 │   ├── larvel-debug.yaml
+│   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── php-errors.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── salesforce-aura-misconfig.yaml
+│   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
 │   ├── springboot-detect.yaml
+│   ├── symfony-debugmode.yaml
+│   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
-│   ├── unauthenticated-jenkin-dashboard.yaml
 │   ├── unauthenticated-nacos-access.yaml
 │   ├── wamp-xdebug-detect.yaml
-│   ├── wordpress-accessible-wpconfig.yaml
 │   └── zenphoto-installation-sensitive-info.yaml
-├── subdomain-takeover
-│   ├── detect-all-takeovers.yaml
-│   └── s3-subtakeover.yaml
+├── takeovers
+│   └── subdomain-takeover.yaml
 ├── technologies
 │   ├── apache-detect.yaml
 │   ├── artica-web-proxy-detect.yaml
@@ -374,16 +382,17 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
 │   ├── favicon-detection.yaml
+│   ├── firebase-detect.yaml
 │   ├── google-storage.yaml
 │   ├── graphql.yaml
+│   ├── graylog-api-browser.yaml
 │   ├── home-assistant.yaml
 │   ├── jaspersoft-detect.yaml
-│   ├── jira-detect.yaml
+│   ├── jolokia.yaml
 │   ├── kibana-detect.yaml
 │   ├── kong-detect.yaml
 │   ├── liferay-portal-detect.yaml
 │   ├── linkerd-badrule-detect.yaml
-│   ├── linkerd-ssrf-detect.yaml
 │   ├── lotus-domino-version.yaml
 │   ├── magmi-detect.yaml
 │   ├── mrtg-detect.yaml
@@ -401,66 +410,82 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── shiro-detect.yaml
 │   ├── sql-server-reporting.yaml
 │   ├── tech-detect.yaml
+│   ├── telerik-dialoghandler-detect.yaml
+│   ├── telerik-fileupload-detect.yaml
 │   ├── terraform-detect.yaml
 │   ├── tomcat-detect.yaml
 │   ├── tor-socks-proxy.yaml
 │   ├── waf-detect.yaml
 │   ├── weblogic-detect.yaml
 │   └── werkzeug-debugger-detect.yaml
-├── tokens
-│   ├── amazon-mws-auth-token-value.yaml
-│   ├── aws-access-key-value.yaml
-│   ├── credentials-disclosure.yaml
-│   ├── fcm-server-key.yaml
-│   ├── google-api-key.yaml
-│   ├── http-username-password.yaml
-│   ├── mailchimp-api-key.yaml
-│   └── slack-access-token.yaml
 ├── vulnerabilities
-│   ├── bullwark-momentum-series-directory-traversal.yaml
-│   ├── cached-aem-pages.yaml
-│   ├── couchdb-adminparty.yaml
-│   ├── crlf-injection.yaml
-│   ├── discourse-xss.yaml
-│   ├── easy-wp-smtp-listing.yaml
-│   ├── eclipse-help-system-xss.yaml
-│   ├── git-config-nginxoffbyslash.yaml
-│   ├── ibm-infoprint-directory-traversal.yaml
-│   ├── mcafee-epo-rce.yaml
-│   ├── microstrategy-ssrf.yaml
-│   ├── mida-eframework-xss.yaml
-│   ├── moodle-filter-jmol-lfi.yaml
-│   ├── moodle-filter-jmol-xss.yaml
-│   ├── nginx-module-vts-xss.yaml
-│   ├── nuuo-nvrmini2-rce.yaml
-│   ├── open-redirect.yaml
-│   ├── oracle-ebs-bispgraph-file-access.yaml
-│   ├── pdf-signer-ssti-to-rce.yaml
-│   ├── rails6-xss.yaml
-│   ├── rce-shellshock-user-agent.yaml
-│   ├── rce-via-java-deserialization.yaml
-│   ├── rconfig-rce.yaml
-│   ├── sassy-social-share.yaml
-│   ├── sick-beard-xss.yaml
-│   ├── springboot-actuators-jolokia-xxe.yaml
-│   ├── springboot-h2-db-rce.yaml
-│   ├── symantec-messaging-gateway.yaml
-│   ├── symfony-debugmode.yaml
-│   ├── tikiwiki-reflected-xss.yaml
-│   ├── tomcat-manager-pathnormalization.yaml
-│   ├── twig-php-ssti.yaml
-│   ├── vmware-vcenter-lfi-linux.yaml
-│   ├── vmware-vcenter-lfi.yaml
-│   ├── vpms-auth-bypass.yaml
-│   ├── w3c-total-cache-ssrf.yaml
-│   ├── wems-manager-xss.yaml
-│   ├── wordpress-emails-verification-for-woocommerce.yaml
-│   ├── wordpress-social-metrics-tracker.yaml
-│   ├── wordpress-wordfence-xss.yaml
-│   ├── wordpress-wpcourses-info-disclosure.yaml
-│   └── zms-auth-bypass.yaml
-├── wordlists
-│   └── wp-plugins.txt
+│   ├── generic
+│   │   ├── crlf-injection.yaml
+│   │   ├── top-xss-params.yaml
+│   │   └── url-redirect.yaml
+│   ├── ibm
+│   │   ├── eclipse-help-system-xss.yaml
+│   │   └── ibm-infoprint-directory-traversal.yaml
+│   ├── jenkins
+│   │   ├── jenkins-asyncpeople.yaml
+│   │   ├── jenkins-stack-trace.yaml
+│   │   └── unauthenticated-jenkin-dashboard.yaml
+│   ├── jira
+│   │   ├── jira-service-desk-signup.yaml
+│   │   ├── jira-unauthenticated-dashboards.yaml
+│   │   ├── jira-unauthenticated-popular-filters.yaml
+│   │   ├── jira-unauthenticated-projects.yaml
+│   │   └── jira-unauthenticated-user-picker.yaml
+│   ├── moodle
+│   │   ├── moodle-filter-jmol-lfi.yaml
+│   │   └── moodle-filter-jmol-xss.yaml
+│   ├── oracle
+│   │   └── oracle-ebs-bispgraph-file-access.yaml
+│   ├── other
+│   │   ├── bullwark-momentum-series-directory-traversal.yaml
+│   │   ├── cached-aem-pages.yaml
+│   │   ├── couchdb-adminparty.yaml
+│   │   ├── discourse-xss.yaml
+│   │   ├── mcafee-epo-rce.yaml
+│   │   ├── microstrategy-ssrf.yaml
+│   │   ├── mida-eframework-xss.yaml
+│   │   ├── nginx-module-vts-xss.yaml
+│   │   ├── nuuo-nvrmini2-rce.yaml
+│   │   ├── pdf-signer-ssti-to-rce.yaml
+│   │   ├── rce-shellshock-user-agent.yaml
+│   │   ├── rce-via-java-deserialization.yaml
+│   │   ├── rconfig-rce.yaml
+│   │   ├── sick-beard-xss.yaml
+│   │   ├── symantec-messaging-gateway.yaml
+│   │   ├── tikiwiki-reflected-xss.yaml
+│   │   ├── twig-php-ssti.yaml
+│   │   ├── vpms-auth-bypass.yaml
+│   │   ├── wems-manager-xss.yaml
+│   │   └── zms-auth-bypass.yaml
+│   ├── rails
+│   │   └── rails6-xss.yaml
+│   ├── springboot
+│   │   ├── springboot-actuators-jolokia-xxe.yaml
+│   │   └── springboot-h2-db-rce.yaml
+│   ├── vmware
+│   │   ├── vmware-vcenter-lfi-linux.yaml
+│   │   └── vmware-vcenter-lfi.yaml
+│   └── wordpress
+│       ├── easy-wp-smtp-listing.yaml
+│       ├── sassy-social-share.yaml
+│       ├── w3c-total-cache-ssrf.yaml
+│       ├── wordpress-accessible-wpconfig.yaml
+│       ├── wordpress-db-backup.yaml
+│       ├── wordpress-debug-log.yaml
+│       ├── wordpress-directory-listing.yaml
+│       ├── wordpress-emails-verification-for-woocommerce.yaml
+│       ├── wordpress-emergency-script.yaml
+│       ├── wordpress-installer-log.yaml
+│       ├── wordpress-social-metrics-tracker.yaml
+│       ├── wordpress-tmm-db-migrate.yaml
+│       ├── wordpress-user-enumeration.yaml
+│       ├── wordpress-wordfence-xss.yaml
+│       └── wordpress-wpcourses-info-disclosure.yaml
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── basic-auth-workflow.yaml
@@ -483,7 +508,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 424 files**.
+**49 directories, 424 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
