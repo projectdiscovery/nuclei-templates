@@ -16,7 +16,7 @@ An overview of the nuclei template directory including number of templates and H
 | Templates          | Counts                           | Templates                 | Counts                                  |
 | ------------------ | -------------------------------- | ------------------------- | --------------------------------------- |
 | cves               | 147             | files                     | 51                     |
-| vulnerabilities    | 42    | panels                    | 50                    |
+| vulnerabilities    | 43    | panels                    | 50                    |
 | technologies       | 41       | security-misconfiguration | 29 |
 | workflows          | 17          | tokens                    | 8                    |
 | dns                | 6                | fuzzing                   | 6                   |
@@ -447,6 +447,7 @@ An overview of the nuclei template directory including number of templates and H
 │   ├── springboot-h2-db-rce.yaml
 │   ├── symantec-messaging-gateway.yaml
 │   ├── symfony-debugmode.yaml
+│   ├── thinkific-redirect.yaml
 │   ├── tikiwiki-reflected-xss.yaml
 │   ├── tomcat-manager-pathnormalization.yaml
 │   ├── twig-php-ssti.yaml
@@ -484,7 +485,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**24 directories, 425 files**.
+**24 directories, 426 files**.
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
 
