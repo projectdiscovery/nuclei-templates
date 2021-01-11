@@ -19,7 +19,7 @@ An overview of the nuclei template directory including number of templates and H
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 72   |
 | exposed-tokens  | 9  | exposures        | 41      |
-| fuzzing         | 6           | helpers          | 3        |
+| fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
 | vulnerabilities | 62 | workflows        | 17        |
@@ -358,7 +358,6 @@ An overview of the nuclei template directory including number of templates and H
 │       └── trace-axd-detect.yaml
 ├── fuzzing
 │   ├── arbitrary-file-read.yaml
-│   ├── basic-auth-bruteforce.yaml
 │   ├── directory-traversal.yaml
 │   ├── generic-lfi-fuzzing.yaml
 │   ├── iis-shortname.yaml
@@ -566,7 +565,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**53 directories, 477 files**.
+**53 directories, 476 files**.
 
 📖 Documentation
 -----
