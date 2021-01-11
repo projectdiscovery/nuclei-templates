@@ -12,6 +12,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
 ### Nuclei templates `v7.3.7` overview
+-----
 
 | Templates       | Counts | Templates        | Counts |
 | --------------- | ------ | ---------------- | ------ |
@@ -25,6 +26,7 @@ An overview of the nuclei template directory including number of templates and H
 
 
 ### Nuclei templates `v7.3.7` tree overview
+-----
 
 <details>
 <summary> Nuclei templates </summary>
