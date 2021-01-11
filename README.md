@@ -12,6 +12,7 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
 ### Nuclei templates `v7.3.7` overview
+------
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
@@ -25,6 +26,7 @@ An overview of the nuclei template directory including number of templates and H
 
 
 ### Nuclei templates `v7.3.7` tree overview
+-----
 
 <details>
 <summary> Nuclei templates </summary>
@@ -566,11 +568,24 @@ An overview of the nuclei template directory including number of templates and H
 
 **53 directories, 477 files**.
 
-Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to build new and your own custom templates and many example templates for easy understanding. 
+📖 Documentation
+-----
 
-------
-**Notes:** 
-1. Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/)) to validate new templates when sending pull requests.
-2. Use YAML Formatter (e.g. [jsonformatter](https://jsonformatter.org/yaml-formatter)) to format new templates when sending pull requests.
+Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to **build** new and your **own custom** templates, we have also added many example templates for easy understanding.
+
+💪 Contributions
+-----
+
+Nuclei-templates is powered by major contributions from the community. [Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
+
+👨‍💻 Community
+-----
+
+You are welcomed to join our [Discord Community](https://discord.gg/KECAGdH). You can also follow us on [Twitter](https://twitter.com/pdiscoveryio) to keep up with everything related to projectdiscovery.
+
+💡 Notes
+-----
+-  Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/) to validate the syntax of templates before sending pull requests.
+
 
 Thanks again for your contribution and keeping the community vibrant. :heart:
