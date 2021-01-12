@@ -9,10 +9,22 @@
 
 Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** or [Github issue](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) and grow the list.
 
-An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
+# Resources
 
-### Nuclei templates `v7.3.8` overview
-------
+- [Templates](#nuclei-templates-overview)
+- [Documentation](#-documentation)
+- [Contributions](#-contributions)
+- [Discussion](#-discussion)
+- [Community](#-community)
+- [Notes](#-notes)
+
+### Nuclei templates overview
+-----
+
+An overview of the nuclei template directory including number of templates associated with each directory. 
+
+
+**Directory structure of nuclei templates:**
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
@@ -25,8 +37,7 @@ An overview of the nuclei template directory including number of templates and H
 | vulnerabilities | 62 | workflows        | 17        |
 
 
-### Nuclei templates `v7.3.8` tree overview
------
+**Tree structure of nuclei templates:**
 
 <details>
 <summary> Nuclei templates </summary>
@@ -575,6 +586,11 @@ Please navigate to https://nuclei.projectdiscovery.io for detailed documentation
 -----
 
 Nuclei-templates is powered by major contributions from the community. [Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
+
+💬 Discussion
+-----
+
+Have questions / doubts / ideas to discuss? feel free to open a discussion using [Github discussions](https://github.com/projectdiscovery/nuclei-templates/discussions) board.
 
 👨‍💻 Community
 -----
