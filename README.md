@@ -11,21 +11,21 @@ Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/n
 
 An overview of the nuclei template directory including number of templates and HTTP request associated with each directory. 
 
-### Nuclei templates `v7.3.7` overview
+### Nuclei templates `v7.3.8` overview
 ------
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 72   |
-| exposed-tokens  | 9  | exposures        | 41      |
+| exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
 | vulnerabilities | 62 | workflows        | 17        |
 
 
-### Nuclei templates `v7.3.7` tree overview
+### Nuclei templates `v7.3.8` tree overview
 -----
 
 <details>
@@ -322,7 +322,6 @@ An overview of the nuclei template directory including number of templates and H
 │   │   ├── amazon-docker-config-disclosure.yaml
 │   │   ├── ansible-config-disclosure.yaml
 │   │   ├── composer-config.yaml
-│   │   ├── exposed-alps-spring.yaml
 │   │   ├── exposed-svn.yaml
 │   │   ├── git-config-nginxoffbyslash.yaml
 │   │   ├── git-config.yaml
@@ -565,7 +564,7 @@ An overview of the nuclei template directory including number of templates and H
 
 </details>
 
-**53 directories, 476 files**.
+**53 directories, 475 files**.
 
 📖 Documentation
 -----
