@@ -534,7 +534,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── springboot
 │   │   ├── springboot-actuators-jolokia-xxe.yaml
 │   │   └── springboot-h2-db-rce.yaml
-│   ├── thinkific-redirect.yaml
 │   ├── vmware
 │   │   ├── vmware-vcenter-lfi-linux.yaml
 │   │   └── vmware-vcenter-lfi.yaml
@@ -576,7 +575,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**53 directories, 476 files**.
+**53 directories, 475 files**.
 
 📖 Documentation
 -----
