@@ -29,11 +29,11 @@ An overview of the nuclei template directory including number of templates assoc
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
-| dns             | 6               | exposed-panels   | 72   |
+| dns             | 6               | exposed-panels   | 73   |
 | exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
-| takeovers       | 1         | technologies     | 44     |
+| takeovers       | 1         | technologies     | 43     |
 | vulnerabilities | 62 | workflows        | 17        |
 
 
@@ -277,6 +277,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── parallels-html-client.yaml
 │   ├── phpmyadmin-panel.yaml
 │   ├── polycom-admin-detect.yaml
+│   ├── prometheus-exporter-detect.yaml
 │   ├── public-tomcat-manager.yaml
 │   ├── pulse-secure-panel.yaml
 │   ├── rabbitmq-dashboard.yaml
@@ -460,7 +461,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── nifi-detech.yaml
 │   ├── oidc-detect.yaml
 │   ├── pi-hole-detect.yaml
-│   ├── prometheus-exporter-detect.yaml
 │   ├── prometheus-exposed-panel.yaml
 │   ├── prtg-detect.yaml
 │   ├── redmine-cli-detect.yaml
