@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 43     |
-| vulnerabilities | 62 | workflows        | 17        |
+| vulnerabilities | 62 | workflows        | 16        |
 
 
 **Tree structure of nuclei templates:**
@@ -554,7 +554,6 @@ An overview of the nuclei template directory including number of templates assoc
 │       └── wordpress-wpcourses-info-disclosure.yaml
 └── workflows
     ├── artica-web-proxy-workflow.yaml
-    ├── basic-auth-workflow.yaml
     ├── bigip-workflow.yaml
     ├── cisco-asa-workflow.yaml
     ├── grafana-workflow.yaml
@@ -574,7 +573,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**53 directories, 474 files**.
+**53 directories, 473 files**.
 
 📖 Documentation
 -----
