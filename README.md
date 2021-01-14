@@ -277,7 +277,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── parallels-html-client.yaml
 │   ├── phpmyadmin-panel.yaml
 │   ├── polycom-admin-detect.yaml
-│   ├── public-tomcat-instance.yaml
+│   ├── public-tomcat-manager.yaml
 │   ├── pulse-secure-panel.yaml
 │   ├── rabbitmq-dashboard.yaml
 │   ├── rocketmq-console-exposure.yaml
