@@ -33,7 +33,7 @@ An overview of the nuclei template directory including number of templates assoc
 | exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
-| takeovers       | 1         | technologies     | 43     |
+| takeovers       | 1         | technologies     | 44     |
 | vulnerabilities | 62 | workflows        | 16        |
 
 
@@ -455,6 +455,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── liferay-portal-detect.yaml
 │   ├── linkerd-badrule-detect.yaml
 │   ├── lotus-domino-version.yaml
+│   ├── lucee-detect.yaml
 │   ├── magmi-detect.yaml
 │   ├── mrtg-detect.yaml
 │   ├── netsweeper-webadmin-detect.yaml
@@ -573,7 +574,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**53 directories, 473 files**.
+**53 directories, 474 files**.
 
 📖 Documentation
 -----
