@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
-| vulnerabilities | 62 | workflows        | 16        |
+| vulnerabilities | 66 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -534,6 +534,11 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── springboot
 │   │   ├── springboot-actuators-jolokia-xxe.yaml
 │   │   └── springboot-h2-db-rce.yaml
+│   ├── thinkphp
+│   │   ├── thinkphp-2-rce.yaml
+│   │   ├── thinkphp-5022-rce.yaml
+│   │   ├── thinkphp-5023-rce.yaml
+│   │   └── thinkphp-509-information-disclosure.yaml
 │   ├── vmware
 │   │   ├── vmware-vcenter-lfi-linux.yaml
 │   │   └── vmware-vcenter-lfi.yaml
@@ -568,13 +573,14 @@ An overview of the nuclei template directory including number of templates assoc
     ├── sap-netweaver-workflow.yaml
     ├── solarwinds-orion-workflow.yaml
     ├── springboot-workflow.yaml
+    ├── thinkphp-workflow.yaml
     ├── vbulletin-workflow.yaml
     └── wordpress-workflow.yaml
 ```
 
 </details>
 
-**53 directories, 474 files**.
+**54 directories, 479 files**.
 
 📖 Documentation
 -----
