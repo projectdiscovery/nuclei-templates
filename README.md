@@ -32,9 +32,9 @@ An overview of the nuclei template directory including number of templates assoc
 | dns             | 6               | exposed-panels   | 73   |
 | exposed-tokens  | 9  | exposures        | 39      |
 | fuzzing         | 5           | helpers          | 3        |
-| miscellaneous   | 14     | misconfiguration | 40 |
+| miscellaneous   | 13     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 44     |
-| vulnerabilities | 67 | workflows        | 17        |
+| vulnerabilities | 68 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -391,7 +391,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── security.txt.yaml
 │   ├── trace-method.yaml
 │   ├── unencrypted-bigip-ltm-cookie.yaml
-│   ├── wp-xmlrpc.yaml
 │   └── xml-schema-detect.yaml
 ├── misconfiguration
 │   ├── aem-groovyconsole.yaml
@@ -560,7 +559,8 @@ An overview of the nuclei template directory including number of templates assoc
 │       ├── wordpress-user-enumeration.yaml
 │       ├── wordpress-wordfence-xss.yaml
 │       ├── wordpress-wpcourses-info-disclosure.yaml
-│       └── wp-enabled-registration.yaml
+│       ├── wp-enabled-registration.yaml
+│       └── wp-xmlrpc.yaml
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── bigip-workflow.yaml
