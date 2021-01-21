@@ -30,11 +30,11 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 42      |
+| exposed-tokens  | 9  | exposures        | 41      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
-| vulnerabilities | 66 | workflows        | 17        |
+| vulnerabilities | 67 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -353,7 +353,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── symfony-profiler.yaml
 │   │   └── web-config.yaml
 │   ├── files
-│   │   ├── WordPress-user-registration-enabled.yaml
 │   │   ├── domcfg-page.yaml
 │   │   ├── drupal-install.yaml
 │   │   ├── ds_store.yaml
@@ -559,7 +558,8 @@ An overview of the nuclei template directory including number of templates assoc
 │       ├── wordpress-tmm-db-migrate.yaml
 │       ├── wordpress-user-enumeration.yaml
 │       ├── wordpress-wordfence-xss.yaml
-│       └── wordpress-wpcourses-info-disclosure.yaml
+│       ├── wordpress-wpcourses-info-disclosure.yaml
+│       └── wp-enabled-registration.yaml
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── bigip-workflow.yaml
