@@ -30,9 +30,9 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 41      |
+| exposed-tokens  | 9  | exposures        | 39      |
 | fuzzing         | 5           | helpers          | 3        |
-| miscellaneous   | 14     | misconfiguration | 37 |
+| miscellaneous   | 14     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 44     |
 | vulnerabilities | 67 | workflows        | 17        |
 
@@ -347,7 +347,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── phpinfo.yaml
 │   │   ├── rails-database-config.yaml
 │   │   ├── redmine-db-config.yaml
-│   │   ├── server-status-localhost.yaml
 │   │   ├── syfmony-profiler.yaml
 │   │   ├── symfony-database-config.yaml
 │   │   ├── symfony-profiler.yaml
@@ -364,7 +363,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   └── logs
 │       ├── elmah-log-file.yaml
 │       ├── error-logs.yaml
-│       ├── nginx-status.yaml
 │       ├── rails-debug-mode.yaml
 │       ├── struts-debug-mode.yaml
 │       └── trace-axd-detect.yaml
@@ -420,10 +418,13 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── larvel-debug.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── nginx-status.yaml
 │   ├── php-errors.yaml
+│   ├── php-fpm-status.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── salesforce-aura-misconfig.yaml
+│   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
 │   ├── springboot-detect.yaml
@@ -582,7 +583,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 481 files**.
+**54 directories, 482 files**.
 
 📖 Documentation
 -----
