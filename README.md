@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 41      |
+| exposed-tokens  | 9  | exposures        | 42      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
@@ -353,6 +353,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── symfony-profiler.yaml
 │   │   └── web-config.yaml
 │   ├── files
+│   │   ├── WordPress-user-registration-enabled.yaml
 │   │   ├── domcfg-page.yaml
 │   │   ├── drupal-install.yaml
 │   │   ├── ds_store.yaml
@@ -581,7 +582,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 480 files**.
+**54 directories, 481 files**.
 
 📖 Documentation
 -----
