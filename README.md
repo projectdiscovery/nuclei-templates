@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 154            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 40      |
+| exposed-tokens  | 9  | exposures        | 41      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 14     | misconfiguration | 37 |
 | takeovers       | 1         | technologies     | 44     |
@@ -364,6 +364,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   └── logs
 │       ├── elmah-log-file.yaml
 │       ├── error-logs.yaml
+│       ├── nginx-status.yaml
 │       ├── rails-debug-mode.yaml
 │       ├── struts-debug-mode.yaml
 │       └── trace-axd-detect.yaml
@@ -580,7 +581,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 479 files**.
+**54 directories, 480 files**.
 
 📖 Documentation
 -----
