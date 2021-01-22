@@ -33,7 +33,7 @@ An overview of the nuclei template directory including number of templates assoc
 | exposed-tokens  | 9  | exposures        | 39      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 40 |
-| takeovers       | 1         | technologies     | 44     |
+| takeovers       | 1         | technologies     | 45     |
 | vulnerabilities | 68 | workflows        | 17        |
 
 
@@ -469,6 +469,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── s3-detect.yaml
 │   ├── sap-netweaver-as-java-detect.yaml
 │   ├── sap-netweaver-detect.yaml
+│   ├── selea-ip-camera.yaml
 │   ├── shiro-detect.yaml
 │   ├── sql-server-reporting.yaml
 │   ├── tech-detect.yaml
@@ -583,7 +584,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 482 files**.
+**54 directories, 483 files**.
 
 📖 Documentation
 -----
