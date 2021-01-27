@@ -43,6 +43,7 @@ An overview of the nuclei template directory including number of templates assoc
 <summary> Nuclei templates </summary>
 
 ```
+├── CODE_OF_CONDUCT.md
 ├── LICENSE.md
 ├── README.md
 ├── cves
@@ -585,7 +586,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 484 files**.
+**54 directories, 485 files**.
 
 📖 Documentation
 -----
