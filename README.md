@@ -33,7 +33,7 @@ An overview of the nuclei template directory including number of templates assoc
 | exposed-tokens  | 9  | exposures        | 39      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 39 |
-| takeovers       | 1         | technologies     | 45     |
+| takeovers       | 1         | technologies     | 46     |
 | vulnerabilities | 69 | workflows        | 17        |
 
 
@@ -428,6 +428,13 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
+│   ├── springboot
+│   │   ├── springboot-configprops.yaml
+│   │   ├── springboot-env.yaml
+│   │   ├── springboot-heapdump.yaml
+│   │   ├── springboot-loggers.yaml
+│   │   ├── springboot-mappings.yaml
+│   │   └── springboot-trace.yaml
 │   ├── symfony-debugmode.yaml
 │   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
@@ -444,6 +451,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── cacti-detect.yaml
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
+│   ├── detect-springboot-actuator.yaml
 │   ├── favicon-detection.yaml
 │   ├── firebase-detect.yaml
 │   ├── google-storage.yaml
@@ -586,7 +594,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 485 files**.
+**55 directories, 492 files**.
 
 📖 Documentation
 -----
