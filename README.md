@@ -32,7 +32,7 @@ An overview of the nuclei template directory including number of templates assoc
 | dns             | 6               | exposed-panels   | 73   |
 | exposed-tokens  | 9  | exposures        | 39      |
 | fuzzing         | 5           | helpers          | 3        |
-| miscellaneous   | 13     | misconfiguration | 40 |
+| miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 45     |
 | vulnerabilities | 69 | workflows        | 17        |
 
@@ -428,7 +428,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
-│   ├── springboot-detect.yaml
 │   ├── symfony-debugmode.yaml
 │   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
@@ -587,7 +586,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 486 files**.
+**54 directories, 485 files**.
 
 📖 Documentation
 -----
