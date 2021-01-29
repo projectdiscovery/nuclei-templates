@@ -405,12 +405,12 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── aws-redirect.yaml
 │   ├── cgi-test-page.yaml
 │   ├── django-debug-detect.yaml
-│   ├── docker-api.yaml
 │   ├── docker-registry.yaml
 │   ├── druid-monitor.yaml
 │   ├── drupal-user-enum-ajax.yaml
 │   ├── drupal-user-enum-redirect.yaml
 │   ├── elasticsearch.yaml
+│   ├── exposed-docker-api.yaml
 │   ├── exposed-kibana.yaml
 │   ├── exposed-service-now.yaml
 │   ├── front-page-misconfig.yaml
