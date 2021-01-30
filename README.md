@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 69 | workflows        | 17        |
+| vulnerabilities | 70 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -521,6 +521,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── oracle
 │   │   └── oracle-ebs-bispgraph-file-access.yaml
 │   ├── other
+│   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
 │   │   ├── aspnuke-openredirect.yaml
 │   │   ├── bullwark-momentum-series-directory-traversal.yaml
@@ -599,7 +600,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 496 files**.
+**56 directories, 497 files**.
 
 📖 Documentation
 -----
