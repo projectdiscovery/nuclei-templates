@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 155            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 39      |
+| exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
@@ -334,6 +334,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── zip-backup-files.yaml
 │   ├── configs
 │   │   ├── airflow-configuration-exposure.yaml
+│   │   ├── alibaba-canal-info-leak.yaml
 │   │   ├── amazon-docker-config-disclosure.yaml
 │   │   ├── ansible-config-disclosure.yaml
 │   │   ├── composer-config.yaml
@@ -595,7 +596,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 492 files**.
+**56 directories, 493 files**.
 
 📖 Documentation
 -----
