@@ -28,7 +28,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 157            | default-logins   | 8 |
+| cves            | 158            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 73   |
 | exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
@@ -212,7 +212,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2020-9496.yaml
 │   │   └── CVE-2020-9757.yaml
 │   └── 2021
-│       └── CVE-2021-22873.yaml
+│       ├── CVE-2021-22873.yaml
+│       └── CVE-2021-3019.yaml
 ├── default-logins
 │   ├── activemq
 │   │   └── activemq-default-login.yaml
@@ -598,7 +599,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 495 files**.
+**56 directories, 496 files**.
 
 📖 Documentation
 -----
