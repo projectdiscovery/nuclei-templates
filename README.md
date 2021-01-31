@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 70 | workflows        | 17        |
+| vulnerabilities | 71 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -525,7 +525,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
 │   │   ├── aspnuke-openredirect.yaml
-│   │   ├── bullwark-momentum-series-directory-traversal.yaml
+│   │   ├── bullwark-momentum-lfi.yaml
 │   │   ├── cached-aem-pages.yaml
 │   │   ├── couchdb-adminparty.yaml
 │   │   ├── discourse-xss.yaml
@@ -546,6 +546,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── twig-php-ssti.yaml
 │   │   ├── vpms-auth-bypass.yaml
 │   │   ├── wems-manager-xss.yaml
+│   │   ├── wooyun-path-traversal.yaml
 │   │   ├── yarn-resourcemanager-rce.yaml
 │   │   └── zms-auth-bypass.yaml
 │   ├── rails
@@ -601,7 +602,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 498 files**.
+**56 directories, 499 files**.
 
 📖 Documentation
 -----
