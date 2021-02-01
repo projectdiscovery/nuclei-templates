@@ -29,12 +29,12 @@ An overview of the nuclei template directory including number of templates assoc
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 161            | default-logins   | 8 |
-| dns             | 6               | exposed-panels   | 73   |
+| dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 5           | helpers          | 3        |
 | miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 71 | workflows        | 17        |
+| vulnerabilities | 72 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -277,6 +277,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── kafka-connect-ui.yaml
 │   ├── kafka-monitoring.yaml
 │   ├── kafka-topics-ui.yaml
+│   ├── key-cloak-admin-panel.yaml
 │   ├── kubernetes-dashboard.yaml
 │   ├── manage-engine-admanager-panel.yaml
 │   ├── mobileiron-login.yaml
@@ -531,6 +532,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── cached-aem-pages.yaml
 │   │   ├── couchdb-adminparty.yaml
 │   │   ├── discourse-xss.yaml
+│   │   ├── keycloak-xss.yaml
 │   │   ├── mcafee-epo-rce.yaml
 │   │   ├── microstrategy-ssrf.yaml
 │   │   ├── mida-eframework-xss.yaml
@@ -604,7 +606,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 501 files**.
+**56 directories, 503 files**.
 
 📖 Documentation
 -----
