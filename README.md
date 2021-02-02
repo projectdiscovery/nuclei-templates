@@ -31,7 +31,7 @@ An overview of the nuclei template directory including number of templates assoc
 | cves            | 163            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 40      |
-| fuzzing         | 5           | helpers          | 3        |
+| fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 13     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
 | vulnerabilities | 73 | workflows        | 17        |
@@ -383,14 +383,11 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── arbitrary-file-read.yaml
 │   ├── directory-traversal.yaml
 │   ├── generic-lfi-fuzzing.yaml
-│   ├── iis-shortname.yaml
-│   └── wp-plugin-scan.yaml
+│   └── iis-shortname.yaml
 ├── helpers
-│   ├── payloads
-│   │   ├── CVE-2020-5776.csv
-│   │   └── CVE-2020-6287.xml
-│   └── wordlists
-│       └── wp-plugins.txt
+│   └── payloads
+│       ├── CVE-2020-5776.csv
+│       └── CVE-2020-6287.xml
 ├── miscellaneous
 │   ├── basic-cors-flash.yaml
 │   ├── dir-listing.yaml
@@ -609,7 +606,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 506 files**.
+**55 directories, 504 files**.
 
 📖 Documentation
 -----
