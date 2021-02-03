@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 163            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
-| exposed-tokens  | 9  | exposures        | 40      |
+| exposed-tokens  | 9  | exposures        | 41      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
@@ -350,6 +350,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── exposed-svn.yaml
 │   │   ├── git-config-nginxoffbyslash.yaml
 │   │   ├── git-config.yaml
+│   │   ├── gmail-api-client-secrets.yaml
 │   │   ├── htpasswd-detection.yaml
 │   │   ├── laravel-env.yaml
 │   │   ├── magento-config.yaml
@@ -606,7 +607,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 504 files**.
+**55 directories, 505 files**.
 
 📖 Documentation
 -----
