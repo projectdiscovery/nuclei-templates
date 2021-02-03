@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 74 | workflows        | 17        |
+| vulnerabilities | 75 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -544,6 +544,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── rce-shellshock-user-agent.yaml
 │   │   ├── rce-via-java-deserialization.yaml
 │   │   ├── rconfig-rce.yaml
+│   │   ├── sangfor-edr-rce.yaml
 │   │   ├── sick-beard-xss.yaml
 │   │   ├── sonicwall-sslvpn-shellshock.yaml
 │   │   ├── symantec-messaging-gateway.yaml
@@ -608,7 +609,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 506 files**.
+**55 directories, 507 files**.
 
 📖 Documentation
 -----
