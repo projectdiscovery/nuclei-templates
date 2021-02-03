@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 73 | workflows        | 17        |
+| vulnerabilities | 74 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -528,6 +528,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── aspnuke-openredirect.yaml
 │   │   ├── bullwark-momentum-lfi.yaml
 │   │   ├── cached-aem-pages.yaml
+│   │   ├── chamilo-lms-xss.yaml
 │   │   ├── couchdb-adminparty.yaml
 │   │   ├── discourse-xss.yaml
 │   │   ├── dlink-850L-info-leak.yaml
@@ -605,7 +606,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 503 files**.
+**55 directories, 504 files**.
 
 📖 Documentation
 -----
