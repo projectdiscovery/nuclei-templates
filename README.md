@@ -28,13 +28,13 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 154            | default-logins   | 8 |
-| dns             | 6               | exposed-panels   | 73   |
-| exposed-tokens  | 9  | exposures        | 40      |
-| fuzzing         | 5           | helpers          | 3        |
-| miscellaneous   | 14     | misconfiguration | 37 |
-| takeovers       | 1         | technologies     | 44     |
-| vulnerabilities | 66 | workflows        | 17        |
+| cves            | 165            | default-logins   | 8 |
+| dns             | 6               | exposed-panels   | 74   |
+| exposed-tokens  | 9  | exposures        | 41      |
+| fuzzing         | 4           | helpers          | 2        |
+| miscellaneous   | 12     | misconfiguration | 39 |
+| takeovers       | 1         | technologies     | 46     |
+| vulnerabilities | 75 | workflows        | 17        |
 
 
 **Tree structure of nuclei templates:**
@@ -43,6 +43,7 @@ An overview of the nuclei template directory including number of templates assoc
 <summary> Nuclei templates </summary>
 
 ```
+├── CODE_OF_CONDUCT.md
 ├── LICENSE.md
 ├── README.md
 ├── cves
@@ -75,6 +76,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2018-1273.yaml
 │   │   ├── CVE-2018-13379.yaml
 │   │   ├── CVE-2018-13380.yaml
+│   │   ├── CVE-2018-14574.yaml
 │   │   ├── CVE-2018-14728.yaml
 │   │   ├── CVE-2018-16341.yaml
 │   │   ├── CVE-2018-16763.yaml
@@ -89,7 +91,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2018-5230.yaml
 │   │   ├── CVE-2018-7251.yaml
 │   │   ├── CVE-2018-7490.yaml
-│   │   └── CVE-2018-8006.yaml
+│   │   ├── CVE-2018-8006.yaml
+│   │   └── CVE-2018-8033.yaml
 │   ├── 2019
 │   │   ├── CVE-2019-10092.yaml
 │   │   ├── CVE-2019-1010287.yaml
@@ -117,6 +120,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2019-16759.yaml
 │   │   ├── CVE-2019-16920.yaml
 │   │   ├── CVE-2019-17382.yaml
+│   │   ├── CVE-2019-17506.yaml
 │   │   ├── CVE-2019-17558.yaml
 │   │   ├── CVE-2019-18394.yaml
 │   │   ├── CVE-2019-19368.yaml
@@ -145,69 +149,78 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2019-9733.yaml
 │   │   ├── CVE-2019-9955.yaml
 │   │   └── CVE-2019-9978.yaml
-│   └── 2020
-│       ├── CVE-2020-0618.yaml
-│       ├── CVE-2020-10148.yaml
-│       ├── CVE-2020-10199.yaml
-│       ├── CVE-2020-10204.yaml
-│       ├── CVE-2020-11034.yaml
-│       ├── CVE-2020-1147.yaml
-│       ├── CVE-2020-11738.yaml
-│       ├── CVE-2020-12116.yaml
-│       ├── CVE-2020-12720.yaml
-│       ├── CVE-2020-13167.yaml
-│       ├── CVE-2020-13942.yaml
-│       ├── CVE-2020-14179.yaml
-│       ├── CVE-2020-14181.yaml
-│       ├── CVE-2020-14864.yaml
-│       ├── CVE-2020-14882.yaml
-│       ├── CVE-2020-15129.yaml
-│       ├── CVE-2020-15505.yaml
-│       ├── CVE-2020-15920.yaml
-│       ├── CVE-2020-16846.yaml
-│       ├── CVE-2020-16952.yaml
-│       ├── CVE-2020-17505.yaml
-│       ├── CVE-2020-17506.yaml
-│       ├── CVE-2020-17518.yaml
-│       ├── CVE-2020-17519.yaml
-│       ├── CVE-2020-1943.yaml
-│       ├── CVE-2020-2096.yaml
-│       ├── CVE-2020-2140.yaml
-│       ├── CVE-2020-23972.yaml
-│       ├── CVE-2020-24223.yaml
-│       ├── CVE-2020-24312.yaml
-│       ├── CVE-2020-2551.yaml
-│       ├── CVE-2020-25540.yaml
-│       ├── CVE-2020-26214.yaml
-│       ├── CVE-2020-3187.yaml
-│       ├── CVE-2020-3452.yaml
-│       ├── CVE-2020-4463.yaml
-│       ├── CVE-2020-5284.yaml
-│       ├── CVE-2020-5405.yaml
-│       ├── CVE-2020-5410.yaml
-│       ├── CVE-2020-5412.yaml
-│       ├── CVE-2020-5776.yaml
-│       ├── CVE-2020-5777.yaml
-│       ├── CVE-2020-5902.yaml
-│       ├── CVE-2020-6287.yaml
-│       ├── CVE-2020-7209.yaml
-│       ├── CVE-2020-7318.yaml
-│       ├── CVE-2020-7961.yaml
-│       ├── CVE-2020-8091.yaml
-│       ├── CVE-2020-8115.yaml
-│       ├── CVE-2020-8163.yaml
-│       ├── CVE-2020-8191.yaml
-│       ├── CVE-2020-8193.yaml
-│       ├── CVE-2020-8194.yaml
-│       ├── CVE-2020-8209.yaml
-│       ├── CVE-2020-8512.yaml
-│       ├── CVE-2020-8982.yaml
-│       ├── CVE-2020-9047.yaml
-│       ├── CVE-2020-9344.yaml
-│       ├── CVE-2020-9376.yaml
-│       ├── CVE-2020-9484.yaml
-│       ├── CVE-2020-9496.yaml
-│       └── CVE-2020-9757.yaml
+│   ├── 2020
+│   │   ├── CVE-2020-0618.yaml
+│   │   ├── CVE-2020-10148.yaml
+│   │   ├── CVE-2020-11034.yaml
+│   │   ├── CVE-2020-1147.yaml
+│   │   ├── CVE-2020-11710.yaml
+│   │   ├── CVE-2020-11738.yaml
+│   │   ├── CVE-2020-12116.yaml
+│   │   ├── CVE-2020-12720.yaml
+│   │   ├── CVE-2020-13167.yaml
+│   │   ├── CVE-2020-13937.yaml
+│   │   ├── CVE-2020-13942.yaml
+│   │   ├── CVE-2020-14179.yaml
+│   │   ├── CVE-2020-14181.yaml
+│   │   ├── CVE-2020-14864.yaml
+│   │   ├── CVE-2020-14882.yaml
+│   │   ├── CVE-2020-15129.yaml
+│   │   ├── CVE-2020-15505.yaml
+│   │   ├── CVE-2020-15920.yaml
+│   │   ├── CVE-2020-16846.yaml
+│   │   ├── CVE-2020-16952.yaml
+│   │   ├── CVE-2020-17505.yaml
+│   │   ├── CVE-2020-17506.yaml
+│   │   ├── CVE-2020-17518.yaml
+│   │   ├── CVE-2020-17519.yaml
+│   │   ├── CVE-2020-17530.yaml
+│   │   ├── CVE-2020-1943.yaml
+│   │   ├── CVE-2020-2096.yaml
+│   │   ├── CVE-2020-2140.yaml
+│   │   ├── CVE-2020-23972.yaml
+│   │   ├── CVE-2020-24223.yaml
+│   │   ├── CVE-2020-24312.yaml
+│   │   ├── CVE-2020-24579.yaml
+│   │   ├── CVE-2020-2551.yaml
+│   │   ├── CVE-2020-25540.yaml
+│   │   ├── CVE-2020-26214.yaml
+│   │   ├── CVE-2020-27986.yaml
+│   │   ├── CVE-2020-3187.yaml
+│   │   ├── CVE-2020-3452.yaml
+│   │   ├── CVE-2020-35476.yaml
+│   │   ├── CVE-2020-4463.yaml
+│   │   ├── CVE-2020-5284.yaml
+│   │   ├── CVE-2020-5405.yaml
+│   │   ├── CVE-2020-5410.yaml
+│   │   ├── CVE-2020-5412.yaml
+│   │   ├── CVE-2020-5776.yaml
+│   │   ├── CVE-2020-5777.yaml
+│   │   ├── CVE-2020-5902.yaml
+│   │   ├── CVE-2020-6287.yaml
+│   │   ├── CVE-2020-7209.yaml
+│   │   ├── CVE-2020-7318.yaml
+│   │   ├── CVE-2020-7961.yaml
+│   │   ├── CVE-2020-8091.yaml
+│   │   ├── CVE-2020-8115.yaml
+│   │   ├── CVE-2020-8163.yaml
+│   │   ├── CVE-2020-8191.yaml
+│   │   ├── CVE-2020-8193.yaml
+│   │   ├── CVE-2020-8194.yaml
+│   │   ├── CVE-2020-8209.yaml
+│   │   ├── CVE-2020-8512.yaml
+│   │   ├── CVE-2020-8515.yaml
+│   │   ├── CVE-2020-8982.yaml
+│   │   ├── CVE-2020-9047.yaml
+│   │   ├── CVE-2020-9344.yaml
+│   │   ├── CVE-2020-9376.yaml
+│   │   ├── CVE-2020-9484.yaml
+│   │   ├── CVE-2020-9496.yaml
+│   │   └── CVE-2020-9757.yaml
+│   └── 2021
+│       ├── CVE-2021-22873.yaml
+│       ├── CVE-2021-25646.yaml
+│       └── CVE-2021-3019.yaml
 ├── default-logins
 │   ├── activemq
 │   │   └── activemq-default-login.yaml
@@ -268,6 +281,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── kafka-connect-ui.yaml
 │   ├── kafka-monitoring.yaml
 │   ├── kafka-topics-ui.yaml
+│   ├── key-cloak-admin-panel.yaml
 │   ├── kubernetes-dashboard.yaml
 │   ├── manage-engine-admanager-panel.yaml
 │   ├── mobileiron-login.yaml
@@ -331,12 +345,14 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── zip-backup-files.yaml
 │   ├── configs
 │   │   ├── airflow-configuration-exposure.yaml
+│   │   ├── alibaba-canal-info-leak.yaml
 │   │   ├── amazon-docker-config-disclosure.yaml
 │   │   ├── ansible-config-disclosure.yaml
 │   │   ├── composer-config.yaml
 │   │   ├── exposed-svn.yaml
 │   │   ├── git-config-nginxoffbyslash.yaml
 │   │   ├── git-config.yaml
+│   │   ├── gmail-api-client-secrets.yaml
 │   │   ├── htpasswd-detection.yaml
 │   │   ├── laravel-env.yaml
 │   │   ├── magento-config.yaml
@@ -347,7 +363,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── phpinfo.yaml
 │   │   ├── rails-database-config.yaml
 │   │   ├── redmine-db-config.yaml
-│   │   ├── server-status-localhost.yaml
 │   │   ├── syfmony-profiler.yaml
 │   │   ├── symfony-database-config.yaml
 │   │   ├── symfony-profiler.yaml
@@ -371,16 +386,12 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── arbitrary-file-read.yaml
 │   ├── directory-traversal.yaml
 │   ├── generic-lfi-fuzzing.yaml
-│   ├── iis-shortname.yaml
-│   └── wp-plugin-scan.yaml
+│   └── iis-shortname.yaml
 ├── helpers
-│   ├── payloads
-│   │   ├── CVE-2020-5776.csv
-│   │   └── CVE-2020-6287.xml
-│   └── wordlists
-│       └── wp-plugins.txt
+│   └── payloads
+│       ├── CVE-2020-5776.csv
+│       └── CVE-2020-6287.xml
 ├── miscellaneous
-│   ├── basic-cors-flash.yaml
 │   ├── dir-listing.yaml
 │   ├── htaccess-config.yaml
 │   ├── missing-csp.yaml
@@ -392,7 +403,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── security.txt.yaml
 │   ├── trace-method.yaml
 │   ├── unencrypted-bigip-ltm-cookie.yaml
-│   ├── wp-xmlrpc.yaml
 │   └── xml-schema-detect.yaml
 ├── misconfiguration
 │   ├── aem-groovyconsole.yaml
@@ -403,12 +413,12 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── aws-redirect.yaml
 │   ├── cgi-test-page.yaml
 │   ├── django-debug-detect.yaml
-│   ├── docker-api.yaml
 │   ├── docker-registry.yaml
 │   ├── druid-monitor.yaml
 │   ├── drupal-user-enum-ajax.yaml
 │   ├── drupal-user-enum-redirect.yaml
 │   ├── elasticsearch.yaml
+│   ├── exposed-docker-api.yaml
 │   ├── exposed-kibana.yaml
 │   ├── exposed-service-now.yaml
 │   ├── front-page-misconfig.yaml
@@ -419,13 +429,22 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── larvel-debug.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── nginx-status.yaml
 │   ├── php-errors.yaml
+│   ├── php-fpm-status.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
 │   ├── salesforce-aura-misconfig.yaml
+│   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
-│   ├── springboot-detect.yaml
+│   ├── springboot
+│   │   ├── springboot-configprops.yaml
+│   │   ├── springboot-env.yaml
+│   │   ├── springboot-heapdump.yaml
+│   │   ├── springboot-loggers.yaml
+│   │   ├── springboot-mappings.yaml
+│   │   └── springboot-trace.yaml
 │   ├── symfony-debugmode.yaml
 │   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
@@ -442,6 +461,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── cacti-detect.yaml
 │   ├── clockwork-php-page.yaml
 │   ├── couchdb-detect.yaml
+│   ├── detect-springboot-actuator.yaml
 │   ├── favicon-detection.yaml
 │   ├── firebase-detect.yaml
 │   ├── google-storage.yaml
@@ -468,6 +488,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── s3-detect.yaml
 │   ├── sap-netweaver-as-java-detect.yaml
 │   ├── sap-netweaver-detect.yaml
+│   ├── selea-ip-camera.yaml
 │   ├── shiro-detect.yaml
 │   ├── sql-server-reporting.yaml
 │   ├── tech-detect.yaml
@@ -505,12 +526,16 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── oracle
 │   │   └── oracle-ebs-bispgraph-file-access.yaml
 │   ├── other
+│   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
 │   │   ├── aspnuke-openredirect.yaml
-│   │   ├── bullwark-momentum-series-directory-traversal.yaml
+│   │   ├── bullwark-momentum-lfi.yaml
 │   │   ├── cached-aem-pages.yaml
+│   │   ├── chamilo-lms-xss.yaml
 │   │   ├── couchdb-adminparty.yaml
 │   │   ├── discourse-xss.yaml
+│   │   ├── dlink-850L-info-leak.yaml
+│   │   ├── keycloak-xss.yaml
 │   │   ├── mcafee-epo-rce.yaml
 │   │   ├── microstrategy-ssrf.yaml
 │   │   ├── mida-eframework-xss.yaml
@@ -520,13 +545,16 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── rce-shellshock-user-agent.yaml
 │   │   ├── rce-via-java-deserialization.yaml
 │   │   ├── rconfig-rce.yaml
+│   │   ├── sangfor-edr-rce.yaml
 │   │   ├── sick-beard-xss.yaml
+│   │   ├── sonicwall-sslvpn-shellshock.yaml
 │   │   ├── symantec-messaging-gateway.yaml
 │   │   ├── thinkific-redirect.yaml
 │   │   ├── tikiwiki-reflected-xss.yaml
 │   │   ├── twig-php-ssti.yaml
 │   │   ├── vpms-auth-bypass.yaml
 │   │   ├── wems-manager-xss.yaml
+│   │   ├── wooyun-path-traversal.yaml
 │   │   ├── yarn-resourcemanager-rce.yaml
 │   │   └── zms-auth-bypass.yaml
 │   ├── rails
@@ -557,7 +585,9 @@ An overview of the nuclei template directory including number of templates assoc
 │       ├── wordpress-tmm-db-migrate.yaml
 │       ├── wordpress-user-enumeration.yaml
 │       ├── wordpress-wordfence-xss.yaml
-│       └── wordpress-wpcourses-info-disclosure.yaml
+│       ├── wordpress-wpcourses-info-disclosure.yaml
+│       ├── wp-enabled-registration.yaml
+│       └── wp-xmlrpc.yaml
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── bigip-workflow.yaml
@@ -580,7 +610,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**54 directories, 479 files**.
+**55 directories, 508 files**.
 
 📖 Documentation
 -----
