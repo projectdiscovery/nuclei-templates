@@ -32,7 +32,7 @@ An overview of the nuclei template directory including number of templates assoc
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 40      |
 | fuzzing         | 4           | helpers          | 2        |
-| miscellaneous   | 13     | misconfiguration | 39 |
+| miscellaneous   | 12     | misconfiguration | 39 |
 | takeovers       | 1         | technologies     | 46     |
 | vulnerabilities | 73 | workflows        | 17        |
 
@@ -389,7 +389,6 @@ An overview of the nuclei template directory including number of templates assoc
 │       ├── CVE-2020-5776.csv
 │       └── CVE-2020-6287.xml
 ├── miscellaneous
-│   ├── basic-cors-flash.yaml
 │   ├── dir-listing.yaml
 │   ├── htaccess-config.yaml
 │   ├── missing-csp.yaml
@@ -606,7 +605,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 504 files**.
+**55 directories, 503 files**.
 
 📖 Documentation
 -----
