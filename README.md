@@ -30,9 +30,9 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 165            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
-| exposed-tokens  | 9  | exposures        | 41      |
+| exposed-tokens  | 9  | exposures        | 42      |
 | fuzzing         | 4           | helpers          | 2        |
-| miscellaneous   | 12     | misconfiguration | 39 |
+| miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 46     |
 | vulnerabilities | 75 | workflows        | 17        |
 
@@ -373,6 +373,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── ds_store.yaml
 │   │   ├── exposed-alps-spring.yaml
 │   │   ├── filezilla.yaml
+│   │   ├── golang-metrics.yaml
 │   │   ├── lazy-file.yaml
 │   │   ├── server-private-keys.yaml
 │   │   └── xprober-service.yaml
@@ -429,6 +430,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── larvel-debug.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── misconfigured-docker.yaml
 │   ├── nginx-status.yaml
 │   ├── php-errors.yaml
 │   ├── php-fpm-status.yaml
@@ -610,7 +612,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 508 files**.
+**55 directories, 510 files**.
 
 📖 Documentation
 -----
