@@ -28,13 +28,13 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 167            | default-logins   | 8 |
+| cves            | 168            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 42      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 46     |
-| vulnerabilities | 75 | workflows        | 17        |
+| vulnerabilities | 75 | workflows        | 18        |
 
 
 **Tree structure of nuclei templates:**
@@ -57,6 +57,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── CVE-2014-6271.yaml
 │   ├── 2017
 │   │   ├── CVE-2017-10075.yaml
+│   │   ├── CVE-2017-10271.yaml
 │   │   ├── CVE-2017-11444.yaml
 │   │   ├── CVE-2017-12637.yaml
 │   │   ├── CVE-2017-14537.yaml
@@ -609,12 +610,13 @@ An overview of the nuclei template directory including number of templates assoc
     ├── springboot-workflow.yaml
     ├── thinkphp-workflow.yaml
     ├── vbulletin-workflow.yaml
+    ├── weblogic-workflow.yaml
     └── wordpress-workflow.yaml
 ```
 
 </details>
 
-**55 directories, 512 files**.
+**55 directories, 514 files**.
 
 📖 Documentation
 -----
