@@ -33,7 +33,7 @@ An overview of the nuclei template directory including number of templates assoc
 | exposed-tokens  | 9  | exposures        | 42      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
-| takeovers       | 1         | technologies     | 46     |
+| takeovers       | 1         | technologies     | 45     |
 | vulnerabilities | 75 | workflows        | 18        |
 
 
@@ -465,7 +465,6 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── bigip-config-utility-detect.yaml
 │   ├── cacti-detect.yaml
 │   ├── clockwork-php-page.yaml
-│   ├── couchdb-detect.yaml
 │   ├── detect-springboot-actuator.yaml
 │   ├── favicon-detection.yaml
 │   ├── firebase-detect.yaml
@@ -616,7 +615,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 514 files**.
+**55 directories, 513 files**.
 
 📖 Documentation
 -----
