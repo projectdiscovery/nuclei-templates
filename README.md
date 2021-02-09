@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 77 | workflows        | 18        |
+| vulnerabilities | 78 | workflows        | 18        |
 
 
 **Tree structure of nuclei templates:**
@@ -525,6 +525,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── jira-unauthenticated-adminprojects.yaml
 │   │   ├── jira-unauthenticated-dashboards.yaml
 │   │   ├── jira-unauthenticated-popular-filters.yaml
+│   │   ├── jira-unauthenticated-projectcategories.yaml
 │   │   ├── jira-unauthenticated-projects.yaml
 │   │   ├── jira-unauthenticated-resolutions.yaml
 │   │   └── jira-unauthenticated-user-picker.yaml
@@ -619,7 +620,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 517 files**.
+**55 directories, 518 files**.
 
 📖 Documentation
 -----
