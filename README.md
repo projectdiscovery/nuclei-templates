@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 175            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
-| exposed-tokens  | 9  | exposures        | 42      |
+| exposed-tokens  | 9  | exposures        | 43      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 45     |
@@ -359,6 +359,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── amazon-docker-config-disclosure.yaml
 │   │   ├── ansible-config-disclosure.yaml
 │   │   ├── composer-config.yaml
+│   │   ├── docker-compose-config.yml
 │   │   ├── exposed-svn.yaml
 │   │   ├── git-config-nginxoffbyslash.yaml
 │   │   ├── git-config.yaml
@@ -626,7 +627,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 524 files**.
+**55 directories, 525 files**.
 
 📖 Documentation
 -----
