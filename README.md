@@ -28,7 +28,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 172            | default-logins   | 8 |
+| cves            | 173            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 42      |
 | fuzzing         | 4           | helpers          | 2        |
@@ -135,6 +135,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2019-3396.yaml
 │   │   ├── CVE-2019-3402.yaml
 │   │   ├── CVE-2019-3799.yaml
+│   │   ├── CVE-2019-5127.yaml
 │   │   ├── CVE-2019-5418.yaml
 │   │   ├── CVE-2019-6112.yaml
 │   │   ├── CVE-2019-6340.yaml
@@ -622,7 +623,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 520 files**.
+**55 directories, 521 files**.
 
 📖 Documentation
 -----
