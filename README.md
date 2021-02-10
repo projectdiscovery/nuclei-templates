@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 78 | workflows        | 18        |
+| vulnerabilities | 79 | workflows        | 18        |
 
 
 **Tree structure of nuclei templates:**
@@ -541,6 +541,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── other
 │   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
+│   │   ├── apache-flink-unauth-rce.yaml
 │   │   ├── aspnuke-openredirect.yaml
 │   │   ├── bullwark-momentum-lfi.yaml
 │   │   ├── cached-aem-pages.yaml
@@ -624,7 +625,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 522 files**.
+**55 directories, 523 files**.
 
 📖 Documentation
 -----
