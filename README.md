@@ -445,7 +445,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── php-fpm-status.yaml
 │   ├── put-method-enabled.yaml
 │   ├── rack-mini-profiler.yaml
-│   ├── salesforce-aura-misconfig.yaml
+│   ├── salesforce-aura.yaml
 │   ├── server-status-localhost.yaml
 │   ├── shell-history.yaml
 │   ├── sidekiq-dashboard.yaml
