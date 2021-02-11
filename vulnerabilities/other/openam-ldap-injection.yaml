@@ -1,24 +1,74 @@
-id: openam-ldap-injection
+id: detect-openam
 
 info:
-  name: LDAP Injection In OPENAM
-  author: xelkomy
-  severity: high
-  description: The vulnerability was found in the password reset feature that OpenAM provides. When a user tries to reset his password, he is asked to enter his username then the backend validates whether the user exists or not through an LDAP query before the password reset token is sent to the user’s email.
+  name: Detect openam reset password token
+  author: melbadry9 & xelkomy
+  severity: info
+  description: The vulnerability was found in the password reset feature that OpenAM provides. When a user tries to reset his password, he is asked to enter his username then the backend validates whether the user exists or not through an LDAP query before the password reset token is sent to the userâ€™s email.
 
   # reference: https://blog.cybercastle.io/ldap-injection-in-openam/
 
 requests:
-  - method: GET
-    path:
-      - '{{BaseURL}/openam/ui/PWResetUserValidation'
-      - '{{BaseURL}/ui/PWResetUserValidation'
-    matchers-condition: and
+  - raw:
+    - |
+      GET /openam/ui/PWResetUserValidation HTTP/1.1
+      Host: {{Hostname}}
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        
+
+    - |
+      GET /OpenAM-11.0.0/ui/PWResetUserValidation HTTP/1.1
+      Host: {{Hostname}}
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        
+    - |
+      GET /ui/PWResetUserValidation HTTP/1.1
+      Host: {{Hostname}}
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        
+#    - | 
+#      POST /openam/ui/PWResetUserValidation HTTP/1.1
+#      Host: {{Hostname}}
+#      Content-Type: application/x-www-form-urlencoded
+#      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+#      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+#      Accept-Encoding: gzip, deflate
+#      Accept-Language: en-US,en;q=0.9
+#      
+#      PWResetUserValidation.fldUserAttr=uid&PWResetUserValidation.tfUserAttr=*&PWResetUserValidation.btnNext=Next&jato.defaultCommand=%2FbtnNext&jato.pageSession={{page_session}}
+
     matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - "jato.defaultCommand"
-        part: body
+#      - type: status
+#        status:
+#          - 200
+
+#      - type: word
+#        name: detect-openam
+#        words:
+#          - "jato.pageSession"
+#        part: body
+      
+      - type: dsl
+        name: detect-openam
+        dsl: 
+          - 'contains(body, "jato.pageSession") && status_code==200'
+
+
+#      - type: dsl
+#        name: vulnerable
+#        dsl: 
+#          - 'contains(body_2, "There is more than one user matching the specified value. Enter a different value, or contact your administrator for assistance.") && status_code==200'
+#          - 'contains(body_2, "An error occurred while processing this request") && status_code==200'
+#        condition: or
+
+#    extractors:
+#      - type: regex
+#        name: page_session
+#        part: body
+#        group: 1
+#        regex:
+#          - 'name="jato.pageSession" value="([\w\$]+)"|name="jato.pageSession" value="()"'
+
