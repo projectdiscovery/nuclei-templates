@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 79 | workflows        | 18        |
+| vulnerabilities | 80 | workflows        | 18        |
 
 
 **Tree structure of nuclei templates:**
@@ -565,6 +565,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── sick-beard-xss.yaml
 │   │   ├── sonicwall-sslvpn-shellshock.yaml
 │   │   ├── symantec-messaging-gateway.yaml
+│   │   ├── thinkcmf-lfi.yaml
 │   │   ├── thinkific-redirect.yaml
 │   │   ├── tikiwiki-reflected-xss.yaml
 │   │   ├── twig-php-ssti.yaml
@@ -627,7 +628,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**55 directories, 525 files**.
+**55 directories, 526 files**.
 
 📖 Documentation
 -----
