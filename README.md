@@ -32,7 +32,7 @@ An overview of the nuclei template directory including number of templates assoc
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
-| miscellaneous   | 12     | misconfiguration | 40 |
+| miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
 | vulnerabilities | 81 | workflows        | 18        |
 
@@ -439,12 +439,14 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── exposed-service-now.yaml
 │   ├── front-page-misconfig.yaml
 │   ├── hadoop-unauth.yaml
+│   ├── jboss-status.yaml
 │   ├── jkstatus-manager.yaml
 │   ├── jupyter-ipython-unauth.yaml
 │   ├── kubernetes-pods.yaml
 │   ├── larvel-debug.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── mikrotik-graph.yaml
 │   ├── misconfigured-docker.yaml
 │   ├── nginx-status.yaml
 │   ├── php-errors.yaml
@@ -466,6 +468,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-nacos-access.yaml
+│   ├── unauthenticated-prtg.yaml
 │   ├── wamp-xdebug-detect.yaml
 │   └── zenphoto-installation-sensitive-info.yaml
 ├── takeovers
@@ -634,7 +637,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 531 files**.
+**56 directories, 534 files**.
 
 📖 Documentation
 -----
