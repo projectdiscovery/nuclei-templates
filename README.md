@@ -30,7 +30,7 @@ An overview of the nuclei template directory including number of templates assoc
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
 | cves            | 176            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
-| exposed-tokens  | 9  | exposures        | 43      |
+| exposed-tokens  | 9  | exposures        | 44      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 40 |
 | takeovers       | 1         | technologies     | 45     |
@@ -386,6 +386,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── exposed-alps-spring.yaml
 │   │   ├── filezilla.yaml
 │   │   ├── golang-metrics.yaml
+│   │   ├── keycloak-json.yaml
 │   │   ├── lazy-file.yaml
 │   │   ├── server-private-keys.yaml
 │   │   └── xprober-service.yaml
@@ -631,7 +632,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 528 files**.
+**56 directories, 529 files**.
 
 📖 Documentation
 -----
