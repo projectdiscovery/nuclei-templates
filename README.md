@@ -28,11 +28,11 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 176            | default-logins   | 8 |
+| cves            | 177            | default-logins   | 8 |
 | dns             | 6               | exposed-panels   | 74   |
-| exposed-tokens  | 9  | exposures        | 44      |
+| exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
-| miscellaneous   | 12     | misconfiguration | 40 |
+| miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
 | vulnerabilities | 81 | workflows        | 18        |
 
@@ -160,6 +160,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2020-1147.yaml
 │   │   ├── CVE-2020-11710.yaml
 │   │   ├── CVE-2020-11738.yaml
+│   │   ├── CVE-2020-11991.yaml
 │   │   ├── CVE-2020-12116.yaml
 │   │   ├── CVE-2020-12720.yaml
 │   │   ├── CVE-2020-13167.yaml
@@ -367,6 +368,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── gmail-api-client-secrets.yaml
 │   │   ├── htpasswd-detection.yaml
 │   │   ├── laravel-env.yaml
+│   │   ├── lvmeng-uts-disclosure.yaml
 │   │   ├── magento-config.yaml
 │   │   ├── opcache-status-exposure.yaml
 │   │   ├── owncloud-config.yaml
@@ -437,12 +439,14 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── exposed-service-now.yaml
 │   ├── front-page-misconfig.yaml
 │   ├── hadoop-unauth.yaml
+│   ├── jboss-status.yaml
 │   ├── jkstatus-manager.yaml
 │   ├── jupyter-ipython-unauth.yaml
 │   ├── kubernetes-pods.yaml
 │   ├── larvel-debug.yaml
 │   ├── linkerd-ssrf-detect.yaml
 │   ├── manage-engine-ad-search.yaml
+│   ├── mikrotik-graph.yaml
 │   ├── misconfigured-docker.yaml
 │   ├── nginx-status.yaml
 │   ├── php-errors.yaml
@@ -464,6 +468,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── tomcat-scripts.yaml
 │   ├── unauthenticated-airflow.yaml
 │   ├── unauthenticated-nacos-access.yaml
+│   ├── unauthenticated-prtg.yaml
 │   ├── wamp-xdebug-detect.yaml
 │   └── zenphoto-installation-sensitive-info.yaml
 ├── takeovers
@@ -632,7 +637,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 529 files**.
+**56 directories, 534 files**.
 
 📖 Documentation
 -----
