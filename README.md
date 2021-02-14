@@ -28,7 +28,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 177            | default-logins   | 8 |
+| cves            | 177            | default-logins   | 9 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
@@ -242,6 +242,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── tomcat-manager-default.yaml
 │   ├── grafana
 │   │   └── grafana-default-credential.yaml
+│   ├── nps
+│   │   └── nps-default-password.yaml
 │   ├── ofbiz
 │   │   └── ofbiz-default-credentials.yaml
 │   ├── rabbitmq
@@ -639,7 +641,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 536 files**.
+**57 directories, 537 files**.
 
 📖 Documentation
 -----
