@@ -524,8 +524,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── basic-cors.yaml
 │   │   ├── basic-xss-prober.yaml
 │   │   ├── crlf-injection.yaml
-│   │   ├── top-xss-params.yaml
-│   │   └── url-redirect.yaml
+│   │   ├── open-redirect.yaml
+│   │   └── top-xss-params.yaml
 │   ├── ibm
 │   │   ├── eclipse-help-system-xss.yaml
 │   │   └── ibm-infoprint-directory-traversal.yaml
