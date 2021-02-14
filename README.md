@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 81 | workflows        | 18        |
+| vulnerabilities | 82 | workflows        | 18        |
 
 
 **Tree structure of nuclei templates:**
@@ -524,8 +524,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── basic-cors.yaml
 │   │   ├── basic-xss-prober.yaml
 │   │   ├── crlf-injection.yaml
-│   │   ├── top-xss-params.yaml
-│   │   └── url-redirect.yaml
+│   │   ├── open-redirect.yaml
+│   │   └── top-xss-params.yaml
 │   ├── ibm
 │   │   ├── eclipse-help-system-xss.yaml
 │   │   └── ibm-infoprint-directory-traversal.yaml
@@ -565,6 +565,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── nginx-module-vts-xss.yaml
 │   │   ├── nuuo-nvrmini2-rce.yaml
 │   │   ├── pdf-signer-ssti-to-rce.yaml
+│   │   ├── powercreator-cms-rce.yaml
 │   │   ├── rce-shellshock-user-agent.yaml
 │   │   ├── rce-via-java-deserialization.yaml
 │   │   ├── rconfig-rce.yaml
@@ -637,7 +638,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**56 directories, 534 files**.
+**56 directories, 535 files**.
 
 📖 Documentation
 -----
