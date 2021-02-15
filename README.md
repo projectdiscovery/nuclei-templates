@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 83 | workflows        | 18        |
+| vulnerabilities | 86 | workflows        | 19        |
 
 
 **Tree structure of nuclei templates:**
@@ -595,6 +595,10 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── zms-auth-bypass.yaml
 │   ├── rails
 │   │   └── rails6-xss.yaml
+│   ├── samsung
+│   │   ├── samsung-wlan-ap-lfi.yaml
+│   │   ├── samsung-wlan-ap-rce.yaml
+│   │   └── samsung-wlan-ap-xss.yaml
 │   ├── springboot
 │   │   ├── springboot-actuators-jolokia-xxe.yaml
 │   │   └── springboot-h2-db-rce.yaml
@@ -639,6 +643,7 @@ An overview of the nuclei template directory including number of templates assoc
     ├── mida-eframework-workflow.yaml
     ├── netsweeper-workflow.yaml
     ├── rabbitmq-workflow.yaml
+    ├── samsung-wlan-ap-workflow.yaml
     ├── sap-netweaver-workflow.yaml
     ├── solarwinds-orion-workflow.yaml
     ├── springboot-workflow.yaml
@@ -650,7 +655,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**57 directories, 546 files**.
+**58 directories, 550 files**.
 
 📖 Documentation
 -----
