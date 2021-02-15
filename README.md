@@ -28,7 +28,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 186            | default-logins   | 9 |
+| cves            | 186            | default-logins   | 10 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
@@ -257,6 +257,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── ofbiz-default-credentials.yaml
 │   ├── rabbitmq
 │   │   └── rabbitmq-default-admin.yaml
+│   ├── samsung
+│   │   └── samsung-wlan-ap-default-credentials.yaml
 │   ├── solarwinds
 │   │   └── solarwinds-default-admin.yaml
 │   └── zabbix
@@ -655,7 +657,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**58 directories, 550 files**.
+**59 directories, 551 files**.
 
 📖 Documentation
 -----
