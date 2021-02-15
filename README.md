@@ -28,13 +28,12 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 186            | default-logins   | 9 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 84 | workflows        | 18        |
+
 
 
 **Tree structure of nuclei templates:**
@@ -54,12 +53,16 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── 2013
 │   │   └── CVE-2013-2251.yaml
 │   ├── 2014
+│   │   ├── CVE-2014-3120.yaml
 │   │   └── CVE-2014-6271.yaml
+│   ├── 2015
+│   │   └── CVE-2015-1427.yaml
 │   ├── 2017
 │   │   ├── CVE-2017-10075.yaml
 │   │   ├── CVE-2017-10271.yaml
 │   │   ├── CVE-2017-11444.yaml
 │   │   ├── CVE-2017-12615.yaml
+│   │   ├── CVE-2017-12635.yaml
 │   │   ├── CVE-2017-12637.yaml
 │   │   ├── CVE-2017-14537.yaml
 │   │   ├── CVE-2017-14849.yaml
@@ -94,6 +97,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── CVE-2018-5230.yaml
 │   │   ├── CVE-2018-7251.yaml
 │   │   ├── CVE-2018-7490.yaml
+│   │   ├── CVE-2018-7600.yaml
 │   │   ├── CVE-2018-8006.yaml
 │   │   └── CVE-2018-8033.yaml
 │   ├── 2019
@@ -257,6 +261,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── ofbiz-default-credentials.yaml
 │   ├── rabbitmq
 │   │   └── rabbitmq-default-admin.yaml
+│   ├── samsung
+│   │   └── samsung-wlan-ap-default-credentials.yaml
 │   ├── solarwinds
 │   │   └── solarwinds-default-admin.yaml
 │   └── zabbix
@@ -595,6 +601,10 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   └── zms-auth-bypass.yaml
 │   ├── rails
 │   │   └── rails6-xss.yaml
+│   ├── samsung
+│   │   ├── samsung-wlan-ap-lfi.yaml
+│   │   ├── samsung-wlan-ap-rce.yaml
+│   │   └── samsung-wlan-ap-xss.yaml
 │   ├── springboot
 │   │   ├── springboot-actuators-jolokia-xxe.yaml
 │   │   └── springboot-h2-db-rce.yaml
@@ -640,6 +650,7 @@ An overview of the nuclei template directory including number of templates assoc
     ├── mida-eframework-workflow.yaml
     ├── netsweeper-workflow.yaml
     ├── rabbitmq-workflow.yaml
+    ├── samsung-wlan-ap-workflow.yaml
     ├── sap-netweaver-workflow.yaml
     ├── solarwinds-orion-workflow.yaml
     ├── springboot-workflow.yaml
@@ -651,7 +662,6 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**57 directories, 547 files**.
 
 📖 Documentation
 -----
