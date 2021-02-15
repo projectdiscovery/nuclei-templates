@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 86 | workflows        | 19        |
+| vulnerabilities | 87 | workflows        | 19        |
 
 
 **Tree structure of nuclei templates:**
@@ -636,6 +636,7 @@ An overview of the nuclei template directory including number of templates assoc
 │       ├── wordpress-user-enumeration.yaml
 │       ├── wordpress-wordfence-xss.yaml
 │       ├── wordpress-wpcourses-info-disclosure.yaml
+│       ├── wordpress-zebra-form-xss.yaml
 │       ├── wp-enabled-registration.yaml
 │       └── wp-xmlrpc.yaml
 └── workflows
@@ -662,7 +663,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**60 directories, 555 files**.
+**60 directories, 556 files**.
 
 📖 Documentation
 -----
