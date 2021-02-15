@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 87 | workflows        | 19        |
+| vulnerabilities | 88 | workflows        | 20        |
 
 
 **Tree structure of nuclei templates:**
@@ -572,6 +572,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── aspnuke-openredirect.yaml
 │   │   ├── bullwark-momentum-lfi.yaml
 │   │   ├── cached-aem-pages.yaml
+│   │   ├── cacti-weathermap-file-write.yaml
 │   │   ├── chamilo-lms-xss.yaml
 │   │   ├── couchdb-adminparty.yaml
 │   │   ├── discourse-xss.yaml
@@ -642,6 +643,7 @@ An overview of the nuclei template directory including number of templates assoc
 └── workflows
     ├── artica-web-proxy-workflow.yaml
     ├── bigip-workflow.yaml
+    ├── cacti-workflow.yaml
     ├── cisco-asa-workflow.yaml
     ├── grafana-workflow.yaml
     ├── jira-workflow.yaml
@@ -663,7 +665,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**60 directories, 556 files**.
+**60 directories, 558 files**.
 
 📖 Documentation
 -----
