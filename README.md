@@ -34,7 +34,7 @@ An overview of the nuclei template directory including number of templates assoc
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 88 | workflows        | 20        |
+| vulnerabilities | 89 | workflows        | 20        |
 
 
 **Tree structure of nuclei templates:**
@@ -564,7 +564,8 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── moodle-filter-jmol-lfi.yaml
 │   │   └── moodle-filter-jmol-xss.yaml
 │   ├── oracle
-│   │   └── oracle-ebs-bispgraph-file-access.yaml
+│   │   ├── oracle-ebs-bispgraph-file-access.yaml
+│   │   └── oracle-glassfish-lfi.yaml
 │   ├── other
 │   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
@@ -665,7 +666,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 </details>
 
-**60 directories, 558 files**.
+**60 directories, 559 files**.
 
 📖 Documentation
 -----
