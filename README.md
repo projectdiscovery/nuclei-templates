@@ -28,13 +28,13 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates       | Counts                          | Templates        | Counts                         |
 | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves            | 190            | default-logins   | 10 |
+| cves            | 191            | default-logins   | 10 |
 | dns             | 6               | exposed-panels   | 74   |
 | exposed-tokens  | 9  | exposures        | 45      |
 | fuzzing         | 4           | helpers          | 2        |
 | miscellaneous   | 12     | misconfiguration | 43 |
 | takeovers       | 1         | technologies     | 45     |
-| vulnerabilities | 89 | workflows        | 20        |
+| vulnerabilities | 88 | workflows        | 20        |
 
 
 **Tree structure of nuclei templates:**
@@ -59,6 +59,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   ├── 2015
 │   │   └── CVE-2015-1427.yaml
 │   ├── 2017
+│   │   ├── CVE-2017-1000028.yaml
 │   │   ├── CVE-2017-10075.yaml
 │   │   ├── CVE-2017-10271.yaml
 │   │   ├── CVE-2017-11444.yaml
@@ -564,8 +565,7 @@ An overview of the nuclei template directory including number of templates assoc
 │   │   ├── moodle-filter-jmol-lfi.yaml
 │   │   └── moodle-filter-jmol-xss.yaml
 │   ├── oracle
-│   │   ├── oracle-ebs-bispgraph-file-access.yaml
-│   │   └── oracle-glassfish-lfi.yaml
+│   │   └── oracle-ebs-bispgraph-file-access.yaml
 │   ├── other
 │   │   ├── CNVD-2020-62422.yaml
 │   │   ├── acme-xss.yaml
