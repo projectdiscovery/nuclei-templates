@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import os
+import glob
 import subprocess
 
 def countTpl(path):
-	return len(os.listdir(path))
+	return len(glob.glob(path + "/*.*"))
 
 def command(args, start=None, end=None):
 	return "\n".join(subprocess.run(args, text=True, capture_output=True).stdout.split("\n")[start:end])[:-1]
