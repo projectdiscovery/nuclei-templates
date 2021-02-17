@@ -26,7 +26,7 @@ Nuclei Templates
 Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** or [Github issue](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) and grow the list.
 
 
-## Nuclei templates overview
+## Nuclei Templates overview
 
 
 An overview of the nuclei template directory including number of templates associated with each directory. 
@@ -34,9 +34,6 @@ An overview of the nuclei template directory including number of templates assoc
 <table>
 <tr>
 <td> 
-
-**Directory structure of nuclei templates:**
-
 
 | Templates      | Counts                         | Templates       | Counts                          | Templates        | Counts                         |
 | -------------- | ------------------------------ | --------------- | ------------------------------- | ---------------- | ------------------------------ |
