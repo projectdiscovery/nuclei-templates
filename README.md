@@ -45,6 +45,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 **63 directories, 609 files**.
 
+
 </td>
 </tr>
 </table>
