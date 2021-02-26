@@ -1,0 +1,44 @@
+id: dell-idrac-detect
+info:
+  name: Detect Dell iDRAC
+  author: kophjager007
+  description: The Integrated Dell Remote Access Controller (iDRAC) is designed for secure local and remote server management and helps IT administrators deploy, update and monitor Dell EMC PowerEdge servers.
+  severity: info
+
+requests:
+  - method: GET
+    headers:
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36
+    path:
+      - "{{BaseURL}}/restgui/start.html"
+      - "{{BaseURL}}/sysmgmt/2015/bmc/info" # Firmware Version and other info (iDRAC9)
+      - "{{BaseURL}}/login.html"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "Dell Integrated Remote Access Controller "
+          - "Integrated Dell Remote Access Controller"
+          - "iDRAC"
+          - "PowerEdge"
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - iDRAC/[0-9]{1,2}
+      - type: regex
+        part: body
+        regex:
+          - iDRAC[0-9]{1,2}
+      - type: regex
+        part: body
+        name: fwver
+        group: 1
+        regex:
+          - '"FwVer" *: *"([^"]+)"'
