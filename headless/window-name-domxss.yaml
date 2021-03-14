@@ -1,0 +1,81 @@
+id: window-name-domxss
+
+info:
+  name: window.name DOM XSS
+  author: pd-team
+  severity: medium
+  reference: https://public-firing-range.appspot.com/dom/index.html
+  tags: headless,xss,domxss
+
+headless:
+  - steps:
+      - action: setheader
+        args:
+          part: response
+          key: Content-Security-Policy
+          value: "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
+      - action: script
+        args:
+          hook: true
+          code: |
+            (function() {window.alerts = [];
+
+            function logger(found) {
+            	window.alerts.push(found);
+            }
+
+            function getStackTrace () {
+              var stack;
+              try {
+                throw new Error('');
+              }
+              catch (error) {
+                stack = error.stack || '';
+              }
+              stack = stack.split('\n').map(function (line) { return line.trim(); });
+              return stack.splice(stack[0] == 'Error' ? 2 : 1);
+            }
+            window.name = "{{randstr_1}}'\"<>";
+
+            var oldEval = eval;
+            var oldDocumentWrite = document.write;
+            var setter = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+            Object.defineProperty(Element.prototype, 'innerHTML', {
+              set: function innerHTML_Setter(val) {
+                if (val.includes("{{randstr_1}}'\"<>")) {
+                  logger({sink: 'innerHTML', source: 'window.name', code: val, stack: getStackTrace()});
+                }
+                return setter.call(this, val)
+              }
+            });
+            eval = function(data) {
+              if (data.includes("{{randstr_1}}'\"<>")) {
+                logger({sink: 'eval' ,source: 'window.name', code: data, stack: getStackTrace()});
+              }
+              return oldEval.apply(this, arguments);
+            };
+            document.write = function(data) {
+              if (data.includes("{{randstr_1}}'\"<>")) {
+                logger({sink: 'document.write' ,source: 'window.name', code: data, stack: getStackTrace()});
+              }
+              return oldEval.apply(this, arguments);
+            };
+            })();
+      - args:
+          url: "{{BaseURL}}"
+        action: navigate
+      - action: waitload
+      - action: script
+        name: alerts
+        args:
+          code: "window.alerts"
+    matchers:
+      - type: word
+        part: alerts
+        words:
+          - "sink:"
+    extractors:
+      - type: kval
+        part: alerts
+        kval:
+          - alerts
