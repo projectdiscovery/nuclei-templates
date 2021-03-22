@@ -43,7 +43,7 @@ An overview of the nuclei template directory including number of templates assoc
 | default-logins   | 20 | exposed-tokens  | 9  | dns            | 8            |
 | fuzzing          | 5          | helpers         | 3         | iot            | 7            |
 
-**79 directories, 826 files**.
+**79 directories, 827 files**.
 
 </td>
 </tr>
