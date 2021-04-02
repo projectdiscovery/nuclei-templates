@@ -41,9 +41,9 @@ An overview of the nuclei template directory including number of templates assoc
 | takeovers        | 67        | exposures       | 66       | technologies   | 57   |
 | misconfiguration | 55 | workflows       | 25         | miscellaneous  | 19  |
 | default-logins   | 20 | exposed-tokens  | 9  | dns            | 8            |
-| fuzzing          | 7          | helpers         | 6         | iot            | 10            |
+| fuzzing          | 7          | helpers         | 6         | iot            | 11            |
 
-**80 directories, 876 files**.
+**80 directories, 877 files**.
 
 </td>
 </tr>
