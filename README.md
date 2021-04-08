@@ -18,7 +18,8 @@ Nuclei Templates
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://discord.gg/KECAGdH">Join Discord</a>
+  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
 ----
