@@ -18,7 +18,8 @@ Nuclei Templates
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://discord.gg/KECAGdH">Join Discord</a>
+  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
 ----
@@ -37,13 +38,13 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
 | ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
-| cves             | 266           | vulnerabilities | 119 | exposed-panels | 117 |
-| takeovers        | 67        | exposures       | 66       | technologies   | 60   |
+| cves             | 267           | vulnerabilities | 120 | exposed-panels | 118 |
+| takeovers        | 67        | exposures       | 69       | technologies   | 60   |
 | misconfiguration | 55 | workflows       | 27         | miscellaneous  | 20  |
-| default-logins   | 21 | exposed-tokens  | 9  | dns            | 8            |
+| default-logins   | 21 | exposed-tokens  | 33  | dns            | 8            |
 | fuzzing          | 7          | helpers         | 6         | iot            | 11            |
 
-**82 directories, 891 files**.
+**95 directories, 921 files**.
 
 </td>
 </tr>
