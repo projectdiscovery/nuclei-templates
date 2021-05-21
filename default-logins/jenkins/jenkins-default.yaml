@@ -1,35 +1,50 @@
-id: default-password-jenkins
+id: jenkins-weak-password
 
 info:
-  name: Default Password Jenkins Dashboard
+  name: Jenkins Weak Password
   author: Zandros0
   severity: high
-  tags: jenkins, default-login
+  tags: jenkins,default-login
 
 requests:
-  - payloads:
-      username:
-        - admin
-        - jenkins
-
-      password:
-        - admin
-        - password
-
-    attack: pitchfork
-
-    redirects: true
-    cookie-reuse: true
-    raw:
+  - raw:
       - |
-        POST /j_acegi_security_check HTTP/1.1
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /j_spring_security_check HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
+        Cookie: {{cookie}}
 
-        j_username=§username§&j_password=§password§&from=%2F&Submit=Sign+in
+        j_username=admin&j_password=admin&from=%2F&Submit=Sign+in
 
-    matchers-condition: and
+      - |
+        POST /j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: {{cookie}}
+
+        j_username=jenkins&j_password=password&from=%2F&Submit=Sign+in
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{cookie}}
+
+    extractors:
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        regex:
+          - 'JSESSIONID\..*=([a-z0-9.]+)'
+
+    req-condition: true
     matchers:
-      - type: word
-        words:
-          - <a href="/logout"><b>
+      - type: dsl
+        dsl:
+          - 'contains(body_4, "/logout")'
+          - 'contains(body_4, "Dashboard [Jenkins]")'
+        condition: and
