@@ -38,7 +38,7 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
 | ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
-| cves             | 334           | vulnerabilities | 177 | exposed-panels | 146 |
+| cves             | 335           | vulnerabilities | 176 | exposed-panels | 146 |
 | takeovers        | 67        | exposures       | 106       | technologies   | 100   |
 | misconfiguration | 68 | workflows       | 32         | miscellaneous  | 24  |
 | default-logins   | 30 | exposed-tokens  | 0  | dns            | 9            |
