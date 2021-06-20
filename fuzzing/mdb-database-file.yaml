@@ -1,0 +1,40 @@
+id: mdb-database-file
+
+info:
+  name: MDB database file leakage
+  author: pdteam
+  severity: medium
+  tags: fuzz,mdb,asp
+  reference: https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.5-Testing_for_MS_Access.html
+
+requests:
+  - payloads:
+      mdbPaths: helpers/wordlists/mdb-paths.txt
+
+    attack: sniper
+    threads: 50
+
+    raw:
+      - |
+        GET {{mdbPaths}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept-Language: en-US,en;q=0.9
+        Connection: close
+
+    max-size: 500 # Size in bytes - Max Size to read from server response
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "000100005374616E64617264204A657420444200"  # mdb
+        part: body
+
+      - type: word
+        words:
+          - "application/x-msaccess"
+        part: header
+
+      - type: status
+        status:
+          - 200
