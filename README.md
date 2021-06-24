@@ -18,7 +18,8 @@ Nuclei Templates
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://discord.gg/KECAGdH">Join Discord</a>
+  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
 ----
@@ -35,15 +36,15 @@ An overview of the nuclei template directory including number of templates assoc
 <tr>
 <td> 
 
-| Templates      | Counts                         | Templates       | Counts                          | Templates        | Counts                         |
-| -------------- | ------------------------------ | --------------- | ------------------------------- | ---------------- | ------------------------------ |
-| cves           | 203            | vulnerabilities | 96 | exposed-panels   | 74   |
-| exposures      | 55      | technologies    | 46      | misconfiguration | 48 |
-| workflows      | 21        | miscellaneous   | 12     | default-logins   | 10 |
-| exposed-tokens | 9 | dns             | 6               | fuzzing          | 4          |
-| helpers        | 2        | takeovers       | 1         | -                | -                              |
+| Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
+| ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
+| cves             | 357           | vulnerabilities | 199 | exposed-panels | 154 |
+| takeovers        | 68        | exposures       | 107       | technologies   | 107   |
+| misconfiguration | 71 | workflows       | 32         | miscellaneous  | 25  |
+| default-logins   | 31 | file            | 42            | dns            | 10            |
+| fuzzing          | 10          | helpers         | 9         | iot            | 13            |
 
-**61 directories, 596 files**.
+**119 directories, 1343 files**.
 
 </td>
 </tr>

@@ -1,0 +1,45 @@
+id: dvwa-default-login
+info:
+  name: DVWA Default Login
+  author: pdteam
+  severity: critical
+  tags: dvwa,default-login
+
+requests:
+  - raw:
+      - |
+        GET /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en-GB,en-US;q=0.9,en;q=0.8
+        Connection: close
+
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: PHPSESSID={{session}}; security=low
+        Connection: close
+
+        username=admin&password=password&Login=Login&user_token={{token}}
+
+    extractors:
+      - type: regex
+        name: token
+        group: 1
+        internal: true
+        part: body
+        regex:
+          - "hidden' name='user_token' value='([0-9a-z]+)'"
+
+      - type: kval
+        name: session
+        internal: true
+        part: body
+        kval:
+          - PHPSESSID
+
+    redirects: true
+    matchers:
+      - type: word
+        words:
+          - "You have logged in as 'admin'"

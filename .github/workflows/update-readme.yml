@@ -1,4 +1,4 @@
-name: "Auto Update README"
+name: 📝 Readme Update
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'projectdiscovery/nuclei-templates'
+    if: github.repository == 'projectdiscovery/nuclei-templates' && github.ref == 'refs/heads/master'
     steps:
       - name: Install tree
         run: sudo apt-get install tree -y
@@ -28,16 +28,20 @@ jobs:
           python-version: "3.8"
 
       - name: Update README
+        id: update-readme
         run: |
           python .github/scripts/update-readme.py
+          echo "::set-output name=changes::$(git status -s | wc -l)"
 
       - name: Commit files
+        if: steps.update-readme.outputs.changes > 0
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Auto Update README [$(date)] :robot:" -a
 
       - name: Push changes
+        if: steps.update-readme.outputs.changes > 0
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
