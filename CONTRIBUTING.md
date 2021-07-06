@@ -1,8 +1,8 @@
-# Template Contributing Guidelines
+# Template Contribution Guidelines
 
 This documentation contains a set of guidelines to help you during the contribution process. 
 We are happy to welcome all the contributions from anyone willing to **improve/add** new **templates** to this project. 
-Thank you for helping out and remember,**no contribution is too small.**
+Thank you for helping out and remember, **no contribution is too small.**
 
 # Submitting Nuclei Templates 👩‍💻👨‍💻
 
@@ -11,7 +11,7 @@ Below you will find the process and workflow used to review and merge your chang
 ## Step 1 : Find existing templates
 
 - Take a look at the [Existing Templates](https://github.com/projectdiscovery/nuclei-templates) before creating new one.
-- Take a look at Existing Templates in [GitHub Issues](https://github.com/projectdiscovery/nuclei-templates/issues) and [Pull Request](https://github.com/projectdiscovery/nuclei-templates/pulls) section to avoid duplicate work
+- Take a look at Existing Templates in [GitHub Issues](https://github.com/projectdiscovery/nuclei-templates/issues) and [Pull Request](https://github.com/projectdiscovery/nuclei-templates/pulls) section to avoid duplicate work.
 - Take a look at [Templates](https://nuclei.projectdiscovery.io/templating-guide/) and [Matchers](https://github.com/projectdiscovery/nuclei-templates/wiki/Unique-Template-Matchers) Guideline for creating new template.
 
 ## Step 2 : Fork the Project
@@ -20,7 +20,7 @@ Below you will find the process and workflow used to review and merge your chang
 
 <img width="928" alt="template-fork" src="https://user-images.githubusercontent.com/8293321/124467966-2afde200-ddb6-11eb-835f-8f8fc2fabedb.png">
 
-```yaml
+```sh
 git clone https://github.com/<your-username>/nuclei-templates
 cd nuclei-templates
 git remote add upstream https://github.com/projectdiscovery/nuclei-templates
@@ -28,7 +28,7 @@ git remote add upstream https://github.com/projectdiscovery/nuclei-templates
 
 - If you have already forked the project, update your copy before working.
 
-```yaml
+```sh
 git remote update
 git checkout master
 git rebase upstream/master
@@ -38,7 +38,7 @@ git rebase upstream/master
 
 Create a new branch. Use its name to identify the issue your addressing.
 
-```yaml
+```sh
 
 # It will create a new branch with name template_branch_name and switch to that branch
 git checkout -b template_branch_name
@@ -49,14 +49,14 @@ git checkout -b template_branch_name
 - Add all the files/folders needed.
 - After you've made changes or completed template creation, add changes to the branch you've just created by:
 
-```yaml
+```sh
 # To add all new files to branch template_branch_name
 git add .
 ```
 
 - To commit give a descriptive message for the convenience of reveiwer by:
 
-```yaml
+```sh
 # This message get associated with all files you have changed
 git commit -m "Added/Fixed/Updated XXX Template"
 ```
@@ -69,22 +69,22 @@ git commit -m "Added/Fixed/Updated XXX Template"
 
 ## Step 5 : Push Your Changes
 
-- Now you are ready to your work to the remote repository.
+- Now you are ready to push your template to the remote (forked) repository.
 - When your work is ready and complies with the project conventions, upload your changes to your fork:
 
-```yaml
+```sh
 # To push your work to your remote repository
 git push -u origin template_branch_name
 ```
 
 ## Step 6 : Pull Request
 
-- Go to your repository in browser and click on compare and pull requests. Then add a title and description to your pull request that explains your template.
-- Voila! Your Pull Request has been submitted and will be reviewed by the moderators and merged.🥳
+- Fire up your favorite browser, navigate to your GitHub repository, then click on the New pull request button within the Pull requests tab. Provide a meaningful name and description to you pull request, that describes the purpose of the template.
+- Voila! Your Pull Request has been submitted. It will be reviewed and merged by the moderators, if it complies with project standards, otherwise a feedback will be provided.🥳
 
 ## Need more help?🤔
 
-You can refer to the following articles on basics of Git and Github and also contact the Project Mentors, in case you are stuck:
+You can refer to the following articles of Git and GitHub basics. In case you are stuck, feel free to contact the Project Mentors and Community by joining [PD Community](https://discord.gg/projectdiscovery) Discord server.
 
 - [Forking a Repo](https://help.github.com/en/github/getting-started-with-github/fork-a-repo)
 - [Cloning a Repo](https://help.github.com/en/desktop/contributing-to-projects/creating-an-issue-or-pull-request)
