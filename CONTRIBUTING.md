@@ -39,7 +39,6 @@ git rebase upstream/master
 Create a new branch. Use its name to identify the issue your addressing.
 
 ```sh
-
 # It will create a new branch with name template_branch_name and switch to that branch
 git checkout -b template_branch_name
 ```
@@ -79,7 +78,7 @@ git push -u origin template_branch_name
 
 ## Step 6 : Pull Request
 
-- Fire up your favorite browser, navigate to your GitHub repository, then click on the New pull request button within the Pull requests tab. Provide a meaningful name and description to you pull request, that describes the purpose of the template.
+- Fire up your favorite browser, navigate to your GitHub repository, then click on the New pull request button within the Pull requests tab. Provide a meaningful name and description to your pull request, that describes the purpose of the template.
 - Voila! Your Pull Request has been submitted. It will be reviewed and merged by the moderators, if it complies with project standards, otherwise a feedback will be provided.🥳
 
 ## Need more help?🤔
