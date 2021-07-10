@@ -3,10 +3,8 @@
 <!-- Explains the information and/or motivation for update or/ creating this templates -->
 <!-- Please include any reference to your template if available -->
 
-- _Fixed CVE-2020-XXX_ / _Added CVE-2020-XXX_
-- Reference:
-    - https://github.com/XXXXX/poc
-    - https://nvd.nist.gov/vuln/detail/CVE-2020-XXX
+- Fixed CVE-2020-XXX / Added CVE-2020-XXX / Updated CVE-2020-XXX
+- References:
 
 ### Template Validation
 
