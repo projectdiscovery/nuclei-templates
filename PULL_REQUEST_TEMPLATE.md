@@ -13,7 +13,7 @@ I've validated this template locally?
 - [ ] NO
 
 
-#### Additonal Details (leave it blank if not applicalbe)
+#### Additional Details (leave it blank if not applicable)
 
 <!-- Include Shodan / Fofa / Google Query / Docker / Screenshots if available -->
 <!-- Include HTTP/TCP/DNS Matched response data snippet if available -->
