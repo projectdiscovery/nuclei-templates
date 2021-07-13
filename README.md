@@ -38,13 +38,13 @@ An overview of the nuclei template directory including number of templates assoc
 
 | Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
 | ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
-| cves             | 383           | vulnerabilities | 211 | exposed-panels | 188 |
-| takeovers        | 69        | exposures       | 110       | technologies   | 112   |
-| misconfiguration | 74 | workflows       | 32         | miscellaneous  | 27  |
-| default-logins   | 36 | file            | 42            | dns            | 10            |
-| fuzzing          | 10          | helpers         | 9         | iot            | 13            |
+| cves             | 396           | vulnerabilities | 218 | exposed-panels | 194 |
+| takeovers        | 70        | exposures       | 113       | technologies   | 117   |
+| misconfiguration | 76 | workflows       | 33         | miscellaneous  | 27  |
+| default-logins   | 37 | file            | 42            | dns            | 10            |
+| fuzzing          | 10          | helpers         | 9         | iot            | 18            |
 
-**126 directories, 1442 files**.
+**127 directories, 1488 files**.
 
 </td>
 </tr>
