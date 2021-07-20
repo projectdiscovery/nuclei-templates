@@ -1,9 +1,8 @@
 name: 🗒 Templates Stats
 
 on:
-  create:
-    tags:
-      - v*
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -12,6 +11,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@master
+        with:
+          fetch-depth: 0
 
       - name: Setup golang
         uses: actions/setup-go@v2
@@ -35,19 +36,28 @@ jobs:
 
       - name: Markdown Stats
         run: |
-          templates-stats -output TEMPLATES-STATS.md -path /home/runner/work/nuclei-templates/nuclei-templates/
+          templates-stats -output TEMPLATES-STATS.md -path {{ github.workspace }}
         shell: bash
 
       - name: JSON Stats
         run: |
-          templates-stats -output TEMPLATES-STATS.json -json -path /home/runner/work/nuclei-templates/nuclei-templates/
+          templates-stats -output TEMPLATES-STATS.json -json -path {{ github.workspace }}
         shell: bash
 
-      - name: Commit files
+      - name: Top 10 Stats
         run: |
-          git pull --tags -f
-          git add TEMPLATES-STATS.md
-          git add TEMPLATES-STATS.json
+          templates-stats -output TOP-10.md -top 10 -path {{ github.workspace }}
+        shell: bash
+
+      - name: Get statistical changes
+        id: stats
+        run: echo "::set-output name=changes::$(git status -s | wc -l)"
+
+      - name: Commit files
+        if: steps.stats.outputs.changes > 0
+        run: |
+          git add TEMPLATES-STATS.*
+          git add TOP-10.md
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -m "Auto Generated Templates Stats [$(date)] :robot:" -a
