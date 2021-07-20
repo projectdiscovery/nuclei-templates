@@ -58,7 +58,7 @@ An overview of the nuclei template directory including number of templates assoc
 -----
 
 Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to **build** new or your own **custom** templates.
-Ee have also added a set of example templates to help you understand how things work.
+We have also added a set of example templates to help you understand how things work.
 
 💪 Contributions
 -----
