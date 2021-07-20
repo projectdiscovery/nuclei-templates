@@ -40,12 +40,6 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 ## Nuclei Templates Top 10 statistics
 
-<table>
-<tr>
-<td> 
-
-## Nuclei Templates Top 10 statistics
-
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
 | cve       |   467 | dhiyaneshdk   |   202 | cves             |   473 | info     |   453 | http    |  1409 |
