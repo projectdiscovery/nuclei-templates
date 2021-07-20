@@ -32,28 +32,19 @@ We hope that you also contribute by sending templates via **pull requests** or [
 ## Nuclei Templates overview
 
 
-An overview of the nuclei template directory including number of templates associated with each directory. 
+An overview of the nuclei template project, including statistics on unique tags, author, directory, severity, and type of templates. The table below contains the top ten statistics for each matrix; an expanded version of this is [available here](TEMPLATES-STATS.md), and also available in [JSON](TEMPLATES-STATS.json) format for integration.
 
 <table>
 <tr>
 <td> 
 
-| Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
-| ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
-| cves             | 475           | vulnerabilities | 229 | exposed-panels | 202 |
-| takeovers        | 70        | exposures       | 116       | technologies   | 125   |
-| misconfiguration | 77 | workflows       | 33         | miscellaneous  | 27  |
-| default-logins   | 44 | file            | 42            | dns            | 10            |
-| fuzzing          | 10          | helpers         | 9         | iot            | 18            |
+## Nuclei Templates Top 10 statistics
 
-**134 directories, 1609 files**.
+<table>
+<tr>
+<td> 
 
-</td>
-</tr>
-</table>
-
-
-## Top 10 Contributors
+## Nuclei Templates Top 10 statistics
 
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
@@ -68,6 +59,11 @@ An overview of the nuclei template directory including number of templates assoc
 | wp-plugin |   110 | gaurang       |    42 | file             |    42 |          |       |         |       |
 | cve2019   |    82 | gy741         |    36 | workflows        |    33 |          |       |         |       |
 
+**134 directories, 1612 files**.
+
+</td>
+</tr>
+</table>
 
 📖 Documentation
 -----
