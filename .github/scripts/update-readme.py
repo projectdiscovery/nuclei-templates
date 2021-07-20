@@ -9,7 +9,7 @@ def command(args, start=None, end=None):
 	return "\n".join(subprocess.run(args, text=True, capture_output=True).stdout.split("\n")[start:end])[:-1]
 
 def get_top10():
-	HEADER = "## Top 10 Contributors\n\n"
+	HEADER = "## Nuclei Templates Top 10 statistics\n\n"
 	TOP10 = command(["cat", "TOP-10.md"])
 	return HEADER + TOP10 if len(TOP10) > 0 else ""
 
