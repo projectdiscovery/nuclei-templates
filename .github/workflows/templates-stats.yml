@@ -1,0 +1,70 @@
+name: 🗒 Templates Stats
+
+on:
+  create:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Setup golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+
+      - name: Cache Go
+        id: cache-go
+        uses: actions/cache@v2
+        with:
+          path: /home/runner/go
+          key: ${{ runner.os }}-go
+
+      - name: Installing Template Stats
+        if: steps.cache-go.outputs.cache-hit != 'true'
+        env:
+          GO111MODULE: on
+        run: |
+          go get -v github.com/projectdiscovery/templates-stats
+        shell: bash
+
+      - name: Markdown Stats
+        run: |
+          templates-stats -output TEMPLATES-STATS.md -path {{ github.workspace }}
+        shell: bash
+
+      - name: JSON Stats
+        run: |
+          templates-stats -output TEMPLATES-STATS.json -json -path {{ github.workspace }}
+        shell: bash
+
+      - name: Top 10 Stats
+        run: |
+          templates-stats -output TOP-10.md -top 10 -path {{ github.workspace }}
+        shell: bash
+
+      - name: Get statistical changes
+        id: stats
+        run: echo "::set-output name=changes::$(git status -s | wc -l)"
+
+      - name: Commit files
+        if: steps.stats.outputs.changes > 0
+        run: |
+          git add TEMPLATES-STATS.*
+          git add TOP-10.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Auto Generated Templates Stats [$(date)] :robot:" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
