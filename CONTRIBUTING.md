@@ -97,3 +97,4 @@ You can refer to the following articles of Git and GitHub basics. In case you ar
 - **Nuclei** outcomes are only as excellent as **template matchers💡**
 - Declare at least two matchers to reduce false positive
 - Avoid matching words reflected in the URL to reduce false positive
+- Avoid short word that could be encountered anywhere
