@@ -1,0 +1,44 @@
+id: prestashop-module-fuzz
+info:
+  name: Prestashop Modules Enumeration
+  author: meme-lord
+  severity: info
+  tags: fuzz,prestashop
+
+requests:
+
+  - payloads:
+      path: helpers/wordlists/prestashop-modules.txt
+
+    attack: sniper
+    threads: 50
+
+    raw:
+      - |
+        GET /modules/{{path}}/config.xml HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Accept-Language: en-US,en;q=0.5
+        Referer: {{BaseURL}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<module>"
+          - "<name>"
+          - "<displayName>"
+          - "<is_configurable>"
+          - "</module>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 2
+        regex:
+          - '<version>(<!\[CDATA\[)?([0-9.]+)'
