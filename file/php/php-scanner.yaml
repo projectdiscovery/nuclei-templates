@@ -1,0 +1,126 @@
+id: php-scanner
+
+info:
+  name: PHP Scanner
+  author: geeknik
+  severity: info
+  tags: php,file
+
+file:
+  - extensions:
+      - html
+      - phtml
+      - php
+      - php3
+      - php4
+
+    extractors:
+      - type: regex
+        # Investigate for possible SQL Injection
+        # Likely vulnerable: $dbConn->GetRow("SELECT * FROM users WHERE id = $user_id");
+        # Likely not Vulnerable: $dbConn->GetRow("SELECT * FROM users WHERE id = ?", array(‘$user_id’));
+        regex:
+          - '(?i)getone|getrow|getall|getcol|getassoc|execute|replace'
+      - type: regex
+        # Warn when var_dump is found
+        regex:
+          - 'var_dump'
+      - type: regex
+        # Warn when display_errors is enabled manually
+        regex:
+          - 'display_errors'
+      - type: regex
+        # Avoid the use of eval()
+        regex:
+          - 'eval'
+          - 'eval\((base64|eval|\$_|\$\$|\$[A-Za-z_0-9\{]*(\(|\{|\[))'
+        condition: or
+      - type: regex
+        # Avoid the use of exit or die()
+        regex:
+          - 'exit'
+          - 'die'
+        condition: or
+      - type: regex
+        # Avoid the use of logical operators (ex. using and over &&)
+        regex:
+          - 'and'
+      - type: regex
+        # Avoid the use of the ereg* functions (now deprecated)
+        regex:
+          - 'ereg'
+      - type: regex
+        # Ensure that the second parameter of extract is set to not overwrite (not EXTR_OVERWRITE)
+        regex:
+          - 'extract'
+      - type: regex
+        # Checking output methods (echo, print, printf, print_r, vprintf, sprintf) that use variables in their options
+        regex:
+          - 'echo'
+          - 'print'
+          - 'printf'
+          - 'print_r'
+          - 'vprintf'
+          - 'sprintf'
+        condition: or
+      - type: regex
+        # Ensuring you're not using echo with file_get_contents
+        regex:
+          - 'file_get_contents'
+      - type: regex
+        # Testing for the system execution functions and shell exec (backticks)
+        regex:
+          - '\\`'
+      - type: regex
+        # Use of readfile, readlink and readgzfile
+        regex:
+          - 'readfile'
+          - 'readlink'
+          - 'readgzfile'
+      - type: regex
+        # Using parse_str or mb_parse_str (writes values to the local scope)
+        regex:
+          - 'parse_st'
+          - 'mb_parse_str'
+      - type: regex
+        # Using session_regenerate_id either without a parameter or using false
+        regex:
+          - 'session_regenerate'
+      - type: regex
+        # Avoid use of $_REQUEST (know where your data is coming from)
+        regex:
+          - '\\$_REQUEST'
+      - type: regex
+        # Don't use mysql_real_escape_string
+        regex:
+          - 'mysql_real_escape_string'
+      - type: regex
+        # Avoiding use of import_request_variables
+        regex:
+          - 'import_request_variables'
+      - type: regex
+        # Avoid use of $GLOBALS
+        regex:
+          - '\\$GLOBALS'
+      - type: regex
+        regex:
+          - '\\$_GET'
+      - type: regex
+        regex:
+          - '\\$_POST'
+      - type: regex
+        # Ensure the use of type checking validating against booleans (===)
+        regex:
+          - '\\=\\=\\='
+      - type: regex
+        # Ensure that the /e modifier isn't used in regular expressions (execute)
+        regex:
+          - '\\/e'
+      - type: regex
+        # Using concatenation in header() calls
+        regex:
+          - 'header'
+      - type: regex
+        # Avoiding the use of $http_raw_post_data
+        regex:
+          - '\\$http_raw_post_data'
