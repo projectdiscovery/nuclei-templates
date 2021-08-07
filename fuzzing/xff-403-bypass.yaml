@@ -1,0 +1,47 @@
+id: xff-403-bypass
+
+info:
+  name: X-Forwarded-For 403-forbidden bypass
+  author: vavkamil
+  severity: info
+  description: Template to detect 403 forbidden endpoint bypass behind Nginx/Apache proxy & load balancers, based on X-Forwarded-For header.
+  tags: xff,bypass,fuzz
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+        Accept-Encoding: gzip
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+        Accept-Encoding: gzip
+        X-Forwarded-For: 127.0.0.1, 0.0.0.0, 192.168.0.1, 10.0.0.1, 172.16.0.1
+
+      - |
+        GET /test.txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
+        Connection: close
+        Accept: */*
+        Accept-Language: en
+        Accept-Encoding: gzip
+        X-Forwarded-For: 127.0.0.1, 0.0.0.0, 192.168.0.1, 10.0.0.1, 172.16.0.1
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 403 && status_code_2 != 403"
+          - "status_code_1 == 403 && status_code_3 != 403"
+        condition: or
