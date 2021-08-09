@@ -1,0 +1,35 @@
+name: 🛠 Template Validate
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+
+      - name: Setup golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+
+      - name: Cache Go
+        id: cache-go
+        uses: actions/cache@v2
+        with:
+          path: /home/runner/go
+          key: ${{ runner.os }}-go
+
+      - name: Installing Nuclei
+        if: steps.cache-go.outputs.cache-hit != 'true'
+        env:
+          GO111MODULE: on
+        run: |
+          go get -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@dev
+        shell: bash
+
+      - name: Template Validation
+        run: |
+          nuclei -validate -t . -exclude .pre-commit-config.yaml
+        shell: bash
