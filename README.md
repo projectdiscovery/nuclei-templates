@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   590 | dhiyaneshdk   |   239 | cves             |   597 | info     |   583 | http    |  1720 |
-| panel     |   219 | pikpikcu      |   237 | vulnerabilities  |   265 | high     |   465 | file    |    46 |
-| xss       |   215 | pdteam        |   194 | exposed-panels   |   221 | medium   |   387 | network |    35 |
-| wordpress |   201 | daffainfo     |   136 | exposures        |   174 | critical |   226 | dns     |    11 |
-| exposure  |   196 | dwisiswant0   |   128 | technologies     |   159 | low      |   156 |         |       |
-| rce       |   187 | geeknik       |   127 | misconfiguration |   124 |          |       |         |       |
-| lfi       |   176 | gy741         |    68 | takeovers        |    70 |          |       |         |       |
-| cve2020   |   155 | madrobot      |    60 | default-logins   |    51 |          |       |         |       |
+| cve       |   624 | pikpikcu      |   243 | cves             |   631 | info     |   592 | http    |  1785 |
+| panel     |   222 | dhiyaneshdk   |   240 | vulnerabilities  |   281 | high     |   504 | file    |    46 |
+| xss       |   221 | pdteam        |   196 | exposed-panels   |   225 | medium   |   398 | network |    38 |
+| exposure  |   212 | daffainfo     |   160 | exposures        |   182 | critical |   230 | dns     |    11 |
+| wordpress |   203 | geeknik       |   149 | technologies     |   160 | low      |   161 |         |       |
+| lfi       |   203 | dwisiswant0   |   131 | misconfiguration |   125 |          |       |         |       |
+| rce       |   189 | gy741         |    71 | takeovers        |    71 |          |       |         |       |
+| cve2020   |   157 | madrobot      |    62 | default-logins   |    51 |          |       |         |       |
 | wp-plugin |   136 | princechaddha |    53 | file             |    46 |          |       |         |       |
-| tech      |   101 | gaurang       |    42 | workflows        |    35 |          |       |         |       |
+| cve2021   |   103 | pussycat0x    |    42 | workflows        |    35 |          |       |         |       |
 
-**144 directories, 1870 files**.
+**146 directories, 1940 files**.
 
 </td>
 </tr>
