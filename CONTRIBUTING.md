@@ -53,7 +53,7 @@ git checkout -b template_branch_name
 git add .
 ```
 
-- To commit give a descriptive message for the convenience of reveiwer by:
+- To commit, give a descriptive message for the convenience of the reviewer by:
 
 ```sh
 # This message get associated with all files you have changed
