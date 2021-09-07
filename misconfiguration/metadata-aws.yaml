@@ -1,0 +1,32 @@
+id: metadata-service-aws
+
+info:
+  name: Amazon AWS Metadata Service Check
+  author: sullo
+  severity: critical
+  tags: exposure,config,aws,amazon
+  description: The AWS host is configured as a proxy which allows access to the metadata service. This could allow significant access to the host/infrastructure. Upgrade to IMDSv2.
+  reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+
+requests:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: 169.254.169.254
+        Accept: */*
+        Proxy-Connection: Keep-Alive
+
+    payloads:
+        path:
+          - "http://169.254.169.254/latest/meta-data/"
+          - "http://169.254.169.254/latest/dynamic/instance-identity/document"
+
+    unsafe: true
+    attack: sniper
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "public-ipv4"
+          - "privateIp"
