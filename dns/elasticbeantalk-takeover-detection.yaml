@@ -5,10 +5,19 @@ info:
   author: philippedelteil
   severity: high
   reference:
-    - https://github.com/EdOverflow/can-i-take-over-xyz/issues/147
+    - https://github.com/EdOverflow/can-i-take-over-xyz/issues/147 # kudos to @m7mdharoun for sharing process details.
     - https://twitter.com/payloadartist/status/1362035009863880711
     - https://www.youtube.com/watch?v=srKIqhj_ki8
   tags: dns,takeover,aws
+
+# You need to claim the CNAME in AWS portal (https://aws.amazon.com/) or via AWS CLI to confirm the takeover.
+# Do not report this without claiming the CNAME.
+#
+# CLI command to verify the availability of the environment:
+# aws elasticbeanstalk check-dns-availability --region {AWS_REGION} --cname-prefix {CNAME_PREFIX} 
+# Example:
+# CNAME - 2rs3c.eu-west-1.elasticbeanstalk.com
+# Command - aws elasticbeanstalk check-dns-availability --region eu-west-1 --cname-prefix 2rs3c 
 
 dns:
   - name: "{{FQDN}}"
@@ -18,9 +27,17 @@ dns:
     retries: 3
     matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "elasticbeanstalk"
+      - type: regex
+        name: elasticbeanstalk
+        regex:
+          # Only CNAMEs with region specification are hijackable.
+          - \.(us|af|ap|ca|eu|me|sa)\-(east|west|south|northeast|southeast|central)\-[1-9]+\.elasticbeanstalk\.com
+        condition: or
       - type: word
         words:
           - "NXDOMAIN"
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "IN\tCNAME\t(.+)"
