@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | cve2020   |   162 | princechaddha |    61 | file             |    46 |          |       |         |       |
 | wp-plugin |   143 | pussycat0x    |    58 | workflows        |    36 |          |       |         |       |
 
-**164 directories, 2090 files**.
+**164 directories, 2104 files**.
 
 </td>
 </tr>
@@ -80,12 +80,15 @@ Feel free to open a discussion on [Github discussions](https://github.com/projec
 👨‍💻 Community
 -----
 
-You are welcome to join our [Discord Community](https://discord.gg/KECAGdH).
-You can also follow us on [Twitter](https://twitter.com/pdiscoveryio) to keep up with everything related to projectdiscovery.
+You are welcome to join the active [Discord Community](https://discord.gg/projectdiscovery) to discuss directly with project maintainers and share things with others around security and automation.
+Additionally, you may follow us on [Twitter](https://twitter.com/pdnuclei) to be updated on all the things about Nuclei.
 
-💡 Notes
------
--  Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/) to validate the syntax of templates before sending pull requests.
+
+<p align="center">
+<a href="https://github.com/projectdiscovery/nuclei-templates/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=projectdiscovery/nuclei-templates&max=300">
+</a>
+</p>
 
 
 Thanks again for your contribution and keeping this community vibrant. :heart:
