@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | cve2020   |   164 | madrobot      |    61 | file             |    46 |          |       |         |       |
 | wp-plugin |   149 | princechaddha |    61 | workflows        |    36 |          |       |         |       |
 
-**166 directories, 2144 files**.
+**166 directories, 2155 files**.
 
 </td>
 </tr>
