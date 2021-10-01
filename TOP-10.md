@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   739 | pikpikcu      |   273 | cves             |   739 | info     |   650 | http    |  1991 |
-| lfi       |   266 | dhiyaneshdk   |   268 | vulnerabilities  |   307 | high     |   560 | file    |    46 |
-| panel     |   252 | daffainfo     |   217 | exposed-panels   |   250 | medium   |   456 | network |    42 |
-| xss       |   248 | pdteam        |   195 | technologies     |   192 | critical |   276 | dns     |    12 |
-| wordpress |   235 | geeknik       |   154 | exposures        |   188 | low      |   154 |         |       |
+| cve       |   804 | daffainfo     |   280 | cves             |   804 | info     |   661 | http    |  2068 |
+| lfi       |   325 | pikpikcu      |   277 | vulnerabilities  |   311 | high     |   621 | file    |    46 |
+| xss       |   253 | dhiyaneshdk   |   268 | exposed-panels   |   250 | medium   |   463 | network |    43 |
+| panel     |   252 | pdteam        |   199 | technologies     |   200 | critical |   275 | dns     |    12 |
+| wordpress |   241 | geeknik       |   154 | exposures        |   188 | low      |   154 |         |       |
 | exposure  |   233 | dwisiswant0   |   131 | misconfiguration |   136 |          |       |         |       |
-| rce       |   200 | gy741         |    76 | takeovers        |    64 |          |       |         |       |
-| tech      |   183 | pussycat0x    |    69 | default-logins   |    56 |          |       |         |       |
-| cve2020   |   164 | princechaddha |    61 | file             |    46 |          |       |         |       |
-| wp-plugin |   161 | madrobot      |    61 | workflows        |    37 |          |       |         |       |
+| rce       |   200 | gy741         |    77 | takeovers        |    64 |          |       |         |       |
+| tech      |   191 | pussycat0x    |    70 | default-logins   |    56 |          |       |         |       |
+| wp-plugin |   167 | princechaddha |    63 | file             |    46 |          |       |         |       |
+| cve2020   |   164 | madrobot      |    61 | workflows        |    37 |          |       |         |       |
