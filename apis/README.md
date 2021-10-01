@@ -1,15 +1,13 @@
 ## About
-This directory holds templates that have static API URL endpoints. Use these to test an API token against many API service endpoints. By placing the token in `token.txt`, Nuclei will test the token against all known API endpoints within the API templates, and return any successful results. By incorporating API checks as Nuclei Templates, users can test API keys that have no context (i.e., API keys that do not indicate for which API endpoint they are meant).
+This directory holds templates that have static API URL endpoints. Use these to test an API token against many API service endpoints. By providing token input using flag, Nuclei will test the token against all known API endpoints within the API templates, and return any successful results. By incorporating API checks as Nuclei Templates, users can test API keys that have no context (i.e., API keys that do not indicate for which API endpoint they are meant).
 
 ## Usage
-You do not need to specify an input URL to test a token against these API endpoints, as the API endpoints have static URLs. However, Nuclei requires an input (specified via `-u` for individual URLs or `-l` for a file containing URLs). Because of this requirement, we simply pass in `-u "null"`. Each template in the `apis` directory assumes the input API token will be placed in a file called `token.txt`. The `token.txt` file can exist in your current working directory or in the same directory as the template `yaml` file.
+You do not need to specify an input URL to test a token against these API endpoints, as the API endpoints have static URLs. However, Nuclei requires an input (specified via `-u` for individual URLs or `-l` for a file containing URLs). Because of this requirement, we simply pass in `-u "null"`. Each template in the `apis` directory assumes the input API token will be provided using CLI `var` flag.
 
 ```bash
-# Input the token into token.txt:
-$ echo -n "thisIsMySecretTokenThatIWantToTest" > token.txt
-
 # Run Nuclei specifying all the api templates:
-$ nuclei -u "null" -t ./nuclei-templates/apis/
+
+nuclei -u null -t apis/ -var token=thisIsMySecretTokenThatIWantToTest
 ```
 
 ## Credits
