@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   804 | daffainfo     |   280 | cves             |   804 | info     |   661 | http    |  2068 |
-| lfi       |   325 | pikpikcu      |   277 | vulnerabilities  |   311 | high     |   621 | file    |    46 |
-| xss       |   253 | dhiyaneshdk   |   268 | exposed-panels   |   250 | medium   |   463 | network |    43 |
-| panel     |   252 | pdteam        |   199 | technologies     |   200 | critical |   275 | dns     |    12 |
-| wordpress |   241 | geeknik       |   154 | exposures        |   188 | low      |   154 |         |       |
-| exposure  |   233 | dwisiswant0   |   131 | misconfiguration |   136 |          |       |         |       |
-| rce       |   200 | gy741         |    77 | takeovers        |    64 |          |       |         |       |
-| tech      |   191 | pussycat0x    |    70 | default-logins   |    56 |          |       |         |       |
-| wp-plugin |   167 | princechaddha |    63 | file             |    46 |          |       |         |       |
-| cve2020   |   164 | madrobot      |    61 | workflows        |    37 |          |       |         |       |
+| cve       |   814 | daffainfo     |   285 | cves             |   818 | info     |   732 | http    |  2155 |
+| lfi       |   329 | pikpikcu      |   279 | vulnerabilities  |   312 | high     |   631 | file    |    48 |
+| panel     |   259 | dhiyaneshdk   |   268 | exposed-panels   |   255 | medium   |   465 | network |    45 |
+| xss       |   253 | pdteam        |   200 | technologies     |   201 | critical |   282 | dns     |    12 |
+| wordpress |   243 | geeknik       |   158 | exposures        |   191 | low      |   155 |         |       |
+| exposure  |   237 | dwisiswant0   |   131 | misconfiguration |   137 |          |       |         |       |
+| rce       |   202 | gy741         |    81 | takeovers        |    65 |          |       |         |       |
+| tech      |   193 | pussycat0x    |    71 | token-spray      |    63 |          |       |         |       |
+| wp-plugin |   168 | princechaddha |    64 | default-logins   |    57 |          |       |         |       |
+| cve2020   |   164 | zzeitlin      |    63 | file             |    48 |          |       |         |       |
