@@ -4,7 +4,7 @@ This directory holds templates that have static API URL endpoints. Use these to 
 
 ## Usage
 
-**token-spray** are self-contained template and does not requires URLs as input as the API endpoints have static URLs predefined in the template. Each template in the `token-spray` directory assumes the input API token/s will be provided using CLI `var` flag.
+token-spray are **self-contained** template and does not requires URLs as input as the API endpoints have static URLs predefined in the template. Each template in the `token-spray` directory assumes the input API token/s will be provided using CLI `var` flag.
 
 ```console
 # Running token-spray templates against a single token to test
