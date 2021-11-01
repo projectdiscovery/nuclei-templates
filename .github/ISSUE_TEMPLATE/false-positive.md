@@ -1,6 +1,6 @@
 ---
 name: False Positive
-about: 'Issue for template producing false positive results.'
+about: 'Issue for template producing invalid/unexpected result.'
 labels: 'false-positive'
 
 ---
