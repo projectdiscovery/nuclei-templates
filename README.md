@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   852 | dhiyaneshdk   |   309 | cves             |   856 | info     |   833 | http    |  2326 |
-| lfi       |   350 | daffainfo     |   304 | vulnerabilities  |   333 | high     |   659 | file    |    57 |
-| panel     |   295 | pikpikcu      |   281 | exposed-panels   |   289 | medium   |   493 | network |    46 |
-| xss       |   266 | pdteam        |   208 | technologies     |   210 | critical |   303 | dns     |    12 |
-| wordpress |   262 | geeknik       |   172 | exposures        |   199 | low      |   158 |         |       |
-| exposure  |   250 | dwisiswant0   |   152 | misconfiguration |   148 |          |       |         |       |
-| rce       |   221 | gy741         |    85 | token-spray      |    98 |          |       |         |       |
-| tech      |   204 | pussycat0x    |    76 | takeovers        |    66 |          |       |         |       |
-| wp-plugin |   180 | princechaddha |    67 | default-logins   |    61 |          |       |         |       |
-| cve2021   |   166 | madrobot      |    65 | file             |    57 |          |       |         |       |
+| cve       |   859 | dhiyaneshdk   |   315 | cves             |   864 | info     |   841 | http    |  2345 |
+| lfi       |   353 | daffainfo     |   308 | vulnerabilities  |   334 | high     |   663 | file    |    57 |
+| panel     |   297 | pikpikcu      |   281 | exposed-panels   |   291 | medium   |   498 | network |    46 |
+| xss       |   268 | pdteam        |   209 | technologies     |   211 | critical |   305 | dns     |    12 |
+| wordpress |   263 | geeknik       |   172 | exposures        |   199 | low      |   158 |         |       |
+| exposure  |   252 | dwisiswant0   |   152 | misconfiguration |   151 |          |       |         |       |
+| rce       |   222 | gy741         |    85 | token-spray      |   102 |          |       |         |       |
+| tech      |   205 | pussycat0x    |    77 | takeovers        |    66 |          |       |         |       |
+| wp-plugin |   181 | princechaddha |    67 | default-logins   |    61 |          |       |         |       |
+| cve2021   |   168 | madrobot      |    65 | file             |    57 |          |       |         |       |
 
-**181 directories, 2509 files**.
+**182 directories, 2529 files**.
 
 </td>
 </tr>
