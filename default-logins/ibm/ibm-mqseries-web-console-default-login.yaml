@@ -1,0 +1,39 @@
+id: ibm-mqseries-web-console-default-login
+
+info:
+  name: IBM MQSeries web console default login
+  author: righettod
+  severity: critical
+  tags: ibm,default-login
+  reference: https://github.com/ibm-messaging/mq-container/blob/master/etc/mqm/mq.htpasswd
+
+requests:
+  - raw:
+      - |
+        POST /ibmmq/console/j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/ibmmq/console/login.html
+
+        j_username={{username}}&j_password={{password}}
+
+    payloads:
+      username:
+        - admin
+        - app
+        - donotexists # To detect false-positives
+      password:
+        - passw0rd
+    attack: clusterbomb
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "LtpaToken2_"
+        part: header
+        condition: and
+
+      - type: status
+        status:
+          - 302
