@@ -1,5 +1,5 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
+|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------
 | cve       |   921 | daffainfo     |   348 | cves             |   927 | info     |   912 | http    |  2504 |
 | lfi       |   382 | dhiyaneshdk   |   341 | vulnerabilities  |   350 | high     |   695 | file    |    57 |
 | panel     |   319 | pikpikcu      |   286 | exposed-panels   |   319 | medium   |   527 | network |    47 |
