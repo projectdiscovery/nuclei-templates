@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | cve2021   |   198 | 0x_akoko      |    82 | default-logins   |    63 |          |       |         |       |
 | wp-plugin |   188 | princechaddha |    76 | file             |    57 |          |       |         |       |
 
-**194 directories, 2737 files**.
+**194 directories, 2742 files**.
 
 </td>
 </tr>
@@ -70,6 +70,8 @@ We have also added a set of templates to help you understand how things work.
 
 Nuclei-templates is powered by major contributions from the community.
 [Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
+
+![Alt](https://repobeats.axiom.co/api/embed/55ee65543bb9a0f9c797626c4e66d472a517d17c.svg "Repobeats analytics image")
 
 💬 Discussion
 -----
