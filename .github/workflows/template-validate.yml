@@ -7,23 +7,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-go@v2
-        with: 
-          go-version: 1.17
 
-      - name: Cache Go
-        id: cache-go
-        uses: actions/cache@v2
+      - name: Get latest Nuclei release version
+        id: nuclei-latest
+        uses: actions/github-script@v5
         with:
-          path: /home/runner/go
-          key: ${{ runner.os }}-go
+          result-encoding: string
+          script: |
+            const release = await github.rest.repos.getLatestRelease({
+              owner: 'projectdiscovery',
+              repo: 'nuclei',
+            });
 
-      - name: Installing Nuclei
-#        if: steps.cache-go.outputs.cache-hit != 'true'
+            return release.data.name
+
+      - name: Setup Nuclei
+        if: steps.nuclei-latest.outputs.result != ''
+        env:
+          VERSION: ${{ steps.nuclei-latest.outputs.result }}
         run: |
-          go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+          wget -q https://github.com/projectdiscovery/nuclei/releases/download/${VERSION}/nuclei_${VERSION:1}_linux_amd64.zip
+          sudo unzip nuclei*.zip -d /usr/local/bin
+        working-directory: /tmp
 
       - name: Template Validation
         run: |
+          cp -r ${{ github.workspace }} $HOME
           nuclei -validate -t .
           nuclei -validate -w ./workflows
