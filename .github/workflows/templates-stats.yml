@@ -1,0 +1,52 @@
+name: 🗒 Templates Stats
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+        with: 
+          go-version: 1.17
+
+      - name: Installing Template Stats
+        run: |
+          go install github.com/projectdiscovery/templates-stats@main
+        shell: bash
+
+      - name: Markdown Stats
+        run: |
+          templates-stats -output TEMPLATES-STATS.md -path /home/runner/work/nuclei-templates/nuclei-templates/
+        shell: bash
+
+      - name: JSON Stats
+        run: |
+          templates-stats -output TEMPLATES-STATS.json -json -path /home/runner/work/nuclei-templates/nuclei-templates/
+        shell: bash
+
+      - name: Top 10 Stats
+        run: |
+          templates-stats -output TOP-10.md -top 10 -path /home/runner/work/nuclei-templates/nuclei-templates/
+        shell: bash
+
+      - name: Get statistical changes
+        id: stats
+        run: echo "::set-output name=changes::$(git status -s | wc -l)"
+
+      - name: Commit files
+        if: steps.stats.outputs.changes > 0
+        run: |
+          git add TEMPLATES-STATS.*
+          git add TOP-10.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Auto Generated Templates Stats [$(date)] :robot:" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

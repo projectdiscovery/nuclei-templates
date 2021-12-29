@@ -1,0 +1,63 @@
+id: vmware-version-detect
+
+info:
+  name: vmware-version-detect
+  author: elouhi
+  severity: info
+  description: Sends a POST request containing a SOAP payload to a vCenter server to obtain version information
+  reference:
+    - https://www.pwndefend.com/2021/09/23/exposed-vmware-vcenter-servers-around-the-world-cve-2021-22005/
+    - https://svn.nmap.org/nmap/scripts/vmware-version.nse
+  tags: tech,vcenter,vmware
+
+requests:
+  - raw:
+      - |
+        POST /sdk/ HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Encoding: gzip, deflate
+        Accept-Language: en-US,en;q=0.9
+        Connection: close
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+           <soap:Header>
+              <operationID>00000001-00000001</operationID>
+           </soap:Header>
+           <soap:Body>
+              <RetrieveServiceContent xmlns="urn:internalvim25">
+                 <_this xsi:type="ManagedObjectReference" type="ServiceInstance">ServiceInstance</_this>
+              </RetrieveServiceContent>
+           </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'ha-folder-root'
+          - 'RetrieveServiceContentResponse'
+
+      - type: word
+        words:
+          - "text/xml"
+        part: header
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "<name>(.*?)</name>"
+          - "<version>(.*?)</version>"
+          - "<build>(.*?)</build>"
+          - "<osType>(.*?)</osType>"
+          - "<productLineId>(.*?)</productLineId>"
+          - "<apiType>(.*?)</apiType>"

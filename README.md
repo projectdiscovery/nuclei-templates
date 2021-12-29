@@ -3,7 +3,7 @@
 <h1 align="center">
 Nuclei Templates
 </h1>
-<h4 align="center">Community curated list of templates for the nuclei engine to find a security vulnerability in application.</h4>
+<h4 align="center">Community curated list of templates for the nuclei engine to find security vulnerabilities in applications.</h4>
 
 
 <p align="center">
@@ -24,59 +24,73 @@ Nuclei Templates
 
 ----
 
-Templates are the core of [nuclei scanner](https://github.com/projectdiscovery/nuclei) which power the actual scanning engine. This repository stores and houses various templates for the scanner provided by our team as well as contributed by the community. We hope that you also contribute by sending templates via **pull requests** or [Github issue](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) and grow the list.
+Templates are the core of the [nuclei scanner](https://github.com/projectdiscovery/nuclei) which powers the actual scanning engine.
+This repository stores and houses various templates for the scanner provided by our team, as well as contributed by the community.
+We hope that you also contribute by sending templates via **pull requests** or [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) to grow the list.
 
 
 ## Nuclei Templates overview
 
 
-An overview of the nuclei template directory including number of templates associated with each directory. 
+An overview of the nuclei template project, including statistics on unique tags, author, directory, severity, and type of templates. The table below contains the top ten statistics for each matrix; an expanded version of this is [available here](TEMPLATES-STATS.md), and also available in [JSON](TEMPLATES-STATS.json) format for integration.
 
 <table>
 <tr>
 <td> 
 
-| Templates        | Counts                         | Templates       | Counts                          | Templates      | Counts                       |
-| ---------------- | ------------------------------ | --------------- | ------------------------------- | -------------- | ---------------------------- |
-| cves             | 357           | vulnerabilities | 199 | exposed-panels | 154 |
-| takeovers        | 68        | exposures       | 107       | technologies   | 107   |
-| misconfiguration | 71 | workflows       | 32         | miscellaneous  | 25  |
-| default-logins   | 31 | file            | 42            | dns            | 10            |
-| fuzzing          | 10          | helpers         | 9         | iot            | 13            |
+## Nuclei Templates Top 10 statistics
 
-**119 directories, 1343 files**.
+|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
+|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
+| cve       |   934 | daffainfo     |   366 | cves             |   940 | info     |   948 | http    |  2572 |
+| lfi       |   393 | dhiyaneshdk   |   347 | vulnerabilities  |   367 | high     |   713 | file    |    57 |
+| panel     |   334 | pikpikcu      |   287 | exposed-panels   |   333 | medium   |   533 | network |    48 |
+| xss       |   291 | pdteam        |   222 | technologies     |   231 | critical |   332 | dns     |    12 |
+| wordpress |   274 | geeknik       |   173 | exposures        |   196 | low      |   170 |         |       |
+| exposure  |   254 | dwisiswant0   |   158 | misconfiguration |   168 |          |       |         |       |
+| rce       |   238 | pussycat0x    |    97 | token-spray      |   143 |          |       |         |       |
+| tech      |   237 | gy741         |    92 | takeovers        |    65 |          |       |         |       |
+| cve2021   |   201 | 0x_akoko      |    84 | default-logins   |    64 |          |       |         |       |
+| wp-plugin |   188 | princechaddha |    77 | file             |    57 |          |       |         |       |
+
+**195 directories, 2764 files**.
 
 </td>
 </tr>
 </table>
 
-
-
-
-
 📖 Documentation
 -----
 
-Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to **build** new and your **own custom** templates, we have also added many example templates for easy understanding.
+Please navigate to https://nuclei.projectdiscovery.io for detailed documentation to **build** new or your own **custom** templates.
+We have also added a set of templates to help you understand how things work.
 
 💪 Contributions
 -----
 
-Nuclei-templates is powered by major contributions from the community. [Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
+Nuclei-templates is powered by major contributions from the community.
+[Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
+
+![Alt](https://repobeats.axiom.co/api/embed/55ee65543bb9a0f9c797626c4e66d472a517d17c.svg "Repobeats analytics image")
 
 💬 Discussion
 -----
 
-Have questions / doubts / ideas to discuss? feel free to open a discussion using [Github discussions](https://github.com/projectdiscovery/nuclei-templates/discussions) board.
+Have questions / doubts / ideas to discuss?
+Feel free to open a discussion on [Github discussions](https://github.com/projectdiscovery/nuclei-templates/discussions) board.
 
 👨‍💻 Community
 -----
 
-You are welcomed to join our [Discord Community](https://discord.gg/KECAGdH). You can also follow us on [Twitter](https://twitter.com/pdiscoveryio) to keep up with everything related to projectdiscovery.
-
-💡 Notes
------
--  Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/) to validate the syntax of templates before sending pull requests.
+You are welcome to join the active [Discord Community](https://discord.gg/projectdiscovery) to discuss directly with project maintainers and share things with others around security and automation.
+Additionally, you may follow us on [Twitter](https://twitter.com/pdnuclei) to be updated on all the things about Nuclei.
 
 
-Thanks again for your contribution and keeping the community vibrant. :heart:
+<p align="center">
+<a href="https://github.com/projectdiscovery/nuclei-templates/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=projectdiscovery/nuclei-templates&max=300">
+</a>
+</p>
+
+
+Thanks again for your contribution and keeping this community vibrant. :heart:
