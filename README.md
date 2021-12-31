@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | cve2021   |   201 | 0x_akoko      |    84 | default-logins   |    64 |          |       |         |       |
 | wp-plugin |   188 | princechaddha |    77 | file             |    57 |          |       |         |       |
 
-**195 directories, 2764 files**.
+**198 directories, 2811 files**.
 
 </td>
 </tr>
