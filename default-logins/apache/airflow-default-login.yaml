@@ -1,0 +1,56 @@
+id: airflow-default-login
+
+info:
+  name: Apache Airflow Default Login
+  author: pdteam
+  severity: critical
+  tags: airflow,default-login,apache
+  reference: https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html
+  metadata:
+    shodan-query: title:"Sign In - Airflow"
+
+requests:
+  - raw:
+      - |
+        GET /login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+
+      - |
+        POST /login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/admin/airflow/login
+
+        username={{username}}&password={{password}}&_csrf_token={{csrf_token}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - airflow
+      password:
+        - airflow
+
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        name: csrf_token
+        group: 1
+        internal: true
+        regex:
+          - 'type="hidden" value="(.*?)">'
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "Sign In - Airflow")'
+          - 'contains(all_headers_2, "session=.")'
+          - 'status_code_2 == 302'
+        condition: and
+
+      - type: word
+        words:
+          - 'You should be redirected automatically to target URL: <a href="/">'

