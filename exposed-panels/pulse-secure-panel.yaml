@@ -2,7 +2,7 @@ id: pulse-secure-panel
 
 info:
   name: Pulse Secure VPN Panel
-  author: bsysop
+  author: bsysop,dadevel
   severity: info
   tags: panel,pulse
 
@@ -12,7 +12,6 @@ requests:
       - "{{BaseURL}}/dana-na/auth/url_default/welcome.cgi"
       - "{{BaseURL}}/dana-na/auth/url_2/welcome.cgi"
       - "{{BaseURL}}/dana-na/auth/url_3/welcome.cgi"
-
     stop-at-first-match: true
     matchers-condition: or
     matchers:
@@ -20,8 +19,36 @@ requests:
         part: header
         words:
           - "/dana-na/auth/welcome.cgi"
-
       - type: regex
         part: body
         regex:
           - "(?i)/dana-na/css/ds(_[a-f0-9]{64})?.css"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/dana-na/nc/nc_gina_ver.txt"  # not present in newer release
+      - "{{BaseURL}}/dana-cached/hc/HostCheckerInstaller.osx"
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        case-insensitive: true
+        words:
+          - 'NAME="ProductVersion"'
+      - type: word
+        part: body
+        case-insensitive: true
+        words:
+          - "<key>version</key>"
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)NAME="ProductVersion"\s+?VALUE="([^"]+)"'
+        group: 1
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<string>([^<]+)</string>"
+        group: 1
