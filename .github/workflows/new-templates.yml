@@ -1,0 +1,33 @@
+name: 🥳 New Template List
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate new template list
+        id: new-additions
+        run: |
+          git diff  --name-only --diff-filter=A $(git tag | tail -n 1) @ . | grep .yaml | tee .new-additions
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .new-additions -f
+          git commit -m "Auto Generated New Template Addition List [$(date)] :robot:" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
