@@ -2,7 +2,7 @@ id: tomcat-manager-pathnormalization
 
 info:
   name: Tomcat Manager Path Normalization
-  author: organiccrap
+  author: brenocss,organiccrap
   severity: info
   reference: https://i.blackhat.com/us-18/Wed-August-8/us-18-Orange-Tsai-Breaking-Parser-Logic-Take-Your-Path-Normalization-Off-And-Pop-0days-Out-2.pdf
   tags: panel,tomcat,apache
@@ -12,17 +12,20 @@ requests:
     path:
       - '{{BaseURL}}/..;/manager/html'
       - '{{BaseURL}}/..;/host-manager/html'
+      - '{{BaseURL}}/{{randstr}}/..;/manager/html'
+      - '{{BaseURL}}/{{randstr}}/..;/host-manager/html'
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: word
-        words:
-          - 'username="tomcat" password="s3cret"'
-          - 'manager-gui'
-        condition: and
-
-      - type: status
-        negative: true
-        status:
-          - 403
-          - 401
+      - type: dsl
+        name: '200'
+        dsl:
+          - 'status_code==200 && contains(body,"Tomcat")'
+      - type: dsl
+        name: '401'
+        dsl:
+          - 'status_code==401 && contains(body,"Tomcat")'
+      - type: dsl
+        name: '403'
+        dsl:
+          - 'status_code==403 && contains(body,"Tomcat")'
