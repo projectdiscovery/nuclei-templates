@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   960 | daffainfo     |   529 | cves             |   966 | info     |   994 | http    |  2668 |
-| lfi       |   401 | dhiyaneshdk   |   360 | exposed-panels   |   384 | high     |   731 | file    |    57 |
-| panel     |   385 | pikpikcu      |   295 | vulnerabilities  |   377 | medium   |   547 | network |    48 |
-| xss       |   297 | pdteam        |   241 | technologies     |   214 | critical |   354 | dns     |    16 |
-| wordpress |   277 | geeknik       |   173 | exposures        |   199 | low      |   171 |         |       |
-| exposure  |   273 | dwisiswant0   |   160 | workflows        |   182 |          |       |         |       |
-| rce       |   253 | gy741         |    98 | misconfiguration |   182 |          |       |         |       |
-| tech      |   224 | pussycat0x    |    98 | token-spray      |   146 |          |       |         |       |
-| cve2021   |   214 | 0x_akoko      |    96 | default-logins   |    67 |          |       |         |       |
-| wp-plugin |   187 | princechaddha |    81 | takeovers        |    65 |          |       |         |       |
+| cve       |  1056 | daffainfo     |   544 | cves             |  1061 | info     |  1067 | http    |  2905 |
+| panel     |   446 | dhiyaneshdk   |   406 | exposed-panels   |   447 | high     |   789 | file    |    57 |
+| lfi       |   430 | pikpikcu      |   313 | vulnerabilities  |   421 | medium   |   622 | network |    49 |
+| xss       |   335 | pdteam        |   257 | technologies     |   227 | critical |   384 | dns     |    17 |
+| wordpress |   329 | geeknik       |   174 | exposures        |   199 | low      |   169 |         |       |
+| exposure  |   282 | dwisiswant0   |   163 | misconfiguration |   188 | unknown  |     6 |         |       |
+| rce       |   268 | 0x_akoko      |   114 | workflows        |   185 |          |       |         |       |
+| cve2021   |   251 | gy741         |   109 | token-spray      |   147 |          |       |         |       |
+| tech      |   238 | princechaddha |   109 | default-logins   |    77 |          |       |         |       |
+| wp-plugin |   235 | pussycat0x    |   104 | takeovers        |    67 |          |       |         |       |

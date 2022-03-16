@@ -60,7 +60,7 @@ git add .
 git commit -m "Added/Fixed/Updated XXX Template"
 ```
 
-**NOTE**: 
+**NOTE**:
 
 - A Pull Request should have only one unique template to make it simple for review.
 - Multiple templates for same technology can be grouped into single Pull Request. 

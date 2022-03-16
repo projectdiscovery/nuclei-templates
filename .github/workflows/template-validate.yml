@@ -6,25 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
 
-      - name: Get latest Nuclei release version
-        id: nuclei-latest
-        uses: actions/github-script@v5
-        with:
-          result-encoding: string
-          script: |
-            const release = await github.rest.repos.getLatestRelease({
-              owner: 'projectdiscovery',
-              repo: 'nuclei',
-            });
-
-            return release.data.name
+      - name: Get Github tag
+        id: meta
+        run: |
+          echo "::set-output name=tag::$(curl --silent "https://api.github.com/repos/projectdiscovery/nuclei/releases/latest" | jq -r .tag_name)"
 
       - name: Setup Nuclei
-        if: steps.nuclei-latest.outputs.result != ''
+        if: steps.meta.outputs.tag != ''
         env:
-          VERSION: ${{ steps.nuclei-latest.outputs.result }}
+          VERSION: ${{ steps.meta.outputs.tag }}
         run: |
           wget -q https://github.com/projectdiscovery/nuclei/releases/download/${VERSION}/nuclei_${VERSION:1}_linux_amd64.zip
           sudo unzip nuclei*.zip -d /usr/local/bin
