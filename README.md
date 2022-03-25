@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | tech      |   238 | gy741         |   109 | default-logins   |    78 |          |       |         |       |
 | wp-plugin |   235 | pussycat0x    |   104 | takeovers        |    67 |          |       |         |       |
 
-**234 directories, 3291 files**.
+**236 directories, 3310 files**.
 
 </td>
 </tr>
