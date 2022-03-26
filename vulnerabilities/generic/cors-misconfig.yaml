@@ -1,0 +1,63 @@
+id: cors-misconfig
+
+info:
+  name: Basic CORS misconfiguration
+  author: nadino,G4L1T0,convisoappsec,pdteam
+  severity: info
+  reference: https://portswigger.net/web-security/cors
+  tags: cors,generic
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{randstr}}.tld
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Origin: null
+
+#  TODO's for future as currently {{Hostname}} is not supported in matchers
+#        Origin: {{randstr}}.{{Hostname}}
+#        Origin: {{Hostname}}.{{randstr}}.tld
+#        Origin: {{Hostname}}{{randstr}}.tld
+#        Origin: {{Hostname}}_.{{randstr}}.tld
+#        Origin: {{Hostname}}%60.{{randstr}}.tld
+#        Origin: http://{{Hostname}}
+#        Origin: http://{{randstr}}.{{Hostname}}
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: arbitrary-origin
+        dsl:
+          - "contains(tolower(all_headers), 'access-control-allow-origin: {{randstr}}.tld')"
+          - "contains(tolower(all_headers), 'access-control-allow-credentials: true')"
+        condition: and
+
+      - type: dsl
+        name: null-origin
+        dsl:
+          - "contains(tolower(all_headers), 'access-control-allow-origin: null')"
+          - "contains(tolower(all_headers), 'access-control-allow-credentials: true')"
+        condition: and
+
+      - type: dsl
+        name: wildcard-acac
+        dsl:
+          - "contains(tolower(all_headers), 'access-control-allow-origin: *')"
+          - "contains(tolower(all_headers), 'access-control-allow-credentials: true')"
+        condition: and
+
+      - type: dsl
+        name: wildcard-no-acac
+        dsl:
+          - "contains(tolower(all_headers), 'access-control-allow-origin: *')"
+          - "!contains(tolower(all_headers), 'access-control-allow-credentials: true')"
+        condition: and

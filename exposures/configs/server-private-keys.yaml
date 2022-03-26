@@ -1,0 +1,53 @@
+id: server-private-keys
+
+info:
+  name: Detect Private SSH, TLS, and JWT Keys
+  author: geeknik
+  severity: high
+  tags: config,exposure
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/localhost.key"
+      - "{{BaseURL}}/host.key"
+      - "{{BaseURL}}/www.key"
+      - "{{BaseURL}}/private-key"
+      - "{{BaseURL}}/privatekey.key"
+      - "{{BaseURL}}/server.key"
+      - "{{BaseURL}}/my.key"
+      - "{{BaseURL}}/key.pem"
+      - "{{BaseURL}}/ssl/localhost.key"
+      - "{{BaseURL}}/ssl/{{Hostname}}.key"
+      - "{{BaseURL}}/id_rsa"
+      - "{{BaseURL}}/id_dsa"
+      - "{{BaseURL}}/.ssh/id_rsa"
+      - "{{BaseURL}}/.ssh/id_dsa"
+      - "{{BaseURL}}/{{Hostname}}.key"
+      - "{{BaseURL}}/{{Hostname}}.pem"
+      - "{{BaseURL}}/config/jwt/private.pem"
+      - "{{BaseURL}}/jwt/private.pem"
+      - "{{BaseURL}}/var/jwt/private.pem"
+      - "{{BaseURL}}/private.pem"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "BEGIN OPENSSH PRIVATE KEY"
+          - "BEGIN PRIVATE KEY"
+          - "BEGIN RSA PRIVATE KEY"
+          - "BEGIN DSA PRIVATE KEY"
+          - "BEGIN EC PRIVATE KEY"
+          - "BEGIN PGP PRIVATE KEY BLOCK"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - '!contains(body_2, "<html")'
+          - '!contains(body_2, "<HTML")'
+        condition: and

