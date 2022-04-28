@@ -4,56 +4,37 @@ info:
   name: Jenkins Default Login
   author: Zandros0
   severity: high
-  tags: jenkins,default-login
   description: Jenkins default admin login information was discovered.
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
-    cve-id:
     cwe-id: CWE-522
+  tags: jenkins,default-login
 
 requests:
   - raw:
       - |
-        GET /login HTTP/1.1
+        GET / HTTP/1.1
         Host: {{Hostname}}
 
       - |
         POST /j_spring_security_check HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
-        Cookie: {{cookie}}
 
-        j_username={{username}}&j_password={{password}}&from=%2F&Submit=Sign+in
+        j_username=admin&j_password=admin&from=%2F&Submit=Sign+in
 
       - |
         GET / HTTP/1.1
         Host: {{Hostname}}
-        Cookie: {{cookie}}
 
-    attack: pitchfork
-    payloads:
-      username:
-        - admin
-        - jenkins
-      password:
-        - admin
-        - password
-
-    extractors:
-      - type: regex
-        name: cookie
-        internal: true
-        part: header
-        regex:
-          - 'JSESSIONID\..*=([a-z0-9.]+)'
-
+    cookie-reuse: true
     req-condition: true
     matchers:
       - type: dsl
-        condition: and
         dsl:
           - 'contains(body_3, "/logout")'
           - 'contains(body_3, "Dashboard [Jenkins]")'
+        condition: and
 
 # Enhanced by mp on 2022/03/10
