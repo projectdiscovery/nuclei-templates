@@ -4,39 +4,27 @@ info:
   name: phpMyAdmin Default Login
   author: Natto97
   severity: high
-  metadata:
-    shodan-query: http.title:phpMyAdmin
   description: phpMyAdmin default admin credentials were discovered
   reference:
-    - https://www.phpmyadmin.net/
+    - https://www.phpmyadmin.net
+  metadata:
+    shodan-query: http.title:phpMyAdmin
   tags: default-login,phpmyadmin
+
 
 requests:
   - raw:
       - |
         GET /index.php HTTP/1.1
         Host: {{Hostname}}
-        Upgrade-Insecure-Requests: 1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36
-        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-        Accept-Encoding: gzip, deflate
-        Accept-Language: zh-CN,zh;q=0.9
-        Connection: close
+
       - |
         POST /index.php HTTP/1.1
         Host: {{Hostname}}
-        Content-Length: 103
-        Cache-Control: max-age=0
-        Upgrade-Insecure-Requests: 1
         Content-Type: application/x-www-form-urlencoded
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36
-        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-        Accept-Encoding: gzip, deflate
-        Accept-Language: zh-CN,zh;q=0.9
-        Cookie: pma_lang=zh_CN; pma_collation_connection=utf8_unicode_ci; phpMyAdmin={{token2}}
-        Connection: close
+        Cookie: phpMyAdmin={{token2}}; pma_lang=en
 
-        pma_username={{user}}&pma_password={{password}}&server=1&target=index.php&token={{token1}}
+        set_session={{session}}&pma_username={{user}}&pma_password={{password}}&server=1&route=%2F&token={{token}}
 
     attack: clusterbomb
     payloads:
@@ -47,31 +35,44 @@ requests:
         - 123456
         - root
         - mysql
+        - toor
+
 
     extractors:
       - type: regex
-        name: token1
-        part: body
+        name: token
         internal: true
         group: 1
         regex:
-          - ;token=(.*?)'></script>
+          - 'name="token" value="(.*?)">'
+
       - type: regex
         name: token2
+        internal: true
+        group: 1
+        regex:
+          - 'name="set_session" value="(.*?)">'
+
+      - type: regex
+        name: session
         part: header
         internal: true
         group: 1
         regex:
-          - phpMyAdmin=(.*?); path=
+          - "phpMyAdmin=([0-9a-z]+)"
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 302
       - type: word
         part: header
         words:
-          - 'Set-Cookie: pmaUser'
-          - 'Set-Cookie: pmaPas'
+          - "/index.php?route"
+          - "phpMyAdmin="
+          - "pmaUser-1="
+        case-insensitive: true
         condition: and
+
+      - type: status
+        status:
+          - 302
