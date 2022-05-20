@@ -1,0 +1,53 @@
+id: rainloop-default-login
+
+info:
+  name: Rainloop WebMail Default Login
+  author: For3stCo1d
+  severity: high
+  reference:
+    - https://github.com/RainLoop/rainloop-webmail/issues/28
+  metadata:
+    fofa-query: app="RAINLOOP-WebMail"
+  tags: rainloop,webmail,default-login,foss
+
+requests:
+  - raw:
+      - | # Login Portal: /?admin
+        GET /?/AdminAppData@no-mobile-0/0/15503332983847185/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /?/Ajax/&q[]=/0/ HTTP/2
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        Login={{user}}&Password={{pass}}&Action=AdminLogin&XToken={{token}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+
+      pass:
+        - 12345
+
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        name: token
+        internal: true
+        group: 1
+        regex:
+          - 'token":"(.+?)"'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Action":"AdminLogin"'
+          - '"Result":true'
+        condition: and
+
+      - type: status
+        status:
+          - 200

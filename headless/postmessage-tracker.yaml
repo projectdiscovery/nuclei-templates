@@ -1,0 +1,66 @@
+id: postmessage-tracker
+
+info:
+  name: Postmessage Tracker
+  author: pdteam
+  severity: info
+  reference:
+    - https://github.com/vinothsparrow/iframe-broker/blob/main/static/script.js
+  tags: headless,postmessage
+
+headless:
+  - steps:
+      - action: setheader
+        args:
+          part: response
+          key: Content-Security-Policy
+          value: "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
+      - action: script
+        args:
+          hook: true
+          code: |
+            (function() {window.alerts = [];
+
+            function logger(found) {
+            	window.alerts.push(found);
+            }
+
+            function getStackTrace () {
+              var stack;
+              try {
+                throw new Error('');
+              }
+              catch (error) {
+                stack = error.stack || '';
+              }
+              stack = stack.split('\n').map(function (line) { return line.trim(); });
+              return stack.splice(stack[0] == 'Error' ? 2 : 1);
+            }
+
+            var oldListener = Window.prototype.addEventListener;
+
+            Window.prototype.addEventListener = function(type, listener, useCapture) {
+              if(type === 'message') {
+                logger(getStackTrace());
+              }
+              return oldListener.apply(this, arguments);
+            };
+            })();
+      - args:
+          url: "{{BaseURL}}"
+        action: navigate
+      - action: waitload
+      - action: script
+        name: alerts
+        args:
+          code: "window.alerts"
+    matchers:
+      - type: word
+        part: alerts
+        words:
+          - "at Window.addEventListener"
+    extractors:
+      - type: kval
+        part: alerts
+        kval:
+          - alerts

@@ -1,0 +1,37 @@
+id: darkstat-detect
+
+info:
+  name: Detect Darkstat Reports
+  author: geeknik
+  severity: high
+  description: Darkstat captures network traffic, calculates statistics about usage, and serves reports over HTTP
+  reference:
+    - https://unix4lyfe.org/darkstat/
+  tags: darkstat,logs,exposure
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/darkstat/"
+    # FYI, the default port for darkstat is 666
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "[Ss]erver: darkstat.*"
+      - type: word
+        part: body
+        words:
+          - "darkstat"
+          - "<title>Graphs"
+          - "Measuring for"
+          - "hosts</a>"
+        condition: and
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - server

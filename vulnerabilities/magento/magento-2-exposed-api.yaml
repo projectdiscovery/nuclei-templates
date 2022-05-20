@@ -1,0 +1,43 @@
+id: magento-2-exposed-api
+
+info:
+  name: Exposed Magento 2 API
+  author: TechbrunchFR
+  severity: info
+  description: The API in Magento 2 can be accessed by the world without providing credentials. Through the API information like storefront, (hidden) products including prices are exposed.
+  reference:
+    - https://support.hypernode.com/en/ecommerce/magento-2/how-to-protect-the-magento-2-api
+  tags: magento
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/rest/V1/products'
+      - '{{BaseURL}}/rest/V1/store/storeConfigs'
+      - '{{BaseURL}}/rest/V1/store/storeViews'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "searchCriteria")'
+          - 'contains(body, "parameters")'
+          - 'contains(body, "message")'
+          - 'contains(tolower(all_headers), "application/json")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "secure_base_link_url")'
+          - 'contains(body, "timezone")'
+          - 'contains(tolower(all_headers), "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "name")'
+          - 'contains(body, "website_id")'
+          - 'contains(tolower(all_headers), "application/json")'
+          - 'status_code == 200'
+        condition: and

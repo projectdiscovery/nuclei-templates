@@ -1,0 +1,34 @@
+id: magento-detect
+
+info:
+  name: Magento Detect
+  author: TechbrunchFR
+  severity: info
+  description: Identify Magento
+  reference:
+    - https://devdocs.magento.com/guides/v2.4/graphql/
+  tags: magento
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+      - '{{BaseURL}}/graphql?query=+{customerDownloadableProducts+{+items+{+date+download_url}}+}'
+
+      # There might be a better way to do that, the idea of this check is that Magento might be behind some kind of proxy when
+      # consumed by a SPA/PWA app, so we need a valid GraphQL query from Magento to check reference[1]
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(tolower(all_headers), "x-magento")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "graphql-authorization")'
+          - 'contains(body, "The current customer")'
+          - 'status_code == 200'
+        condition: and

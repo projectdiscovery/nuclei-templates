@@ -1,0 +1,44 @@
+id: zabbix-default-login
+
+info:
+  name: Zabbix Default Login
+  author: pdteam
+  severity: high
+  description: Zabbix default admin credentials were discovered.
+  reference:
+    - https://openbaton.github.io/documentation/zabbix-server-configuration-3.0/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  tags: zabbix,default-login
+
+requests:
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+
+        name={{username}}&password={{password}}&autologin=1&enter=Sign+in
+
+    payloads:
+      username:
+        - Admin
+      password:
+        - zabbix
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "zabbix.php?action=dashboard.view"
+
+      - type: status
+        status:
+          - 302
+
+# Enhanced by mp on 2022/03/13

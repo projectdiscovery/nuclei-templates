@@ -1,0 +1,40 @@
+id: wordpress-detect
+
+info:
+  name: WordPress Detection
+  author: pdteam
+  severity: info
+  metadata:
+    shodan-query: http.component:"WordPress"
+  tags: tech,wordpress
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 2
+    matchers-condition: or
+    matchers:
+
+      - type: regex
+        regex:
+          - '<link[^>]+s\d+\.wp\.com'
+          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([\d.]+) -'
+          - '<!--[^>]+WP-Super-Cache'
+        condition: or
+
+      - type: word
+        words:
+          - '/wp-content/themes/'
+          - '/wp-includes/'
+          - 'name="generator" content="wordpress'
+          - '<!-- performance optimized by w3 total cache. learn more: http://www.w3-edge.com/wordpress-plugins/'
+        condition: or
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - 'content="WordPress ([0-9.]+)"'

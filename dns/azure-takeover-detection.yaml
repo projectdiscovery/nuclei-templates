@@ -1,20 +1,24 @@
 id: azure-takeover-detection
 
 info:
-  name: Azure takeover detection
-  author: "pdnuclei - projectdiscovery.io"
+  name: Microsoft Azure Takeover Detection
+  author: pdteam
   severity: high
-
-  # Update the list with more CNAMEs related to azure
-  # You need to claim the CNAME in Azure portal (https://portal.azure.com) to confirm the takeover.
-  # Do not report this without claiming the CNAME.
+  description: Microsoft Azure is vulnerable to subdomain takeover attacks. Subdomain takeovers are a common, high-severity threat for organizations that regularly create and delete many resources. A subdomain takeover can occur when a DNS record points to a deprovisioned Azure resource.
+  reference:
+    - https://godiego.co/posts/STO/
+    - https://docs.microsoft.com/en-us/azure/security/fundamentals/subdomain-takeover
+    - https://cystack.net/research/subdomain-takeover-chapter-two-azure-services/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-404
+  tags: dns,takeover,azure
 
 dns:
   - name: "{{FQDN}}"
     type: A
-    class: inet
-    recursion: true
-    retries: 3
+
     matchers-condition: and
     matchers:
       - type: word
@@ -36,8 +40,16 @@ dns:
           - "redis.cache.windows.net"
           - "search.windows.net"
           - "servicebus.windows.net"
-          - "trafficmanager.net"
           - "visualstudio.com"
+
       - type: word
         words:
           - "NXDOMAIN"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "IN\tCNAME\t(.+)"
+
+# Enhanced by mp on 2022/03/13
