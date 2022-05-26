@@ -1,0 +1,46 @@
+id: openemr-default-login
+
+info:
+  name: OpenEMR Default Login
+  author: Geekby
+  description: OpenEMR default login was discovered.
+  severity: high
+  reference:
+    - https://github.com/openemr/openemr-devops/tree/master/docker/openemr/6.1.0/#openemr-official-docker-image
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    fofa-query: app="OpenEMR"
+    shodan-query: http.html:"OpenEMR"
+  tags: openemr,default-login
+
+requests:
+  - raw:
+      - |
+        POST /interface/main/main_screen.php?auth=login&site=default HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        new_login_session_management=1&languageChoice=1&authUser={{user}}&clearPass={{pass}}&languageChoice=10
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - pass
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "main.php?token_main="
+          - "OpenEMR"
+        condition: and
+
+      - type: status
+        status:
+          - 302

