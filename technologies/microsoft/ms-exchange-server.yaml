@@ -1,0 +1,43 @@
+id: ms-exchange-server
+
+info:
+  name: Microsoft Exchange Server Detect
+  author: pikpikcu,dhiyaneshDK
+  severity: info
+  description: Check for Exchange Server CVEs CVE-2021-26855, CVE-2021-26857, CVE-2021-26858 and CVE-2021-27065, using Outlook Web App path data.
+  reference:
+    - https://github.com/GossiTheDog/scanning/blob/main/http-vuln-exchange.nse
+  tags: microsoft,exchange,tech
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/owa/auth/logon.aspx"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)(X-Owa-Version:)"
+
+      - type: regex
+        part: body
+        regex:
+          - "/owa/auth/[0-9.]+/"
+
+      - type: word
+        words:
+          - '<title>Exchange Log In</title>'
+          - '<title>Microsoft Exchange - Outlook Web Access</title>'
+
+    extractors:
+      - type: kval
+        kval:
+          - x_owa_version
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "/owa/auth/([0-9.]+)/"
