@@ -1,0 +1,38 @@
+id: mismatched-certificate
+
+info:
+  name: Mismatched SSL Certificate
+  author: pdteam
+  severity: info
+  tags: ssl,takeover
+
+variables:
+  rdn: "{{RDN}}"
+  fqdn: "{{FQDN}}"
+  wrdn: "*.{{RDN}}"
+  wfqdn: "*.{{FQDN}}"
+
+ssl:
+  - address: "{{Host}}:{{Port}}"
+
+    extractors:
+      - type: json
+        name: cn
+        json:
+          - ".common_name[]"
+        internal: true
+
+      - type: json
+        name: san
+        json:
+          - ".dns_names[]"
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - '!contains(cn, rdn) && !contains(san, rdn)'
+          - '!contains(cn, fqdn) && !contains(san, fqdn)'
+          - '!contains(cn, rdn) && !contains(san, wrdn)'
+          - '!contains(cn, fqdn) && !contains(san, wfqdn)'
+        condition: and
