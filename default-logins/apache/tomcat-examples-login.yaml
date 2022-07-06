@@ -1,13 +1,14 @@
-id: example-tomcat-default-login
+id: tomcat-examples-login
 
 info:
-  name: Tomcat Default Creds
+  name: Tomcat Examples Default Login
   author: 0xelkomy & C0NQR0R
-  severity: medium
+  severity: info
   description: Default Creds and there is XSS here, /examples/jsp/security/protected/index.jsp?dataName=%22%3E%3Cimg+src%3Dd+onerror%3Dalert%28document.cookie%29%3E&dataValue= after you login you will be able to get it.
-  tags: creds
   reference:
     - https://c0nqr0r.github.io/CVE-2022-34305/
+  tags: default-login,tomcat
+
 requests:
   - raw:
       - |
@@ -21,21 +22,23 @@ requests:
         Content-Type: application/x-www-form-urlencoded
         Cookie: JSESSIONID={{session}} ;
 
-        j_username=tomcat&j_password=tomcat
-    extractors:
-      - type: regex
-        name: token
-        group: 1
-        internal: true
-        part: header
-        regex:
-          - "JSESSIONID=(.*)"
+        j_username={{username}}&j_password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - tomcat
+      password:
+        - tomcat
+
+    redirects: true
+    max-redirects: 2
+    cookie-reuse: true
     matchers-condition: and
     matchers:
       - type: word
-        part: header
+        part: body
         words:
-          - "Location: /examples/jsp/security/protected/index.jsp"
-      - type: status
-        status:
-          - 303
+          - "You are logged in as remote user"
+          - "{{username}}"
+        condition: and
