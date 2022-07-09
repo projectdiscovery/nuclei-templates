@@ -1,11 +1,13 @@
-id: icewarp-open-redirects
+id: icewarp-open-redirect
 
 info:
-  name: icewarp open redirects
+  name: IceWarp - Open Redirect
   author: uomogrande
-  severity: medium
+  severity: low
   description: Detects icewarp open redirects / fixed in Version 13.0.2.4
-  reference: "shodan Server: IceWarp/"
+  metadata:
+    verified: true
+    shodan-query: title:"icewarp"
   tags: icewarp,redirect
 
 requests:
@@ -13,17 +15,21 @@ requests:
       - |
         GET ///interact.sh/%2F.. HTTP/1.1
 
-    redirects: false
     matchers-condition: and
     matchers:
+      - type: word
+        part: header
+        words:
+          - 'IceWarp'
 
-      - type: dsl
-        name: redirected
-        dsl:
-          - 'contains(all_headers, "HTTP/1.1 302 Document Moved")'
-          - 'contains(all_headers, "Location: //interact.sh/../")'
-          - 'contains(all_headers, "Server: IceWarp")'
-        condition: and
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)interact\.sh\/?(\/|[^.].*)?$' 
+
+      - type: status
+        status:
+          - 302
 
     extractors:
       - type: regex
