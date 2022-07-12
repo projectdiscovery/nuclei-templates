@@ -1,0 +1,36 @@
+id: icewarp-open-redirect
+
+info:
+  name: IceWarp - Open Redirect
+  author: uomogrande
+  severity: medium
+  description: Detects icewarp open redirects / fixed in Version 13.0.2.4
+  metadata:
+    verified: true
+    shodan-query: title:"icewarp"
+  tags: icewarp,redirect
+
+requests:
+  - raw:
+      - |
+        GET ///interact.sh/%2F.. HTTP/1.1
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'IceWarp'
+
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)interact\.sh\/?(\/|[^.].*)?$'
+
+    extractors:
+      - type: regex
+        name: redirected
+        part: header
+        group: 1
+        regex:
+          - 'Server: (.{4,20})'
