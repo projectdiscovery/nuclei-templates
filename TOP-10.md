@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1240 | daffainfo     |   601 | cves             |  1236 | info     |  1306 | http    |  3408 |
-| panel     |   556 | dhiyaneshdk   |   451 | exposed-panels   |   564 | high     |   920 | file    |    76 |
-| lfi       |   475 | pikpikcu      |   316 | vulnerabilities  |   468 | medium   |   716 | network |    50 |
-| xss       |   402 | pdteam        |   268 | technologies     |   260 | critical |   422 | dns     |    17 |
-| wordpress |   388 | geeknik       |   187 | exposures        |   222 | low      |   194 |         |       |
-| exposure  |   322 | dwisiswant0   |   169 | misconfiguration |   206 | unknown  |     6 |         |       |
-| cve2021   |   307 | 0x_akoko      |   148 | token-spray      |   206 |          |       |         |       |
-| rce       |   305 | princechaddha |   146 | workflows        |   187 |          |       |         |       |
-| wp-plugin |   283 | pussycat0x    |   125 | default-logins   |    98 |          |       |         |       |
-| tech      |   276 | gy741         |   124 | file             |    76 |          |       |         |       |
+| cve       |  1261 | daffainfo     |   605 | cves             |  1257 | info     |  1350 | http    |  3511 |
+| panel     |   586 | dhiyaneshdk   |   502 | exposed-panels   |   594 | high     |   929 | file    |    76 |
+| lfi       |   482 | pikpikcu      |   320 | vulnerabilities  |   481 | medium   |   750 | network |    50 |
+| xss       |   426 | pdteam        |   268 | technologies     |   266 | critical |   425 | dns     |    17 |
+| wordpress |   399 | geeknik       |   187 | exposures        |   252 | low      |   207 |         |       |
+| exposure  |   351 | dwisiswant0   |   169 | token-spray      |   206 | unknown  |     6 |         |       |
+| cve2021   |   309 | 0x_akoko      |   152 | misconfiguration |   206 |          |       |         |       |
+| rce       |   306 | princechaddha |   147 | workflows        |   187 |          |       |         |       |
+| wp-plugin |   295 | pussycat0x    |   126 | default-logins   |    99 |          |       |         |       |
+| tech      |   281 | gy741         |   124 | file             |    76 |          |       |         |       |
