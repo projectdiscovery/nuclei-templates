@@ -1,0 +1,45 @@
+id: audiocodes-default-login
+
+info:
+  name: Audiocodes 310HD, 320HD, 420HD, 430HD & 440HD Default Login
+  author: d4vy
+  severity: high
+  description: Audiocodes 310HD, 320HD, 420HD, 430HD & 440HD default login credentials were discovered.
+  reference:
+    - https://wiki.freepbx.org/display/FPG/Supported+Devices-Audio+Codes#:~:text=Reset%20to%20Factory%20Defaults,-Press%20the%20Menu&text=Then%2C%20enter%20the%20Admin%20password,is%20%221234%22%20by%20default
+  classification:
+    cwe-id: CWE-798
+  tags: iot,audiocodes,default-login
+
+requests:
+  - raw:
+      - |
+        POST /login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&psw={{url_encode(base64("{{password}}"))}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - "1234"
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "redirect('/mainform.cgi?go=mainframe.htm')"
+
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "Login failed. Check username and password"
+
+      - type: status
+        status:
+          - 200
