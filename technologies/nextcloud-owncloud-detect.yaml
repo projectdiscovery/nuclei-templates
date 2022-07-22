@@ -1,0 +1,57 @@
+id: nextcloud-owncloud-detect
+
+info:
+  name: nextcloud | owncloud detect
+  author: evait security - anton strilez
+  severity: info
+  tags: tech
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/status.php"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '{"installed":(?:true|false),"maintenance":(?:true|false),"version":"[0-9\.]*","versionstring":"[a-z-A-Z0-9\.]*","edition":"[\d\D]*"}'
+        part: body
+        condition: and
+      - type: regex
+        regex:
+          - 'var\s_theme={[\d\D]*productName":"(?:[Oo]Own[Cc]loud|[Nn]extcloud)"[\d\D]*}'
+        part: body
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '{[\d\D]*"version":"([0-9\.]+)","versionstring":"([a-z-A-Z0-9\.]*)"[\d\D]*}'
+      - type: regex
+        part: body
+        name: versionstring
+        group: 2
+        regex:
+          - '{[\d\D]*"version":"([0-9\.]*)","versionstring":"([a-z-A-Z0-9\.]+)"[\d\D]*}'
+      - type: regex
+        part: body
+        name: edition
+        group: 3
+        regex:
+          - '{"installed":(?:true|false),"maintenance":(?:true|false),"version":"([0-9\.]*)","versionstring":"([a-z-A-Z0-9\.]*)","edition":"([\d\D]+)"}'
+      - type: regex
+        part: body
+        name: productName
+        group: 1
+        regex:
+          - 'var\s_theme={[\d\D]*productName":"([^"]+)"[\d\D]*}'
+      - type: xpath
+        name: footer
+        xpath:
+          - '/html/body/footer/p/a[1]' # Here is mostly the product name contained
