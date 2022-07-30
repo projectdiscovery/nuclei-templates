@@ -1,0 +1,34 @@
+id: cache-poisoning-fuzz
+
+info:
+  name: Cache Poison Fuzzing
+  author: dwisiswant0
+  severity: info
+  reference:
+    - https://youst.in/posts/cache-poisoning-at-scale/
+  tags: cache,fuzz
+
+requests:
+  - raw:
+      - |
+        GET /?{{uniq}}=1 HTTP/1.1
+        Host: {{Hostname}}
+        {{headers}}: {{uniq}}.tld
+
+      - |
+        GET /?{{uniq}}=1 HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: clusterbomb
+    payloads:
+      uniq:
+        - "{{md5(rand_text_numeric(32))}}"
+      headers: helpers/wordlists/headers.txt
+
+    stop-at-first-match: true
+    req-condition: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{uniq}}")'

