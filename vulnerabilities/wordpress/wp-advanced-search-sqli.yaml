@@ -1,0 +1,43 @@
+id: wp-advanced-search-sqli
+
+info:
+  name: WP Advanced Search < 3.3.6 - Unauthenticated SQL Injection
+  author: akincibor
+  severity: critical
+  description: Due to using string concatenation, allowing direct access to a vulnerable PHP file and missing best-practices for coding SQL operations, there exists an unauthenticated SQL injection in autocompletion-PHP5.5.php.
+  reference:
+    - https://wpscan.com/vulnerability/136e1010-2f1b-4d09-b251-10db01ab72f1
+  tags: sqli,wp,wordpress,wp-plugin,unauth
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/wp-advanced-search/readme.txt'
+
+    extractors:
+      - type: regex
+        name: version
+        internal: true
+        group: 1
+        regex:
+          - "(?m)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        group: 1
+        regex:
+          - "(?m)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "WordPress WP-Advanced-Search"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 3.3.6')
