@@ -22,6 +22,11 @@ Nuclei Templates
   <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/projectdiscovery/nuclei-templates/blob/master/README.md">English</a> •
+  <a href="https://github.com/projectdiscovery/nuclei-templates/blob/master/README_KR.md">Korean</a>
+</p>
+
 ----
 
 Templates are the core of the [nuclei scanner](https://github.com/projectdiscovery/nuclei) which powers the actual scanning engine.
