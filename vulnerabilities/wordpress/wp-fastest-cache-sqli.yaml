@@ -1,0 +1,43 @@
+id: wp-fastest-cache-sqli
+
+info:
+  name: WP Fastest Cache <= 0.8.7.4 - Blind SQL Injection
+  author: akincibor
+  severity: critical
+  description: Improper escaping of user input when deleting the cache of specific pages leads to SQL injection vulnerability. esc_sql() was used on input but the result was used unquoted in the constructed SQL query.
+  reference:
+    - https://wpscan.com/vulnerability/8beb9013-b36d-4d2d-9042-f1053e2ccf21
+  tags: sqli,wp,wordpress,wp-plugin,unauth
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/wp-fastest-cache/readme.txt'
+
+    extractors:
+      - type: regex
+        name: version
+        internal: true
+        group: 1
+        regex:
+          - "(?m)Stable tag: ([0-9.]+)"
+
+      - type: regex
+        group: 1
+        regex:
+          - "(?m)Stable tag: ([0-9.]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "WP Fastest Cache"
+        part: body
+
+      - type: dsl
+        dsl:
+          - compare_versions(version, '< 0.8.7.5')
