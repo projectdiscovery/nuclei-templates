@@ -22,11 +22,6 @@ Nuclei Templates
   <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/projectdiscovery/nuclei-templates/blob/master/README.md">English</a> •
-  <a href="https://github.com/projectdiscovery/nuclei-templates/blob/master/README_KR.md">Korean</a>
-</p>
-
 ----
 
 Templates are the core of the [nuclei scanner](https://github.com/projectdiscovery/nuclei) which powers the actual scanning engine.
@@ -47,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1325 | daffainfo     |   629 | cves             |  1306 | info     |  1398 | http    |  3644 |
-| panel     |   604 | dhiyaneshdk   |   509 | exposed-panels   |   613 | high     |   955 | file    |    76 |
-| lfi       |   490 | pikpikcu      |   322 | vulnerabilities  |   506 | medium   |   784 | network |    50 |
-| xss       |   451 | pdteam        |   269 | technologies     |   273 | critical |   445 | dns     |    17 |
-| wordpress |   409 | geeknik       |   187 | exposures        |   254 | low      |   211 |         |       |
-| exposure  |   360 | dwisiswant0   |   169 | token-spray      |   230 | unknown  |     7 |         |       |
-| cve2021   |   324 | 0x_akoko      |   157 | misconfiguration |   210 |          |       |         |       |
-| rce       |   319 | princechaddha |   149 | workflows        |   187 |          |       |         |       |
-| wp-plugin |   304 | pussycat0x    |   130 | default-logins   |   102 |          |       |         |       |
-| tech      |   286 | gy741         |   126 | file             |    76 |          |       |         |       |
+| cve       |  1351 | daffainfo     |   629 | cves             |  1324 | info     |  1415 | http    |  3700 |
+| panel     |   616 | dhiyaneshdk   |   535 | exposed-panels   |   624 | high     |   962 | file    |    76 |
+| lfi       |   495 | pikpikcu      |   325 | vulnerabilities  |   521 | medium   |   799 | network |    51 |
+| xss       |   463 | pdteam        |   269 | technologies     |   276 | critical |   459 | dns     |    17 |
+| wordpress |   417 | geeknik       |   187 | exposures        |   260 | low      |   215 |         |       |
+| exposure  |   369 | dwisiswant0   |   169 | token-spray      |   230 | unknown  |     7 |         |       |
+| cve2021   |   339 | 0x_akoko      |   158 | misconfiguration |   214 |          |       |         |       |
+| rce       |   331 | princechaddha |   150 | workflows        |   187 |          |       |         |       |
+| wp-plugin |   312 | pussycat0x    |   133 | default-logins   |   102 |          |       |         |       |
+| tech      |   288 | gy741         |   126 | file             |    76 |          |       |         |       |
 
-**286 directories, 4012 files**.
+**290 directories, 4070 files**.
 
 </td>
 </tr>
