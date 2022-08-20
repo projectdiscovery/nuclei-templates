@@ -1,0 +1,59 @@
+id: magento-sensitive-information-disclosure
+
+info:
+  name: Magento Sensitive Information Disclosure (local.xml)
+  author: 
+    - ptonewreckin
+    - danigoland
+  severity: high
+  description: Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml
+  reference:
+    - https://github.com/ptonewreckin/cmsDetector/blob/master/signatures/magento.py
+  tags: magento,exposure,credentials
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/etc/local.xml"
+      - "{{BaseURL}}/app/etc/local.xml.additional"
+      - "{{BaseURL}}/store/app/etc/local.xml"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "* Magento"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+        - type: regex
+          name: "Host"
+          part: body
+          group: 1
+          regex:
+            - "<host><!\\[CDATA\\[(.+)\\]\\]><\\/host>"
+
+        - type: regex
+          name: "Username"
+          part: body
+          group: 1
+          regex:
+            - "<username><!\\[CDATA\\[(.+)\\]\\]><\\/username>"
+
+        - type: regex
+          name: "Password"
+          part: body
+          group: 1
+          regex:
+            - "<password><!\\[CDATA\\[(.+)\\]\\]><\\/password>"
+
+        - type: regex
+          name: "DB Name"
+          part: body
+          group: 1
+          regex:
+            - "<dbname><!\\[CDATA\\[(.+)\\]\\]><\\/dbname>"
