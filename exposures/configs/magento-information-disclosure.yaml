@@ -1,14 +1,15 @@
-id: magento-sensitive-information-disclosure
+id: magento-information-disclosure
 
 info:
-  name: Magento Sensitive Information Disclosure (local.xml)
-  author: 
-    - ptonewreckin
-    - danigoland
+  name: Magento - Information Disclosure
+  author: ptonewreckin,danigoland
   severity: high
-  description: Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml
+  description: |
+    Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml
   reference:
     - https://github.com/ptonewreckin/cmsDetector/blob/master/signatures/magento.py
+  metadata:
+    verified: true
   tags: magento,exposure,credentials
 
 requests:
@@ -18,12 +19,20 @@ requests:
       - "{{BaseURL}}/app/etc/local.xml.additional"
       - "{{BaseURL}}/store/app/etc/local.xml"
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "* Magento"
-        part: body
+          - "<dbname>"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/xml"
 
       - type: status
         status:
@@ -31,28 +40,28 @@ requests:
 
     extractors:
         - type: regex
-          name: "Host"
+          name: Host
           part: body
           group: 1
           regex:
             - "<host><!\\[CDATA\\[(.+)\\]\\]><\\/host>"
 
         - type: regex
-          name: "Username"
+          name: Username
           part: body
           group: 1
           regex:
             - "<username><!\\[CDATA\\[(.+)\\]\\]><\\/username>"
 
         - type: regex
-          name: "Password"
+          name: Password
           part: body
           group: 1
           regex:
             - "<password><!\\[CDATA\\[(.+)\\]\\]><\\/password>"
 
         - type: regex
-          name: "DB Name"
+          name: DB Name
           part: body
           group: 1
           regex:
