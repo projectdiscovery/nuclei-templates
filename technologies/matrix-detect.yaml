@@ -1,0 +1,51 @@
+id: matrix-detect
+
+info:
+  name: Matrix Server Detect
+  author: erethon
+  severity: info
+  description: Detects Matrix servers based on .well-known entries. See https://en.wikipedia.org/wiki/Matrix_(protocol)
+  reference: https://spec.matrix.org/v1.3/server-server-api/#getwell-knownmatrixserver, https://spec.matrix.org/v1.3/client-server-api/#getwell-knownmatrixclient
+  tags: tech,matrix
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/matrix/server"
+      - "{{BaseURL}}/.well-known/matrix/client"
+
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        part: body
+        words:
+          - "m."
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        name: server-to-server
+        json:
+          - '."m.server" | select( . != null )'
+
+      - type: json
+        part: body
+        name: client-homeserver
+        json:
+          - '."m.homeserver" | .base_url | select( . != null )'
+
+      - type: json
+        part: body
+        name: identity-server
+        json:
+          - '."m.identity_server" | .base_url | select( . != null )'

