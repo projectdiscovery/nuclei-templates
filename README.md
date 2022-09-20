@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1430 | daffainfo     |   631 | cves             |  1407 | info     |  1474 | http    |  3858 |
-| panel     |   655 | dhiyaneshdk   |   584 | exposed-panels   |   662 | high     |  1009 | file    |    76 |
-| edb       |   563 | pikpikcu      |   329 | vulnerabilities  |   509 | medium   |   818 | network |    51 |
-| lfi       |   509 | pdteam        |   269 | technologies     |   282 | critical |   478 | dns     |    17 |
-| xss       |   491 | geeknik       |   187 | exposures        |   275 | low      |   225 |         |       |
-| wordpress |   419 | dwisiswant0   |   169 | misconfiguration |   237 | unknown  |    11 |         |       |
-| exposure  |   407 | 0x_akoko      |   165 | token-spray      |   230 |          |       |         |       |
-| cve2021   |   352 | princechaddha |   151 | workflows        |   189 |          |       |         |       |
-| rce       |   337 | ritikchaddha  |   137 | default-logins   |   103 |          |       |         |       |
-| wp-plugin |   316 | pussycat0x    |   133 | file             |    76 |          |       |         |       |
+| cve       |  1444 | daffainfo     |   631 | cves             |  1421 | info     |  1481 | http    |  3894 |
+| panel     |   663 | dhiyaneshdk   |   594 | exposed-panels   |   670 | high     |  1033 | file    |    76 |
+| edb       |   564 | pikpikcu      |   329 | vulnerabilities  |   513 | medium   |   817 | network |    52 |
+| lfi       |   513 | pdteam        |   269 | technologies     |   283 | critical |   483 | dns     |    17 |
+| xss       |   496 | geeknik       |   192 | exposures        |   280 | low      |   228 |         |       |
+| wordpress |   422 | dwisiswant0   |   169 | misconfiguration |   240 | unknown  |    11 |         |       |
+| exposure  |   415 | 0x_akoko      |   166 | token-spray      |   230 |          |       |         |       |
+| cve2021   |   353 | princechaddha |   151 | workflows        |   190 |          |       |         |       |
+| rce       |   338 | ritikchaddha  |   137 | default-logins   |   103 |          |       |         |       |
+| wp-plugin |   319 | pussycat0x    |   133 | file             |    76 |          |       |         |       |
 
-**296 directories, 4231 files**.
+**297 directories, 4270 files**.
 
 </td>
 </tr>
