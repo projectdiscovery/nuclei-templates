@@ -6,29 +6,35 @@ info:
   severity: info
   reference:
     - https://youst.in/posts/cache-poisoning-at-scale/
-  tags: cache,fuzz
+    - https://portswigger.net/web-security/web-cache-poisoning
+  tags: fuzz,cache
 
 requests:
   - raw:
       - |
-        GET /?{{uniq}}=1 HTTP/1.1
+        GET /?{{md5(headers)}}=1 HTTP/1.1
         Host: {{Hostname}}
-        {{headers}}: {{uniq}}.tld
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0
+        {{headers}}: {{randstr}}
 
       - |
-        GET /?{{uniq}}=1 HTTP/1.1
+        GET /?{{md5(headers)}}=1 HTTP/1.1
         Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0
 
     attack: clusterbomb
     payloads:
-      uniq:
-        - "{{md5(rand_text_numeric(32))}}"
       headers: helpers/wordlists/headers.txt
 
     stop-at-first-match: true
     req-condition: true
 
+    matchers-condition: and
+
     matchers:
       - type: dsl
         dsl:
-          - 'contains(body_2, "{{uniq}}")'
+          - 'contains(body_1, "{{randstr}}")'
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{randstr}}")'
