@@ -2,40 +2,36 @@ id: wordpress-detect
 
 info:
   name: WordPress Detection
-  author: pdteam
+  author: pdteam,daffainfo
   severity: info
   metadata:
+    verified: true
     shodan-query: http.component:"WordPress"
   tags: tech,wordpress
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}"
+      - '{{BaseURL}}/feed/'
+      - '{{BaseURL}}/?feed=rss2' #alternative if /feed/ is blocked
 
-    host-redirects: true
-    max-redirects: 2
-    matchers-condition: or
+    stop-at-first-match: true
+    matchers-condition: and
     matchers:
-
       - type: regex
+        part: body
         regex:
-          - '<link[^>]+s\d+\.wp\.com'
-          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([\d.]+) -'
-          - '<!--[^>]+WP-Super-Cache'
-        condition: or
+          - '<generator>'
+          - '<link>'
+          - '<title>'
+        condition: and
 
-      - type: word
-        words:
-          - 'wp-login.php'
-          - '/wp-content/themes/'
-          - '/wp-includes/'
-          - 'name="generator" content="wordpress'
-          - '<!-- performance optimized by w3 total cache. learn more: http://www.w3-edge.com/wordpress-plugins/'
-        condition: or
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
         group: 1
         regex:
-          - 'content="WordPress ([0-9.]+)"'
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
