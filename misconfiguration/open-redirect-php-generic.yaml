@@ -1,0 +1,37 @@
+id: open-redirect-php-generic
+
+info:
+  name: Open redirect php generic
+  author: tess,elmahdi
+  severity: low
+  description: A user-controlled input redirects users to an external website, misconfiguration in php application.
+  metadata:
+    verified: true
+  tags: redirect,generic,php,misconfig
+
+requests:
+  - raw:
+      - |
+        GET /index.php/{{redirect}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      redirect:
+        - /interact.sh
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Location\s*?:\s*?)(?:https?:\/\/|\/\/|\/\\\\|\/\\)?(?:[a-zA-Z0-9\-_\.@]*)interact\.sh\/?(\/|[^.].*)?$' # https://regex101.com/r/ZDYhFh/1
+
+      - type: status
+        status:
+          - 301
+          - 302
+          - 307
+          - 308
+        condition: or
