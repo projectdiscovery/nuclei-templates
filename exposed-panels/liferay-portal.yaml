@@ -1,0 +1,45 @@
+id: liferay-portal
+
+info:
+  name: Liferay Portal Detect
+  author: organiccrap,dwisiswant0,ricardomaia
+  severity: info
+  reference:
+    - https://www.liferay.com/
+    - https://github.com/mzer0one/CVE-2020-7961-POC
+  metadata:
+    verified: true
+    shodan-query: http.favicon.hash:129457226
+  tags: panel,liferay,portal
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/api/jsonws"
+      - "{{BaseURL}}/api/jsonws/invoke"
+
+    matchers-condition: or
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Liferay-Portal"
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - <title>json-web-services-api</title>
+          - There are no services matching that phrase.
+          - Unable to deserialize object
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        name: version
+        group: 2
+        regex:
+          - '(i?)Liferay-Portal:.*?(\d+\.?.*?)\s'
