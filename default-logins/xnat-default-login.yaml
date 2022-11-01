@@ -5,30 +5,20 @@ info:
   author: 0x_Akoko
   severity: high
   description: XNAT default login information (admin/admin) was discovered.
-  classification:
-    cwe-id: CWE-798
   metadata:
     verified: true
-    shodan-dork: http.title:"XNAT"
-  tags: xnat,default-login
+    shodan-query: http.title:"XNAT"
+  tags: default-login,xnat
 
 requests:
   - raw:
       - |
-        GET /login HTTP/1.1
-        Host: {{Hostname}}
-        Origin: {{BaseURL}}
-
-      - |
         POST /login HTTP/1.1
         Host: {{Hostname}}
-        Origin: {{BaseURL}}
         Content-Type: application/x-www-form-urlencoded
-        Referer: {{BaseURL}}/app/template/Login.vm
 
         login_method=localdb&username={{username}}&password={{password}}&login=&XNAT_CSRF=
 
-    cookie-reuse: true
     attack: pitchfork
     payloads:
       username:
@@ -38,11 +28,13 @@ requests:
 
     matchers-condition: and
     matchers:
+      - type: word
+        part: header
+        words:
+          - "app/template/Index.vm?login=true"
+          - "JSESSIONID"
+        condition: and
+
       - type: status
         status:
           - 302
-
-      - type: word
-        part: location
-        words:
-          - "app/template/Index.vm?login=true"
