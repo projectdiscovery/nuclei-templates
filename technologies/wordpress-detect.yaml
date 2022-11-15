@@ -2,7 +2,7 @@ id: wordpress-detect
 
 info:
   name: WordPress Detect
-  author: pdteam,daffainfo
+  author: pdteam,daffainfo,ricardomaia
   severity: info
   metadata:
     verified: true
@@ -11,40 +11,45 @@ info:
 
 requests:
   - method: GET
-    path:
-      - '{{BaseURL}}'
-      - '{{BaseURL}}/feed/'
-      - '{{BaseURL}}/?feed=rss2' #alternative if /feed/ is blocked
-
     stop-at-first-match: true
-    matchers-condition: or
+    path:
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    matchers-condition: and
     matchers:
       - type: regex
         regex:
+          - '<generator>https?:\/\/wordpress\.org.*</generator>'
+          - "wp-login.php"
+          - '\/wp-content/themes\/'
+          - '\/wp-includes\/'
+          - 'name="generator" content="wordpress'
           - '<link[^>]+s\d+\.wp\.com'
           - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin v([\d.]+) -'
-          - '<!--[^>]+WP-Super-Cache'
+          - "<!--[^>]+WP-Super-Cache"
         condition: or
-
-      - type: word
-        part: body
-        words:
-          - '<generator>'
-          - '<link>'
-          - '<title>'
-        condition: and
-
-      - type: word
-        words:
-          - 'wp-login.php'
-          - '/wp-content/themes/'
-          - '/wp-includes/'
-          - 'name="generator" content="wordpress'
-          - '<!-- performance optimized by w3 total cache. learn more: http://www.w3-edge.com/wordpress-plugins/'
-        condition: or
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
+        name: version_by_generator
         group: 1
         regex:
           - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'
