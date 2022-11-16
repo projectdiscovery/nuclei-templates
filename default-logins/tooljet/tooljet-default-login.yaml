@@ -1,0 +1,54 @@
+id: tooljet-default-login
+
+info:
+  name: ToolJet Default Login Credential
+  author: random-robbie
+  severity: high
+  description: |
+    toolJet is an open-source low-code framework to build and deploy custom internal tools. ToolJet can connect to your data sources such as databases ( PostgreSQL, MongoDB, MS SQL Server, Snowflake, , BigQuery, etc ), API/GraphQL endpoints, SaaS tools ( Airtable, Stripe, Google Sheets, etc ) and cloud object storage services ( AWS S3, Google Cloud Storage and Minio )
+  reference:
+    - https://docs.tooljet.com/docs/contributing-guide/setup/docker/
+  metadata:
+    verified: true
+    shodan-query: title:"tooljet"
+  tags: default-login,tooljet
+
+requests:
+  - raw:
+      - |-
+        POST /api/authenticate HTTP/2
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:106.0) Gecko/20100101 Firefox/106.0
+        Accept: */*
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Referer: {{BaseURL}}/login?redirectTo=/
+        Content-Type: application/json
+        Origin: {{BaseURL}}
+
+        {"email":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - dev@tooljet.io
+      password:
+        - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"auth_token":'
+          - '"org_environment_variable_delete":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 201
