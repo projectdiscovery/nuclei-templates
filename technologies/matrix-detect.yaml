@@ -10,6 +10,8 @@ info:
 
 requests:
   - method: GET
+    redirects: true
+    max-redirects: 2
     path:
       - "{{BaseURL}}/.well-known/matrix/server"
       - "{{BaseURL}}/.well-known/matrix/client"
@@ -17,15 +19,15 @@ requests:
     matchers-condition: and
     matchers:
 
-      - type: word
-        part: body
-        words:
-          - "m."
+      - type: regex
+        regex:
+          - '"m\.([a-z]+)":'
 
       - type: word
         part: header
         words:
-          - "text/plain"
+          - text/html
+        negative: true
 
       - type: status
         status:
@@ -34,18 +36,7 @@ requests:
     extractors:
       - type: json
         part: body
-        name: server-to-server
         json:
           - '."m.server" | select( . != null )'
-
-      - type: json
-        part: body
-        name: client-homeserver
-        json:
           - '."m.homeserver" | .base_url | select( . != null )'
-
-      - type: json
-        part: body
-        name: identity-server
-        json:
           - '."m.identity_server" | .base_url | select( . != null )'
