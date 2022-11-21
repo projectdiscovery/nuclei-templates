@@ -1,0 +1,33 @@
+id: linkerd-service-detect
+
+info:
+  name: Linkerd Service detection
+  author: dudez
+  severity: info
+  reference:
+    - https://twitter.com/nirvana_msu/status/1084144955034165248
+  tags: tech,linkerd,service
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    headers:
+      l5d-dtab: /svc/* => /$/inet/interact.sh/443
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '(?mi)^l5d-err:.*$'
+          - '(?mi)^l5d-success-class: 0.*$'
+          - '(?mi)^Via\s*?:.*?linkerd.*$'
+        part: header
+        condition: or
+
+      - type: regex
+        regex:
+          - '(?mi)Exceeded .*? binding timeout while resolving name'
+          - '(?mi)exceeded .*? to unspecified while dyn binding'
+        part: body
+        condition: or

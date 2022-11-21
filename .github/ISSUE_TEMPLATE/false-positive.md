@@ -1,30 +1,24 @@
 ---
 name: False Positive
-about: 'Create an issue if you found false positive results. '
-title: "[false-positive] template-name "
+about: 'Issue for template producing invalid/unexpected result.'
 labels: 'false-positive'
-assignees: ''
 
 ---
 
-**Nuclei version**
+<!-- ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION. -->
 
-```
-nuclei -version 
-```
+### Nuclei Version:
 
-**Nuclei template version**
+<!-- You can find current version of nuclei with "nuclei -version" -->
 
-```
-cat ~/.nuclei-config.json
-```
+### Template file:
 
-**Template ID**
+<!-- Template producing false-positive results, for example: "cves/XX/XX.yaml" -->
 
-Please submit the ID template producing false-positive results. 
+### Command to reproduce:
 
-**Commands to Reproduce**
+<!-- Please include the command to replicate the behavior so fix can be applied asap. -->
+<!-- if host information can not be shared publicly, please reach out to us on discord server in DM -->
 
-```
-nuclei -t template_id -target ?
-```
+### Anything else:
+<!-- Links? References? Screnshots? Anything that will give us more context about the issue that you are encountering! -->

