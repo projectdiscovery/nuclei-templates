@@ -1,0 +1,79 @@
+id: tiny-file-manager-default-login
+
+info:
+  name: Tiny File Manager Default Login
+  author: shelled
+  severity: high
+  description: Tiny File Manager default login was discovered.
+  reference:
+    - https://github.com/prasathmani/tinyfilemanager
+  tags: tiny-file-manager, default-login
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/
+
+        fm_usr={{user}}&fm_pwd={{pass}}
+
+      - |
+        GET /index.php?p= HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/
+
+        fm_usr={{user}}&fm_pwd={{pass}}&token={{token}}
+
+      - |
+        GET /index.php?p= HTTP/1.1
+        Host: {{Hostname}}
+
+
+    stop-at-first-match: true
+    redirects: true
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        internal: true
+        regex:
+          - '([a-f0-9]{64})'
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - admin@123
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - 'admin'
+
+      - type: word
+        words:
+          - 'You are logged in'
+
+      - type: word
+        words:
+          - 'Tiny File Manager'
