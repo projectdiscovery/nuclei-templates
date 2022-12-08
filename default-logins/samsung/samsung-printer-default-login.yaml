@@ -1,0 +1,47 @@
+id: samsung-printer-default-login
+
+info:
+  name: Samsung Printer Default Login
+  author: gy741
+  severity: high
+  description: |
+    Samsung Printer default login credentials were discovered.
+  reference:
+    - https://support.hp.com/gb-en/document/c05591673
+  metadata:
+    verified: true
+    shodan-query: title:"SyncThru Web Service"
+  tags: default-login,iot,samsung,printer
+
+requests:
+  - raw:
+      - |
+        POST /sws/app/gnb/login/login.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+        Authentication=Basic {{base64(username + ':' + password)}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - sec00000
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "success: true"
+          - "passwordExpiration"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
