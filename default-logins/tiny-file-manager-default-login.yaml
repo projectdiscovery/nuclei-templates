@@ -1,4 +1,4 @@
-id: tiny-file-manager-default-login
+id: tiny-filemanager-default-login
 
 info:
   name: Tiny File Manager Default Login
@@ -7,7 +7,11 @@ info:
   description: Tiny File Manager default login was discovered.
   reference:
     - https://github.com/prasathmani/tinyfilemanager
-  tags: tiny-file-manager, default-login
+    - https://tinyfilemanager.github.io/docs/
+  metadata:
+    verified: true
+    shodan-query: html:"Tiny File Manager"
+  tags: default-login,tiny,filemanager
 
 requests:
   - raw:
@@ -19,39 +23,12 @@ requests:
         POST / HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
-        Origin: {{BaseURL}}
-        Referer: {{BaseURL}}/
-
-        fm_usr={{user}}&fm_pwd={{pass}}
-
-      - |
-        GET /index.php?p= HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        POST / HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-        Origin: {{BaseURL}}
-        Referer: {{BaseURL}}/
 
         fm_usr={{user}}&fm_pwd={{pass}}&token={{token}}
 
       - |
-        GET /index.php?p= HTTP/1.1
+        GET /?p= HTTP/1.1
         Host: {{Hostname}}
-
-
-    stop-at-first-match: true
-    redirects: true
-    cookie-reuse: true
-    extractors:
-      - type: regex
-        name: token
-        part: body
-        internal: true
-        regex:
-          - '([a-f0-9]{64})'
 
     attack: pitchfork
     payloads:
@@ -60,20 +37,27 @@ requests:
       pass:
         - admin@123
 
+    skip-variables-check: true
+    host-redirects: true
+    max-redirects: 2
+    cookie-reuse: true
     matchers-condition: and
     matchers:
+      - type: word
+        words:
+          - 'admin'
+          - 'You are logged in'
+          - 'Tiny File Manager'
+        condition: and
+
       - type: status
         status:
           - 200
 
-      - type: word
-        words:
-          - 'admin'
-
-      - type: word
-        words:
-          - 'You are logged in'
-
-      - type: word
-        words:
-          - 'Tiny File Manager'
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        regex:
+          - '([a-f0-9]{64})'
+        internal: true
