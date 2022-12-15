@@ -11,26 +11,57 @@ info:
     shodan-query: title:"RouterOS router configuration page"
   tags: panel,login,mikrotik
 
-requests:
   - method: GET
     path:
       - '{{BaseURL}}'
       - '{{BaseURL}}/cfg'
       - '{{BaseURL}}/graphs/'
 
-    stop-at-first-match: true
     matchers-condition: and
+    stop-at-first-match: true
     matchers:
       - type: word
         name: router
         part: body
         words:
           - 'If this device is not in your possession, please contact your local network administrator'
+          - '.mikrotik.com'
           - '<title>RouterOS router configuration page</title>'
         condition: and
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        name: router-old
+        part: body
+        words:
+          - '<title>mikrotik routeros > administration</title>'
+          - '<title>Mikrotik Router'
+          - '<img src="/webcfg/'
+          - '<title>MikroTik RouterOS Managing Webpage</title>'
+        condition: or
+
+      - type: word
+        name: hotspot
+        part: body
+        words:
+          - 'Please log on to use the mikrotik hotspot service'
+          - 'mikrotik hotspot > login'
+        condition: and
+
+      - type: word
+        name: mikrotik-httpproxy
+        part: header
+        words:
+          - "Server: mikrotik httpproxy"
 
     extractors:
       - type: regex
         group: 1
         regex:
-          - '<h1>RouterOS (.+)</h1>'
+          - "<h1>RouterOS (.+)</h1>"
+          - '<div class="top">mikrotik routeros (.[0-9.]+) configuration page</div>'
+          - 'routeros (.[0-9.]+) '
+          - '<b>MikroTik RouterOS (.[0-9.]+)</b>'
