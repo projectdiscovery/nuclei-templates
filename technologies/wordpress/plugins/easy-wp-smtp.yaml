@@ -1,0 +1,50 @@
+id: wordpress-easy-wp-smtp
+
+info:
+  name: Easy WP SMTP Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/easy-wp-smtp/
+  metadata:
+    plugin_namespace: easy-wp-smtp
+    wpscan: https://wpscan.com/plugin/easy-wp-smtp
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+requests:
+  - method: GET
+    redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/wp-content/plugins/easy-wp-smtp/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/easy-wp-smtp.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

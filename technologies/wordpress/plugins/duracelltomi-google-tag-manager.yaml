@@ -1,0 +1,50 @@
+id: wordpress-duracelltomi-google-tag-manager
+
+info:
+  name: GTM4WP Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/duracelltomi-google-tag-manager/
+  metadata:
+    plugin_namespace: duracelltomi-google-tag-manager
+    wpscan: https://wpscan.com/plugin/duracelltomi-google-tag-manager
+  tags: tech,wordpress,wp-plugin,top-200
+
+requests:
+  - method: GET
+    redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/wp-content/plugins/duracelltomi-google-tag-manager/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/duracelltomi-google-tag-manager.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'

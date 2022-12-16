@@ -1,0 +1,50 @@
+id: wordpress-ewww-image-optimizer
+
+info:
+  name: EWWW Image Optimizer Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/ewww-image-optimizer/
+  metadata:
+    plugin_namespace: ewww-image-optimizer
+    wpscan: https://wpscan.com/plugin/ewww-image-optimizer
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+requests:
+  - method: GET
+    redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ewww-image-optimizer/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/ewww-image-optimizer.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
