@@ -1,0 +1,50 @@
+id: wordpress-nextgen-gallery
+
+info:
+  name: WordPress Gallery Plugin – NextGEN Gallery Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/nextgen-gallery/
+  metadata:
+    plugin_namespace: nextgen-gallery
+    wpscan: https://wpscan.com/plugin/nextgen-gallery
+  tags: tech,wordpress,wp-plugin,top-200
+
+requests:
+  - method: GET
+    redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nextgen-gallery/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/nextgen-gallery.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
