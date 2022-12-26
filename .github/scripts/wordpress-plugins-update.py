@@ -160,13 +160,13 @@ requests:
           - '(?i)Stable.tag:\s?([\w.]+)'
 '''
         version_file = open(
-            f"./nuclei-templates/helpers/wordpress/plugins/{name}.txt", "w")
+            f"helpers/wordpress/plugins/{name}.txt", "w")
         version_file.write(version)
         version_file.close()
 
         # print(template)
         template_file = open(
-            f"./nuclei-templates/technologies/wordpress/plugins/{name}.yaml", "w")
+            f"technologies/wordpress/plugins/{name}.yaml", "w")
         template_file.write(template)
         template_file.close()
 
