@@ -7,9 +7,6 @@ jobs:
   Update:
     runs-on: ubuntu-latest
     steps:
-      - name: Install tree
-        run: sudo apt-get install tree -y
-
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
@@ -25,19 +22,21 @@ jobs:
           pip install -r .github/scripts/wordpress-plugins-update-requirements.txt
 
       - name: Update Templates
+        id: update-templates
         run: |
           python3 .github/scripts/wordpress-plugins-update.py
           git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
 
       - name: Commit files
-        if: steps.readme-update.outputs.CHANGES > 0
+        if: steps.update-templates.outputs.CHANGES > 0
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "Auto WordPress Plugins Update [$(date)] :robot:" -a
+          git add --all
+          git commit -m "Auto WordPress Plugins Update [$(date)] :robot:"
 
       - name: Push changes
-        if: steps.readme-update.outputs.CHANGES > 0
+        if: steps.update-templates.outputs.CHANGES > 0
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.TOKEN }}
