@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 from markdown import markdown
+import os
 from termcolor import colored, cprint
 
 # Regex to extract the name of th plugin from the URL
@@ -123,8 +124,7 @@ info:
 
 requests:
   - method: GET
-    redirects: true
-    max-redirects: 2
+
     path:
       - "{{{{BaseURL}}}}/wp-content/plugins/{name}/readme.txt"
 
@@ -159,14 +159,25 @@ requests:
         regex:
           - '(?i)Stable.tag:\s?([\w.]+)'
 '''
-        version_file = open(
-            f"helpers/wordpress/plugins/{name}.txt", "w")
+
+        work_dir = os.getcwd()
+        print(f"Current working directory: {work_dir}")
+        helper_dir = f"{work_dir}/helpers/wordpress/plugins"
+        template_dir = f"{work_dir}/technologies/wordpress/plugins"
+
+        if not os.path.exists(helper_dir):
+            os.makedirs(helper_dir)
+
+        if not os.path.exists(template_dir):
+            os.makedirs(template_dir)
+
+        helper_path = f"helpers/wordpress/plugins/{name}.txt"
+        version_file = open(helper_path, "w")
         version_file.write(version)
         version_file.close()
 
-        # print(template)
-        template_file = open(
-            f"technologies/wordpress/plugins/{name}.yaml", "w")
+        template_path = f"technologies/wordpress/plugins/{name}.yaml"
+        template_file = open(template_path, "w")  # Dev environment
         template_file.write(template)
         template_file.close()
 
