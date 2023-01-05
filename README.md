@@ -40,20 +40,20 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 ## Nuclei Templates Top 10 statistics
 
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1552 | dhiyaneshdk   |   701 | cves             |  1529 | info     |  1671 | http    |  4330 |
-| panel     |   780 | daffainfo     |   662 | exposed-panels   |   782 | high     |  1152 | file    |    78 |
-| edb       |   582 | pikpikcu      |   344 | vulnerabilities  |   520 | medium   |   837 | network |    77 |
-| exposure  |   551 | pdteam        |   274 | misconfiguration |   361 | critical |   552 | dns     |    17 |
-| xss       |   543 | geeknik       |   206 | technologies     |   322 | low      |   281 |         |       |
-| lfi       |   519 | pussycat0x    |   172 | exposures        |   308 | unknown  |    25 |         |       |
-| wordpress |   471 | dwisiswant0   |   171 | token-spray      |   236 |          |       |         |       |
-| cve2021   |   370 | 0x_akoko      |   170 | workflows        |   190 |          |       |         |       |
-| wp-plugin |   366 | ritikchaddha  |   164 | default-logins   |   116 |          |       |         |       |
-| tech      |   360 | princechaddha |   153 | file             |    78 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
+|-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
+| cve       |  1575 | dhiyaneshdk  |   707 | cves             |  1552 | info     |  1919 | http    |  4630 |
+| panel     |   803 | daffainfo    |   662 | exposed-panels   |   805 | high     |  1169 | network |    84 |
+| wordpress |   684 | pikpikcu     |   344 | technologies     |   529 | medium   |   849 | file    |    78 |
+| edb       |   583 | pdteam       |   273 | vulnerabilities  |   528 | critical |   568 | dns     |    17 |
+| wp-plugin |   579 | geeknik      |   220 | misconfiguration |   371 | low      |   294 |         |       |
+| exposure  |   573 | ricardomaia  |   210 | exposures        |   325 | unknown  |    26 |         |       |
+| tech      |   567 | pussycat0x   |   181 | token-spray      |   237 |          |       |         |       |
+| xss       |   548 | 0x_akoko     |   171 | workflows        |   190 |          |       |         |       |
+| lfi       |   522 | dwisiswant0  |   171 | default-logins   |   122 |          |       |         |       |
+| cve2021   |   375 | ritikchaddha |   167 | file             |    78 |          |       |         |       |
 
-**328 directories, 4791 files**.
+**335 directories, 5243 files**.
 
 </td>
 </tr>
