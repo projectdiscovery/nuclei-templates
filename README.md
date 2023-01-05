@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | wp-plugin |   366 | ritikchaddha  |   164 | default-logins   |   116 |          |       |         |       |
 | tech      |   360 | princechaddha |   153 | file             |    78 |          |       |         |       |
 
-**335 directories, 5238 files**.
+**335 directories, 5242 files**.
 
 </td>
 </tr>
