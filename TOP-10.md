@@ -1,12 +1,12 @@
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1551 | dhiyaneshdk   |   701 | cves             |  1528 | info     |  1666 | http    |  4323 |
-| panel     |   778 | daffainfo     |   662 | exposed-panels   |   780 | high     |  1152 | file    |    78 |
-| edb       |   582 | pikpikcu      |   344 | vulnerabilities  |   519 | medium   |   835 | network |    77 |
-| exposure  |   551 | pdteam        |   274 | misconfiguration |   361 | critical |   552 | dns     |    17 |
-| xss       |   541 | geeknik       |   206 | technologies     |   319 | low      |   281 |         |       |
-| lfi       |   519 | dwisiswant0   |   171 | exposures        |   308 | unknown  |    25 |         |       |
-| wordpress |   470 | pussycat0x    |   171 | token-spray      |   236 |          |       |         |       |
-| cve2021   |   369 | 0x_akoko      |   170 | workflows        |   190 |          |       |         |       |
-| wp-plugin |   365 | ritikchaddha  |   163 | default-logins   |   116 |          |       |         |       |
-| tech      |   357 | princechaddha |   153 | file             |    78 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
+|-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
+| cve       |  1575 | dhiyaneshdk  |   708 | cves             |  1552 | info     |  1919 | http    |  4631 |
+| panel     |   803 | daffainfo    |   662 | exposed-panels   |   805 | high     |  1170 | network |    84 |
+| wordpress |   684 | pikpikcu     |   344 | technologies     |   529 | medium   |   849 | file    |    78 |
+| edb       |   583 | pdteam       |   273 | vulnerabilities  |   528 | critical |   568 | dns     |    17 |
+| wp-plugin |   579 | geeknik      |   220 | misconfiguration |   372 | low      |   294 |         |       |
+| exposure  |   573 | ricardomaia  |   210 | exposures        |   325 | unknown  |    26 |         |       |
+| tech      |   567 | pussycat0x   |   181 | token-spray      |   237 |          |       |         |       |
+| xss       |   549 | dwisiswant0  |   171 | workflows        |   190 |          |       |         |       |
+| lfi       |   522 | 0x_akoko     |   171 | default-logins   |   122 |          |       |         |       |
+| cve2021   |   375 | ritikchaddha |   167 | file             |    78 |          |       |         |       |
