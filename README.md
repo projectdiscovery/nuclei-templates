@@ -53,7 +53,7 @@ An overview of the nuclei template project, including statistics on unique tags,
 | lfi       |   522 | 0x_akoko     |   171 | default-logins   |   122 |          |       |         |       |
 | cve2021   |   375 | ritikchaddha |   167 | file             |    78 |          |       |         |       |
 
-**336 directories, 5244 files**.
+**337 directories, 5307 files**.
 
 </td>
 </tr>
