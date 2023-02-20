@@ -8,7 +8,7 @@ The templates within the `osint` directory are **self-contained** and do NOT req
 
 ```bash
 # Running OSINT templates against a single user to test
-nuclei -t osint/ -var token=some-user
+nuclei -t osint/ -var user=some-user
 ```
 
 ### Categories
@@ -19,10 +19,10 @@ To execute OSINT templates within a particular category, you can apply a filter 
 
 ```bash
 # Running OSINT templates against the social category
-nuclei -t osint/ -tags osint-social -var token=some-user
+nuclei -t osint/ -tags osint-social -var user=some-user
 
 # Running OSINT templates against the multiple categories
-nuclei -t osint/ -tags osint-social,osint-finance -var token=some-user
+nuclei -t osint/ -tags osint-social,osint-finance -var user=some-user
 ```
 
 ## Acknowledgment
