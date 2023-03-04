@@ -1,29 +1,87 @@
 id: php-backup-files
 
 info:
-  name: PHP source disclosure through backup files
-  author: StreetOfHackerR007 (Rohit Soni)
+  name: PHP Source - Backup File Information Disclosure
+  author: StreetOfHackerR007,pwnhxl
   severity: medium
-  tags: exposure,backup,php,disclosure
+  tags: exposure,backup,php,disclosure,fuzz
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}/index.php.bak"
-      - "{{BaseURL}}/default.php.bak"
-      - "{{BaseURL}}/main.php.bak"
-      - "{{BaseURL}}/config.php.bak"
-      - "{{BaseURL}}/settings.php.bak"
-      - "{{BaseURL}}/header.php.bak"
-      - "{{BaseURL}}/footer.php.bak"
-      - "{{BaseURL}}/login.php.bak"
-      - "{{BaseURL}}/database.php.bak"
-      - "{{BaseURL}}/db.php.bak"
-      - "{{BaseURL}}/conn.php.bak"
-      - "{{BaseURL}}/db_config.php.bak"
-      - "{{BaseURL}}/404.php.bak"
-      - "{{BaseURL}}/wp-config.php.bak"
-      - "{{BaseURL}}/wp-login.php.bak"
+      - "{{BaseURL}}{{filepath}}{{bakext}}"
+
+    attack: clusterbomb
+    payloads:
+      filepath:
+        - /wp-config.php   # wordpress
+        - /site/default/settings.php   # drupal
+        - /installation/configuration.php   # joomla
+        - /app/etc/env.php   # magento
+        - /Application/Common/Conf/config.php   # thinkphp
+        - /environments/dev/common/config/main-local.php   # yii
+        - /environments/prod/common/config/main-local.php   # yii
+        - /common/config/main-local.php   # yii
+        - /system/config/default.php   # opencart
+        - /typo3conf/localconf.php   # typo3
+        - /config/config_global.php   # discuz
+        - /config/config_ucenter.php   # discuz
+        - /textpattern/config.php   # textpattern
+        - /data/common.inc.php   # dedecms
+        - /caches/configs/database.php   # phpcms
+        - /caches/configs/system.php   # phpcms
+        - /include/config.inc.php   # phpcms
+        - /phpsso_server/caches/configs/database.php   # phpcms
+        - /phpsso_server/caches/configs/system.php   # phpcms
+        - /zb_users/c_option.php   # zblog
+        - /e/class/config.php   # empirecms
+        - /e/config/config.php   # empirecms
+        - /data/sql_config.php   # phpwind
+        - /data/bbscache/config.php   # phpwind
+        - /db.php
+        - /conn.php
+        - /database.php
+        - /db_config.php
+        - /config.inc.php
+        - /data/config.php
+        - /config/config.php
+        - /index.php
+        - /default.php
+        - /main.php
+        - /settings.php
+        - /header.php
+        - /footer.php
+        - /login.php
+        - /404.php
+        - /wp-login.php
+        - /config.php
+
+      bakext:
+        - ".~"
+        - ".bk"
+        - ".bak"
+        - ".BAK"
+        - ".swp"
+        - ".swo"
+        - ".swn"
+        - ".tmp"
+        - ".save"
+        - ".old"
+        - ".new"
+        - ".orig"
+        - ".dist"
+        - ".txt"
+        - ".disabled"
+        - ".original"
+        - ".backup"
+        - "_bak"
+        - "_1.bak"
+        - "~"
+        - "!"
+        - ".0"
+        - ".1"
+        - ".2"
+        - ".3"
 
     matchers-condition: and
     matchers:
@@ -32,20 +90,26 @@ requests:
           - 200
 
       - type: word
+        part: body
         words:
           - "<?php"
           - "<?="
         condition: or
-        part: body
 
       - type: word
+        part: body
         words:
           - "?>"
-        part: body
+          - "($"
+          - "$_GET["
+          - "$_POST["
+          - "$_REQUEST["
+          - "$_SERVER["
+        condition: or
 
       - type: word
+        part: header
         words:
           - "text/plain"
           - "bytes"
-        part: header
         condition: or

@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1593 | dhiyaneshdk  |   713 | cves             |  1572 | info     |  2006 | http    |  4718 |
-| panel     |   826 | daffainfo    |   662 | exposed-panels   |   827 | high     |  1161 | network |    84 |
-| wordpress |   688 | pikpikcu     |   344 | technologies     |   544 | medium   |   886 | file    |    80 |
-| exposure  |   591 | pdteam       |   273 | vulnerabilities  |   532 | critical |   579 | dns     |    17 |
-| edb       |   586 | geeknik      |   221 | misconfiguration |   390 | low      |   261 |         |       |
-| wp-plugin |   583 | ricardomaia  |   212 | exposures        |   329 | unknown  |    23 |         |       |
-| tech      |   581 | pussycat0x   |   191 | token-spray      |   239 |          |       |         |       |
-| xss       |   561 | ritikchaddha |   182 | workflows        |   190 |          |       |         |       |
-| lfi       |   524 | 0x_akoko     |   174 | default-logins   |   123 |          |       |         |       |
-| cve2021   |   375 | dwisiswant0  |   171 | file             |    80 |          |       |         |       |
+| cve       |  1617 | dwisiswant0  |   793 | cves             |  1597 | info     |  2673 | http    |  5422 |
+| panel     |   853 | dhiyaneshdk  |   731 | exposed-panels   |   842 | high     |  1176 | network |    86 |
+| wordpress |   695 | daffainfo    |   662 | osint            |   620 | medium   |   911 | file    |    84 |
+| osint     |   624 | pikpikcu     |   350 | technologies     |   549 | critical |   595 | dns     |    18 |
+| exposure  |   603 | pdteam       |   275 | vulnerabilities  |   538 | low      |   248 |         |       |
+| wp-plugin |   589 | geeknik      |   221 | misconfiguration |   414 | unknown  |    25 |         |       |
+| edb       |   588 | ricardomaia  |   212 | exposures        |   334 |          |       |         |       |
+| tech      |   586 | pussycat0x   |   211 | token-spray      |   239 |          |       |         |       |
+| xss       |   567 | ritikchaddha |   194 | workflows        |   190 |          |       |         |       |
+| lfi       |   526 | 0x_akoko     |   176 | default-logins   |   125 |          |       |         |       |
 
-**337 directories, 5338 files**.
+**344 directories, 6051 files**.
 
 </td>
 </tr>
