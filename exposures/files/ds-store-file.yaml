@@ -1,10 +1,12 @@
 id: ds-store-file
 
 info:
-  name: Directory Listing via DS_Store
-  author: 0w4ys
+  name: Exposed DS_Store File
+  author: 0w4ys,pwnhxl
   severity: info
-  tags: exposure,files
+  reference:
+    - https://github.com/lijiejie/ds_store_exp
+  tags: exposure,files,ds_store,config
 
 requests:
   - method: GET
@@ -13,17 +15,18 @@ requests:
 
     matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "\x00@\x00"
-
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "Accept-Ranges: bytes"
-          - "octet-stream"
+      - type: dsl
+        dsl:
+          - "contains(body, '\x00@\x00')"
+          - "contains(hex_encode(body), '0000000142756431')"
         condition: or
-        part: header
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+      - type: dsl
+        dsl:
+          - 'contains(to_lower(header), "accept-ranges: bytes")'
+          - 'contains(to_lower(header), "octet-stream")'
+        condition: or
