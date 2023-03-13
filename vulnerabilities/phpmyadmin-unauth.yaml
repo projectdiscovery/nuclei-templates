@@ -1,0 +1,55 @@
+id: phpmyadmin-unauth
+
+info:
+  name: phpMyAdmin-Unauth
+  author: pwnhxl
+  severity: high
+  description: phpMyAdmin-Unauth.
+  reference:
+    - https://www.phpmyadmin.net
+  metadata:
+    verified: true
+    fofa-query: body="server_databases.php"
+  tags: phpmyadmin,unauth
+
+requests:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: batteringram
+    payloads:
+      path:
+        - "/index.php"
+        - "/pma/index.php"
+        - "/pmd/index.php"
+        - "/phpMyAdmin/index.php"
+        - "/phpmyadmin/index.php"
+        - "/_phpmyadmin/index.php"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'server_sql.php'
+          - 'server_status.php'
+          - 'server_variables.php'
+          - 'server_databases.php'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: phpMyAdmin='
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200
