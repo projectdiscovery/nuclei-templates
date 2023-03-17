@@ -1,0 +1,45 @@
+id: cloud-enum-azure-blob-storage
+
+info:
+  name: Cloud Enumeration - Azure Blob Storage
+  author: initstring
+  severity: info
+  description: Searches for Azure Blob Storage accounts and containers within valid accounts
+  reference: tba
+  tags: cloud,azure
+
+self-contained: true
+
+variables:
+  baseDNS: "blob.core.windows.net"
+
+requests:
+  - raw:
+      - |
+        GET https://{{keyword}}.{{baseDNS}} HTTP/1.1
+        Host: {{keyword}}.{{baseDNS}}
+    redirects: false
+    attack: batteringram
+    threads: 10
+    matchers:
+      - type: dsl
+        name: "Valid Azure Storage Account"
+        condition: and
+        dsl:
+          - "status_code==400"
+          - contains(body, "Value for one of the query parameters specified in the request URI is invalid")
+      - type: dsl
+        name: "Disabled Azure Storage Account"
+        condition: and
+        dsl:
+          - "status_code==403"
+          - contains(body, "The specified account is disabled")
+      - type: dsl
+        name: "Protected Azure Storage Account"
+        condition: and
+        dsl:
+          - "status_code==403"
+          - contains(body, "Server failed to authenticate the request")
+
+# TODO: This needs a second-level request to brute force container names
+# inside matches to "Valid Azure Storage Accounts"
