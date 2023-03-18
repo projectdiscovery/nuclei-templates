@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1650 | dwisiswant0  |   793 | cves             |  1628 | info     |  2693 | http    |  5480 |
-| panel     |   859 | dhiyaneshdk  |   731 | exposed-panels   |   850 | high     |  1182 | network |    87 |
-| wordpress |   725 | daffainfo    |   662 | osint            |   629 | medium   |   927 | file    |    84 |
-| osint     |   633 | pikpikcu     |   350 | technologies     |   553 | critical |   609 | dns     |    18 |
-| wp-plugin |   619 | pdteam       |   275 | vulnerabilities  |   543 | low      |   251 |         |       |
-| exposure  |   607 | geeknik      |   220 | misconfiguration |   415 | unknown  |    25 |         |       |
-| edb       |   593 | ricardomaia  |   213 | exposures        |   334 |          |       |         |       |
-| tech      |   590 | pussycat0x   |   213 | token-spray      |   239 |          |       |         |       |
+| cve       |  1657 | dwisiswant0  |   792 | cves             |  1635 | info     |  2754 | http    |  5540 |
+| panel     |   862 | dhiyaneshdk  |   772 | exposed-panels   |   853 | high     |  1192 | network |    87 |
+| wordpress |   725 | daffainfo    |   662 | osint            |   630 | medium   |   947 | file    |    86 |
+| exposure  |   649 | pikpikcu     |   351 | technologies     |   554 | critical |   617 | dns     |    18 |
+| osint     |   634 | pdteam       |   275 | vulnerabilities  |   549 | low      |   215 |         |       |
+| wp-plugin |   619 | pussycat0x   |   221 | misconfiguration |   419 | unknown  |    25 |         |       |
+| edb       |   593 | geeknik      |   219 | exposures        |   374 |          |       |         |       |
+| tech      |   591 | ricardomaia  |   213 | token-spray      |   239 |          |       |         |       |
 | xss       |   583 | ritikchaddha |   195 | workflows        |   190 |          |       |         |       |
-| lfi       |   527 | 0x_akoko     |   176 | default-logins   |   125 |          |       |         |       |
+| lfi       |   529 | 0x_akoko     |   179 | default-logins   |   126 |          |       |         |       |
