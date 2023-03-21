@@ -1,0 +1,53 @@
+id: joomla-detect
+info:
+  name: Joomla! Detect
+  author: ricardomaia
+  severity: info
+  description: |
+    Joomla, also spelled Joomla! (with an exclamation mark) and sometimes abbreviated as J!, is a free and open-source content management system (CMS) for publishing web content on websites.
+  reference:
+    - https://www.joomla.org/
+    - https://github.com/joomla/joomla-cms
+    - https://www.itoctopus.com/how-to-quickly-know-the-version-of-any-joomla-website
+    - https://hackertarget.com/attacking-enumerating-joomla/
+  metadata:
+    verified: true
+    google-query: Joomla! Administration Login inurl:"/index.php" || intitle:"Joomla Web Installer"
+  tags: tech,joomla,cms,oss
+
+requests:
+  - method:
+    path:
+      - "{{BaseURL}}" # >= 1.5.0 and <= 1.5.26
+      - "{{BaseURL}}/language/en-GB/en-GB.xml" # >= 1.5.0 and <= 1.5.26
+      - "{{BaseURL}}/administrator/manifests/files/joomla.xml" # >= 1.6.0
+      - "{{BaseURL}}/README.txt"
+      - "{{BaseURL}}/modules/custom.xml" # < 1.5.0
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        regex:
+          - '(?i)<meta.name="generator".content="(Joomla!).*/>'
+          - '(?i)Joomla_([\d.|\d]+)_version_history'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "<version>"
+          - "<creationDate>"
+          - "</metafile>"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - "(?i)<version>(.*)</version>"
+          - '(?i)Joomla_([\d.|\d]+)_version_history'
