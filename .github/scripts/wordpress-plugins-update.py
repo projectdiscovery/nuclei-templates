@@ -122,7 +122,7 @@ info:
     wpscan: https://wpscan.com/plugin/{name}
   tags: tech,wordpress,wp-plugin,{top_tag}
 
-requests:
+http:
   - method: GET
 
     path:
