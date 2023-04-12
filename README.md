@@ -40,20 +40,20 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 ## Nuclei Templates Top 10 statistics
 
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1552 | dhiyaneshdk   |   701 | cves             |  1529 | info     |  1671 | http    |  4330 |
-| panel     |   780 | daffainfo     |   662 | exposed-panels   |   782 | high     |  1152 | file    |    78 |
-| edb       |   582 | pikpikcu      |   344 | vulnerabilities  |   520 | medium   |   837 | network |    77 |
-| exposure  |   551 | pdteam        |   274 | misconfiguration |   361 | critical |   552 | dns     |    17 |
-| xss       |   543 | geeknik       |   206 | technologies     |   322 | low      |   281 |         |       |
-| lfi       |   519 | pussycat0x    |   172 | exposures        |   308 | unknown  |    25 |         |       |
-| wordpress |   471 | dwisiswant0   |   171 | token-spray      |   236 |          |       |         |       |
-| cve2021   |   370 | 0x_akoko      |   170 | workflows        |   190 |          |       |         |       |
-| wp-plugin |   366 | ritikchaddha  |   164 | default-logins   |   116 |          |       |         |       |
-| tech      |   360 | princechaddha |   153 | file             |    78 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
+|-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
+| cve       |  1734 | dhiyaneshdk  |   799 | cves             |  1713 | info     |  2807 | http    |  5646 |
+| panel     |   870 | dwisiswant0  |   793 | exposed-panels   |   862 | high     |  1216 | file    |   117 |
+| wordpress |   756 | daffainfo    |   662 | osint            |   630 | medium   |   984 | network |    88 |
+| exposure  |   652 | pikpikcu     |   353 | technologies     |   561 | critical |   645 | dns     |    18 |
+| wp-plugin |   647 | pdteam       |   276 | vulnerabilities  |   550 | low      |   215 |         |       |
+| osint     |   635 | pussycat0x   |   234 | misconfiguration |   428 | unknown  |    24 |         |       |
+| xss       |   608 | geeknik      |   219 | exposures        |   374 |          |       |         |       |
+| tech      |   598 | ricardomaia  |   214 | token-spray      |   240 |          |       |         |       |
+| edb       |   595 | ritikchaddha |   195 | workflows        |   190 |          |       |         |       |
+| lfi       |   533 | 0x_akoko     |   179 | default-logins   |   127 |          |       |         |       |
 
-**335 directories, 5229 files**.
+**380 directories, 6318 files**.
 
 </td>
 </tr>
