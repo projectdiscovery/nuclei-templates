@@ -1,0 +1,44 @@
+id: missing-mfa
+info:
+  name: lack of MFA
+  author: pussycat0x
+  severity: medium
+  description: |
+    AWS multi-factor authentication (MFA) is an AWS Identity and Access Management (IAM) best practice that requires a second authentication factor in addition to user name and password sign-in credentials.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html
+  tags: aws,amazon,cloud,iam,mfa
+
+self-contained: true
+signature: aws
+variables:
+  service: iam
+
+http:
+  - raw:
+      - |
+        POST https://{{service}}.amazonaws.com HTTP/1.1
+        Host: {{service}}.amazonaws.com
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.11.4 Python/3.11.2 Darwin/21.6.0 source/arm64 prompt/off command/iam.list-mfa-devices
+
+        Action=ListMFADevices&Version=2010-05-08&UserName={{user}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<member>"
+          - "<EnableDate>"
+        condition: and
+        negative: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"MFA is missing for user:"+ user'
