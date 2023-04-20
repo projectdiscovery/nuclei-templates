@@ -1,27 +1,29 @@
-id: sql-server-report-viewer
+id: sql-server-reportviewer
 
 info:
-  name: SQL Server ReportViewer Exposure
+  name: SQL Server ReportViewer - Exposure
   author: kazet
   severity: high
   reference:
     - https://learn.microsoft.com/en-us/sql/reporting-services/create-deploy-and-manage-mobile-and-paginated-reports?view=sql-server-ver16
-  tags: misconfig,sql-server,report-viewer,exposure
+  metadata:
+    verified: "true"
+    google-query: inurl:"/Reports/Pages/Folder.aspx"
+  tags: misconfig,sql,report,exposure
 
-requests:
-  - method: GET
-    path:
-      - "{{BaseURL}}/Reports/Pages/Folder.aspx"
-      - "{{BaseURL}}ReportServer/Pages/Folder.aspx"
+http:
+  - raw:
+      - |
+        GET /Reports/Pages/Folder.aspx HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
+      - |
+        GET /ReportServer/Pages/Folder.aspx HTTP/1.1
+        Host: {{Hostname}}
+
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - 'Data Source'
-          - 'SQL Server Reporting Services'
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 != 401"
+          - "contains(body, 'Data Source') && contains(body, 'SQL Server Reporting Services')"
+        condition: and
