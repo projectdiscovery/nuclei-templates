@@ -11,7 +11,7 @@ The templates within the `osint` directory are **self-contained** and do NOT req
 nuclei -tags osint -var user=elon
 ```
 
-**osint** templates can be also ran against list of usernames as well.
+**OSINT** templates can be also ran against list of usernames as well.
 
 ```console
 $ cat user_names.txt
