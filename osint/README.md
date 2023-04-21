@@ -4,11 +4,28 @@ OSINT templates are available for conducting user enumeration across many websit
 
 ## Usage
 
-The templates within the `osint` directory are **self-contained** and do NOT require URLs as input because the OSINT templates have pre-defined static URLs. Each template in this directory expects the user(name), email, or phone number to be supplied as input using the `V`/`var` flag through the Nuclei engine.
+The templates within the `osint` directory are **self-contained** and do NOT require URLs as input because the OSINT templates have pre-defined static URLs. Each template in this directory expects the user(name), email, or phone number or list of it to be supplied as input using the `V`/`var` flag through the Nuclei engine.
 
 ```bash
 # Running OSINT templates against a single user to test
-nuclei -t osint/ -var user=some-user
+nuclei -tags osint -var user=elon
+```
+
+**OSINT** templates can be also ran against list of usernames as well.
+
+```console
+$ cat user_names.txt
+
+user_1
+user_2
+user_3
+user_4
+user_5
+```
+
+```bash
+# Running OSINT templates against a list of users to test
+nuclei -tags osint -var user=user_names.txt
 ```
 
 ### Categories
