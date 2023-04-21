@@ -20,23 +20,53 @@ network:
         type: hex
       - read: 1024
         name: negotiate_reply
+        match:
+          - "unpack('<I',substr(negotiate_reply, 9, 13)) == 0"
 
       # send/receive session setup request
       - data: "{{session_setup_request}}"
         type: hex
       - read: 1024
         name: session_setup_response
+        match:
+          - "unpack('<H',substr(session_setup_response, 9, 13)) == 0"
+        extract:
+          # extract user id
+          - user_id: "{{substr(session_setup_response,32,34}}"
+          # modify tree connect request with user id
+          - tree_connect_request: "{{replace_at(tree_connect_request,32,33,user_id,0,1}}"
 
-      # extract user id
       # send/receive tree connect request
-      # extract session id
-      # send/receive trans name piped request
-      # complete trans 2 session setup request
+      - data: "{{tree_connect_request}}"
+        type: hex
+      - read: 1024
+        name: tree_connect_response
+        extract:
+          # extract session id
+          - tree_id: "{{substr(tree_connect_response,28,30)}}"
+          # modify named pipe request with session id and user id
+          - trans_name_piped_request: "{{replace_at(trans_name_piped_request,28,29,treeID,0,1}}"
+          - trans_name_piped_request: "{{replace_at(trans_name_piped_request,32,33,user_id,0,1}}"
+
+      # send/receive trans name piped request - NS17-010 Check
+      - data: "{{trans_name_piped_request}}"
+        type: hex
+      - read: 1024
+        name: trans_name_piped_response
+        match:
+          - "hex(substr(trans_name_piped_response,9,10))=='05'"
+          - "hex(substr(trans_name_piped_response,10,11))=='02'"
+          - "hex(substr(trans_name_piped_response,11,12))=='00'"
+          - "hex(substr(trans_name_piped_response,12,13))=='c0'"
+      
+      # send/receive trans 2 session setup request - Double Pulsar Implant check
+      # send/receive trans name piped request - NS17-010 Check
+      - data: "{{trans_2_session_setup_request}}"
+        type: hex
+      - read: 1024
+        name: trans_2_session_setup_response
+        match:
+          - "hex(substr(trans_2_session_setup_response,34,35))=='51'"
 
     host:
       - "{{Hostname}}:445"
-    matchers:
-      - type: dsl
-        dsl:
-          - "unpack('<I',substr(negotiate_reply, 9, 13)) == 0"
-          - "unpack('<H',substr(session_setup_response, 9, 13)) == 0"
