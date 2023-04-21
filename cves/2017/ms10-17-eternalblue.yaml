@@ -9,8 +9,11 @@ info:
 variables:
   negotiate_protocol_request: "00000085ff534d4272000000001853c00000000000000000000000000000fffe00004000006200025043204e4554574f524b2050524f4752414d20312e3000024c414e4d414e312e30000257696e646f777320666f7220576f726b67726f75707320332e316100024c4d312e325830303200024c414e4d414e322e3100024e54204c4d20302e313200"
   session_setup_request: "00000088ff534d4273000000001807c00000000000000000000000000000fffe000040000dff00880004110a000000000000000100000000000000d40000004b000000000000570069006e0064006f007700730020003200300030003000200032003100390035000000570069006e0064006f007700730020003200300030003000200035002e0030000000"
-  tree_connect_request: "00000060ff534d4275000000001807c00000000000000000000000000000fffe0008400004ff006000080001003500005c005c003100390032002e003100360038002e003100370035002e003100320038005c00490050004300240000003f3f3f3f3f00"
-  trans_name_piped_request: "0000004aff534d42250000000018012800000000000000000000000000088ea3010852981000000000ffffffff0000000000000000000000004a0000004a0002002300000007005c504950455c00"
+  tree_connect_request_part_1: "00000060ff534d4275000000001807c00000000000000000000000000000fffe"
+  tree_connect_request_part_2: "400004ff006000080001003500005c005c003100390032002e003100360038002e003100370035002e003100320038005c00490050004300240000003f3f3f3f3f00"
+  trans_name_piped_request_part_1: "0000004aff534d422500000000180128000000000000000000000000"
+  trans_name_piped_request_part_2: "8ea3"
+  trans_name_piped_request_part_3: "52981000000000ffffffff0000000000000000000000004a0000004a0002002300000007005c504950455c00"
   trans_2_session_setup_request: "0000004eff534d4232000000001807c00000000000000000000000000008fffe000841000f0c0000000100000000000000a6d9a40000000c00420000004e0001000e000d0000000000000000000000000000"
 
 network:
@@ -21,7 +24,7 @@ network:
       - read: 1024
         name: negotiate_reply
         match:
-          - "unpack('<I',substr(negotiate_reply, 9, 13)) == 0"
+          - to_number(unpack('<I',substr(negotiate_reply, 9, 13)))==0
 
       # send/receive session setup request
       - data: "{{session_setup_request}}"
@@ -29,12 +32,12 @@ network:
       - read: 1024
         name: session_setup_response
         match:
-          - "unpack('<H',substr(session_setup_response, 9, 13)) == 0"
+          - to_number(unpack('<H',substr(session_setup_response, 9, 13))) == 0
         extract:
           # extract user id
-          - user_id: "{{substr(session_setup_response,32,34}}"
+          user_id: substr(session_setup_response,32,34)
           # modify tree connect request with user id
-          - tree_connect_request: "{{replace_at(tree_connect_request,32,33,user_id,0,1}}"
+          tree_connect_request: tree_connect_request_part_1 + hex_encode(user_id) + tree_connect_request_part_2
 
       # send/receive tree connect request
       - data: "{{tree_connect_request}}"
@@ -43,10 +46,9 @@ network:
         name: tree_connect_response
         extract:
           # extract session id
-          - tree_id: "{{substr(tree_connect_response,28,30)}}"
+          tree_id: substr(tree_connect_response,28,30)
           # modify named pipe request with session id and user id
-          - trans_name_piped_request: "{{replace_at(trans_name_piped_request,28,29,tree_id,0,1}}"
-          - trans_name_piped_request: "{{replace_at(trans_name_piped_request,32,33,user_id,0,1}}"
+          trans_name_piped_request: trans_name_piped_request_part_1 + hex_encode(user_id) + trans_name_piped_request_part_2 + hex_encode(tree_id) + trans_name_piped_request_part_3
 
       # send/receive trans name piped request - NS17-010 Check
       - data: "{{trans_name_piped_request}}"
@@ -54,10 +56,15 @@ network:
       - read: 1024
         name: trans_name_piped_response
         match:
-          - "hex(substr(trans_name_piped_response,9,10))=='05'"
-          - "hex(substr(trans_name_piped_response,10,11))=='02'"
-          - "hex(substr(trans_name_piped_response,11,12))=='00'"
-          - "hex(substr(trans_name_piped_response,12,13))=='c0'"
+          - "hex_encode(substr(trans_name_piped_response,9,10))=='05'"
+          - "hex_encode(substr(trans_name_piped_response,10,11))=='02'"
+          - "hex_encode(substr(trans_name_piped_response,11,12))=='00'"
+          - "hex_encode(substr(trans_name_piped_response,12,13))=='c0'"
+        extract:
+          # here we know the target is likely vulnerable to ms10-17
+          ms1017: true
+          # just print a debug message (inline matchers not yet connected to template matchers)
+          justPrint: print_debug("MS17-010 likely vulnerable")
       
       # send/receive trans 2 session setup request - Double Pulsar Implant check
       - data: "{{trans_2_session_setup_request}}"
@@ -65,7 +72,23 @@ network:
       - read: 1024
         name: trans_2_session_setup_response
         match:
-          - "hex(substr(trans_2_session_setup_response,34,35))=='51'"
+          - "hex_encode(substr(trans_2_session_setup_response,34,35))=='51'"
+        extract:
+          # here we know the target has double pulsar implant
+          double_pulsar: true
+          # just print a debug message (inline matchers not yet connected to template matchers)
+          justPrint: print_debug("Double Pulsar implant detected")
 
     host:
       - "{{Hostname}}:445"
+
+    # inline matchers should be exported to template matchers (todo)
+    matchers:
+      - type: dsl
+        name: "ms1017"
+        dsl:
+          - "ms1017"
+      - type: dsl
+        name: "double pulsar"
+        dsl:
+          - "double_pulsar"
