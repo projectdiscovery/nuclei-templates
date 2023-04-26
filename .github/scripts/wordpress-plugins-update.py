@@ -9,7 +9,7 @@ compares the detect version with the payload version.
 The generated template also includes the tags top-100 and top-200 allowing filtering.
 
 e.g.
-nuclei -t technologies/wordpress/plugins -tags top-100 -u https://www.example.com
+nuclei -t http/technologies/wordpress/plugins -tags top-100 -u https://www.example.com
 '''
 
 __author__ = "ricardomaia"
@@ -163,7 +163,7 @@ requests:
         work_dir = os.getcwd()
         print(f"Current working directory: {work_dir}")
         helper_dir = f"{work_dir}/helpers/wordpress/plugins"
-        template_dir = f"{work_dir}/technologies/wordpress/plugins"
+        template_dir = f"{work_dir}/http/technologies/wordpress/plugins"
 
         if not os.path.exists(helper_dir):
             os.makedirs(helper_dir)
@@ -176,7 +176,7 @@ requests:
         version_file.write(version)
         version_file.close()
 
-        template_path = f"technologies/wordpress/plugins/{name}.yaml"
+        template_path = f"http/technologies/wordpress/plugins/{name}.yaml"
         template_file = open(template_path, "w")  # Dev environment
         template_file.write(template)
         template_file.close()
