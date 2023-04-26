@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
 |-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1682 | dhiyaneshdk  |   799 | cves             |  1662 | info     |  2790 | http    |  5573 |
-| panel     |   862 | dwisiswant0  |   792 | exposed-panels   |   854 | high     |  1201 | file    |   116 |
-| wordpress |   741 | daffainfo    |   662 | osint            |   630 | medium   |   961 | network |    87 |
-| exposure  |   651 | pikpikcu     |   352 | technologies     |   557 | critical |   622 | dns     |    18 |
-| osint     |   635 | pdteam       |   275 | vulnerabilities  |   548 | low      |   216 |         |       |
-| wp-plugin |   635 | pussycat0x   |   229 | misconfiguration |   423 | unknown  |    25 |         |       |
-| edb       |   594 | geeknik      |   219 | exposures        |   373 |          |       |         |       |
-| tech      |   594 | ricardomaia  |   213 | token-spray      |   240 |          |       |         |       |
-| xss       |   592 | ritikchaddha |   195 | workflows        |   190 |          |       |         |       |
-| lfi       |   530 | 0x_akoko     |   179 | default-logins   |   126 |          |       |         |       |
+| cve       |  1770 | dhiyaneshdk  |   805 | cves             |  1749 | info     |  2816 | http    |  5695 |
+| panel     |   873 | dwisiswant0  |   793 | exposed-panels   |   865 | high     |  1230 | file    |   117 |
+| wordpress |   769 | daffainfo    |   662 | osint            |   633 | medium   |  1007 | network |    90 |
+| wp-plugin |   660 | pikpikcu     |   353 | technologies     |   562 | critical |   654 | dns     |    18 |
+| exposure  |   657 | pdteam       |   278 | vulnerabilities  |   554 | low      |   215 |         |       |
+| osint     |   638 | pussycat0x   |   235 | misconfiguration |   432 | unknown  |    25 |         |       |
+| xss       |   624 | geeknik      |   219 | exposures        |   375 |          |       |         |       |
+| tech      |   599 | ricardomaia  |   214 | token-spray      |   240 |          |       |         |       |
+| edb       |   595 | ritikchaddha |   196 | workflows        |   190 |          |       |         |       |
+| lfi       |   538 | 0x_akoko     |   179 | default-logins   |   128 |          |       |         |       |

