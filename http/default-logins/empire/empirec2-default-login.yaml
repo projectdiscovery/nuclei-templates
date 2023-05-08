@@ -1,0 +1,52 @@
+id: empirec2-default-login
+
+info:
+  name: Empire C2 Default Admin Login - Detect
+  author: clem9669
+  severity: high
+  description: Empire C2 contains a default admin login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://github.com/BC-SECURITY/Empire
+    - https://bc-security.gitbook.io/empire-wiki/quickstart/configuration/server
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+    verified: true
+  tags: default-login,empire
+
+http:
+  - raw:
+      - |
+        POST /api/admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{user}}","password":"{{pass}}"}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - empireadmin
+      pass:
+        - password123
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '{"token":".*"}'
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by md on 2023/04/20
