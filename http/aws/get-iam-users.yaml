@@ -1,0 +1,46 @@
+id: get-iam-users
+info:
+  name: Get IAM Users - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+     list all iam users.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html
+  tags: aws,amazon,cloud,iam,users,enum
+
+self-contained: true
+signature: aws
+variables:
+  service: iam
+  region: us-east-1
+
+http:
+  - raw:
+      - |
+        POST https://{{service}}.amazonaws.com  HTTP/1.1
+        Host: {{service}}.amazonaws.com
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.11.4 Python/3.11.2 Darwin/21.6.0 source/arm64 prompt/off command/iam.list-users
+
+        Action=ListUsers&Version=2010-05-08
+
+    extractors:
+      - type: xpath
+        part: body
+        attribute: UserName
+        xpath:
+          - '//UserName'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<UserName>"
+          - "<CreateDate>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
