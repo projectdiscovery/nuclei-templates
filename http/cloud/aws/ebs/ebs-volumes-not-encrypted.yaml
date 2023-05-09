@@ -1,0 +1,55 @@
+id: ebs-volumes-not-encrypted
+info:
+  name: EBS volumes not encrypted
+  author: princechaddha
+  severity: high
+  description: |
+    Checks if the EBS volumes are encrypted
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+  remediation: Implementing encryption is strongly advised as a means of safeguarding your data against unauthorized access by attackers or personnel without proper authorization.
+  tags: cloud,devops,aws,amazon,ebs,ec2
+
+self-contained: true
+signature: aws
+variables:
+  service: ec2
+  region: ap-south-1
+
+requests:
+  - raw:
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com/ HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/ec2.describe-volumes
+
+        Action=DescribeVolumes&Version=2016-11-15&MaxResults=1000
+
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com/ HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/ec2.describe-volumes
+
+        Action=DescribeVolumes&Version=2016-11-15&VolumeId.1={{volumeId}}
+
+    iterate-all: true
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '<encrypted>false</encrypted>'
+
+    extractors:
+      - type: regex
+        name: volumeId
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '<volumeId>([a-z-0-9]+)<\/volumeId>'
+
+      - type: dsl
+        dsl:
+          - '"EBS volume [" + volumeId + "] in "+ region + " is not Encrypted"'

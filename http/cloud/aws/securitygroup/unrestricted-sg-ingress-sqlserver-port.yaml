@@ -1,0 +1,49 @@
+id: unrestricted-sg-ingress-sqlserver-port
+
+info:
+  name: Unrestricted Ingress to Security Group on Port 1433 (SQL Server)
+  author: princechaddha
+  severity: high
+  description: |
+    Unrestricted Security Group Ingress on Uncommon Ports refers to the situation where a security group allows incoming traffic from any IP address to specific ports that are not commonly used, making it easier for attackers to gain unauthorized access to the resources.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVpcs.html
+  remediation: To address this vulnerability, the security group rules should be updated to restrict access to only necessary IP addresses and ports. It is recommended to follow the principle of least privilege, allowing only the minimum level of access required for the resources to function properly. Regular reviews of the security group rules should also be conducted to ensure they remain up-to-date and effective.
+  tags: aws,amazon,cloud,ec2,vpc
+
+self-contained: true
+signature: aws
+variables:
+  service: ec2
+  region: us-east-1
+
+http:
+  - raw:
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/ec2.describe-security-groups
+
+        Action=DescribeSecurityGroups&Version=2016-11-15&Filter.1.Name=ip-permission.cidr&Filter.1.Value.1=0.0.0.0%2F0&Filter.2.Name=ip-permission.from-port&Filter.2.Value.1=1433
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<groupId>"
+          - "<groupName>"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: securitygroup
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - '<groupName>([a-z-0-9]+)<\/groupName>'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup  + "allows ingress to 0.0.0.0/0 on port 1433"'
