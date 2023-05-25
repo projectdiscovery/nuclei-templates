@@ -4,94 +4,87 @@ info:
   name: Prototype Pollution Check
   author: pdteam
   severity: medium
-  reference:
-    - https://github.com/msrkp/PPScan
   tags: headless
 
 headless:
   - steps:
-      - action: setheader
-        args:
-          part: response
-          key: Content-Security-Policy
-          value: "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
-      - action: setheader
-        args:
-          part: response
-          key: X-Frame-Options
-          value: foo
-      - action: setheader
-        args:
-          part: response
-          key: If-None-Match
-          value: foo
-      - action: script
-        args:
-          hook: true
-          code: |
-            // Hooking code adapted from https://github.com/msrkp/PPScan/blob/main/scripts/content_script.js
-            () => {
-              window.alerts = [];
-
-              logger = found => window.alerts.push(found);
-
-              function check() {
-                  loc = location.href;
-
-                  if (loc.indexOf("e32a5ec9c99") >= 0 && loc.search("a0def12bce") == -1) {
-                      setTimeout(function() {
-                          if (Object.prototype.e32a5ec9c99 == "ddcb362f1d60") {
-                              logger(location.href);
-                          }
-                          var url = new URL(location.origin + location.pathname);
-                          url.hash = "__proto__[a0def12bce]=ddcb362f1d60&__proto__.a0def12bce=ddcb362f1d60&dummy";
-                          location = url.href;
-                      }, 5 * 1000);
-                  } else if (loc.search("a0def12bce") != -1) {
-                      setTimeout(function() {
-                          if (Object.prototype.a0def12bce == "ddcb362f1d60") {
-                              logger(location.href);
-                          }
-                          window.close();
-                      }, 5 * 1000);
-                  } else {
-                      var url = new URL(loc);
-                      url.searchParams.append("__proto__[e32a5ec9c99]", "ddcb362f1d60");
-                      url.searchParams.append("__proto__.e32a5ec9c99", "ddcb362f1d60");
-                      location = url.href;
-                  }
-              }
-
-              window.onload = function() {
-                  if (Object.prototype.e32a5ec9c99 == "ddcb362f1d60" ||  Object.prototype.a0def12bce == "ddcb362f1d60") {
-                      logger(location.href);
-                  } else {
-                      check();
-                  }
-              };
-
-              var timerID = setInterval(function() {
-                  if (Object.prototype.e32a5ec9c99 == "ddcb362f1d60" || Object.prototype.a0def12bce == "ddcb362f1d60") {
-                      logger(location.href);
-                      clearInterval(timerID);
-                  }
-              }, 5 * 1000);
-            }
       - args:
-          url: "{{BaseURL}}"
+          url: "{{BaseURL}}?constructor[prototype][vulnerableprop]=polluted#constructor[prototype][vulnerableprop]=polluted"
         action: navigate
+
       - action: waitload
+
       - action: script
-        name: alerts
+        name: extract
         args:
-          code: window.alerts
+          code: |
+            () => {
+             return window.vulnerableprop
+            }
+
     matchers:
       - type: word
-        part: alerts
+        part: extract
         words:
-          - "__proto__"
-    extractors:
-      - type: kval
-        part: alerts
-        kval:
-          - alerts
+          - "polluted"
+  - steps:
+      - args:
+          url: "{{BaseURL}}?constructor.prototype.vulnerableprop=polluted#constructor.prototype.vulnerableprop=polluted"
+        action: navigate
+
+      - action: waitload
+
+      - action: script
+        name: extract2
+        args:
+          code: |
+            () => {
+             return window.vulnerableprop
+            }
+
+    matchers:
+      - type: word
+        part: extract2
+        words:
+          - "polluted"
+
+  - steps:
+      - args:
+          url: "{{BaseURL}}?__proto__[vulnerableprop]=polluted#__proto__.vulnerableprop=polluted&__proto__[vulnerableprop]=polluted"
+        action: navigate
+
+      - action: waitload
+
+      - action: script
+        name: extract3
+        args:
+          code: |
+            () => {
+             return window.vulnerableprop
+            }
+
+    matchers:
+      - type: word
+        part: extract3
+        words:
+          - "polluted"
+  - steps:
+      - args:
+          url: "{{BaseURL}}?__proto__.vulnerableprop=polluted"
+        action: navigate
+
+      - action: waitload
+
+      - action: script
+        name: extract4
+        args:
+          code: |
+            () => {
+             return window.vulnerableprop
+            }
+
+    matchers:
+      - type: word
+        part: extract4
+        words:
+          - "polluted"
