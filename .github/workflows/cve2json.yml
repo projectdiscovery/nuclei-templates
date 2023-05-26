@@ -1,0 +1,40 @@
+name: Generate JSON Metadata of CVE Templates 
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/cves/'
+  workflow_dispatch: # allows manual triggering of the workflow
+
+jobs:
+  cve2json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+          check-latest: true
+          
+      - name: Run yaml2json.go to generate cves.json
+        run: |
+           go env -w GO111MODULE=off
+           go get gopkg.in/yaml.v3
+           go run .github/scripts/yaml2json.go $GITHUB_WORKSPACE/http/cves/ cves.json
+           md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
+          
+      - name: Commit files
+        run: |
+          git pull
+          git add cves.json cves.json-checksum.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Auto Generated cves.json [$(date)] :robot:" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
