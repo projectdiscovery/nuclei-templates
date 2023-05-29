@@ -9,34 +9,43 @@ info:
     - https://github.com/pyn3rd/Spring-Boot-Vulnerability
   tags: springboot,exposure
   metadata:
-    max-request: 2
+    max-request: 3
+
+variables:
+  str: "{{rand_base(6)}}"
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/heapdump"
-      - "{{BaseURL}}/actuator/heapdump"
+  - raw:
+      - |
+        GET /{{str}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
 
     stop-at-first-match: true
     max-size: 2097152 # 2MB - Max Size to read from server response
     matchers-condition: and
     matchers:
+      - type: dsl
+        dsl:
+          - "!contains(tolower(all_headers_1), 'application/x-gzip')"
 
-      - type: binary
-        part: body
-        binary:
-          - "4a4156412050524f46494c45" # "JAVA PROFILE"
-          - "4850524f46" # "HPROF"
-          - "1f8b080000000000" # Gunzip magic byte
+      - type: dsl
+        dsl:
+          - "contains(hex_encode(body_2), '4a4156412050524f46494c45')"
+          - "contains(hex_encode(body_2), '4850524f46')"
+          - "contains(hex_encode(body_2), '1f8b080000000000')"
         condition: or
 
-      - type: word
-        part: header
-        words:
-          - "Accept-Encoding: gzip"
-        case-insensitive: true
-        negative: true
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - "contains(hex_encode(body_3), '4a4156412050524f46494c45')"
+          - "contains(hex_encode(body_3), '4850524f46')"
+          - "contains(hex_encode(body_3), '1f8b080000000000')"
+        condition: or
