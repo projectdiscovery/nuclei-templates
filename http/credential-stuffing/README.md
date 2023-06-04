@@ -1,5 +1,8 @@
 ## Credential Stuffing Templates
 
+![cred-stuffing](https://github.com/projectdiscovery/nuclei-templates/assets/28601533/6db9aec8-39be-429b-8a2c-fa25c6fc0320)
+
+
 This repository contains a collection of credential stuffing templates for both cloud services and self-hosted services. These templates help automate the detection and prevention of credential stuffing attempts on your organization's websites and applications using the Nuclei vulnerability scanner.
 
 ### Types of Templates
