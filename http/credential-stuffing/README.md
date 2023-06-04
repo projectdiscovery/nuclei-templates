@@ -1,6 +1,6 @@
 ## Credential Stuffing Templates
 
-![cred-stuffing](https://github.com/projectdiscovery/nuclei-templates/assets/28601533/6db9aec8-39be-429b-8a2c-fa25c6fc0320)
+![carbon (2)](https://github.com/projectdiscovery/nuclei-templates/assets/28601533/bfdd0f4d-60aa-4b87-9cad-1fd4169327f3)
 
 
 This repository contains a collection of credential stuffing templates for both cloud services and self-hosted services. These templates help automate the detection and prevention of credential stuffing attempts on your organization's websites and applications using the Nuclei vulnerability scanner.
@@ -57,7 +57,7 @@ password3
 The command below will check credential validity by sequentially testing each email from `email.txt` with all entries in `pass.txt` across different hosts stored in `jira.txt`:
 
 ```bash
-cat jira.txt | nuclei -var username=email.txt -var password=pass.txt -t jira.yaml -attack-type clusterbomb
+cat jira.txt | nuclei -var username=email.txt -var password=pass.txt -id jira-login-check -attack-type clusterbomb
 ```
 
 Developing custom target-specific templates for internal/custom portals can yield even more comprehensive results.
