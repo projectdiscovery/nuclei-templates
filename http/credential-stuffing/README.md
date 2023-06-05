@@ -3,7 +3,7 @@
 ![credential-stuffing](https://github.com/projectdiscovery/nuclei-templates/assets/28601533/bfdd0f4d-60aa-4b87-9cad-1fd4169327f3)
 
 
-This repository contains a collection of credential stuffing templates for both cloud services and self-hosted services. These templates help automate the detection and prevention of credential stuffing attempts on your organization's websites and applications using the Nuclei vulnerability scanner.
+This directory contains a collection of credential stuffing templates for both cloud and self-hosted services. These templates help automate the detection and prevention of credential stuffing attempts on your organization's websites and applications using the Nuclei vulnerability scanner.
 
 ### Types of Templates
 
@@ -17,7 +17,7 @@ This repository contains a collection of credential stuffing templates for both 
 An example of using a cloud service credential stuffing template can be seen with the Datadog Login Check template:
 
 ```bash
-nuclei -var username=testing@projectdiscovery.io -var password=test123 -t datadog-login-check
+nuclei -var username=testing@projectdiscovery.io -var password=test123 -id datadog-login-check
 ```
 
 Here, the `-var` option supplies the necessary inputs (username/email and password) to the template.
@@ -27,7 +27,7 @@ Here, the `-var` option supplies the necessary inputs (username/email and passwo
 An example of using a self-hosted service credential stuffing template can be seen with the Jira Login Check template:
 
 ```bash
-nuclei -u https://jira.projectdiscovery.io/ -t jira-login-check -var username=testing@projectdiscovery.io -var password=test123 
+nuclei -u https://jira.projectdiscovery.io/ -id jira-login-check -var username=testing@projectdiscovery.io -var password=test123 
 ```
 
 In this case, you also need to provide the hostname/IP of the deployed instance using the `-u` or `--url` option along with the necessary credentials using the `-var` option.
