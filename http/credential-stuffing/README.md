@@ -36,7 +36,7 @@ In this case, you also need to provide the hostname/IP of the deployed instance 
 
 By default, Nuclei uses Pitchfork mode in which it takes the first line from `email.txt` as the username input and the first line from `pass.txt` as the password parameter input. Ensure that both `email.txt` and `pass.txt` have an equal number of entries, with email/password combinations aligned on the same line in both files.
 
-Starting with Nuclei 2.8, you can override the default behavior using the `-at` or `--attack-type` CLI option. Specifying the attack-type option as `clusterbomb` enables convenient verification of weak credentials for a list of given email addresses across various services.
+Starting with Nuclei 2.8, you can override the default behavior using the `-at` or `-attack-type` CLI option. Specifying the attack-type option as `clusterbomb` enables convenient verification of weak credentials for a list of given email addresses across various services.
 
 For example, assuming `email.txt` contains:
 
