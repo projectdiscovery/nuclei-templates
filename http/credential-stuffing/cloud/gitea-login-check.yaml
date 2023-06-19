@@ -1,0 +1,37 @@
+id: gitea-login-check
+
+info:
+  name: gitea.com Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid gitea account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  tags: login-check,gitea,creds-stuffing
+
+self-contained: true
+http:
+  - raw:
+      - |
+        POST https://gitea.com/user/login HTTP/1.1
+        Host: gitea.com
+        Content-Type: application/x-www-form-urlencoded
+
+        user_name={{username}}&password={{password}}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'Location: /'
+
+      - type: status
+        status:
+          - 303
