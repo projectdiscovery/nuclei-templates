@@ -5,8 +5,8 @@ import json
 # GitHub credentials
 password = sys.argv[3]
 
-repo_owner = "princechaddha"
-repo_name = "autoassign-test-project"
+repo_owner = "projectdiscovery"
+repo_name = "nuclei-templates"
 pr_user_list = ["DhiyaneshGeek", "pussycat0x", "ritikchaddha"]
 issue_user_list = ["princechaddha", "DhiyaneshGeek", "pussycat0x", "ritikchaddha"]
 
