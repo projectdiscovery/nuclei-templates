@@ -1,0 +1,44 @@
+name: 📝 CVE JSON Metadata
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'http/cves/**'
+  workflow_dispatch: # allows manual triggering of the workflow
+
+jobs:
+  cve2json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+          
+      - name: Run YAML2JSON
+        id: cves
+        run: |
+          go env -w GO111MODULE=off
+          go get gopkg.in/yaml.v3
+          go run .github/scripts/yaml2json.go $GITHUB_WORKSPACE/http/cves/ cves.json
+          md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
+          git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
+          
+      - name: Commit files
+        if: steps.cves.outputs.CHANGES > 0
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add cves.json cves.json-checksum.txt
+          git commit -m "Auto Generated cves.json [$(date)] :robot:" -a
+
+      - name: Push changes
+        if: steps.cves.outputs.CHANGES > 0
+        run: |
+          git pull --rebase
+          git push origin ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
