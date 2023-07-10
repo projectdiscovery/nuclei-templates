@@ -1,0 +1,45 @@
+id: open-proxy-external
+
+info:
+  name: Open Proxy To External Network
+  author: gtrrnr
+  severity: medium
+  description: The host is configured as a proxy which allows access to other hosts on the external network.
+  reference:
+    - https://en.wikipedia.org/wiki/Open_proxy
+    - https://www.acunetix.com/vulnerabilities/web/apache-configured-to-run-as-proxy/
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-441
+  metadata:
+    max-request: 3
+  tags: exposure,config,proxy,misconfig
+
+http:
+  - raw:
+      - |+
+        GET http://example.com HTTP/1.1
+        Host: example.com
+
+      - |+
+        GET http://{{interactsh-url}} HTTP/1.1
+        Host: {{interactsh-url}}
+
+      - |+
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    unsafe: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_1, "www.iana.org") || contains(body_1, "<title>Example Domain</title>")
+          - contains(header_2, "X-Interactsh-Version")
+        condition: or
+
+      - type: dsl
+        dsl:
+          - '!contains(body_3, "<title>Example Domain</title>")'
