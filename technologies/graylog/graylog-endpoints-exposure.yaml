@@ -1,16 +1,19 @@
-id: graylog-endpoints-exposure
+id: graylog-api-endpoints
 
 info:
-  name: Graylog endpoints exposure
+  name: Graylog REST API Endpoints - Exposure
   author: Arqsz
   severity: info
   description: Graylog is a centralized log management solution. According to the official documentation, it exposes multiple endpoints (some by default).
   reference:
     - https://go2docs.graylog.org/5-0/setting_up_graylog/rest_api.html
     - https://gist.github.com/asachs01/f1f317b2924a688deb8ed2520a4520bd
-  tags: tech,graylog,api
+  metadata:
+    verified: true
+    shodan-query: Graylog
+  tags: tech,graylog,api,swagger
 
-requests:
+http:
   - method: "GET"
     path:
       - "{{BaseURL}}/"
@@ -64,20 +67,21 @@ requests:
       - "{{BaseURL}}/api/views/search/sync"
       - "{{BaseURL}}/api/users"
 
-    redirects: true
-    max-redirects: 1
-    matchers-condition: or
+    host-redirects: true
     stop-at-first-match: true
+    matchers-condition: or
     matchers:
       - type: dsl
-        name: unauthorized-graylog-header
         dsl:
-          - "status_code == 401 || status_code == 404"
-          - "contains(all_headers, 'X-Graylog-Node-Id') || contains_any(body, 'Graylog', 'graylog')"
+          - "status_code == 200"
+          - "contains_any(all_headers, 'X-Graylog-Node-Id', 'Graylog', 'graylog')"
+          - "contains_any(body, 'X-Graylog-Node-Id', 'Graylog', 'graylog')"
+          - "contains_any(body, 'swagger')"
         condition: and
 
       - type: dsl
+        name: unauthorized-graylog-header
         dsl:
-          - "status_code != 404 && status_code != 401"
-          - "contains_any(all_headers, 'X-Graylog-Node-Id', 'Graylog', 'graylog') || contains_any(body, 'X-Graylog-Node-Id', 'Graylog', 'graylog')"
+          - "status_code == 401"
+          - "contains(all_headers, 'X-Graylog-Node-Id') || contains(all_headers, 'Graylog Server')"
         condition: and
