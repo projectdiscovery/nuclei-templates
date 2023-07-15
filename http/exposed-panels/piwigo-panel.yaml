@@ -12,15 +12,18 @@ info:
   metadata:
     max-request: 1
     verified: true
+    shodan-query: http.favicon.hash:540706145
     fofa-query: title="piwigo"
     google-query: "Powered by Piwigo"
-  tags: panel,piwigo
+  tags: panel,piwigo,detect
 
 http:
   - method: GET
     path:
+      - "{{BaseURL}}"
       - "{{BaseURL}}/identification.php"
 
+    stop-at-first-match: true
     redirects: true
     max-redirects: 2
     matchers-condition: and
@@ -28,10 +31,18 @@ http:
       - type: word
         part: body
         words:
+          - 'content="Piwigo'
+          - '>Piwigo</a>'
           - '<body id=theIdentificationPage>'
-          - 'piwigo.org">Piwigo</a>'
-        condition: and
+        condition: or
 
       - type: status
         status:
           - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'jquery\.min\.js\?v([0-9.]+)">'
