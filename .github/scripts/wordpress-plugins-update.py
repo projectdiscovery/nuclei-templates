@@ -118,6 +118,7 @@ info:
   reference:
     - https://wordpress.org/plugins/{name}/
   metadata:
+    max-request: 1
     plugin_namespace: {name}
     wpscan: https://wpscan.com/plugin/{name}
   tags: tech,wordpress,wp-plugin,{top_tag}
