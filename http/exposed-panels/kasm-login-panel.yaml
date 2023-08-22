@@ -1,4 +1,4 @@
-id: kasm-panel
+id: kasm-login-panel
 
 info:
   name: Kasm Login Panel - Detect
@@ -16,23 +16,31 @@ info:
     max-request: 1
     verified: true
     shodan-query: http.favicon.hash:-2144699833
-  tags: panel,kasm,login
+  tags: panel,kasm,login,detect
 
 http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/api/login_settings"
-    body: "{\"token\":null,\"username\":null}"
-    headers:
-      Content-Type: application/json
+  - raw:
+      - |
+        GET /#/login HTTP/1.1
+        Host: {{Hostname}}
 
+      - |
+        POST /api/login_settings HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"token":null,"username":null}
+
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
-          - "\"html_title\": \"Kasm"
-          - "\"notice_title\": \"Notice\""
+          - '<title>Kasm</title>'
+          - 'content="Kasm Server'
+          - 'content="Kasm Technologies'
+          - '"html_title": "Kasm'
         condition: or
 
       - type: status
