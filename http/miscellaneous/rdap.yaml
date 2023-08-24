@@ -1,0 +1,104 @@
+id: rdap
+
+info:
+  name: RDAP WHOIS
+  description: |
+    RDAP (Registration Data Access Protocol) is a standard defined by the IETF to replace the whois protocol
+    in queries for information about Internet resource records such as domain names, IP addresses, and ASNs.
+  author: ricardomaia
+  severity: info
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+    cwe-id: CWE-200
+  reference:
+    - https://www.rdap.net/
+  tags: misc,dns,domain,whois,rdap
+  metadata:
+    max-request: 1
+
+self-contained: true
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 3
+    headers:
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
+      Accept: "*/*"
+      Pragma: no-cache
+      Cache-Control: no-cache
+      sec-fetch-mode: navigate
+      sec-fetch-site: none
+      sec-fetch-dest: document
+    path:
+      - "https://www.rdap.net/domain/{{Host}}"
+
+    extractors:
+      - type: json
+        part: body
+        name: raw
+        json:
+          - "."
+
+      - type: regex
+        part: body
+        name: domain
+        group: 1
+        regex:
+          - '^{"objectClassName":"domain","handle":".*?","ldhName":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: legalRepresentative
+        group: 1
+        regex:
+          - 'legalRepresentative":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: identifier
+        group: 1
+        regex:
+          - 'identifier":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: email
+        group: 1
+        regex:
+          - 'email",{},"text","(.*?)"'
+
+      - type: regex
+        part: body
+        name: registrationDate
+        group: 1
+        regex:
+          - '"eventAction":"registration","eventDate":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: lastChangeDate
+        group: 1
+        regex:
+          - '"eventAction":"last changed","eventDate":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: expirationDate
+        group: 1
+        regex:
+          - '"eventAction":"expiration","eventDate":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: nameServers
+        group: 1
+        regex:
+          - 'nameserver","ldhName":"(.*?)"'
+
+      - type: regex
+        part: body
+        name: secureDNS
+        group: 1
+        regex:
+          - '"secureDNS":{"delegationSigned":(.*?)}'
