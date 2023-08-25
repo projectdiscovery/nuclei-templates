@@ -1,0 +1,39 @@
+id: sri-missing
+info:
+  name: SRI missing
+  author: lucky0x0d,PulseSecurity.co.nz
+  severity: info
+  tags: javascript,subresource integrity
+  description: |
+     Checks if script tags within the HTML response have Subresource Integrity implemented via the integrity attribute
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html#subresource-integrity
+  metadata:
+    max-request: 1
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 5
+    stop-at-first-match: false
+    matchers-condition: and
+    matchers:
+      - type: xpath
+        part: body
+        xpath:
+          - "//script[contains(@src,'//') and not(contains(translate(@integrity,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'^sha'))]"
+
+      - type: word
+        words:
+          - "text/html"
+        part: header
+
+    extractors:
+      - type: xpath
+        attribute: src
+        xpath:
+          - "//script[contains(@src,'//') and not(contains(translate(@integrity,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'^sha'))]"
