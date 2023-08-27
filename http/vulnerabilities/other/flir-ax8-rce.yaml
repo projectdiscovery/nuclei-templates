@@ -13,7 +13,7 @@ info:
     fofa-query: app="FLIR-FLIR-AX8"
     max-request: 2
     verified: true
-  tags: flir-ax8,rce,exploitdb,iot,sensor
+  tags: flir-ax8,rce,exploitdb,iot,sensor,authenticated
 
 variables:
   username: admin
@@ -37,10 +37,17 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: word
-        part: body_1
-        words:
-          - '"success"'
+      - type: dsl
+        dsl:
+          - contains_all(to_lower(header_1), 'text/html','phpsessid','showcameraid')
+          - contains(body_1, 'success')
+          - status_code_1 == 200 && status_code_2 == 200
+        condition: and
+
+      - type: regex
+        part: body_2
+        regex:
+          - 'uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)'
 
       - type: status
         status:
