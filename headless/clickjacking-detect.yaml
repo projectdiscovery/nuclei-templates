@@ -1,0 +1,37 @@
+id: clickjacking-detect
+
+info:
+  name: Clickjacking - Detect
+  author: geeknik
+  severity: low
+  description: |
+    This template detects potential Clickjacking vulnerabilities. An attacker can trick a user into clicking on a concealed link, which can lead to unauthorized actions.
+  tags: clickjacking,headless
+
+headless:
+  - steps:
+      - args:
+          url: '{{BaseURL}}'
+        action: navigate
+      - action: waitload
+      - action: script
+        args:
+          hook: true
+          code: |
+            () => {
+              var headers = document.getElementsByTagName('head')[0].childNodes;
+              var result = false;
+              headers.forEach(function(header) {
+                if (header.name === 'X-Frame-Options' && header.content !== 'DENY') {
+                  result = true;
+                }
+              });
+              return result;
+            }
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "true"
