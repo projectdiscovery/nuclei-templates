@@ -20,6 +20,9 @@ info:
     fofa-query: app="ShowDoc"
   tags: cnvd,cnvd2020,showdoc,fileupload
 
+variables:
+  str1: "{{randstr}}"
+
 http:
   - raw:
       - |
@@ -31,23 +34,19 @@ http:
         Content-Disposition: form-data; name="editormd-image-file"; filename="{{randstr}}.<>txt"
         Content-Type: text/plain
 
-        test{{randstr}}
+        {{str1}}
         ----------------------------835846770881083140190633--
 
       - |
         GET /Public//Uploads//{{date}}//{{file}} HTTP/1.1
         Host: {{Hostname}}
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "test{{randstr}}"
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - body_2 == str1
+        condition: and
 
     extractors:
       - type: regex
@@ -65,5 +64,3 @@ http:
         regex:
           - '(\d{4}-\d{2}-\d{2})\\/([a-f0-9]+\.txt)'
         internal: true
-
-# Enhanced by mp on 2022/05/30

