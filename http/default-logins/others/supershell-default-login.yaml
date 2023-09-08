@@ -1,32 +1,41 @@
 id: supershell-default-login
 
 info:
-  name: supershell 默认密码
+  name: Supershell - Default Login
   author: SleepingBag945
   severity: high
   description: |
-    Supershell 是一个通过 WEB 服务访问的 C2 远控平台。SuperShell 存在默认口令漏洞，可通过 tdragon6:tdragon6 登陆获取系统权限。
+    Supershell is a WEB management platform that integrates the reverse_ssh service.
   reference:
     - https://github.com/tdragon6/Supershell
-  tags: supershell
+    - https://www.ctfiot.com/129689.html
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: title="supershell"
+  tags: supershell,default-login
 
 http:
   - raw:
       - |
         POST /supershell/login/auth HTTP/1.1
         Host: {{Hostname}}
-        Accept: */*
-        X-Requested-With: XMLHttpRequest
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.5195.127 Safari/537.36
         Content-Type: application/json
-        Accept-Encoding: gzip, deflate
-        Accept-Language: zh-CN,zh;q=0.9
 
-        {"username":"tdragon6","password":"tdragon6"}
+        {"username":"{{username}}","password":"{{password}}"}
 
+    attack: pitchfork
+    payloads:
+      username:
+        - tdragon6
+      password:
+        - tdragon6
+
+    host-redirects: true
+    cookie-reuse: true
     matchers:
       - type: dsl
         dsl:
-          - status_code_1 == 200 && !contains(body_1,"failed")
-          - contains(header_1,"token=ey") && contains(body_1,"success")
+          - 'status_code_1 == 200 && !contains(body_1,"result\":\"failed")'
+          - 'contains(header_1,"token=ey") && contains(body_1,"{\"result\":\"success")'
         condition: and
