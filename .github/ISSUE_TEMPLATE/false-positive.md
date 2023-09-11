@@ -13,7 +13,7 @@ labels: 'false-positive'
 
 ### Template file:
 
-<!-- Template producing false-positive results, for example: "cves/XX/XX.yaml" -->
+<!-- Template producing false-positive results, for example: "http/cves/XX/XX.yaml" -->
 
 ### Command to reproduce:
 

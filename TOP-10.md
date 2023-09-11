@@ -1,12 +1,12 @@
-|    TAG    | COUNT |    AUTHOR    | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|--------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1682 | dhiyaneshdk  |   799 | cves             |  1662 | info     |  2790 | http    |  5573 |
-| panel     |   862 | dwisiswant0  |   792 | exposed-panels   |   854 | high     |  1201 | file    |   116 |
-| wordpress |   741 | daffainfo    |   662 | osint            |   630 | medium   |   961 | network |    87 |
-| exposure  |   651 | pikpikcu     |   352 | technologies     |   557 | critical |   622 | dns     |    18 |
-| osint     |   635 | pdteam       |   275 | vulnerabilities  |   548 | low      |   216 |         |       |
-| wp-plugin |   635 | pussycat0x   |   229 | misconfiguration |   423 | unknown  |    25 |         |       |
-| edb       |   594 | geeknik      |   219 | exposures        |   373 |          |       |         |       |
-| tech      |   594 | ricardomaia  |   213 | token-spray      |   240 |          |       |         |       |
-| xss       |   592 | ritikchaddha |   195 | workflows        |   190 |          |       |         |       |
-| lfi       |   530 | 0x_akoko     |   179 | default-logins   |   126 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR    | COUNT |      DIRECTORY       | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|--------------|-------|----------------------|-------|----------|-------|------|-------|
+| cve       |  2033 | dhiyaneshdk  |  1053 | http                 |  6290 | info     |  3199 | file |   309 |
+| panel     |   980 | dwisiswant0  |   798 | file                 |   309 | high     |  1283 | dns  |    17 |
+| wordpress |   827 | daffainfo    |   787 | workflows            |   190 | medium   |  1261 |      |       |
+| exposure  |   781 | pikpikcu     |   353 | network              |   116 | critical |   765 |      |       |
+| xss       |   720 | pussycat0x   |   288 | ssl                  |    25 | low      |   229 |      |       |
+| wp-plugin |   717 | pdteam       |   282 | dns                  |    17 | unknown  |    29 |      |       |
+| osint     |   669 | ritikchaddha |   247 | headless             |     9 |          |       |      |       |
+| tech      |   627 | ricardomaia  |   221 | TEMPLATES-STATS.json |     1 |          |       |      |       |
+| edb       |   598 | geeknik      |   221 | contributors.json    |     1 |          |       |      |       |
+| lfi       |   585 | theamanrawat |   179 | cves.json            |     1 |          |       |      |       |

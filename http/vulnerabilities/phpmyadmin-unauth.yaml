@@ -1,0 +1,57 @@
+id: phpmyadmin-unauth-access
+
+info:
+  name: PhpMyAdmin - Unauthenticated Access
+  author: pwnhxl
+  severity: high
+  description: Unauthenticated Access to phpmyadmin dashboard.
+  reference:
+    - https://www.phpmyadmin.net
+  metadata:
+    max-request: 6
+    verified: true
+    shodan-query: html:"server_databases.php"
+    fofa-query: body="server_databases.php"
+  tags: misconfig,phpmyadmin,unauth
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - "/index.php"
+        - "/pma/index.php"
+        - "/pmd/index.php"
+        - "/phpMyAdmin/index.php"
+        - "/phpmyadmin/index.php"
+        - "/_phpmyadmin/index.php"
+    attack: batteringram
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'server_sql.php'
+          - 'server_status.php'
+          - 'server_variables.php'
+          - 'server_databases.php'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: phpMyAdmin='
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200

