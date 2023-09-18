@@ -1,24 +1,37 @@
 id: empirec2-default-login
 
 info:
-  name: Empire C2 Default Admin Login - Detect
-  author: clem9669
+  name: Empire C2 / Starkiller Interface - Default Login
+  author: clem9669,parzival
   severity: high
-  description: Empire C2 contains a default admin login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  description: |
+    Empire C2 / Starkiller Default Administrator Credentials Discovered.
   reference:
     - https://github.com/BC-SECURITY/Empire
-    - https://bc-security.gitbook.io/empire-wiki/quickstart/configuration/server
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
-    cvss-score: 8.3
-    cwe-id: CWE-522
+    - https://github.com/BC-SECURITY/empire-docs/blob/main/restful-api/README.md
   metadata:
     max-request: 1
     verified: true
-  tags: default-login,empire
+  tags: default-login,empire,c2
 
 http:
   - raw:
+      - |
+        POST /token HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Accept: application/json, text/plain, */*
+
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Content-Disposition: form-data; name="username"
+
+        {{username}}
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV
+        Content-Disposition: form-data; name="password"
+
+        {{password}}
+        ------WebKitFormBoundaryoZwyedGcQU4FrcFV--
+
       - |
         POST /api/admin/login HTTP/1.1
         Host: {{Hostname}}
@@ -28,22 +41,25 @@ http:
 
     attack: pitchfork
     payloads:
-      user:
+      username:
         - empireadmin
-      pass:
+      password:
         - password123
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: regex
+      - type: word
         part: body
-        regex:
+        words:
+          - 'access_token'
           - '{"token":".*"}'
+        condition: or
 
       - type: word
         part: header
         words:
-          - 'application/json'
+          - application/json
 
       - type: status
         status:
