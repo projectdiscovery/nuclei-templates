@@ -14,9 +14,9 @@ info:
     cvss-score: 8.3
     cwe-id: CWE-522
   metadata:
-    max-request: 3
+    max-request: 2
     verified: true
-    shodan-query: http.favicon.hash:2056442365
+    fofa-query: app="Kanboard"
   tags: default-login,kanboard
 
 http:
@@ -32,34 +32,26 @@ http:
 
         username={{user}}&password={{pass}}&csrf_token={{csrf_token}}
 
-      - |
-        GET /?controller=DashboardController&action=show HTTP/1.1
-        Host: {{Hostname}}
-
+    cookie-reuse: true
     attack: pitchfork
     payloads:
       user:
         - admin
       pass:
         - admin
+
     extractors:
       - type: regex
         name: csrf_token
         part: body
-        internal: true
         group: 1
         regex:
           - "hidden\" name=\"csrf_token\" value=\"([0-9a-z]+)\""
-    cookie-reuse: true
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - 'New project'
-          - 'Project management'
-        condition: and
-        case-insensitive: true
+        internal: true
 
-      - type: status
-        status:
-          - 200
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(location, 'controller=DashboardController&action=show')
+          - status_code == 302
+        condition: and
