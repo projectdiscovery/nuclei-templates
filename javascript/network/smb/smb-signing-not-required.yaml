@@ -1,0 +1,41 @@
+id: smb-signing-not-required
+
+info:
+  name: SMB Signing not required
+  author: pussycat0x
+  severity: medium
+  description: |
+    Signing is not required on the remote SMB server. An unauthenticated, remote attacker can exploit this to conduct man-in-the-middle attacks against the SMB server.
+  reference:
+    - https://www.tenable.com/plugins/nessus/57608
+    - https://nmap.org/nsedoc/scripts/smb2-security-mode.html
+  metadata:
+    verified: true
+    shodan-query: "port:445"
+  tags: js,network,smb,enum
+
+javascript:
+   - pre-condition: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      c.ListSMBv2Metadata(Host, Port);
+
+     code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ListSMBv2Metadata(Host, Port, User, Pass);
+      to_json(response);
+
+     args:
+      Host: "{{Host}}"
+      Port: "5432"
+      User: "test"
+      Pass: "test"
+
+     matchers:
+       - type: word
+         words:
+           - '"SigningEnabled": true'
+           - '"SigningRequired": false'
+         condition: and
+
