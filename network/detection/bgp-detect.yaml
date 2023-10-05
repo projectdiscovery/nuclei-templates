@@ -1,0 +1,42 @@
+id: bgp-detect
+
+info:
+  name: BGP Detection
+  author: danfaizer
+  severity: info
+  description: |
+    The remote host is running BGP, a popular routing protocol. This indicates that the remote host is probably a network router.
+  reference:
+    - https://www.acunetix.com/vulnerabilities/network/vulnerability/bgp-detection/
+    - https://www.tenable.com/plugins/nessus/11907
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+    shodan-query: product:"BGP"
+  tags: network,bgp
+
+tcp:
+  - inputs:
+      - data: FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF001D010400FFFF0000B4C0
+        type: hex
+        # Source: https://www.rfc-editor.org/rfc/rfc4271.html#section-4.2
+        # FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF represents the 16-byte marker field.
+        # 001D is the total length of the BGP message, including the 19 bytes of the header and the optional parameters.
+        # 01 is the BGP message type, which is OPEN (1).
+        # 04 represents the BGP version, which is BGP-4.
+        # FFFF represents the Autonomous System Number (ASN) in hexadecimal format.
+        # 0000 represents the Hold Time.
+        # B4C0 represents the BGP Identifier, usually an IP address in hexadecimal format.
+
+    host:
+      - "{{Hostname}}"
+    port: 179
+
+    read-size: 16
+    matchers:
+      - type: word
+        encoding: hex
+        words:
+          - "ffffffffffffffffffffffffffffffff"

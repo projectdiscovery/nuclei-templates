@@ -2,7 +2,7 @@ id: rdap-whois
 
 info:
   name: RDAP WHOIS
-  author: ricardomaia
+  author: ricardomaia,sttlr
   severity: info
   description: |
     RDAP (Registration Data Access Protocol) is a standard defined by the IETF to replace the whois protocol
@@ -25,72 +25,81 @@ http:
 
     redirects: true
     max-redirects: 3
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
     extractors:
       - type: json
         part: body
-        name: raw
+        name: status
         json:
-          - "."
+          - '.status[]'
 
-      - type: regex
-        part: body
-        name: domain
-        group: 1
-        regex:
-          - '^{"objectClassName":"domain","handle":".*?","ldhName":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: legalRepresentative
-        group: 1
-        regex:
-          - 'legalRepresentative":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: identifier
-        group: 1
-        regex:
-          - 'identifier":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: email
-        group: 1
-        regex:
-          - 'email",{},"text","(.*?)"'
-
-      - type: regex
+      - type: json
         part: body
         name: registrationDate
-        group: 1
-        regex:
-          - '"eventAction":"registration","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "registration").eventDate'
 
-      - type: regex
+      - type: json
         part: body
         name: lastChangeDate
-        group: 1
-        regex:
-          - '"eventAction":"last changed","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "last changed").eventDate'
 
-      - type: regex
+      - type: json
         part: body
         name: expirationDate
-        group: 1
-        regex:
-          - '"eventAction":"expiration","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "expiration").eventDate'
 
-      - type: regex
+      - type: json
+        part: body
+        name: registrantName
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "fn") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantOrg
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "org") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantEmail
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "email") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantPhone
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "tel") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantAddress
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][] | select(. != "")'
+
+      - type: json
+        part: body
+        name: registrantCountry
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][-1]'
+
+      - type: json
         part: body
         name: nameServers
-        group: 1
-        regex:
-          - 'nameserver","ldhName":"(.*?)"'
+        json:
+          - '.nameservers[] | .ldhName'
 
-      - type: regex
+      - type: json
         part: body
         name: secureDNS
-        group: 1
-        regex:
-          - '"secureDNS":{"delegationSigned":(.*?)}'
+        json:
+          - '.secureDNS.delegationSigned // false'
