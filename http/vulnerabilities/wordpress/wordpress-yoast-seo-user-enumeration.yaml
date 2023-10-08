@@ -1,32 +1,40 @@
-id: wordpress-yoast-seo-user-enumeration
+id: wp-yoast-user-enumeration
 
 info:
-  name: WordPress Yoast SEO Plugin User Enumeration
+  name: WordPress Yoast SEO Plugin -  User Enumeration
   author: FLX
   severity: info
-  tags: wordpress,enum
+  reference:
+    - https://developer.yoast.com/features/xml-sitemaps/functional-specification/
   metadata:
     max-request: 1
+    verified: true
+    google-dork: inurl:"/author-sitemap.xml"
+  tags: wp,wp-plugin,wordpress,username,disclosure
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/author-sitemap.xml"
+  - raw:
+      - |
+        @timeout: 15s
+        GET /author-sitemap.xml HTTP/1.1
+        Host: {{Hostname}}
 
     matchers-condition: and
     matchers:
       - type: word
-        words:
-          - "xml"
         part: body
+        words:
+          - "<?xml"
+          - "<lastmod>"
+          - "<loc>"
+        condition: and
 
       - type: word
+        part: header
         words:
-          - "<loc>"
-        part: body
-    extractors:
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - "<loc>https?://.*/author/([^<]+)/</loc>"
+          - "application/xml"
+          - "text/xml"
+
+      - type: status
+        status:
+          - 200
