@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR    | COUNT |      DIRECTORY       | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|--------------|-------|----------------------|-------|----------|-------|------|-------|
-| cve       |  2065 | dhiyaneshdk  |  1059 | http                 |  6462 | info     |  3225 | file |   309 |
-| panel     |   988 | dwisiswant0  |   798 | file                 |   309 | high     |  1346 | dns  |    17 |
-| wordpress |   832 | daffainfo    |   787 | workflows            |   191 | medium   |  1284 |      |       |
-| exposure  |   791 | pikpikcu     |   353 | network              |   116 | critical |   824 |      |       |
-| xss       |   730 | pussycat0x   |   291 | ssl                  |    26 | low      |   231 |      |       |
-| wp-plugin |   721 | pdteam       |   283 | dns                  |    17 | unknown  |    29 |      |       |
-| osint     |   675 | ritikchaddha |   261 | headless             |     9 |          |       |      |       |
-| tech      |   632 | ricardomaia  |   225 | TEMPLATES-STATS.json |     1 |          |       |      |       |
-| lfi       |   601 | geeknik      |   221 | contributors.json    |     1 |          |       |      |       |
-| edb       |   598 | 0x_akoko     |   179 | cves.json            |     1 |          |       |      |       |
+| cve       |  2090 | dhiyaneshdk  |  1085 | http                 |  6532 | info     |  3249 | file |   310 |
+| panel     |   998 | dwisiswant0  |   798 | file                 |   310 | high     |  1372 | dns  |    17 |
+| wordpress |   834 | daffainfo    |   787 | workflows            |   191 | medium   |  1295 |      |       |
+| exposure  |   817 | pikpikcu     |   353 | network              |   119 | critical |   833 |      |       |
+| xss       |   735 | pussycat0x   |   293 | ssl                  |    27 | low      |   235 |      |       |
+| wp-plugin |   723 | pdteam       |   284 | dns                  |    17 | unknown  |    30 |      |       |
+| osint     |   675 | ritikchaddha |   272 | headless             |     9 |          |       |      |       |
+| tech      |   634 | ricardomaia  |   226 | TEMPLATES-STATS.json |     1 |          |       |      |       |
+| lfi       |   603 | geeknik      |   221 | cves.json            |     1 |          |       |      |       |
+| edb       |   598 | theamanrawat |   181 | contributors.json    |     1 |          |       |      |       |
 
-**502 directories, 7374 files**.
+**505 directories, 7450 files**.
 
 </td>
 </tr>
