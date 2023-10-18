@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -24,12 +24,15 @@ jobs:
 
       - name: Install TemplateMan CLI Client
         run: |
-          go install -v github.com/projectdiscovery/nuclei/v2/cmd/tmc@dev
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf https://github
+          git clone https://github.com/projectdiscovery/templateman.git
+          cd templateman/templateman-cli/cmd/tmc
+          go install
 
       - name: Run TemplateMan
         id: tmc
         run: |
-          tmc -i $GITHUB_WORKSPACE -mr
+          echo /home/runner/work/nuclei-templates/nuclei-templates | tmc -mr -e
           git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
 
       - name: Commit files
