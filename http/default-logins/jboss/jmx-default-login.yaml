@@ -1,0 +1,53 @@
+id: jmx-default-login
+
+info:
+  name: JBoss JMX Console Weak Credential Discovery
+  author: paradessia
+  severity: high
+  description: JBoss JMX Console default login information was discovered.
+  reference:
+    - https://docs.jboss.org/jbossas/6/Admin_Console_Guide/en-US/html/Administration_Console_User_Guide-Accessing_the_Console.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 28
+  tags: jboss,jmx,default-login
+
+http:
+  - raw:
+      - |
+        GET /jmx-console/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /jmx-console/ HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(user + ':' + pass)}}
+
+    attack: clusterbomb
+    payloads:
+      user:
+        - admin
+        - root
+      pass:
+        - admin
+        - 12345
+        - 123456
+        - 1234
+        - 123456789
+        - 123qwe
+        - root
+    req-condition: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains(body_1, 'JMImplementation') && contains(body_2, 'JMImplementation')"
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022100fcbf9d1b11ac4631f88f64f7d1fb152f8b47cc9a2004da731df4f598f5ef14a4022006ec683f098c6f43996dfc9d6283dc10b7cfc523d10ab8f669cb7b631b009adb:922c64590222798bb761d5b6d8e72950

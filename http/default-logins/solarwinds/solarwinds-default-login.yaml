@@ -1,0 +1,55 @@
+id: solarwinds-default-admin
+
+info:
+  name: SolarWinds Orion Default Login
+  author: dwisiswant0
+  severity: high
+  description: SolarWinds Orion default admin credentials were discovered.
+  reference:
+    - https://github.com/solarwinds/OrionSDK/wiki/REST
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: solarwinds,default-login
+
+# Optional:
+# POST /SolarWinds/InformationService/v3/Json/Create/Orion.Pollers HTTP/1.1
+# {"PollerType":"Hello, world! from nuclei :-P", "NetObject":"N:1337", "NetObjectType":"N", "NetObjectID":1337}
+http:
+  - raw:
+      - |
+        GET /SolarWinds/InformationService/v3/Json/Query?query=SELECT+Uri+FROM+Orion.Pollers+ORDER+BY+PollerID+WITH+ROWS+1+TO+3+WITH+TOTALROWS HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username)}}
+      - |
+        GET /InformationService/v3/Json/Query?query=SELECT+Uri+FROM+Orion.Pollers+ORDER+BY+PollerID+WITH+ROWS+1+TO+3+WITH+TOTALROWS HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username)}}
+
+    payloads:
+      username:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Content-Type: application/json"
+        part: header
+
+      - type: regex
+        regex:
+          - "(totalRow|result|swi)s(:\\/\\/)?"
+          - "(Orion\\.|Poller(ID)?)s?"
+        condition: and
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4b0a00483046022100dd1bdb30bf4b1a99b8d4c8bb5bd898e5b502b306813b224242e97ab4423f41310221009e149cd0f02915a3f11b66a75ab7d7175c5d86023da47872d10c5a8049a2105e:922c64590222798bb761d5b6d8e72950

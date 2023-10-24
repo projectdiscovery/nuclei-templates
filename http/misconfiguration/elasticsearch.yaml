@@ -1,0 +1,51 @@
+id: elasticsearch
+
+info:
+  name: ElasticSearch Information Disclosure
+  author: Shine,c-sh0,geeknik
+  severity: low
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: "ElasticSearch"
+  tags: elastic,unauth,elasticsearch,misconfig
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/?pretty'
+      - '{{BaseURL}}/_cat/indices?v'
+      - '{{BaseURL}}/_all/_search'
+      - "{{BaseURL}}/_cluster/health?pretty"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"took":'
+          - '"number" :'
+          - '"number_of_nodes"'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - application/json
+          - application/vnd.api+json
+          - text/plain
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"number"\s:\s"([0-9.]+)"'
+
+# digest: 4a0a004730450220041bb329eab38b5d572d68f256c675ed853783e1b90e4eaed6a9f9295f9b8360022100eb0eb861974fdf8584bbc94c323c2a72a68b99a9d3986633b65482ec863535d1:922c64590222798bb761d5b6d8e72950

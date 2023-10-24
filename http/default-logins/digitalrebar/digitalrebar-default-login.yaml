@@ -1,0 +1,51 @@
+id: digitalrebar-default-login
+
+info:
+  name: RackN Digital Rebar Default Login
+  author: c-sh0
+  severity: high
+  description: A RackN Digital Rebar default login was discovered.
+  reference:
+    - https://docs.rackn.io/en/latest/doc/faq-troubleshooting.html?#what-are-the-default-passwords
+    - https://rackn.com/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+  tags: rackn,digitalrebar,default-login
+
+http:
+  - raw:
+      - |
+        GET /api/v3/users HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    payloads:
+      username:
+        - rocketskates
+      password:
+        - r0cketsk8ts
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: header
+        regex:
+          - '(?i)(X-Drp-)'
+
+      - type: word
+        part: body
+        words:
+          - 'Name'
+          - 'Secret'
+        condition: and
+
+# digest: 4b0a00483046022100dba9a81ddd9e951cbfab4ba1b7ce9c4aad2f2de46b173f26c43b0ee2e6aced4a022100870029bce3a78a4483eabbf5da4638aec42822a236ba5c2e0483ec52d59c9c34:922c64590222798bb761d5b6d8e72950

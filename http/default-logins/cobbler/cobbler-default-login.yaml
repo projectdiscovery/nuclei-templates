@@ -1,0 +1,74 @@
+id: cobbler-default-login
+
+info:
+  name: Cobbler Default Login
+  author: c-sh0
+  severity: high
+  description: Cobbler default login credentials for the testing module (testing/testing) were discovered.
+  reference:
+    - https://seclists.org/oss-sec/2022/q1/146
+    - https://github.com/cobbler/cobbler/issues/2307
+    - https://github.com/cobbler/cobbler/issues/2909
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    max-request: 2
+  tags: cobbler,default-login,api,seclists
+
+http:
+  - raw:
+      - |
+        POST {{BaseURL}}/cobbler_api HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+
+        <?xml version='1.0'?>
+        <methodCall>
+          <methodName>login</methodName>
+          <params>
+            <param>
+              <value>
+                <string>{{username}}</string>
+              </value>
+            </param>
+            <param>
+              <value>
+                <string>{{password}}</string>
+              </value>
+            </param>
+          </params>
+        </methodCall>
+
+    attack: pitchfork
+    payloads:
+      username:
+        - cobbler
+        - testing
+      password:
+        - cobbler
+        - testing
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - 'text/xml'
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(body), '<name>faultCode</name>')"
+          - "!contains(tolower(body), 'login failed')"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(.*[a-zA-Z0-9].+==)</string></value>"
+
+# digest: 4a0a00473045022100dd4fc12cfc56b4bd13e25c4aeef56da170f9b4a3f9ac3113ea36559e6524a1d90220784a6454a3d3f0658e807cb8f08ace56eca10e4aa72e826c4392a9a7b383f223:922c64590222798bb761d5b6d8e72950

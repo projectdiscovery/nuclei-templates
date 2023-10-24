@@ -1,0 +1,49 @@
+id: geoserver-default-login
+
+info:
+  name: Geoserver Admin - Default Login
+  author: For3stCo1d,professorabhay,ritikchaddha
+  severity: high
+  description: Geoserver default admin credentials were discovered.
+  reference:
+    - http://geoserver.org/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="GeoServer"
+  tags: geoserver,default-login
+
+http:
+  - raw:
+      - |
+        POST /geoserver/j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{user}}&password={{pass}}
+      - |
+        GET /geoserver/web/ HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - geoserver
+    host-redirects: true
+    max-redirects: 2
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(tolower(location_1), '/geoserver/web') && contains(body_2, '<span>admin</span>')"
+          - "!contains(tolower(location_1), 'error=true')"
+          - 'status_code_1 == 302'
+        condition: and
+
+# digest: 490a0046304402202d6a0080f07221d34ee64d423c04de75af246a2d64f6a9925f059d10ba990ffb02200cc4a40df8adc2143fc3d516ada4820dfc2d63bf64551bd34d949df1890e5246:922c64590222798bb761d5b6d8e72950

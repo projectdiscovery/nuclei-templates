@@ -1,0 +1,60 @@
+id: minio-default-login
+
+info:
+  name: Minio Default Login
+  author: pikpikcu
+  severity: high
+  description: Minio default admin credentials were discovered.
+  reference:
+    - https://docs.min.io/docs/minio-quickstart-guide.html#
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"symfony Profiler"
+  tags: default-login,minio
+
+http:
+  - raw:
+      - |
+        POST /minio/webrpc HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"id":1,"jsonrpc":"2.0","params":{"username":"{{username}}","password":"{{password}}"},"method":"Web.Login"}
+      - |
+        POST /minio/webrpc HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"id":1,"jsonrpc":"2.0","params":{"username":"{{username}}","password":"{{password}}"},"method":"web.Login"}
+
+    payloads:
+      username:
+        - minioadmin
+      password:
+        - minioadmin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Content-Type: application/json"
+        part: header
+
+      - type: word
+        words:
+          - 'uiVersion'
+          - 'token'
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a0046304402201cb0263ef1608e10339941b6e366222376b8d7a4d4f27c24a10e8af0be15f8dd0220012b697980b91480a3f678299089f862a066ada65477377b49e9ae4bccf54398:922c64590222798bb761d5b6d8e72950

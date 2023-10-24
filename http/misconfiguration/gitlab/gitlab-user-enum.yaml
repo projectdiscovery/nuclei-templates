@@ -1,0 +1,42 @@
+id: gitlab-user-enum
+
+info:
+  name: GitLab - User Enumeration
+  author: Suman_Kar
+  severity: info
+  reference:
+    - https://github.com/danielmiessler/SecLists/blob/master/Usernames/Names/malenames-usa-top1000.txt
+  metadata:
+    max-request: 100
+    shodan-query: http.title:"GitLab"
+  tags: gitlab,enum,misconfig,fuzz
+
+http:
+  - raw:
+      - |
+        GET /users/{{user}}/exists HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+
+    payloads:
+      user: helpers/wordlists/user-list.txt
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "exists.*:true"
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+# digest: 490a00463044022001f9bc926b201aa71ecfea125a7aafc40a3c9251ec58b937cdebda270b2c69070220772c5b31b677eeaefefb90b8edc5ee76735502818f7f2cf29a462db3d1889658:922c64590222798bb761d5b6d8e72950

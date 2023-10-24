@@ -1,0 +1,38 @@
+id: cache-poisoning-fuzz
+
+info:
+  name: Cache Poison Fuzzing
+  author: dwisiswant0,ColbyJack1134
+  severity: info
+  reference:
+    - https://youst.in/posts/cache-poisoning-at-scale/
+    - https://portswigger.net/web-security/web-cache-poisoning
+  metadata:
+    max-request: 5834
+  tags: fuzz,cache
+
+http:
+  - raw:
+      - |
+        GET /?{{md5(headers)}}=1 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0
+        {{headers}}: {{randstr}}.tld
+      - |
+        GET /?{{md5(headers)}}=1 HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0
+
+    attack: clusterbomb
+    payloads:
+
+      headers: helpers/wordlists/headers.txt
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "{{randstr}}")'
+          - 'contains(body_2, "{{randstr}}")'
+        condition: and
+
+# digest: 4a0a00473045022059fbf3d4d11dfb4d85e0fcb0aff33d0086e430c5a3b66cbacdd12d4f2a9ad26e022100a74a6995274757244f57bb4473b5d923e7a6a5bbb2e111fdbe6d66172c803cfb:922c64590222798bb761d5b6d8e72950

