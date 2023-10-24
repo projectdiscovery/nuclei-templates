@@ -1,0 +1,128 @@
+# This Nuclei template is a comprehensive way to identify if an application 
+# is hosted in AWS or consuming AWS services. It checks for the existance of 
+# AWS itself, as well as several services: 
+# ALB, KMS, Xray, WAF, Codebuild, AppSync, Cloudfront, and API-Gateway,
+# and DynamoDB
+
+id: aws-detect
+
+info:
+  name: AWS Detect
+  author: 6mile
+  severity: info
+  description: Detect if AWS is being used in this target application
+  reference:
+    - https://github.com/6mile/cloud-headers
+  classification:
+    cwe-id: CWE-200
+  tags: tech,aws,amazon,graphql,appsync,xray,kms,waf,alb,cloudfront,codebuild,git,api-gateway,dynamodb
+  metadata:
+    max-request: 1
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+
+    matchers-condition: or
+    matchers:
+
+      - type: word
+        condition: or
+        #name: Main AWS Detection template
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amz-Cf-Id:'
+          - 'X-Amz-Cf-Pop:'
+          - 'Server: awselb/2.0'
+          - 'X-Amz-Server-Side-Encryption:'
+          - 'X-Amzn-Requestid:'
+          - 'X-Amzn-Errortype:'
+          - 'X-Amz-Apigw-Id:'
+          - 'X-Amz-Content-Sha256:'
+          - 'X-Amz-Date:'
+          - 'X-Amzn-Trace-Id:'
+          - 'X-Amz-Version-Id:'
+          - 'X-Amzn-Waf-Action:'
+          - 'X-Amz-Id-2:'
+          - 'X-Amz-Delete-Marker:'
+
+      - type: word
+        name: aws-alb
+        part: header
+        case-insensitive: true
+        words:
+          - 'Server: awselb/2.0'
+          - 'Set-Cookie: AWSALB='
+          - 'Set-Cookie: AWSALBCORS='
+
+      - type: word
+        name: aws-cloudfront
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amz-Cf-Id:'
+          - 'X-Amz-Cf-Pop:'
+
+      - type: dsl
+        name: aws-cloudfront
+        condition: or
+        dsl:
+          - "contains(tolower(header), 'x-cache: hit from cloudfront')"
+          - "contains(tolower(header), 'x-cache: refreshhit from cloudfront')"
+          - "contains(tolower(header), 'x-cache: miss from cloudfront')"
+          - "contains(tolower(header), 'x-cache: error from cloudfront')"
+
+      - type: word
+        name: aws-codebuild
+        part: header
+        case-insensitive: true
+        words:
+          - "arn: arn:aws:codebuild"
+          - 'X-Amz-Meta-Codebuild-Buildarn:'
+          - 'X-Amz-Meta-Codebuild-Content-Sha256:'
+          - 'X-Amz-Meta-Codebuild-Content-Md5:'
+
+      - type: word
+        name: aws-api-gateway
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amz-Apigw-Id:'
+          - 'X-Amzn-Requestid:'
+          - 'X-Amzn-Errortype: MissingAuthenticationTokenException'
+
+      - type: word
+        name: aws-kms
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amz-Server-Side-Encryption:'
+
+      - type: word
+        name: aws-xray
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amzn-Trace-Id:'
+
+      - type: word
+        name: aws-waf-captcha
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amzn-Waf-Action:'
+
+      - type: word
+        name: aws-dynamodb
+        part: header
+        case-insensitive: true
+        words:
+          - 'X-Amz-Crc32:'
+          - 'X-Amz-Target:'
+
+
