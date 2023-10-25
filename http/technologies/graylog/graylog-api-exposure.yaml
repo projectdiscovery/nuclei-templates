@@ -1,0 +1,92 @@
+id: graylog-api-exposure
+
+info:
+  name: Graylog REST API Endpoints - Exposure
+  author: Arqsz
+  severity: info
+  description: |
+    Graylog is a centralized log management solution. According to the official documentation, it exposes multiple endpoints (some by default).
+  reference:
+    - https://go2docs.graylog.org/5-0/setting_up_graylog/rest_api.html
+    - https://gist.github.com/asachs01/f1f317b2924a688deb8ed2520a4520bd
+  metadata:
+    verified: true
+    max-request: 50
+    shodan-query: Graylog
+  tags: tech,graylog,api,swagger,fuzz
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/api/api-docs"
+      - "{{BaseURL}}/api/api-browser"
+      - "{{BaseURL}}/api/cluster"
+      - "{{BaseURL}}/api/dashboards"
+      - "{{BaseURL}}/api/events/definitions"
+      - "{{BaseURL}}/api/events/definitions/validate"
+      - "{{BaseURL}}/api/events/notifications/test"
+      - "{{BaseURL}}/api/events/search"
+      - "{{BaseURL}}/api/free-enterprise/license"
+      - "{{BaseURL}}/api/plugins/org.graylog.enterprise.integrations/office365/checkSubscriptions"
+      - "{{BaseURL}}/api/plugins/org.graylog.enterprise.integrations/office365/inputs"
+      - "{{BaseURL}}/api/plugins/org.graylog.enterprise.integrations/office365/startSubscription"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/cloudwatch/log_groups"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/inputs"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/kinesis/auto_setup/create_stream"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/kinesis/auto_setup/create_subscription"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/kinesis/auto_setup/create_subscription_policy"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/kinesis/health_check"
+      - "{{BaseURL}}/api/plugins/org.graylog.integrations/aws/kinesis/streams"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.archive/archives/catalog/rebuild"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.archive/backends"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.archive/cluster/archives/catalog/rebuild"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.collector/configurations"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.license/licenses/verify"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.report/reports"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.security/team-sync/test/backend"
+      - "{{BaseURL}}/api/plugins/org.graylog.plugins.security/teams"
+      - "{{BaseURL}}/api/scheduler/jobs"
+      - "{{BaseURL}}/api/system/authentication/services/backends"
+      - "{{BaseURL}}/api/system/authentication/services/test/backend/connection"
+      - "{{BaseURL}}/api/system/authentication/services/test/backend/login"
+      - "{{BaseURL}}/api/system"
+      - "{{BaseURL}}/api/system/content_packs"
+      - "{{BaseURL}}/api/system/indexer/cluster/health"
+      - "{{BaseURL}}/api/system/indexer/cluster/name"
+      - "{{BaseURL}}/api/system/debug/events/cluster"
+      - "{{BaseURL}}/api/system/debug/events/local"
+      - "{{BaseURL}}/api/system/jobs"
+      - "{{BaseURL}}/api/system/pipelines/pipeline"
+      - "{{BaseURL}}/api/system/pipelines/rule"
+      - "{{BaseURL}}/api/system/urlwhitelist/check"
+      - "{{BaseURL}}/api/system/urlwhitelist/generate_regex"
+      - "{{BaseURL}}/api/views"
+      - "{{BaseURL}}/api/views/fields"
+      - "{{BaseURL}}/api/views/forValue"
+      - "{{BaseURL}}/api/views/search/messages"
+      - "{{BaseURL}}/api/views/search/metadata"
+      - "{{BaseURL}}/api/views/search/sync"
+      - "{{BaseURL}}/api/users"
+
+    host-redirects: true
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains_any(header, 'X-Graylog-Node-Id', 'Graylog', 'graylog')"
+          - "contains_any(body, 'X-Graylog-Node-Id', 'Graylog', 'graylog')"
+          - "contains_any(body, 'swagger')"
+        condition: and
+
+      - type: dsl
+        name: unauthorized-graylog-header
+        dsl:
+          - "status_code == 401"
+          - "contains(header, 'X-Graylog-Node-Id') || contains(header, 'Graylog Server')"
+        condition: and
+
+# digest: 4a0a00473045022100b636c93ab7e3e9908a11c6756ff1f05864169e0cdb71d473da1f5666e0139e4c0220571ca1ef4291dbb180eba6701fca82a920d3ebdda9e122904cc29176bad51853:922c64590222798bb761d5b6d8e72950

