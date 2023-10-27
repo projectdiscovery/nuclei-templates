@@ -1,0 +1,106 @@
+id: rdap-whois
+
+info:
+  name: RDAP WHOIS
+  author: ricardomaia,sttlr
+  severity: info
+  description: |
+    RDAP (Registration Data Access Protocol) is a standard defined by the IETF to replace the whois protocol
+    in queries for information about Internet resource records such as domain names, IP addresses, and ASNs.
+  reference:
+    - https://about.rdap.org/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+  tags: whois,rdap,osint,misc
+
+http:
+  - method: GET
+    path:
+      - "https://www.rdap.net/domain/{{Host}}"
+
+    redirects: true
+    max-redirects: 3
+    matchers:
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        name: status
+        json:
+          - '.status[]'
+
+      - type: json
+        part: body
+        name: registrationDate
+        json:
+          - '.events[] | select(.eventAction == "registration").eventDate'
+
+      - type: json
+        part: body
+        name: lastChangeDate
+        json:
+          - '.events[] | select(.eventAction == "last changed").eventDate'
+
+      - type: json
+        part: body
+        name: expirationDate
+        json:
+          - '.events[] | select(.eventAction == "expiration").eventDate'
+
+      - type: json
+        part: body
+        name: registrantName
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "fn") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantOrg
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "org") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantEmail
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "email") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantPhone
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "tel") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantAddress
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][] | select(. != "")'
+
+      - type: json
+        part: body
+        name: registrantCountry
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][-1]'
+
+      - type: json
+        part: body
+        name: nameServers
+        json:
+          - '.nameservers[] | .ldhName'
+
+      - type: json
+        part: body
+        name: secureDNS
+        json:
+          - '.secureDNS.delegationSigned // false'
+
+# digest: 4b0a00483046022100ad80b6de8e6031b71c9ed3714fee31c4d47447bc27ca8b8e5784ef200f27c663022100ad31bbd079ecfe1ac91bdc0b590cff4bd93bac28cffd56abeb0db5ac43837f0b:922c64590222798bb761d5b6d8e72950
