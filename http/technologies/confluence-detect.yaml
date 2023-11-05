@@ -1,10 +1,11 @@
 id: confluence-detect
 
 info:
-  name: Confluence Detect
-  author: philippedelteil,AdamCrosser
+  name: Confluence Detection
+  author: philippedelteil,AdamCrosser,6mile
   severity: info
-  description: Allows you to detect Atlassian Confluence instances
+  description: |
+    This nuclei template is used to detect the presence of Confluence, a popular collaboration software.
   metadata:
     max-request: 5
     vendor: atlassian
@@ -22,33 +23,28 @@ http:
       - "{{BaseURL}}/confluence"
       - "{{BaseURL}}/wiki"
 
-    host-redirects: true
+    redirects: true
     stop-at-first-match: true
-
-    matchers-condition: or
     matchers:
-      - type: word
-        part: header
-        words:
-          - '-confluence-'
-        case-insensitive: true
-
-      - type: word
-        part: body
-        words:
-          - 'confluence-base-url'
+      - type: dsl
+        dsl:
+          - contains(to_lower(header), '-confluence-')
+          - contains(to_lower(body), 'confluence-base-url')
 
     extractors:
       - type: regex
         name: version
-        part: body
         group: 1
         regex:
           - '<meta name="ajs-version-number" content="(.*)">'
           - 'Atlassian Confluence ([a-z0-9-._]+)'
 
-      - type: kval
-        kval:
-          - version
+      - type: regex
+        name: hostname
+        group: 1
+        regex:
+          - '<meta id="confluence-base-url" name="confluence-base-url" content="https://(.*)">'
+          - '<meta name="ajs-base-url" content="https://(.*)">'
+          - '<meta name="ajs-server-name" content="(.*)">'
 
 # digest: 490a0046304402200128411f944c976e9440bafee35bfe8c3942c31930a9675c5bf626baac7e993e02205051120570199b6afd2e5590fcf302c0396ab2e8797272dc090196d938ef6db5:922c64590222798bb761d5b6d8e72950
