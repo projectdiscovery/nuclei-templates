@@ -1,0 +1,42 @@
+id: ssh-weak-credentials
+
+info:
+  name: SSH - Default Logins
+  author: tarunKoyalwar
+  severity: critical
+  metadata:
+    shodan-query: port:1433
+  tags: js,ssh,default-login,network
+
+javascript:
+  - pre-condition: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      var response = c.ConnectSSHInfoMode(Host, Port);
+      // only bruteforce if ssh allows password based authentication
+      response["UserAuth"].includes("password")
+
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "{{usernames}}"
+      Password: "{{passwords}}"
+
+    threads: 10
+    attack: clusterbomb
+    payloads:
+      usernames: helpers/wordlists/wp-users.txt
+      passwords: helpers/wordlists/wp-passwords.txt
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "response == true"
+          - "success == true"
+        condition: and
