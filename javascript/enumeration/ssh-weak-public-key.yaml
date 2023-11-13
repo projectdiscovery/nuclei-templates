@@ -14,14 +14,15 @@ info:
   tags: javascript,ssh,misconfig,network
 
 variables:
-  pubkeylen: '256'
+  ecdsa_bit: '256' # 256 bytes = 2048 bits
+  rsa_bit: '2048' # 2048 bits
 
 javascript:
   - code: |
       let m = require("nuclei/ssh");
       let c = m.SSHClient();
       let response = c.ConnectSSHInfoMode(Host, Port);
-      log(to_json(response));
+      to_json(response);
 
     args:
       Host: "{{Host}}"
@@ -35,12 +36,18 @@ javascript:
 
       - type: dsl
         dsl:
-          - 'keylen < pubkeylen'
+          - 'len(ecdsa_keylen) != 0 && ecdsa_keylen < ecdsa_bit'
+          - 'len(rsa_keylen) !=0 && rsa_keylen < rsa_bit'
 
     extractors:
       - type: json
         internal: true
-        name: keylen
+        name: ecdsa_keylen
         json:
           - '.DHKeyExchange.server_host_key.ecdsa_public_key.length'
-#          - '.DHKeyExchange.server_host_key.rsa_public_key.length'
+
+      - type: json
+        internal: true
+        name: rsa_keylen
+        json:
+          - '.DHKeyExchange.server_host_key.rsa_public_key.length'
