@@ -1,14 +1,29 @@
 id: worksites-takeover
 
 info:
-  name: worksites takeover detection
-  author: melbadry9
+  name: Worksites Takeover Detection
+  author: melbadry9,dogasantos
   severity: high
   reference:
-    - https://blog.melbadry9.xyz/dangling-dns/xyz-services/ddns-worksites
+    - https://melbadry9.gitbook.io/blog/dangling-dns/xyz-services/ddns-worksites
   metadata:
     max-request: 1
+    verified: true
   tags: takeover
+
+flow: dns(1) && http(1)
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    class: inet
+    recursion: true
+    retries: 3
+
+    matchers:
+      - type: word
+        words:
+          - "69.164.223.206"
 
 http:
   - method: GET
@@ -21,8 +36,12 @@ http:
         dsl:
           - Host != ip
 
-      - type: regex
-        regex:
-          - "(?:Company Not Found|you&rsquo;re looking for doesn&rsquo;t exist)"
+      - type: word
+        words:
+          - "Company Not Found"
+          - "worksites.net"
+        condition: and
 
-# digest: 490a0046304402203b75d6e58720c807194ef6a62552d097e7de60926ca2fae96db9e4873ecc389202203d39a42e1be2e0377a78f759b510de5b797181f5ca3027eb3c28e77913d34e62:922c64590222798bb761d5b6d8e72950
+      - type: status
+        status:
+          - 404
