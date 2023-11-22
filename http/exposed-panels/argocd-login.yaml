@@ -2,7 +2,7 @@ id: argocd-detect
 
 info:
   name: Argo CD Login Panel
-  author: Adam Crosser,daffainfo
+  author: Adam Crosser,daffainfo,aringo
   severity: info
   description: An Argo CD login panel was discovered.
   reference:
@@ -17,16 +17,25 @@ info:
 http:
   - method: GET
     path:
+      - "{{BaseURL}}/api/version"
       - "{{BaseURL}}/api/v1/settings"
 
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
-          - contains(body, 'appLabelKey')
-          - contains(body, 'resourceOverrides')
+          - contains(to_lower(header_1), 'grpc-metadata-content-type')
+          - status_code_1 == 200
+        condition: and
+
+      - type: dsl
+        dsl:
+          - contains(body_2, 'appLabelKey')
+          - contains(body_2, 'resourceOverrides')
         condition: and
 
     extractors:
-      - type: dsl
-        dsl:
-          - RootURL + "/login"
+      - type: json
+        json:
+          - .Version
