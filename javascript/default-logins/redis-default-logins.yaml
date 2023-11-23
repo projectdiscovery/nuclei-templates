@@ -1,0 +1,43 @@
+id: redis-weak-credentials
+
+info:
+  name: Redis - Default Logins
+  author: tarunKoyalwar
+  severity: high
+  description: |
+    Redis service was accessed with easily guessed credentials.
+  metadata:
+    max-request: 6
+    shodan-query: product:"redis"
+  tags: js,redis,default-login,network
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port)
+    code: |
+      var m = require("nuclei/redis");
+      m.GetServerInfoAuth(Host,Port,Password);
+    args:
+      Host: "{{Host}}"
+      Port: "6379"
+      Password: "{{passwords}}"
+    payloads:
+      passwords:
+        - ""
+        - root
+        - password
+        - admin
+        - iamadmin
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "redis_version"
+
+      - type: word
+        negative: true
+        words:
+          - "redis_mode:sentinel"
+
+# digest: 4a0a00473045022100ce0215e50f21c5db0d6bd6d61c8ca3eedb3bfd1f5c8a838c3907b0cf7528cb9e0220675c431312312c4d07e3f90cd023ff8baa38fdc31f9528bd63cb3e539db56381:922c64590222798bb761d5b6d8e72950
