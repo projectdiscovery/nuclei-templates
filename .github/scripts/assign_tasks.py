@@ -3,7 +3,7 @@ import sys
 import json
 
 # GitHub credentials
-password = sys.argv[3]
+password = sys.argv[2]
 
 repo_owner = "projectdiscovery"
 repo_name = "nuclei-templates"
