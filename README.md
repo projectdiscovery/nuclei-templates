@@ -50,8 +50,8 @@ An overview of the nuclei template project, including statistics on unique tags,
 | wp-plugin |   811 | ritikchaddha |   293 | javascript        |    20 | unknown  |    32 |      |       |
 | osint     |   675 | pdteam       |   283 | dns               |    17 |          |       |      |       |
 | tech      |   645 | ricardomaia  |   229 | headless          |    10 |          |       |      |       |
-| lfi       |   614 | theamanrawat |   221 | code              |     2 |          |       |      |       |
-| edb       |   598 | geeknik      |   221 | contributors.json |     1 |          |       |      |       |
+| lfi       |   614 | geeknik      |   221 | code              |     2 |          |       |      |       |
+| edb       |   598 | theamanrawat |   221 | contributors.json |     1 |          |       |      |       |
 
 **525 directories, 7843 files**.
 
