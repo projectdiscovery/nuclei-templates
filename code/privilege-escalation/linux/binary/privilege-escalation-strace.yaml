@@ -1,0 +1,46 @@
+id: privilege-escalation-strace
+
+info:
+  name: strace - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/strace/
+  metadata:
+    verified: true
+  tags: code,linux,strace,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        strace -o /dev/null whoami
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo strace -o /dev/null whoami
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or

@@ -1,0 +1,54 @@
+id: privilege-escalation-php
+
+info:
+  name: PHP - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/php/
+  metadata:
+    verified: true
+  tags: code,linux,php,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        php -r 'system("whoami");'
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo php -r 'system("whoami");'
+
+  #Capabilities
+  - engine:
+      - sh
+      - bash
+    source: |
+        php -r "posix_setuid(0); system("whoami");"
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+          - 'contains(code_4_response, "root")'
+        condition: or

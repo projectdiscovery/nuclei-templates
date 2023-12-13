@@ -1,0 +1,46 @@
+id: privilege-escalation-sqlite3
+
+info:
+  name: sqlite3 - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/sqlite3/
+  metadata:
+    verified: true
+  tags: code,linux,sqlite3,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        sqlite3 /dev/null '.shell whoami'
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo sqlite3 /dev/null '.shell whoami'
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or

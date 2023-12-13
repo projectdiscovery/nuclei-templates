@@ -1,0 +1,46 @@
+id: privilege-escalation-run-parts
+
+info:
+  name: run-parts - Privilege Escalation
+  author: daffainfo
+  severity: high
+  reference: https://gtfobins.github.io/gtfobins/run-parts/
+  metadata:
+    verified: true
+  tags: code,linux,run-parts,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+        whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+        run-parts --new-session --regex 'whoami' /bin
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+        sudo run-parts --new-session --regex 'whoami' /bin
+
+    matchers-condition: and
+    matchers:
+       - type: word
+         part: code_1_response
+         words:
+           - "root"
+         negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or
