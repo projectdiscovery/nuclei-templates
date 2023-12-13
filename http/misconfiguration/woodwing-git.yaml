@@ -1,0 +1,36 @@
+id: woodwing-git
+
+info:
+  name: Woodwing Studio Server - Git Config
+  author: pdteam
+  severity: medium
+  reference:
+    - https://twitter.com/ynsmroztas/status/1680961398011047936
+  metadata:
+    shodan-query: http.title:"WoodWing Studio Server"
+    fofa-query: title=="WoodWing Studio Server"
+  tags: woodwing,git,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/Server/.git/config"
+      - "{{BaseURL}}/StudioServer/.git/config"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains_all(tolower(body), '<html', '<body')"
+          - "contains_all(tolower(body), '[credentials]', '[core]')"
+          - "status_code == 200"
+        condition: and
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "url ?= ?https?://(.*:.*)@"
+          - "AUTHORIZATION: basic (.*)"
+          - "pass = (.*)"
+# digest: 4a0a0047304502205df970ece21bdef791c706b8fd1b5c14aa34fe7a55db0e595bcd1696d75a178f0221008a71463c5470343a47bc099905cd4448beb3f372d7c44add6531c53386cf585f:922c64590222798bb761d5b6d8e72950

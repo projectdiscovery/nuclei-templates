@@ -1,16 +1,17 @@
 id: confluence-detect
 
 info:
-  name: Confluence Detect
-  author: philippedelteil,AdamCrosser
+  name: Confluence Detection
+  author: philippedelteil,AdamCrosser,6mile
   severity: info
-  description: Allows you to detect Atlassian Confluence instances
+  description: |
+    This nuclei template is used to detect the presence of Confluence, a popular collaboration software.
   metadata:
-    category: productivity
     max-request: 5
+    vendor: atlassian
     product: confluence_server
     shodan-query: http.component:"Atlassian Confluence"
-    vendor: atlassian
+    category: productivity
   tags: tech,confluence,atlassian,detect
 
 http:
@@ -22,30 +23,26 @@ http:
       - "{{BaseURL}}/confluence"
       - "{{BaseURL}}/wiki"
 
-    host-redirects: true
+    redirects: true
     stop-at-first-match: true
-    matchers-condition: or
     matchers:
-      - type: word
-        part: header
-        words:
-          - '-confluence-'
-        case-insensitive: true
-
-      - type: word
-        part: body
-        words:
-          - 'confluence-base-url'
+      - type: dsl
+        dsl:
+          - contains(to_lower(header), '-confluence-')
+          - contains(to_lower(body), 'confluence-base-url')
 
     extractors:
       - type: regex
         name: version
-        part: body
         group: 1
         regex:
           - '<meta name="ajs-version-number" content="(.*)">'
           - 'Atlassian Confluence ([a-z0-9-._]+)'
 
-      - type: kval
-        kval:
-          - version
+      - type: regex
+        name: hostname
+        group: 1
+        regex:
+          - '<meta id="confluence-base-url" name="confluence-base-url" content="https://(.*)">'
+          - '<meta name="ajs-base-url" content="https://(.*)">'
+          - '<meta name="ajs-server-name" content="(.*)">'

