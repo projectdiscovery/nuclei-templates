@@ -1,0 +1,54 @@
+id: ssh-weak-public-key
+
+info:
+  name: SSH Host Keys < 2048 Bits Considered Weak
+  author: pussycat0x
+  severity: low
+  description: |
+    SSH host keys with a bit length below 2048 are deemed weak, posing an increased vulnerability to security threats. Employing robust key lengths is crucial for fortifying the integrity of encrypted communication and thwarting potential exploits.
+  reference:
+    - https://www.tenable.com/plugins/nessus/153954
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: javascript,ssh,misconfig,network
+variables:
+  ecdsa_bit: '256' # 256 bytes = 2048 bits
+  rsa_bit: '2048' # 2048 bits
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      to_json(response);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "server_host_key"
+
+      - type: dsl
+        dsl:
+          - 'len(ecdsa_keylen) != 0 && ecdsa_keylen < ecdsa_bit'
+          - 'len(rsa_keylen) !=0 && rsa_keylen < rsa_bit'
+
+    extractors:
+      - type: json
+        internal: true
+        name: ecdsa_keylen
+        json:
+          - '.DHKeyExchange.server_host_key.ecdsa_public_key.length'
+
+      - type: json
+        internal: true
+        name: rsa_keylen
+        json:
+          - '.DHKeyExchange.server_host_key.rsa_public_key.length'
+# digest: 4b0a0048304602210090f771b958648e32a80a67e61206293bfb7d325a407db4741157076c54b73d6e022100a6dccf1d557c6f8b5fd9941ec9a7e46418d31cf3cac294da99d4319784d501fb:922c64590222798bb761d5b6d8e72950

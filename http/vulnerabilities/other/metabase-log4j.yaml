@@ -15,11 +15,10 @@ info:
     cve-id: CVE-2021-44228
     cwe-id: CWE-77
   metadata:
+    verified: true
     max-request: 1
     shodan-query: title:"Metabase"
-    verified: true
   tags: cve,cve2021,rce,jndi,log4j,metabase,kev,oast
-
 variables:
   rand1: '{{rand_int(111, 999)}}'
   rand2: '{{rand_int(111, 999)}}'
@@ -32,33 +31,35 @@ http:
     matchers-condition: and
     matchers:
       - type: word
-        part: interactsh_protocol  # Confirms the DNS Interaction
+        part: body
+        words:
+          - 'Invalid GeoJSON file location:'
+
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
         words:
           - "dns"
 
       - type: regex
         part: interactsh_request
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
-
-      - type: word
-        part: body
-        words:
-          - 'Invalid GeoJSON file location:'
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
     extractors:
       - type: kval
         kval:
-          - interactsh_ip # Print remote interaction IP in output
+          - interactsh_ip
 
       - type: regex
         part: interactsh_request
         group: 2
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print injection point in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
 
       - type: regex
         part: interactsh_request
         group: 1
         regex:
-          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'   # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 4b0a0048304602210099de73a04dbadbd8b01b1a9af13a552d3495d036cca33e121699bf997f91b5d9022100bf32917f27b9e7ca243dbc74c453263ea677202e3df3b78e5afbf48d0ba5d481:922c64590222798bb761d5b6d8e72950

