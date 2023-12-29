@@ -1,0 +1,81 @@
+id: smb-enum
+
+info:
+  name: SMB - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    SMS Information Extraction is a sophisticated and efficient system designed to retrieve critical information from a remote computer or device through short text messages. This technology enables users to remotely access essential details about a computer, such as its operating system (OS) version, computer name, and hostname,
+    all via SMS communication.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-security-mode.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:445
+  tags: js,network,smb,enum
+javascript:
+  - code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ListSMBv2Metadata(Host, Port);
+      to_json(response);
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(OSVersion) != 0"
+          - "len(NetBIOSComputerName) != 0"
+          - "len(NetBIOSDomainName) != 0"
+          - "len(DNSComputerName) != 0"
+          - "len(DNSDomainName) != 0"
+          - "len(ForestName) != 0"
+
+    extractors:
+      - type: json
+        internal: true
+        name: OSVersion
+        json:
+          - '.OSVersion'
+
+      - type: json
+        internal: true
+        name: NetBIOSComputerName
+        json:
+          - '.NetBIOSComputerName'
+
+      - type: json
+        internal: true
+        name: NetBIOSDomainName
+        json:
+          - '.NetBIOSDomainName'
+
+      - type: json
+        internal: true
+        name: DNSComputerName
+        json:
+          - '.DNSComputerName'
+
+      - type: json
+        internal: true
+        name: DNSDomainName
+        json:
+          - '.DNSDomainName'
+
+      - type: json
+        internal: true
+        name: ForestName
+        json:
+          - '.ForestName'
+
+      - type: json
+        json:
+          - '"OSVersion: "+ .OSVersion '
+          - '"NetBIOSComputerName: "+ .NetBIOSComputerName '
+          - '"NetBIOSDomainName: "+ .NetBIOSDomainName '
+          - '"DNSComputerNamen: "+ .DNSComputerName '
+          - '"DNSComputerName: "+ .DNSComputerName '
+          - '"ForestName: "+ .ForestName'
+# digest: 490a004630440220400426064920e802dc4845114781313f64d319993a1763151c2d5200c4f91b8902206dbd3476fefe69e224c60c81a1ec2d8e9fabb70471c38f62fac7e585eceab043:922c64590222798bb761d5b6d8e72950
