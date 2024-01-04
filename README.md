@@ -40,20 +40,20 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 ## Nuclei Templates Top 10 statistics
 
-|    TAG    | COUNT |    AUTHOR    | COUNT |     DIRECTORY     | COUNT | SEVERITY | COUNT | TYPE | COUNT |
-|-----------|-------|--------------|-------|-------------------|-------|----------|-------|------|-------|
-| cve       |  2271 | dhiyaneshdk  |  1109 | http              |  6856 | info     |  3326 | file |   312 |
-| panel     |  1034 | dwisiswant0  |   800 | file              |   312 | high     |  1439 | dns  |    18 |
-| wordpress |   929 | daffainfo    |   787 | workflows         |   191 | medium   |  1429 |      |       |
-| xss       |   845 | pikpikcu     |   353 | network           |   133 | critical |   906 |      |       |
-| exposure  |   833 | pussycat0x   |   307 | ssl               |    27 | low      |   245 |      |       |
-| wp-plugin |   811 | ritikchaddha |   293 | javascript        |    20 | unknown  |    32 |      |       |
-| osint     |   675 | pdteam       |   283 | dns               |    17 |          |       |      |       |
-| tech      |   645 | ricardomaia  |   229 | headless          |    10 |          |       |      |       |
-| lfi       |   614 | geeknik      |   221 | code              |     2 |          |       |      |       |
-| edb       |   598 | theamanrawat |   221 | contributors.json |     1 |          |       |      |       |
+|    TAG    | COUNT |    AUTHOR    | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|--------------|-------|------------|-------|----------|-------|------|-------|
+| cve       |  2296 | dhiyaneshdk  |  1123 | http       |  6913 | info     |  3337 | file |   312 |
+| panel     |  1038 | dwisiswant0  |   801 | file       |   312 | high     |  1458 | dns  |    18 |
+| wordpress |   938 | daffainfo    |   788 | workflows  |   191 | medium   |  1439 |      |       |
+| xss       |   848 | pikpikcu     |   353 | network    |   131 | critical |   919 |      |       |
+| exposure  |   844 | pussycat0x   |   307 | ssl        |    27 | low      |   248 |      |       |
+| wp-plugin |   812 | ritikchaddha |   298 | javascript |    21 | unknown  |    34 |      |       |
+| osint     |   677 | pdteam       |   286 | dns        |    17 |          |       |      |       |
+| tech      |   649 | ricardomaia  |   229 | headless   |    11 |          |       |      |       |
+| lfi       |   619 | geeknik      |   224 | code       |     3 |          |       |      |       |
+| edb       |   598 | theamanrawat |   221 | cves.json  |     1 |          |       |      |       |
 
-**525 directories, 7843 files**.
+**534 directories, 7902 files**.
 
 </td>
 </tr>
