@@ -1,0 +1,63 @@
+id: dns-rebinding
+info:
+  name: DNS Rebinding Attack
+  description: Detects DNS Rebinding attacks by checking if the DNS response contains a private IPv4 or IPv6 address.
+  author: ricardomaia
+  severity: high
+  reference:
+    - https://capec.mitre.org/data/definitions/275.html
+  metadata:
+    max-request: 3
+  tags: redirect, dns, network
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 8.6
+    cwe-id: CWE-350
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    matchers:
+      # IPv4
+      - type: regex
+        part: answer
+        regex:
+          - 'IN.*A.*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$'
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv4
+        group: 1
+        regex:
+          - 'IN.*A.*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})'
+
+  - name: "{{FQDN}}"
+    type: AAAA
+    matchers:
+      # IPv6 Compressed
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      # IPv6
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv6_Compressed
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      - type: regex
+        part: answer
+        name: IPv6
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
