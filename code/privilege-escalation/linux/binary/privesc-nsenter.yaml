@@ -1,0 +1,49 @@
+id: privesc-nsenter
+
+info:
+  name: Nsenter - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    nsenter is a command-line utility in Linux that allows a user to enter into an existing namespace. It is commonly used for troubleshooting and managing namespaces in containerized environments. By using nsenter, users can enter into a specific namespace and execute commands within that namespace, which can be helpful for various system administration tasks.
+  reference:
+    - https://gtfobins.github.io/gtfobins/nsenter/
+  metadata:
+    verified: true
+  tags: code,linux,nsenter,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+      nsenter whoami
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo nsenter whoami
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or

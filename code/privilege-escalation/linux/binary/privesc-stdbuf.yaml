@@ -1,0 +1,49 @@
+id: privesc-stdbuf
+
+info:
+  name: stdbuf - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    The stdbuf command is used to modify the buffering operations of another command. It can be used to adjust the input/output buffering of a command, which can be useful for controlling the flow of data and improving the performance of certain operations.
+  reference:
+    - https://gtfobins.github.io/gtfobins/stdbuf/
+  metadata:
+    verified: true
+  tags: code,linux,stdbuf,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+      stdbuf -i0 whoami
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo stdbuf -i0 whoami
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or

