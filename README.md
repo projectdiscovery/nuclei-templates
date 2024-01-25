@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR    | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|--------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2318 | dhiyaneshdk  |  1135 | http       |  6947 | info     |  3351 | file |   312 |
-| panel     |  1040 | dwisiswant0  |   801 | file       |   312 | high     |  1471 | dns  |    20 |
-| wordpress |   941 | daffainfo    |   789 | workflows  |   191 | medium   |  1445 |      |       |
-| xss       |   851 | pikpikcu     |   353 | network    |   132 | critical |   933 |      |       |
-| exposure  |   850 | pussycat0x   |   313 | ssl        |    27 | low      |   251 |      |       |
-| wp-plugin |   815 | ritikchaddha |   298 | javascript |    25 | unknown  |    34 |      |       |
-| osint     |   678 | pdteam       |   286 | dns        |    17 |          |       |      |       |
-| tech      |   650 | ricardomaia  |   229 | headless   |    11 |          |       |      |       |
-| lfi       |   622 | geeknik      |   225 | cloud      |     9 |          |       |      |       |
-| edb       |   598 | theamanrawat |   221 | code       |     5 |          |       |      |       |
+| cve       |  2296 | dhiyaneshdk  |  1123 | http       |  6913 | info     |  3337 | file |   312 |
+| panel     |  1038 | dwisiswant0  |   801 | file       |   312 | high     |  1458 | dns  |    18 |
+| wordpress |   938 | daffainfo    |   788 | workflows  |   191 | medium   |  1439 |      |       |
+| xss       |   848 | pikpikcu     |   353 | network    |   131 | critical |   919 |      |       |
+| exposure  |   844 | pussycat0x   |   307 | ssl        |    27 | low      |   248 |      |       |
+| wp-plugin |   812 | ritikchaddha |   298 | javascript |    21 | unknown  |    34 |      |       |
+| osint     |   677 | pdteam       |   286 | dns        |    17 |          |       |      |       |
+| tech      |   649 | ricardomaia  |   229 | headless   |    11 |          |       |      |       |
+| lfi       |   619 | geeknik      |   224 | code       |     3 |          |       |      |       |
+| edb       |   598 | theamanrawat |   221 | cves.json  |     1 |          |       |      |       |
 
-**545 directories, 7957 files**.
+**534 directories, 7902 files**.
 
 </td>
 </tr>
