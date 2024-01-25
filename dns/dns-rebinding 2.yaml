@@ -1,0 +1,68 @@
+id: dns-rebinding
+
+info:
+  name: DNS Rebinding Attack
+  author: ricardomaia
+  severity: high
+  description: |
+    Detects DNS Rebinding attacks by checking if the DNS response contains a private IPv4 or IPv6 address.
+  reference:
+    - https://capec.mitre.org/data/definitions/275.html
+    - https://payatu.com/blog/dns-rebinding/
+    - https://heimdalsecurity.com/blog/dns-rebinding/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 8.6
+    cwe-id: CWE-350
+  metadata:
+    verified: true
+  tags: redirect,dns,network
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    matchers:
+      # IPv4
+      - type: regex
+        part: answer
+        regex:
+          - 'IN.*A.*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$'
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv4
+        group: 1
+        regex:
+          - 'IN.*A.*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})'
+
+  - name: "{{FQDN}}"
+    type: AAAA
+    matchers:
+      # IPv6 Compressed
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      # IPv6
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv6_Compressed
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      - type: regex
+        part: answer
+        name: IPv6
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
+# digest: 4b0a00483046022100f0a55cef522de3cb3a67f445e11a1b53bc3996d393ae8dca6c8a294d3ef4ee7d022100fd80879dba0c5289969d7e5d21abfbc3af1783c77a6d8e3dd23ce740c69bc309:922c64590222798bb761d5b6d8e72950
