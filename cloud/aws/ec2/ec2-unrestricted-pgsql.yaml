@@ -1,0 +1,37 @@
+id: ec2-unrestricted-pgsql
+info:
+  name: Unrestricted PostgreSQL Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Identifies unrestricted inbound access to PostgreSQL databases in Amazon EC2 security groups, which can expose databases to security risks.
+  impact: |
+    Unrestricted access on TCP port 5432 increases vulnerability to unauthorized access and potential data breaches.
+  remediation: |
+    Restrict inbound traffic to PostgreSQL servers by setting stringent rules in EC2 security groups, limiting access to specific IPs or ranges.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html#security-group-rules
+  tags: cloud,devops,aws,amazon,ec2
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=5432 Name=ip-permission.to-port,Values=5432 Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 5432"'
+# digest: 490a0046304402200e9b952f88846ba4669cf90b37f74b6367a29d21799bf6b72cf53827775fdd6202203637e3fbdfed9bd7a8d8323c1e2b24061b141062a811b9ba2e33cdee64b6f437:366f2a24c8eb519f6968bd8801c08ebe
