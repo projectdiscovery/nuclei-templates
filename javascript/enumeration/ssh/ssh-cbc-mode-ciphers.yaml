@@ -1,0 +1,46 @@
+id: ssh-cbc-mode-ciphers
+
+info:
+  name: SSH Server CBC Mode Ciphers Enabled
+  author: pussycat0x
+  severity: low
+  description: |
+    "SSH Server CBC Mode Ciphers Enabled" signifies that the SSH server supports Cipher Block Chaining (CBC) mode ciphers, which are known for potential vulnerabilities. This configuration poses a security risk, and it's recommended to disable CBC ciphers in favor of more secure alternatives for enhanced protection during data transmission.
+  reference:
+    - https://www.tenable.com/plugins/nessus/70658
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: js,enum,ssh,misconfig,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port)
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      to_json(response);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "client_to_server_ciphers"
+          - "server_to_client_ciphers"
+        condition: and
+
+      - type: word
+        words:
+          - "aes128-cbc"
+          - "aes192-cbc:"
+          - "aes256-cbc"
+          - "3des-cbc"
+          - "blowfish-cbc"
+          - "cast128-cbc"
+        condition: or
+# digest: 4b0a0048304602210082687c326b5c8ec0803ad1e07fd7d94f166ac53dad501f5ad325daf42d789045022100e7525130e591163bc997cca9eac1c1b757c6099e892becc2e9b546f12298d13d:922c64590222798bb761d5b6d8e72950

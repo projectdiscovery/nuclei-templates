@@ -1,0 +1,59 @@
+id: vbulletin-backdoor
+
+info:
+  name: vBulletin Backdoor - Detect
+  author: MaStErCho
+  severity: high
+  reference:
+    - https://github.com/OWASP/vbscan
+    - https://blog.sucuri.net/2017/01/vbulletin-malware-hackers-compete-backdoor-control.html
+  metadata:
+    max-request: 31
+  tags: backdoor,php,vbulletin,rce
+
+flow: http(1) && http(2)
+
+variables:
+  num: "999999999"
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "content=\"vBulletin"
+          - "id=\"vbulletin_css"
+          - "clientscript/vbulletin"
+          - "vBulletin_init"
+        condition: or
+        internal: true
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/faq.php?cmd=echo%20-n%20{{num}}|md5sum'
+      - '{{BaseURL}}/forum.php?x=shell_exec&y=echo%20-n%20{{num}}|md5sum'
+      - '{{BaseURL}}/{{paths}}/faq.php?cmd=echo%20-n%20{{num}}|md5sum'
+      - '{{BaseURL}}/{{paths}}/forum.php?x=shell_exec&y=echo%20-n%20{{num}}|md5sum'
+
+    payloads:
+      paths:
+        - 'boards'
+        - 'board'
+        - 'forum'
+        - 'forums'
+        - 'vb'
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 3
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body, '{{md5(num)}}')"
+          - "status_code == 200"
+        condition: and
+# digest: 490a004630440220140a0cd4a972dda1d19412bb1e411cb1c793fc888c041a14c388fb4f7427bea00220254b7d65fbccf04f5bb9c23aacbd313a19ae1075233dcbde2dea106657624abe:922c64590222798bb761d5b6d8e72950

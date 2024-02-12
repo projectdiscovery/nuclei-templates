@@ -1,0 +1,62 @@
+id: dns-rebinding
+
+info:
+  name: DNS Rebinding Attack
+  author: ricardomaia
+  severity: unknown
+  description: |
+    Detects DNS Rebinding attacks by checking if the DNS response contains a private IPv4 or IPv6 address.
+  reference:
+    - https://capec.mitre.org/data/definitions/275.html
+    - https://payatu.com/blog/dns-rebinding/
+    - https://heimdalsecurity.com/blog/dns-rebinding/
+  tags: redirect,dns,network
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    matchers:
+      # IPv4
+      - type: regex
+        part: answer
+        regex:
+          - 'IN.*A.(\s)*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(127\.0\.0\.1|\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$'
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv4
+        group: 1
+        regex:
+          - 'IN.*A.(\s)*(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(127\.0\.0\.1|\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})'
+
+  - name: "{{FQDN}}"
+    type: AAAA
+    matchers:
+      # IPv6 Compressed
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      # IPv6
+      - type: regex
+        part: answer
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv6_Compressed
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{0,4}:){0,5}(:[0-9a-fA-F]{0,4}){1,2}(:)?)$"
+
+      - type: regex
+        part: answer
+        name: IPv6
+        group: 1
+        regex:
+          - "IN.+A.+(fd([0-9a-fA-F]{2}):([0-9a-fA-F]{1,4}:){0,5}([0-9a-fA-F]{1,4}:){1,2}[0-9a-fA-F]{1,4})$"
+# digest: 4a0a004730450221009a895344f0f4bf8d0444566a7a2392d2074708d88d29a0922ebb71935290785702200a338fe1517c225d45750b08f80f3a903cd5925a32c542b5559f0202173732be:922c64590222798bb761d5b6d8e72950

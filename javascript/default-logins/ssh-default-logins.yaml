@@ -1,0 +1,40 @@
+id: ssh-weak-credentials
+
+info:
+  name: SSH - Default Logins
+  author: tarunKoyalwar
+  severity: critical
+  metadata:
+    max-request: 223
+    shodan-query: port:1433
+  tags: js,ssh,default-login,network,fuzz
+
+javascript:
+  - pre-condition: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      var response = c.ConnectSSHInfoMode(Host, Port);
+      // only bruteforce if ssh allows password based authentication
+      response["UserAuth"].includes("password")
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "{{usernames}}"
+      Password: "{{passwords}}"
+    threads: 10
+    attack: pitchfork
+    payloads:
+      usernames: helpers/wordlists/ssh-users.txt
+      passwords: helpers/wordlists/ssh-passwords.txt
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "response == true"
+          - "success == true"
+        condition: and
+# digest: 4a0a0047304502207c2e276750a40905f72d16d4247de8caaf90717e48247d4683f1fd0fb082966e022100bd4cffb2e9b52520acd1d43e36f98aec908d9363e724de3df2f74d5ce6d7840f:922c64590222798bb761d5b6d8e72950

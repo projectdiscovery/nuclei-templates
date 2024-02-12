@@ -1,0 +1,41 @@
+id: ssh-sha1-hmac-algo
+
+info:
+  name: SSH SHA-1 HMAC Algorithms Enabled
+  author: pussycat0x
+  severity: info
+  description: |
+    The SSH server at the remote end is set up to allow the use of SHA-1 HMAC algorithms.
+  reference:
+    - https://forums.ivanti.com/s/article/How-to-disable-SSH-SHA-1-HMAC-algorithms?language=en_US
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: enum,js,ssh,misconfig,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      to_json(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "server_to_client_macs"
+          - "client_to_server_macs"
+        condition: and
+
+      - type: word
+        words:
+          - "hmac-sha1"
+# digest: 4a0a0047304502206210881f22cd8c86f258ac9555736dc09d747df628475ba0dbac86b71078eff2022100ef7b5b68c9686f7120ccf30edaf60bbb4b9b733b690b0e3baf4777e482a5d692:922c64590222798bb761d5b6d8e72950
