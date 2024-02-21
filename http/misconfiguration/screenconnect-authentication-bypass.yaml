@@ -1,0 +1,44 @@
+id: screenconnect-authbypass
+
+info:
+  name: ScreenConnect - Authentication Bypass
+  author: johnk3r
+  severity: critical
+  reference:
+    - https://www.huntress.com/blog/a-catastrophe-for-control-understanding-the-screenconnect-authentication-bypass
+    - https://github.com/watchtowrlabs/connectwise-screenconnect_auth-bypass-add-user-poc
+    - https://www.connectwise.com/company/trust/security-bulletins/connectwise-screenconnect-23.9.8
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: connectwise
+    product: screenconnect
+    shodan-query: http.favicon.hash:-82958153
+  tags: misconfig,screenconnect,connectwise,auth-bypass
+
+variables:
+  string: "{{rand_text_alpha(10)}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/SetupWizard.aspx/{{string}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "SetupWizardPage"
+          - "ContentPanel SetupWizard"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - Server
