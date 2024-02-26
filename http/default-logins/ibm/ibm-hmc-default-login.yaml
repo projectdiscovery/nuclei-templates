@@ -2,9 +2,10 @@ id: ibm-hmc-default-login
 
 info:
   name: IBM Power HMC Default Login
-  author: AG - R3S OST
+  author: g33gs
   severity: high
-  description: IBM HMC default admin login credentials were discovered.
+  description: |
+    IBM HMC default admin login credentials were discovered.
   reference:
     - https://www.ibm.com/docs/en/power8?topic=tools-hardware-management-console
   classification:
@@ -13,17 +14,18 @@ info:
     cwe-id: CWE-522
   metadata:
     max-request: 1
-  tags: default-login,ibm,storage
+    verified: true
+    shodan-query: http.favicon.hash:262502857
+  tags: default-login,ibm,hmc
 
 http:
   - raw:
-      - |-
-        POST /hmc/j_security_check HTTP/2
+      - |
+        POST /hmc/j_security_check HTTP/1.1
         Host: {{Hostname}}
-        Cookie: JSESSIONID=6072A578F88D4C79F5CC6B1792637895; CCFWSESSION=99099D60C80B7FC3B1288BE708A5473A; LOGIN_MODE=Dashboard
         Content-Type: application/x-www-form-urlencoded
 
-        j_username=hscroot&j_password=abc123&j_newConsole=Dashboard&j_security_check=Log+in
+        j_username={{username}}&j_password={{password}}&j_newConsole=Dashboard&j_security_check=Log+in
 
     payloads:
       username:
@@ -32,8 +34,9 @@ http:
         - abc123
     attack: pitchfork
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 303
+      - type: dsl
+        dsl:
+          - "status_code == 303"
+          - "contains(header, 'Location: /hmc/connect;jsessionid=')"
+        condition: and
