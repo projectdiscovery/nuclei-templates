@@ -1,0 +1,42 @@
+id: cloudflare-rocketloader-html-injection
+
+info:
+  name: Cloudflare Rocket Loader HTML Injection
+  author: j3ssie
+  severity: low
+  description: |
+    The Rocket Loader feature in Cloudflare allow attackers to inject arbitrary HTML into the website. This can be used to perform various attacks such as phishing, defacement, etc.
+  reference:
+    - https://developers.cloudflare.com/speed/optimization/content/rocket-loader/enable/
+  metadata:
+    max-request: 1
+  tags: miscellaneous,misc,cloudflare,html-injection
+
+http:
+  - method: GET
+    path:
+      # you can change the path of the SVG file to any URL to make a phishing page more realistic
+      - "{{BaseURL}}/cdn-cgi/image/width=1000,format=auto/https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/cloudflare.svg"
+
+    stop-at-first-match: true
+    matchers-condition: and
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Cloudflare'
+          - '<svg'
+          # this is the content of the SVG file
+          - 'M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-'
+          - '1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 '
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'image/svg+xml'
+
+      - type: status
+        status:
+          - 200
