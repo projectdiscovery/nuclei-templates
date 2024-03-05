@@ -3,7 +3,7 @@ id: lucee-default-login
 info:
   name: Lucee - Default Login
   author: jpg0mez
-  severity: High
+  severity: high
   description: |
     Lucee admin panel using the default login password was discovered.
   reference:
@@ -13,25 +13,37 @@ info:
   metadata:
     verified: true
     max-request: 2
+    shodan-query: "html:\"Lucee\""
+    fofa-query: "app=\"Lucee-Engine\""
   tags: lucee,default-login
 
 http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/lucee/admin/web.cfm"
-      - "{{BaseURL}}/lucee/admin/server.cfm"
-    body: "login_passwordweb=connections&lang=en&rememberMe=s&submit=submit"
-    redirects: true
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login_passwordweb=connections&lang=en&rememberMe=s&submit=submit
+
+    payloads:
+      path:
+        - /lucee/admin/web.cfm
+        - /lucee/admin/server.cfm
+
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - "Lucee Web Administrator"
+
       - type: status
         status:
           - 200
+
       - type: word
+        part: body
         words:
           - "Access is protected"
-        part: body
         negative: true
