@@ -1,0 +1,390 @@
+id: Webpack-Sourcemap
+info:
+  name: Webpack-Sourcemap
+  author: lucky0x0d, PulseSecurity.co.nz
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage
+  severity: low
+  tags: javascript,webpack,sourcemaps
+  classification:
+    cwe-id: CWE-200
+  description: parses target to find scripts and then checks for inline sourcemaps, if js files have map files, if sourcemap headers exists
+  metadata:
+    max-request: 1
+
+flow: |
+  http(1);
+  for (let scripturi1 of iterate(template["allscripts1"])) {
+    set ("scripturi1", scripturi1);
+    http(2);http(13);http(16); for (let mapuri1 of iterate(template["allmaps1"])) {
+                    set ("mapuri1", mapuri1);
+                    http(3);
+               };
+  };
+  http(4);
+  for (let scripturi2 of iterate(template["allscripts2"])) {
+    set ("scripturi2", scripturi2);
+    http(5); http(14);http(17); for (let mapuri2 of iterate(template["allmaps2"])) {
+                    set ("mapuri2", mapuri2);
+                    http(6);
+                    http(7);
+               };
+  };
+  http(8);
+  for (let scripturi3 of iterate(template["allscripts3"])) {
+    set ("scripturi3", scripturi3);
+    http(9); http(15);http(18); for (let mapuri3 of iterate(template["allmaps3"])) {
+                    set ("mapuri3", mapuri3);
+                    http(10);
+                    http(11);
+               };
+  };
+  http(19) && http(20); http(21);
+
+http:
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - "{{BaseURL}}/"
+
+    extractors:
+      - type: xpath
+        name: allscripts1
+        attribute: src
+        internal: true
+        xpath:
+          - "//script[not(contains(@src,'http://')) and not(contains(@src,'https://')) and not(contains(@src,'//')) and not(contains(@src,'data:application'))]"
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/{{replace_regex(scripturi1,"(^\/+)","")}}'
+
+    extractors:
+      - type: regex
+        name: allmaps1
+        internal: true
+        group: 1
+        regex:
+          - (?i)\/\/#\ssourceMappingURL=(.[~a-zA-Z0-9.\/\-_]+)
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/{{replace_regex(replace_regex(scripturi1,"(^\/+)",""),"([^/]+$)","")}}{{replace_regex(mapuri1,"(^\/+)","")}}'
+      - '{{BaseURL}}/{{replace_regex(mapuri1,"(^\/+)","")}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - "{{BaseURL}}/"
+
+    extractors:
+      - type: xpath
+        name: allscripts2
+        attribute: src
+        internal: true
+        xpath:
+          - "//script[(contains(@src,'http://')) or (contains(@src,'https://')) and not(contains(@src,'data:application'))]"
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi2}}'
+
+    extractors:
+      - type: regex
+        name: allmaps2
+        internal: true
+        group: 1
+        regex:
+          - (?i)\/\/#\ssourceMappingURL=(.[~a-zA-Z0-9.\/\-_:]+)
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{mapuri2}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{replace_regex(replace_regex(scripturi2,"(^\/+)",""),"([^/]+$)","")}}{{mapuri2}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - "{{BaseURL}}/"
+
+    extractors:
+      - type: xpath
+        name: allscripts3
+        attribute: src
+        internal: true
+        xpath:
+          - "//script[not(contains(@src,'http://')) and not(contains(@src,'https://')) and (contains(@src,'//')) and not(contains(@src,'data:application'))]"
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{Scheme}}:{{scripturi3}}'
+
+    extractors:
+      - type: regex
+        name: allmaps3
+        internal: true
+        group: 1
+        regex:
+          - (?i)\/\/#\ssourceMappingURL=(.[~a-zA-Z0-9.\/\-_:]+)
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{Scheme}}:{{mapuri3}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{replace_regex(replace_regex(scripturi3,"(^\/+)",""),"([^/]+$)","")}}{{mapuri3}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/'
+
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)sourceMappingURL=data(.*?;)'
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/{{replace_regex(scripturi1,"(^\/+)","")}}'
+
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)sourceMappingURL=data(.*?;)'
+          - '(?i)SourceMapConsumer'
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi2}}'
+
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)sourceMappingURL=data(.*?;)'
+          - '(?i)SourceMapConsumer'
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{Scheme}}:{{scripturi3}}'
+
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)sourceMappingURL=data(.*?;)'
+          - '(?i)SourceMapConsumer'
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/{{replace_regex(scripturi1,"(^\/+)","")}}'
+
+
+    matchers:
+      - type: dsl
+        name: Source_Map_Header
+        dsl:
+          - "regex('(?i)SourceMap', header)"
+          - "status_code != 301 && status_code != 302"
+        condition: and
+
+    extractors:
+      - type: kval
+        kval:
+          - X_SourceMap
+          - SourceMap
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi2}}'
+
+
+    matchers:
+      - type: dsl
+        name: Source_Map_Header
+        dsl:
+          - "regex('(?i)SourceMap', header)"
+          - "status_code != 301 && status_code != 302"
+        condition: and
+
+    extractors:
+      - type: kval
+        kval:
+          - X_SourceMap
+          - SourceMap
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{Scheme}}:{{scripturi3}}'
+
+    matchers:
+      - type: dsl
+        name: Source_Map_Header
+        dsl:
+          - "regex('(?i)SourceMap', header)"
+          - "status_code != 301 && status_code != 302"
+        condition: and
+
+    extractors:
+      - type: kval
+        kval:
+          - X_SourceMap
+          - SourceMap
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/'
+
+    extractors:
+      - type: regex
+        name: mainpage
+        internal: true
+        group: 1
+        regex:
+          - (?i)\/\/#\ssourceMappingURL=(.[~a-zA-Z0-9.\/\-_]+)
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/{{mainpage}}'
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+
+  - method: GET
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}/'
+
+
+    extractors:
+      - type: regex
+        regex:
+          - '(?i)sourceMappingURL=data(.*?;)'
+          - '(?i)SourceMapConsumer'
