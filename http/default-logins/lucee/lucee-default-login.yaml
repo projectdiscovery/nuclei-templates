@@ -24,26 +24,21 @@ http:
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-        login_passwordweb=connections&lang=en&rememberMe=s&submit=submit
+        login_passwordweb={{password}}&lang=en&rememberMe=s&submit=submit
 
+    attack: pitchfork
     payloads:
       path:
         - /lucee/admin/web.cfm
         - /lucee/admin/server.cfm
+      password:
+        - "connections"
 
-    matchers-condition: and
+    stop-at-first-match: true
     matchers:
-      - type: word
-        part: body
-        words:
-          - "Lucee Web Administrator"
-
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - "Access is protected"
-        negative: true
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "Overview - Lucee Web Administrator", "\">Retype new password</th>")'
+          - '!contains(body, "Access is protected")'
+          - 'status_code == 200'
+        condition: and
