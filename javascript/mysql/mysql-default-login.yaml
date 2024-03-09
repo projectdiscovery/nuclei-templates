@@ -1,0 +1,44 @@
+id: mysql-default-login
+
+info:
+  name: MySQL - Default Login
+  author: DhiyaneshDk,pussycat0x,ritikchaddha
+  severity: high
+  description: |
+    A MySQL service was accessed with easily guessed credentials.
+  metadata:
+    shodan-query: port:3306
+    verified: true
+  tags: js,mysql,default-login,network,fuzz
+
+javascript:
+  - pre-condition: |
+      var m = require("nuclei/mysql");
+      var c = m.MySQLClient();
+      c.IsMySQL(Host, Port);
+
+    code: |
+      var m = require("nuclei/mysql");
+      var c = m.MySQLClient();
+      c.Connect(Host,Port,Username,Password)
+
+    args:
+      Host: "{{Host}}"
+      Port: "3306"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    threads: 10
+    attack: pitchfork
+
+    payloads:
+      usernames: helpers/wordlists/mysql-users.txt
+      passwords: helpers/wordlists/mysql-passwords.txt
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "response == true"
+          - "success == true"
+        condition: and
