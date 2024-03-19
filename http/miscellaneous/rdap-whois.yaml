@@ -2,7 +2,7 @@ id: rdap-whois
 
 info:
   name: RDAP WHOIS
-  author: ricardomaia
+  author: ricardomaia,sttlr
   severity: info
   description: |
     RDAP (Registration Data Access Protocol) is a standard defined by the IETF to replace the whois protocol
@@ -11,12 +11,12 @@ info:
     - https://about.rdap.org/
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0.0
+    cvss-score: 0
     cwe-id: CWE-200
   metadata:
-    max-request: 1
     verified: true
-  tags: whois,rdap,osint,misc
+    max-request: 1
+  tags: miscellaneous,whois,rdap,osint,misc
 
 http:
   - method: GET
@@ -25,72 +25,81 @@ http:
 
     redirects: true
     max-redirects: 3
+    matchers:
+      - type: status
+        status:
+          - 200
+
     extractors:
       - type: json
         part: body
-        name: raw
+        name: status
         json:
-          - "."
+          - '.status[]'
 
-      - type: regex
-        part: body
-        name: domain
-        group: 1
-        regex:
-          - '^{"objectClassName":"domain","handle":".*?","ldhName":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: legalRepresentative
-        group: 1
-        regex:
-          - 'legalRepresentative":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: identifier
-        group: 1
-        regex:
-          - 'identifier":"(.*?)"'
-
-      - type: regex
-        part: body
-        name: email
-        group: 1
-        regex:
-          - 'email",{},"text","(.*?)"'
-
-      - type: regex
+      - type: json
         part: body
         name: registrationDate
-        group: 1
-        regex:
-          - '"eventAction":"registration","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "registration").eventDate'
 
-      - type: regex
+      - type: json
         part: body
         name: lastChangeDate
-        group: 1
-        regex:
-          - '"eventAction":"last changed","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "last changed").eventDate'
 
-      - type: regex
+      - type: json
         part: body
         name: expirationDate
-        group: 1
-        regex:
-          - '"eventAction":"expiration","eventDate":"(.*?)"'
+        json:
+          - '.events[] | select(.eventAction == "expiration").eventDate'
 
-      - type: regex
+      - type: json
+        part: body
+        name: registrantName
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "fn") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantOrg
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "org") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantEmail
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "email") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantPhone
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "tel") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantAddress
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][] | select(. != "")'
+
+      - type: json
+        part: body
+        name: registrantCountry
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][-1]'
+
+      - type: json
         part: body
         name: nameServers
-        group: 1
-        regex:
-          - 'nameserver","ldhName":"(.*?)"'
+        json:
+          - '.nameservers[] | .ldhName'
 
-      - type: regex
+      - type: json
         part: body
         name: secureDNS
-        group: 1
-        regex:
-          - '"secureDNS":{"delegationSigned":(.*?)}'
+        json:
+          - '.secureDNS.delegationSigned // false'
+# digest: 4a0a00473045022100da4861d87282b414d2f7cb32ed394492c5748ab3c8b727cdc900b4ff45afd45c022021a743aba5ff7daabb05d039e88bf6b78f76f69862e08fb9b68dbd4f98c0666b:922c64590222798bb761d5b6d8e72950

