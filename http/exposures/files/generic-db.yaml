@@ -1,7 +1,7 @@
 id: generic-db
 
 info:
-  name: Generic DB file exposure
+  name: Generic Database File - Exposure
   author: Michal Mikolas (nanuqcz)
   severity: high
   description: This is collection of some web frameworks recommendation or default configuration for SQLite database file location. If this file is publicly accessible due to server misconfiguration, it could result in application data leak including users sensitive data, password hashes etc.
@@ -41,8 +41,8 @@ info:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
     cvss-score: 7.5
   metadata:
-    verified: true
-  tags: database,exposure,sqlite,sqlite3
+    max-request: 89
+  tags: files,database,exposure,sqlite,sqlite3
 
 http:
   - method: GET
@@ -140,19 +140,11 @@ http:
       - "{{BaseURL}}/database/production.db"
       - "{{BaseURL}}/database/production.sqlite3"
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      # SQLite file always starts with "SQLite format {sqlite_version}"
       - type: dsl
         dsl:
-          - 'startswith(body, "SQLite format ")'
-
-      # SQLite file usually contains "CREATE TABLE", meaning there is at least one table
-      - type: word
-        part: body
-        words:
-          - "CREATE TABLE "
+          - 'startswith(body, "SQLite")' # SQLite file always starts with "SQLite format {sqlite_version}"
+          - 'contains(body, "CREATE TABLE")' # SQLite file usually contains "CREATE TABLE", meaning there is at least one table
+          - '!contains(body, "<html")'
+          - 'status_code == 200'
+        condition: and
