@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,8 +55,8 @@ func main() {
 				return err
 			}
 			if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
-				yamlFile, err := ioutil.ReadFile(path)
-				if err != nil {
+				yamlFile, err := os.ReadFile(path)
+				if err != nil {    
 					fmt.Printf("Error reading YAML file %s: %v\n", path, err)
 					return err
 				}
@@ -89,16 +88,14 @@ func main() {
 	}
 
 	var jsonData []byte
-	for _, d := range data {
-		temp, err := json.Marshal(d)
-		if err != nil {
-			fmt.Printf("Error marshalling JSON: %v\n", err)
-			os.Exit(1)
-		}
-		jsonData = append(jsonData, temp...)
-		jsonData = append(jsonData, byte('\n'))
+
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		fmt.Printf("Error marshalling JSON: %v\n", err)
+		os.Exit(1)
 	}
-	err := ioutil.WriteFile(outputFile, jsonData, 0644)
+
+	err = os.WriteFile(outputFile, jsonData, 0644)
 	if err != nil {
 		fmt.Printf("Error writing JSON data to file: %v\n", err)
 		os.Exit(1)
