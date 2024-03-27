@@ -1,0 +1,45 @@
+id: cloudwatch-events-mfa
+info:
+  name: Missing CloudWatch Alarm for Sign In without MFA
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks if the Amazon CloudWatch alarmed is enabled for Sign In without MFA
+  reference:
+    - https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_ListRules.html
+  remediation: Use Amazon CloudWatch Events to efficiently respond to changes within your AWS resources.
+  tags: aws,amazon,cloud,events
+
+self-contained: true
+signature: aws
+variables:
+  service: monitoring
+  region: us-east-1
+
+requests:
+  - raw:
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com/ HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.2.0 source/arm64 prompt/off command/cloudwatch.describe-alarms-for-metric
+
+        Action=DescribeAlarmsForMetric&Version=2010-08-01&MetricName=ConsoleSignInWithoutMfaCount&Namespace=CloudTrailMetrics
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "DescribeAlarmsForMetricResult"
+
+      - type: word
+        part: body
+        words:
+          - "SignInWithoutMFA"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Missing CloudWatch Alarm for sign-ins without MFA"'

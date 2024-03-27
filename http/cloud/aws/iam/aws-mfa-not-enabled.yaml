@@ -1,0 +1,45 @@
+id: aws-mfa-not-enabled
+
+info:
+  name: MFA not enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Checks if MFA is enabled for your AWS root account
+  reference:
+    - https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetAccountSummary.html
+  remediation: |
+    Enable Multi-Factor Authentication (MFA) for your AWS root account to secure your cloud environment and comply with IAM security best practices
+  tags: aws,amazon,cloud,iam
+
+self-contained: true
+signature: aws
+variables:
+  service: iam
+  region: us-east-1
+
+requests:
+  - raw:
+      - |
+        POST https://{{service}}.amazonaws.com HTTP/1.1
+        Host: {{service}}.amazonaws.com
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/21.6.0 source/arm64 prompt/off command/iam.get-account-summary
+
+        Action=GetAccountSummary&Version=2010-05-08
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "mfaenabled == '0'"
+
+    extractors:
+      - type: xpath
+        name: mfaenabled
+        internal: true
+        xpath:
+          - "//entry[key = 'AccountMFAEnabled' and value = '0']/value"
+
+      - type: dsl
+        dsl:
+          - '"MFA not enabled for AWS root account"'

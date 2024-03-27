@@ -1,0 +1,43 @@
+id: cloudfront-logging-not-enabled
+info:
+  name: CloudFront Logging Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks if logging is not enabled for any CloudFront distribution.
+  reference:
+    - https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_GetDistribution.html
+  tags: aws,amazon,cloud,cloudfront
+
+self-contained: true
+signature: aws
+variables:
+  service: cloudfront
+  region: us-east-1
+
+requests:
+  - method: GET
+    path:
+      - "https://{{service}}.amazonaws.com/2020-05-31/distribution"
+      - "https://{{service}}.amazonaws.com/2020-05-31/distribution/{{ListDistributions}}"
+
+    iterate-all: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<Logging><Enabled>false</Enabled>"
+
+    extractors:
+      - type: regex
+        name: ListDistributions
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '<DistributionSummary><Id>([A-Z0-9]+)<\/Id>'
+
+      - type: dsl
+        dsl:
+          - '"CloudFront Logging is not enabled for " + ListDistributions + " distribution"'

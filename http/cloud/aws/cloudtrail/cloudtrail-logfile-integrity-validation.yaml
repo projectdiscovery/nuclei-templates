@@ -1,0 +1,57 @@
+id: cloudtrail-logfile-integrity-validation
+info:
+  name: CloudTrail Log File Integrity Validation
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks if the Amazon CloudWatch alarmed is enabled for Sign In without MFA
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVpcs.html
+    - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeFlowLogs.html
+  remediation: Enabling VPC Flow Logs
+  tags: cloud,devops,aws,amazon,cloudtrail,s3
+
+self-contained: true
+signature: aws
+variables:
+  service: cloudtrail
+  region: ap-south-1
+
+requests:
+  - raw:
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com/ HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        X-Amz-Target: com.amazonaws.cloudtrail.v20131101.CloudTrail_20131101.ListTrails
+        Content-Type: application/x-amz-json-1.1
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/cloudtrail.list-trails
+
+        {}
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com/ HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        X-Amz-Target: com.amazonaws.cloudtrail.v20131101.CloudTrail_20131101.DescribeTrails
+        Content-Type: application/x-amz-json-1.1
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/cloudtrail.describe-trails
+
+        {"trailNameList": ["{{trails}}"]}
+
+    iterate-all: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"LogFileValidationEnabled":false'
+
+    extractors:
+      - type: regex
+        name: trails
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '","Name":"([a-z-]+)","'
+
+      - type: dsl
+        dsl:
+          - '"Log file validation is not enabled for \"" + trails + "\" cloudtrail"'

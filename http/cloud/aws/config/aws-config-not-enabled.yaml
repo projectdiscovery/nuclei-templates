@@ -1,0 +1,49 @@
+id: aws-config-not-enabled
+info:
+  name: AWS Config Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    This check ensures that the AWS Config service is activated across all regions, allowing for complete monitoring and analysis of alterations to AWS infrastructure configurations.
+  reference:
+    - https://docs.aws.amazon.com/config/latest/APIReference/Welcome.html
+    - https://docs.aws.amazon.com/cli/latest/reference/configservice/index.html
+  remediation: To remediate this issue, activate the AWS Config service in all regions using the AWS Management Console, AWS CLI, or AWS SDKs.
+  tags: aws,amazon,cloud,config
+
+self-contained: true
+signature: aws
+variables:
+  service: config
+  region: us-east-1
+
+requests:
+  - raw:
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        X-Amz-Target: StarlingDoveService.DescribeDeliveryChannelStatus
+        Content-Type: application/x-amz-json-1.1
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/configservice.get-status
+
+        {}
+      - |
+        POST https://{{service}}.{{region}}.amazonaws.com HTTP/1.1
+        Host: {{service}}.{{region}}.amazonaws.com
+        X-Amz-Target: StarlingDoveService.DescribeConfigurationRecorderStatus
+        Content-Type: application/x-amz-json-1.1
+        User-Agent: aws-cli/2.9.15 Python/3.11.1 Darwin/22.3.0 source/arm64 prompt/off command/configservice.get-status
+
+        {}
+
+    matchers:
+      - type: word
+        words:
+          - '{"DeliveryChannelsStatus":[]}'
+          - '{"ConfigurationRecordersStatus":[]}'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"AWS Config is not enabled in " + region'
