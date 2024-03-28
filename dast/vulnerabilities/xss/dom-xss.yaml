@@ -1,0 +1,45 @@
+id: dom-xss
+
+info:
+  name: DOM Cross Site Scripting
+  author: theamanrawat
+  severity: medium
+  tags: xss,dom,dast
+
+variables:
+  num: "{{rand_int(10000, 99999)}}"
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+      - action: waitload
+
+    payloads:
+      reflection:
+        - "'\"><h1>{{num}}</h1>"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<h1>{{num}}</h1>"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
