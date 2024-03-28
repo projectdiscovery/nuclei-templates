@@ -1,0 +1,37 @@
+id: iam-unapproved-policy
+info:
+  name: Unapproved IAM Policy Attachments
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for the attachment of unapproved Amazon IAM managed policies to IAM roles, users, or groups, ensuring compliance with organizational access policies
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/iam/get-policy.html
+  tags: cloud,devops,aws,amazon,iam,ssl,tls
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam get-policy  --policy-arn arn:aws:iam::aws:policy/AmazonRDSFullAccess  --query 'Policy.{"AttachmentCount": AttachmentCount}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "AttachmentCount"
+
+      - type: word
+        part: body
+        words:
+          - '"AttachmentCount": 0'
+        negative: true
+
+    extractors:
+
+      - type: dsl
+        dsl:
+          - '"Unapproved IAM policy is used within your AWS cloud account"'

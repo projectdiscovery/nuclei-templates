@@ -1,0 +1,57 @@
+id: acm-cert-renewal-45days
+info:
+  name: ACM Certificates Pre-expiration Renewal
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure AWS ACM SSL/TLS certificates are renewed at least 45 days before expiration to prevent service disruptions.
+  impact: |
+    Failure to renew certificates timely may lead to expired certificates causing service access issues or downtimes.
+  remediation: |
+    Set up Amazon CloudWatch to monitor ACM certificate expiration and automate renewal notifications or processes.
+  reference:
+    - https://docs.aws.amazon.com/acm/latest/userguide/acm-renewal.html
+  tags: cloud,devops,aws,amazon,acm
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let arns of template.certificatearns){
+    set("certificatearn", arns)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws acm list-certificates --region $region --certificate-statuses ISSUED --query 'CertificateSummaryList[*].CertificateArn' --output json
+
+    extractors:
+      - type: json
+        name: certificatearns
+        internal: true
+        json:
+          - '.CertificateSummaryList[] | .CertificateArn'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws acm describe-certificate --region $region --certificate-arn $certificatearn --query 'Certificate.[NotAfter, CertificateArn]' --output json | jq -r 'select((.[0] | fromdateiso8601 | mktime) - (now | mktime) < (45 * 86400)) | .[1]'
+
+    extractors:
+      - type: regex # type of the extractor
+        name: certificate
+        internal: true
+        regex:
+          - '^arn.*'
+
+      - type: dsl
+        dsl:
+          - '"The AWS ACM Certificate " + certificate +" is about to expire in 30 days"'
+# digest: 4a0a00473045022100e73a67c9a989679fbcdb7e850e0e039d9e14d611f0c1e30514a4ca6d55175825022010fdbbdebfa175723d67c772894599e7be0246f60aa29e9a50f926507e2cc50f:366f2a24c8eb519f6968bd8801c08ebe

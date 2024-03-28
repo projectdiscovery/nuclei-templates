@@ -1,0 +1,37 @@
+id: ec2-unrestricted-http
+info:
+  name: Unrestricted HTTP on EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in EC2 security groups allowing unrestricted access (0.0.0.0/0) to TCP port 80, increasing exposure to potential breaches.
+  impact: |
+    Unrestricted access to TCP port 80 can lead to unauthorized data exposure and increases the risk of security breaches.
+  remediation: |
+    Restrict inbound traffic on TCP port 80 to only necessary IP addresses, adhering to the principle of least privilege.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=80 Name=ip-permission.to-port,Values=80 Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 80"'
+# digest: 4b0a00483046022100ede292340e2d08f4ec1d6efd7bb8571d34e0354effe0dfd56607de8c1e52be1f022100fa22b0b53d56c756756fa52adaecd631d058ce4f988d52d5e0726b7cbad1e2a8:366f2a24c8eb519f6968bd8801c08ebe

@@ -1,0 +1,74 @@
+id: s3-object-lock-not-enabled
+info:
+  name: CloudTrail S3 Object Lock
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure Amazon CloudTrail S3 buckets have Object Lock enabled to prevent log deletion and ensure regulatory compliance.
+  impact: |
+    Without Object Lock, S3 objects such as CloudTrail logs can be deleted, compromising audit trails and violating compliance requirements.
+  remediation: |
+    Enable S3 Object Lock in Governance mode with a retention period that meets your compliance requirements for CloudTrail S3 buckets.
+  reference:
+    - https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock-overview.html
+  tags: cloud,devops,aws,amazon,s3
+
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of template.cloudtrailname){
+    set("trail", CloudTrail)
+    code(2)
+    for(let BucketNames of template.buckets){
+      set("bucket", BucketNames)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].S3BucketName'
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api get-object-lock-configuration --bucket $bucket --query 'ObjectLockConfiguration.ObjectLockEnabled' --output json
+
+    matchers:
+      - type: word
+        part: code_3_stderr
+        words:
+          - 'ObjectLockConfigurationNotFoundError'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The Object Lock feature is not enabled for the S3 bucket associated with the CloudTrail trail " + trail'
+# digest: 490a004630440220494a54482192038e4db9d4972ac132b954342503717fabe3e9b04a3640d42c3402204c8df639bf957bf825e0fb92ec978a3032f42b60aace67dfeef1d5f5a05f0517:366f2a24c8eb519f6968bd8801c08ebe

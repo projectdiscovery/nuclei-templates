@@ -1,0 +1,38 @@
+id: ec2-unrestricted-icmp
+info:
+  name: Restrict EC2 ICMP Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for Amazon EC2 security groups with inbound rules allowing unrestricted ICMP access. Advises restricting ICMP to trusted IPs to uphold the Principle of Least Privilege and minimize the attack surface.
+  impact: |
+    Unrestricted ICMP can be used for network reconnaissance and Distributed Denial of Service (DDoS) attacks, posing a significant security risk.
+  remediation: |
+    Modify EC2 security group rules to limit ICMP access to necessary, trusted IP addresses/ranges only.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules-reference.html
+  tags: cloud,devops,aws,amazon,ec2
+
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.protocol,Values=icmp Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted ICMP access (0.0.0.0/0 or ::/0)"'
+# digest: 4b0a004830460221008e5d2af7598e43b0dcc75d44cc6ee7e35a61115660fa23bba3f54212bdfcad490221009b451ef17627ebf841d3c4626d1a4c3c9b28bb1a927a8a4bad571444dea7855e:366f2a24c8eb519f6968bd8801c08ebe

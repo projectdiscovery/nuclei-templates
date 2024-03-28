@@ -1,0 +1,73 @@
+id: cloudtrail-s3-bucket-logging
+info:
+  name: CloudTrail S3 Logging
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure AWS CloudTrail logs are captured in S3 buckets with Server Access Logging enabled for audit and forensic purposes.
+  impact: |
+    Without S3 Server Access Logging for CloudTrail, tracking unauthorized access or modifications to CloudTrail logs becomes difficult, impacting incident response and forensic analysis.
+  remediation: |
+    Enable Server Access Logging on the S3 bucket used by CloudTrail. Configure the logging feature to capture all requests made to the CloudTrail bucket.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html
+  tags: cloud,devops,aws,amazon,s3,cloudtrail
+
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of template.cloudtrailname){
+    set("trail", CloudTrail)
+    code(2)
+    for(let BucketNames of template.buckets){
+      set("bucket", BucketNames)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].S3BucketName'
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api get-bucket-logging --bucket $bucket --query 'LoggingEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access logging is not enabled for the S3 bucket associated with CloudTrail trail " + trail'
+# digest: 490a00463044022008e833a5459ec4cc466d3d24dedd4801c1c1659639998edff7f93fc85cd8a875022079965bb83ca8f6124dae5278537ecd2c8f22b0737e8c13e155b8ddd8db07a8ef:366f2a24c8eb519f6968bd8801c08ebe
