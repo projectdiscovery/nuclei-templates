@@ -1,0 +1,41 @@
+id: pop3-capabilities-enum
+
+info:
+  name: POP3 Capabilities - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    POP3 capabilities are defined in RFC 2449. The CAPA command allows a client to ask a server what commands it supports and possibly any site-specific policy. Besides the list of supported commands, the IMPLEMENTATION string giving the server version may be available.
+  reference:
+    - https://nmap.org/nsedoc/scripts/pop3-capabilities.html
+  metadata:
+    max-request: 1
+    shodan-query: "port:110"
+    verified: true
+  tags: js,network,pop3,enum
+
+javascript:
+  - code: |
+      let data = "CAPA\r\n"
+      let c = require("nuclei/net");
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.Send(data);
+      let result = conn.RecvString();
+      let cleanedData = result.replace(/\+OK Dovecot ready\.\r\n\+OK|\r\n|\s/g, " ");
+      Export(cleanedData)
+
+    args:
+      Host: "{{Host}}"
+      Port: 110
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        name:
+        dsl:
+          - response
+# digest: 4a0a00473045022023fdf02eaf003d815ef4429196c1583212d1b0f060a0601b7bd69ffa53c6b45f02210081bf792016477fda15d4ef7e6c45f38e5a364c1193d8273048bdacc7468b594f:922c64590222798bb761d5b6d8e72950
