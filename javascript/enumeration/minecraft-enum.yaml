@@ -1,0 +1,43 @@
+id: minecraft-enum
+
+info:
+  name: Minecraft - enum
+  author: pussycat0x
+  severity: info
+  description: |
+    Minecraft server for some basic information about the host.The information that is queried is the Description, Maximum Number of Players, number of Online Players, Version number, and Protocol Number
+  reference:
+    - https://github.com/sjhilt/Nmap-NSEs/blob/master/minecraft-info.nse
+  metadata:
+    max-request: 1
+    shodan-query: product:"Minecraft"
+    verified: true
+  tags: js,network,minecraft,enum
+
+javascript:
+  - code: |
+      let data = "fe01"
+      let c = require("nuclei/net");
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(data);
+      let response = conn.RecvString();
+      const version = response.slice(16, 30).replace(/(\d+)(\d{1})(\d+)/, "$1.$2.$3");
+      const description = response.slice(30, -4);
+      const onlinePlayers = response.slice(-1);
+      const maxPlayers = response.slice(-3);
+      Export("Version: ", version , " Description:", description ," Online Players:", onlinePlayers, " Maximum Players:", maxPlayers)
+
+    args:
+      Host: "{{Host}}"
+      Port: 25565
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a0048304602210097a010ea589db898dd8dfb9813cef0ddf6a92c583644a11ed95aa50ef8147b28022100ea4cfe825571c9cf2c1afc8dd0db45993bbd5e5b5145b18485b60ea965d66fc1:922c64590222798bb761d5b6d8e72950
