@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR    | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|--------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2396 | dhiyaneshdk  |  1233 | http       |  7267 | info     |  3605 | file |   337 |
-| panel     |  1105 | daffainfo    |   864 | file       |   337 | high     |  1601 | dns  |    24 |
-| wordpress |   958 | dwisiswant0  |   802 | workflows  |   191 | medium   |  1463 |      |       |
-| exposure  |   894 | pikpikcu     |   353 | network    |   133 | critical |   967 |      |       |
-| xss       |   893 | pussycat0x   |   328 | code       |    80 | low      |   257 |      |       |
-| wp-plugin |   833 | ritikchaddha |   313 | javascript |    42 | unknown  |    35 |      |       |
-| osint     |   799 | pdteam       |   285 | ssl        |    28 |          |       |      |       |
-| tech      |   667 | ricardomaia  |   232 | dns        |    21 |          |       |      |       |
-| lfi       |   640 | geeknik      |   227 | headless   |    11 |          |       |      |       |
-| edb       |   598 | theamanrawat |   221 | cloud      |     9 |          |       |      |       |
+| cve       |  2425 | dhiyaneshdk  |  1251 | http       |  7306 | info     |  3621 | file |   337 |
+| panel     |  1108 | daffainfo    |   864 | file       |   337 | high     |  1635 | dns  |    24 |
+| wordpress |   959 | dwisiswant0  |   803 | workflows  |   191 | medium   |  1473 |      |       |
+| xss       |   895 | pikpikcu     |   353 | network    |   136 | critical |   981 |      |       |
+| exposure  |   894 | pussycat0x   |   345 | code       |    80 | low      |   258 |      |       |
+| wp-plugin |   834 | ritikchaddha |   320 | javascript |    55 | unknown  |    36 |      |       |
+| osint     |   803 | pdteam       |   296 | ssl        |    28 |          |       |      |       |
+| tech      |   670 | ricardomaia  |   232 | dast       |    21 |          |       |      |       |
+| lfi       |   647 | geeknik      |   229 | dns        |    21 |          |       |      |       |
+| edb       |   598 | theamanrawat |   223 | headless   |    11 |          |       |      |       |
 
-**594 directories, 8406 files**.
+**621 directories, 8482 files**.
 
 </td>
 </tr>
