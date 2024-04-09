@@ -1,0 +1,44 @@
+id: citrix-xenmobile-version
+
+info:
+  name: Citrix XenMobile Version
+  description: Template for XenMobile-detection (even if login-page is deactivated) and the specific version and rolling patch from js/app/init.js endpoint
+  author: Puben
+  severity: info
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'len(body) == 0'
+          - 'contains(header, "Location: /zdm/login_xdm_uc.jsp")'
+        condition: and
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/js/app/init.js'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - 'v=([^"]+)'
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'v=([^"]+)'
