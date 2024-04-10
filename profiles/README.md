@@ -11,7 +11,7 @@ The Nuclei configuration profiles are straightforward to integrate into your exi
 To execute a scan with the `recommended.yml` configuration, which has been optimized for general use to yield efficient and relevant results, use the following command:
 
 ```
-nuclei -config ~/nuclei-templates/config/recommended.yml
+nuclei -config ~/nuclei-templates/profiles/recommended.yml
 ```
 
 ## Customizing Your Scanning Configuration
@@ -29,11 +29,11 @@ Here are examples of how to run scans for specific scenarios:
 For targeting local privilege escalation vulnerabilities, utilize the dedicated config as follows:
 
 ```
-nuclei -config ~/nuclei-templates/config/privilege-escalation.yml
+nuclei -config ~/nuclei-templates/profiles/privilege-escalation.yml
 ```
 
 #### Config Focusing on OSINT
 
 ```
-nuclei -config ~/nuclei-templates/config/osint.yml
+nuclei -config ~/nuclei-templates/profiles/osint.yml
 ```
