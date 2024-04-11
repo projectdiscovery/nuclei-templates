@@ -1,0 +1,41 @@
+id: reflected-xss
+
+info:
+  name: Reflected Cross Site Scripting
+  author: pdteam
+  severity: medium
+  tags: xss,rxss,dast
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - "'\"><{{first}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{reflection}}"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+# digest: 4a0a0047304502205a9aa38841e7308e5d1bf21526d6ae14c3ea4b5b00def0f0f0b95501c0df237d022100ca9a3145f00b6278b60ccc0cb44b525a7bfcf2f86ead8664c33c0ce345a623ea:922c64590222798bb761d5b6d8e72950
