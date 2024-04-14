@@ -1,0 +1,65 @@
+id: unrestricted-admin-ports
+info:
+  name: Unrestricted Admin Port Access
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for unrestricted ingress on TCP ports 22 (SSH) and 3389 (RDP) in Amazon VPC NACLs, exposing remote server administration to potentially malicious traffic.
+  impact: |
+    Allows unrestricted remote access, increasing the risk of unauthorized access and potential compromise.
+  remediation: |
+    Restrict access to ports 22 and 3389 to trusted IPs or IP ranges to adhere to the Principle of Least Privilege (POLP).
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let NACLIDs of template.nacls){
+    set("naclid", NACLIDs)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-network-acls --region $region --query 'NetworkAcls[*].NetworkAclId' --output json
+
+    extractors:
+      - type: json
+        name: nacls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-network-acls --region $region --network-acl-ids $naclid --query 'NetworkAcls[*].Entries[?(RuleAction==`allow`) && (Egress==`false`)] | []' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "0.0.0.0/0"
+          - "CidrBlock"
+        condition: and
+
+      - type: word
+        words:
+          - "22"
+          - "3389"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access to the VPC subnets associated with your NACL " + naclid + " is not restricted."'
+# digest: 4b0a00483046022100c7ef9e19cd61d8fcfb7e1d1faf314a723142d80e0796b5101a964a2ece956abe022100c3b4d818fb5d2da95501f4e15d27dab96a8af3b6c26c7e1da86e6a8b98b2c35d:922c64590222798bb761d5b6d8e72950

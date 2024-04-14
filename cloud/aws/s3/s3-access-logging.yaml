@@ -1,0 +1,49 @@
+id: s3-access-logging
+info:
+  name: S3 Bucket - Access Logging Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    This template verifies if the Server Access Logging feature is enabled for Amazon S3 buckets, which is essential for tracking access requests for security and audit purposes.
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/s3api/get-bucket-encryption.html
+  tags: cloud,devops,aws,amazon,s3,aws-cloud-config
+
+flow: |
+  code(1)
+  for(let bucketName of iterate(template.buckets)){
+    set("bucket", bucketName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api list-buckets --query 'Buckets[*].Name'
+
+    extractors:
+      - type: json # type of the extractor
+        internal: true
+        name: buckets
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws s3api get-bucket-logging --bucket $bucket --query 'LoggingEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The S3 bucket " + bucket +" does not have access logging enabled."'
+# digest: 4b0a004830460221009c7c7b0d5efd419b91df9f3a9c18cbb5c3cf3e05586c1a2feaf8e1c1c1b5d5b5022100ac7392ba990a22432ad62945a93d61578dd95013697d6c3aefd30fa5e9decaac:922c64590222798bb761d5b6d8e72950

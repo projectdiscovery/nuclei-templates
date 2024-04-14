@@ -1,0 +1,37 @@
+id: ec2-unrestricted-rdp
+info:
+  name: Restrict EC2 RDP Access
+  author: princechaddha
+  severity: high
+  description: |
+    Check Amazon EC2 security groups for inbound rules that allow unrestricted RDP access and restrict access to trusted IPs.
+  impact: |
+    Unrestricted RDP access increases the risk of unauthorized access and potential breaches.
+  remediation: |
+    Modify the EC2 security group rules to limit RDP access (TCP 3389) to known, trusted IP addresses or ranges.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=3389 Name=ip-permission.to-port,Values=3389 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 3389"'
+# digest: 4a0a00473045022002ecd5ab647c14882b81b474962bb00f2efc2099d867125b8deb662e1c7a8e70022100877b207077fd1c5a89c0529f98c757af212d85b0d086a8ef00052ebc9005f0a6:922c64590222798bb761d5b6d8e72950
