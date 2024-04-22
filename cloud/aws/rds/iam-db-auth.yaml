@@ -1,0 +1,56 @@
+id: iam-db-auth
+info:
+  name: IAM Database Authentication
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure IAM Database Authentication is enabled for RDS instances, allowing IAM service to manage database access, thereby removing the need to store user credentials within database configurations.
+  impact: |
+    Without IAM Database Authentication, database credentials need to be managed internally, increasing the risk of credential leakage and unauthorized access.
+  remediation: |
+    Enable IAM Database Authentication for MySQL and PostgreSQL RDS database instances to leverage IAM for secure, token-based access control.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let DBInstances of iterate(template.instances)){
+    set("db", DBInstances)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output json --query 'DBInstances[?Engine==`mysql` || Engine==`postgres`].DBInstanceIdentifier | []'
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-instances --region $region --db-instance-identifier $db --query 'DBInstances[*].IAMDatabaseAuthenticationEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Database Authentication feature is not enabled for RDS database instance " + db'
+# digest: 4a0a00473045022100de421600413f2bb3306a9173334cd465c628dd5a198cec9ebe3bf5a373b4479602200bd9a29ac4bc3efe52763411a53243855f599f703baa22c7292da16898754f12:922c64590222798bb761d5b6d8e72950

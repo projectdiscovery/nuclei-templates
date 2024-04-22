@@ -1,0 +1,56 @@
+id: ec2-imdsv2
+info:
+  name: Enforce IMDSv2 on EC2 Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure all EC2 instances use Instance Metadata Service Version 2 (IMDSv2) for enhanced security when requesting instance metadata, protecting against certain types of attacks that target the older version, IMDSv1.
+  impact: |
+    Using IMDSv1 can expose EC2 instances to server-side request forgery (SSRF) attacks, potentially allowing attackers to access sensitive instance metadata.
+  remediation: |
+    Modify the EC2 instance metadata options to set `HttpTokens` to `required`, enforcing the use of IMDSv2. This can be done via the AWS Management Console, CLI, or EC2 API.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let InstancesName of iterate(template.instances)){
+    set("ec2instance", InstancesName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-instances --region $region --output table --query 'Reservations[*].Instances[*].InstanceId' --output json
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-instances --region $region --instance-ids $ec2instance --query 'Reservations[*].Instances[*].MetadataOptions.HttpTokens[]'
+    matchers:
+      - type: word
+        words:
+          - "optional"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ami + " is publically shared"'
+# digest: 4b0a00483046022100a9c93182cc816c3d5bc33cf11b0b8fa7f667153ee8f1c742c1c50da21309f666022100eec3b3b58d54dc9609e9b3b5cbe5feefd239ed07c12958cf75456d961aa3258a:922c64590222798bb761d5b6d8e72950

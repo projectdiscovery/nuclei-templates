@@ -1,0 +1,46 @@
+id: dom-xss
+
+info:
+  name: DOM Cross Site Scripting
+  author: theamanrawat
+  severity: medium
+  description: |
+    Detects DOM-based Cross Site Scripting (XSS) vulnerabilities.
+  impact: |
+    Allows attackers to execute malicious scripts in the victim's browser.
+  remediation: |
+    Sanitize and validate user input to prevent script injection.
+  tags: xss,dom,dast,headless
+variables:
+  num: "{{rand_int(10000, 99999)}}"
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitload
+    payloads:
+      reflection:
+        - "'\"><h1>{{num}}</h1>"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<h1>{{num}}</h1>"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+# digest: 490a0046304402207fab7c940fcf22142b9d67138f5ab9f0b23ff7990e1a3140a0e427d5040f331b02200c46ebbb04f1cc22da5644e29a7cf09905491c071ee8a80b2cd1070c6772827b:922c64590222798bb761d5b6d8e72950

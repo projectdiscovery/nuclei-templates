@@ -1,0 +1,63 @@
+id: nacl-open-inbound
+info:
+  name: Open Inbound NACL Traffic
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks for Amazon VPC Network ACLs with inbound rules allowing traffic from all IPs across all ports, increasing the risk of unauthorized access.
+  impact: |
+    Allows unrestricted access to resources within the subnet, potentially exposing sensitive data or services to unauthorized users.
+  remediation: |
+    Restrict Network ACL inbound rules to only allow necessary IP ranges and ports as per the Principle of Least Privilege.
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let NACLIDs of template.nacls){
+    set("naclid", NACLIDs)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-network-acls --region $region --query 'NetworkAcls[*].NetworkAclId' --output json
+
+    extractors:
+      - type: json
+        name: nacls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-network-acls --region $region --network-acl-ids $naclid --query 'NetworkAcls[*].Entries[?(RuleAction==`allow`) && (Egress==`false`)] | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "allow"
+        condition: and
+
+      - type: word
+        words:
+          - "PortRange"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access to the VPC subnets associated with your NACL " + naclid + " is not restricted."'
+# digest: 490a00463044022061fa0f1f88763697856638e53fa1b78a8587487f6f691d28fdd57818ef2ab00a02204919554ac19da3748543fd6a0299c765833719eece0b93ca663319a3b75faba2:922c64590222798bb761d5b6d8e72950

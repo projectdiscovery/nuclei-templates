@@ -1,0 +1,56 @@
+id: rds-gp-ssd-usage
+info:
+  name: RDS General Purpose SSD Usage
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure Amazon RDS instances use General Purpose SSDs for cost-effective storage suitable for a wide range of workloads, except for applications needing over 10000 IOPS or 160 MiB/s throughput.
+  impact: |
+    Using Provisioned IOPS SSDs when not required can significantly increase AWS costs without providing necessary performance benefits.
+  remediation: |
+    Convert RDS instances from Provisioned IOPS to General Purpose SSDs to optimize costs without sacrificing I/O performance for most database workloads.
+  reference:
+    - https://aws.amazon.com/rds/features/storage/
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let DBInstances of iterate(template.instances)){
+    set("db", DBInstances)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output json --query 'DBInstances[*].DBInstanceIdentifier'
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-instances --region $region --db-instance-identifier $db --query 'DBInstances[*].StorageType'
+
+    matchers:
+      - type: word
+        words:
+          - 'io1'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'db + " RDS instance uses Provisioned IOPS SSD, not the most cost-effective storage"'
+# digest: 4a0a00473045022002f5c7fdd4d9d80a6820cfc1f222bfed3a1d9ad2e9f25cd1ef7757d60774a7dc022100c202e64f627d1aadd2a131aecdc048917a11798572597b382064897ed0848d3d:922c64590222798bb761d5b6d8e72950

