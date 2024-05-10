@@ -1,34 +1,35 @@
 id: unigui-server-monitor-exposure
 
 info:
-  name: UniGUI Server Monitor Panel Exposure
+  name: UniGUI Server Monitor Panel - Exposure
   author: serrapa
-  severity: medium
-  description: Detects exposed UniGUI Server Monitor Panels which could reveal sensitive server statistics, users sessions, licensing information and others data.
+  severity: low
+  description: |
+    Detects exposed UniGUI Server Monitor Panels which could reveal sensitive server statistics, users sessions, licensing information and others data.
   reference:
     - https://www.unigui.com/doc/online_help/using-server-monitor-(server-c.htm
-  tags: exposure,unigui
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"uniGUI"
+    fofa-query: title="uniGUI"
+  tags: exposure,unigui,misconfig
 
-requests:
+http:
   - method: GET
     path:
       - "{{BaseURL}}/server"
 
     matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "uniGUI Standalone Server"
-          - "uniGUI License Information"
-          - "Server Statistics"
-        part: body
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "uniGUI Standalone Server", "uniGUI License Information", "Server Statistics")'
+          - 'status_code == 200'
+        condition: and
 
       - type: dsl
         dsl:
-          - "contains(body, 'layout:\"fit\",title:\"uniGUI Standalone Server\"')"
-          - "contains(body, 'layout:\"absolute\",title:\"Server Statistics\"')"
-
+          - 'contains(body, "layout:\"fit\",title:\"uniGUI Standalone Server\"")'
+          - 'contains(body, "layout:\"absolute\",title:\"Server Statistics\"")'
+        condition: or
