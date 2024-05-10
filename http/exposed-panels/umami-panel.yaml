@@ -1,27 +1,32 @@
 id: umami-panel
 
 info:
-  name: Umami Panel
+  name: Umami Panel - Detect
   author: userdehghani
   severity: info
   metadata:
+    verified: true
     max-request: 1
     shodan-query: http.favicon.hash:-130447705
-    verified: true
-  tags: panel,umami,login
+  tags: panel,umami,login,detect
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/login"
+      - "{{BaseURL}}/favicon.ico"
 
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
       - type: word
         part: body
         words:
-          - '<title>Login | umami</title>'
+          - 'Login | umami'
+          - 'umami</div>'
+        condition: or
+        case-insensitive: true
 
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - "status_code==200 && (\"-130447705\" == mmh3(base64_py(body)))"
