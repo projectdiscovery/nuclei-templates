@@ -1,0 +1,35 @@
+id: googlesites-takeover
+
+info:
+  name: Google sites takeover detection
+  author: philippedelteil
+  severity: info
+  description: This is a Google sites dangling dns record detection. This happens when a Google site is deleted but the DNS record is not.
+  tags: takeover
+  reference: https://github.com/EdOverflow/can-i-take-over-xyz/issues/277
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    class: inet
+    recursion: true
+    retries: 3
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<title>Error 404 (Not Found)!!1</title>"
+          - "The requested URL <code>/</code> was not found on this server.  <ins>That’s all we know.</ins>"
+        condition: and
+      - type: status
+        status:
+          - 404
+      - type: dsl
+        dsl:
+          - contains(dns_cname, 'ghs.googlehosted.com')
