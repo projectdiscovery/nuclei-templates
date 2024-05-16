@@ -1,0 +1,57 @@
+id: rds-deletion-protection
+info:
+  name: RDS Deletion Protection
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure Amazon RDS instances have Deletion Protection enabled to prevent accidental deletions.
+  impact: |
+    Without Deletion Protection, RDS instances can be inadvertently deleted, leading to potential data loss and service disruption.
+  remediation: |
+    Enable Deletion Protection for all Amazon RDS instances via the AWS Management Console or using the AWS CLI.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_DeleteInstance.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let DBInstances of iterate(template.instances)){
+    set("db", DBInstances)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output json --query 'DBInstances[*].DBInstanceIdentifier'
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-instances --region $region --db-instance-identifier $db --query 'DBInstances[*].DeletionProtection' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"RDS Deletion protection feature is not enabled for RDS database instance " + db'
+# digest: 4b0a00483046022100914032dbc9479e0c23f03d553ff358b24dbb159d2b0e39591c929e1b7392f357022100dd0d109579a0dba307e0e203996af0754cc7d40cf1ef7adb218b01cba7fae2a0:922c64590222798bb761d5b6d8e72950

