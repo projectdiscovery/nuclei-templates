@@ -14,12 +14,13 @@ info:
   tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
 
 variables:
-  region: "ap-south-1"
+  region: "us-east-1"
 
 flow: |
   code(1)
   for(let CloudTrail of iterate(template.cloudtrailname)){
     set("trail", CloudTrail)
+    set("region", template.trailregion)
     code(2)
   }
 
@@ -29,14 +30,20 @@ code:
       - sh
       - bash
     source: |
-      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+      aws cloudtrail list-trails --region $region --query 'Trails[*].[Name, HomeRegion]' --output json
 
     extractors:
       - type: json
         name: cloudtrailname
         internal: true
         json:
-          - '.[]'
+          - '.[] | .[0]'
+
+      - type: json
+        name: trailregion
+        internal: true
+        json:
+          - '.[] | .[1]'
 
   - engine:
       - sh
@@ -52,5 +59,5 @@ code:
     extractors:
       - type: dsl
         dsl:
-          - '"CloudTrail trail" + trail + " is not configured to encrypt log files using SSE-KMS encryption"'
-# digest: 490a004630440220615ff60f92dc1540ae499c543e657c18d430e7b6b08291befb395d465b0dfa280220748efe3b2771beb250f0c50040e94c8c0a9a37f60fcb6c88bbe9ff55b5362fa1:922c64590222798bb761d5b6d8e72950
+          - '"CloudTrail trail " + trail + " is not configured to encrypt log files using SSE-KMS encryption"'
+# digest: 4b0a00483046022100b39586900f3cb7a7ce2582be709c7b3d1b25bceaf0f6d35887c3a3d62bfff8d80221009aa3a72ddade09b522655349a54b6cb7e6e0ebd3b36d85b30899b283e77dc90d:922c64590222798bb761d5b6d8e72950
