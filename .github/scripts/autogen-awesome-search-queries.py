@@ -2,6 +2,7 @@ import os
 import argparse
 from ruamel.yaml import YAML
 import logging
+import io
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -9,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 # Create a YAML object
 yaml = YAML()
-yaml.preserve_quotes = True
 yaml.indent(mapping=2, sequence=4, offset=2)
+yaml.preserve_quotes = True
 yaml.width = 10000000  # Set a large value to prevent word wrapping
 
 # Define the query fields
@@ -29,7 +30,7 @@ def read_yaml_files(directory):
     yaml_files = []
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith(".yaml"):
+            if file.endswith(".yaml") or file.endswith(".yml"):
                 yaml_files.append(os.path.join(root, file))
     return yaml_files
 
@@ -299,10 +300,19 @@ def generate_queries_yaml(yaml_files, queries_yaml_path, ignore_list):
                 engine['queries'] = filtered_queries
     
     with open(queries_yaml_path, 'w') as file:
+        first_entry = True
         for entry in updated_queries_data:
-            file.write('\n')  # Add an empty newline before each entry
-            yaml.dump([entry], file)
+            if not first_entry:
+                file.write('\n')  # Add an empty newline before each entry, except the first
+            # Dump to string and adjust the indentation
+            stream = io.StringIO()
+            yaml.dump([entry], stream)
+            yaml_str = stream.getvalue()
+            yaml_str = '\n'.join(line[2:] if line.startswith('  ') else line for line in yaml_str.splitlines())
+            file.write(yaml_str+'\n')
+            first_entry = False
     logger.info(f"Updated {queries_yaml_path}")
+
 
 def main():
     parser = argparse.ArgumentParser(description='Process YAML templates and generate/update QUERIES.yaml')
