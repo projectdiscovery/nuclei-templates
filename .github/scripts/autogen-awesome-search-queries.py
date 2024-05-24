@@ -30,7 +30,7 @@ def read_yaml_files(directory):
     yaml_files = []
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith(".yaml") or file.endswith(".yml"):
+            if file.endswith(".yaml"):
                 yaml_files.append(os.path.join(root, file))
     return yaml_files
 
