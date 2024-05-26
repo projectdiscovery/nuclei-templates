@@ -1,0 +1,48 @@
+id: k8s-privileged-containers
+
+info:
+  name: Privileged Containers Found in Deployments
+  author: princechaddha
+  severity: critical
+  description: Checks for containers running in privileged mode within Kubernetes Deployments, which can pose significant security risks.
+  impact: |
+    Running containers in privileged mode grants them access to host resources and could lead to security breaches if the container is compromised.
+  remediation: |
+    Ensure that no container in Kubernetes Deployments runs in privileged mode. Modify the security context for each container to set `privileged: false`.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privileged
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (deployment.spec.template.spec.containers.some(container => container.securityContext && container.securityContext.privileged)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' is running one or more containers in privileged mode.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100f896dc71c39119ecfd505a21a22dfcec6e06896f4d4b528cec13cf998181dd3902203458b94c2d0bf33603b64f5aa503123505a983941b01b9d0aada0b8985666044:366f2a24c8eb519f6968bd8801c08ebe

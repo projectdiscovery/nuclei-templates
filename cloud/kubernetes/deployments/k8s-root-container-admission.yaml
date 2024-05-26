@@ -1,0 +1,48 @@
+id: k8s-root-container-admission
+
+info:
+  name: Minimize the admission of root containers
+  author: princechaddha
+  severity: critical
+  description: Checks if any Kubernetes Deployments admit containers that run as root, which can pose a significant security risk.
+  impact: |
+    Allowing containers to run as root can lead to privilege escalation and unauthorized access to host resources, significantly compromising the security of the cluster.
+  remediation: |
+    Configure security contexts for all pods to run containers with a non-root user. Use Pod Security Policies or OPA/Gatekeeper to enforce these configurations.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#users-and-groups
+  tags: cloud,devops,kubernetes,devsecops,deployments,k8s
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (deployment.spec.template.spec.containers.some(container => container.securityContext && container.securityContext.runAsUser === null)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' permits containers to run as root.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502200475eac5bae9aa7fe9c98e0a90aa3680da94db7a15515256680d16a9fa319f8d022100b70835b10aa49e8a2961b2d957e41cc8e37f64cd066f36e292eb681900c19133:366f2a24c8eb519f6968bd8801c08ebe

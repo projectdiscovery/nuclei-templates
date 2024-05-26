@@ -1,0 +1,47 @@
+id: k8s-memory-requests-not-set
+
+info:
+  name: Memory requests not set in Deployments
+  author: princechaddha
+  severity: medium
+  description: Checks for missing memory requests in Kubernetes Deployments, which can lead to inefficient scheduling and potential node resource exhaustion.
+  impact: |
+    Missing memory requests in Kubernetes Deployments can lead to inefficient pod scheduling, causing potential resource exhaustion on nodes.
+  remediation: Set memory requests for all containers in Kubernetes Deployments to ensure efficient pod scheduling and node resource utilization.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.some(container => container.resources && container.resources.requests && container.resources.requests.memory)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' lacks memory requests.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100fe240dbf4c3fb7cc25858eae6a77ff3f3af8cce2dd2386358374f3bb179d1c2502210088357bf87098f8125c3a6038dde87ba3ac750d253e525b786f11013219119a7b:366f2a24c8eb519f6968bd8801c08ebe
