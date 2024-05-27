@@ -1,0 +1,43 @@
+id: digital-watchdog-default-login
+
+info:
+  name: Digital Watchdog - Default Login
+  author: omranisecurity
+  severity: high
+  description: |
+    Digital Watchdog default login credentials were discovered.
+  reference:
+    - https://digitalwatchdog.happyfox.com/kb/article/686-recorder-and-raid-default-login-list/
+  metadata:
+    verified: true
+    shodan-query: http.favicon.hash:868509217
+    fofa-query: icon_hash="868509217"
+  tags: digital-watchdog,default-login,dw-Spectrum
+
+http:
+  - raw:
+      - |
+        POST /web/rest/v1/login/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{user}}","password":"{{pass}}","setCookie":true}
+
+    attack: clusterbomb
+    payloads:
+      user:
+        - admin
+        - dwuser
+      pass:
+        - admin
+        - admin1234
+        - admin12345
+        - Dw5pectrum
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(set_cookie, "x-runtime-guid=")'
+          - 'contains(body, "token\":")'
+          - 'status_code == 200'
+        condition: and
