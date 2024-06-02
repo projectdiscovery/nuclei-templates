@@ -1,37 +1,41 @@
-id: Webpack-Sourcemap
+id: webpack-sourcemap
+
 info:
-  name: Webpack-Sourcemap
-  author: lucky0x0d, PulseSecurity.co.nz
+  name: Webpack Sourcemap
+  author: lucky0x0d,PulseSecurity.co.nz
+  severity: low
+  description: |
+    Detects if Webpack source maps are exposed.
+  impact: |
+    Exposure of source maps can leak sensitive information about the application's source code and potentially aid attackers in identifying vulnerabilities.
+  remediation: |
+    Ensure that Webpack source maps are not exposed to the public by configuring the server to restrict access to them.
   reference:
     - https://pulsesecurity.co.nz/articles/javascript-from-sourcemaps
     - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage
-  severity: low
   tags: javascript,webpack,sourcemaps
-  classification:
-    cwe-id: CWE-200
-  description: parses target to find scripts and then checks for a sourcemapconsumer, inline sourcemaps, if js files have map files, if sourcemap headers exists
-  metadata:
-    max-request: 1
 
 headless:
   - steps:
       - args:
           url: "{{BaseURL}}"
         action: navigate
+
       - action: sleep
         args:
           duration: 10
+
       - action: script
         name: extract
         args:
           code: |
-           () => {
-                AAA = [];
-                window.performance.getEntriesByType("resource").forEach((element) => { if (element.initiatorType === 'script' || element.initiatorType === 'fetch'|| element.initiatorType === 'xmlhttprequest') {AAA.push(element.name)}});
-                BBB = [...new Set(Array.from(document.querySelectorAll('script')).map(i => i.src))]
-                CCC = [...new Set(Array.from(document.querySelectorAll('link[as=script]')).map(i => i.href))]
-                return [...new Set([...AAA, ...BBB, ...CCC])];
-           }
+            () => {
+                 AAA = [];
+                 window.performance.getEntriesByType("resource").forEach((element) => { if (element.initiatorType === 'script' || element.initiatorType === 'fetch'|| element.initiatorType === 'xmlhttprequest') {AAA.push(element.name)}});
+                 BBB = [...new Set(Array.from(document.querySelectorAll('script')).map(i => i.src))]
+                 CCC = [...new Set(Array.from(document.querySelectorAll('link[as=script]')).map(i => i.href))]
+                 return [...new Set([...AAA, ...BBB, ...CCC])];
+            }
 
     extractors:
       - type: regex
@@ -40,7 +44,6 @@ headless:
         part: extract
         regex:
           - (?i)http(.[~a-zA-Z0-9.\/\-_:]+)
-
 flow: |
   headless();
   http("check_base_srcmap_inline");
@@ -148,6 +151,7 @@ http:
           - '"version":'
           - '"mappings":'
           - '"sources":'
+
       - type: status
         status:
           - 200
@@ -168,6 +172,7 @@ http:
           - '"version":'
           - '"mappings":'
           - '"sources":'
+
       - type: status
         status:
           - 200
@@ -188,6 +193,7 @@ http:
           - '"version":'
           - '"mappings":'
           - '"sources":'
+
       - type: status
         status:
           - 200
@@ -208,6 +214,7 @@ http:
           - '"version":'
           - '"mappings":'
           - '"sources":'
+
       - type: status
         status:
           - 200
