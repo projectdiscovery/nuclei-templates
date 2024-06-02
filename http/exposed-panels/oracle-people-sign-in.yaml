@@ -2,7 +2,7 @@ id: oracle-people-sign-in
 
 info:
   name: Oracle PeopleSoft Login Panel - Detect
-  author: idealphase
+  author: idealphase,righettod
   severity: info
   description: Oracle PeopleSoft login panel was detected.
   classification:
@@ -11,26 +11,32 @@ info:
   metadata:
     max-request: 1
     shodan-query: http.title:"Oracle PeopleSoft Sign-in"
-  tags: oracle,panel
+  tags: oracle,panel,login,detect
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}'
+      - '{{BaseURL}}/psp/csprd/?cmd=login&languageCd=ENG&'
+      - '{{BaseURL}}/psp/retess/?cmd=login&languageCd=ENG&'
+      - '{{BaseURL}}/psp/fscmprod/?cmd=login&languageCd=ENG&'
+      - '{{BaseURL}}/psp/CT920/?cmd=login&languageCd=ENG&'
+      - '{{BaseURL}}/psp/esshrprd/?cmd=login&languageCd=ENG&'
+      - '{{BaseURL}}/psp/ps/?&cmd=login&languageCd=ENG&'
 
-    host-redirects: true
+    stop-at-first-match: true
+    redirects: true
     max-redirects: 2
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '<title>Oracle PeopleSoft Sign-in</title>'
-          - 'alt="Oracle PeopleSoft Sign-in" title="Oracle PeopleSoft Sign-in"'
-        condition: or
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>oracle peoplesoft sign-in</title>", "alt=\"oracle peoplesoft sign-in\" title=\"oracle peoplesoft sign-in\"")'
+        condition: and
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220534a813cfd286f86aac6bf1ce17b27b6c7b7de5f18eb4b195db1d5ec6a96288f022100b08a023d57ce6c6abb820161ff4ef992d4cd670007e92cdb2d4dc018d01ef3a9:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)\*\s+Copyright\s+\(c\)\s+([0-9,\s]+)\s+Oracle\s+and\/or\s+its\s+affiliates.'
