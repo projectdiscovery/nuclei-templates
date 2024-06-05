@@ -1,0 +1,37 @@
+id: ec2-unrestricted-mysql
+info:
+  name: Unrestricted MySQL Access on EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Identifies unrestricted inbound access to MySQL database servers on Amazon EC2 instances, specifically targeting TCP port 3306.
+  impact: |
+    Unrestricted access to MySQL can lead to unauthorized data access, data manipulation, or exploitation of the database server.
+  remediation: |
+    Restrict inbound access on TCP port 3306 to known, necessary IP addresses or ranges, and avoid using 0.0.0.0/0 or ::/0.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=3306 Name=ip-permission.to-port,Values=3306 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted mongodb access (0.0.0.0/0 or ::/0) on port 3306"'
+# digest: 4a0a00473045022100ff19bb5e8c3dfe1f8e153bd309d866713f3e33c0b54882652f6489cc4bac292c02200d43740086e393886f7dbaca0a05947741687ed853c8e128a7b53bc2d926d995:922c64590222798bb761d5b6d8e72950

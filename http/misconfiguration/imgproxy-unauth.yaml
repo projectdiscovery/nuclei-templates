@@ -1,0 +1,36 @@
+id: imgproxy-unauth
+
+info:
+  name: Imgproxy Unauthorized Access
+  author: userdehghani
+  severity: low
+  description: |
+    imgproxy is a fast and secure standalone server for resizing, processing, and converting images.
+  remediation: set IMGPROXY_SECRET environment variable.
+  reference:
+    - https://docs.imgproxy.net/configuration/options
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"imgproxy"
+  tags: imgproxy,unauth,misconfig
+
+variables:
+  img_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/375px-Google_2015_logo.svg.png'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_/resize:fill:10:10:0/gravity:sm/plain/{{img_url}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==200'
+          - 'contains(content_type, "image/png")'
+          - '("386116288" == mmh3(base64_py(body)))'
+        condition: and
+# digest: 490a0046304402207f4d9df78ca765af9dc185001591fb4b8bd55d95b545a96a8dbba3243c94bc86022062bc7d5358e243a9a43fcca3c3e5e7a9addfa3f57df917e39c3c00fba60c07c4:922c64590222798bb761d5b6d8e72950

