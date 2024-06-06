@@ -1,0 +1,46 @@
+id: tomcat-detect
+
+info:
+  name: Tomcat Detection
+  author: philippedelteil,dhiyaneshDk,AdamCrosser
+  severity: info
+  description: If an Tomcat instance is deployed on the target URL, when we send a
+    request for a non existent resource we receive a Tomcat error page with version.
+  classification:
+    cpe: cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: apache
+    product: tomcat
+    shodan-query: title:"Apache Tomcat"
+  tags: tech,tomcat,apache,intrusive
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/{{randstr}}"
+      - "{{BaseURL}}/docs/introduction.html"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(tolower(header), "tomcat")'
+
+      - type: dsl
+        dsl:
+          - 'contains(tolower(body), "apache tomcat")'
+          - 'contains(tolower(body), "/manager/html")'
+          - 'contains(tolower(body), "/manager/status")'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - '(?i)Apache Tomcat.*([0-9]\.[0-9]+\.[0-9]+)'
+# digest: 4b0a00483046022100e3d8776e9ca37212551101bbd98be081de439409f2dec31a8d7103552b3b33cf022100e76afac4d122a66489d1aca0e5105d0c0de7bef5bb7d4f572e60db2d18bb0e08:922c64590222798bb761d5b6d8e72950

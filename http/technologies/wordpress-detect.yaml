@@ -1,0 +1,63 @@
+id: wordpress-detect
+
+info:
+  name: WordPress Detect
+  author: pdteam,daffainfo,ricardomaia,topscoder,AdamCrosser
+  severity: info
+  classification:
+    cpe: cpe:2.3:a:wordpress:wordpress:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: wordpress
+    product: wordpress
+    shodan-query: http.component:"WordPress"
+    category: cms
+  tags: tech,wordpress,cms,wp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2" # alternative if /feed/ is blocked
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '<generator>https?:\/\/wordpress\.org.*</generator>'
+          - 'wp-login.php'
+          - '\/wp-content/themes\/'
+          - '\/wp-includes\/'
+          - 'name="generator" content="wordpress'
+          - '<link[^>]+s\d+\.wp\.com'
+          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin
+            v([\d.]+) -'
+          - '<!--[^>]+WP-Super-Cache'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version_by_generator
+        group: 1
+        regex:
+          - '(?m)https:\/\/wordpress.org\/\?v=([0-9.]+)'
+
+      - type: regex
+        name: version_by_js
+        group: 1
+        regex:
+          - 'wp-emoji-release\.min\.js\?ver=((\d+\.?)+)\b'
+
+      - type: regex
+        name: version_by_css
+        group: 1
+        regex:
+          - 'install\.min\.css\?ver=((\d+\.?)+)\b'
+# digest: 490a00463044022009836460f5740a15d20183b2a6e0d9b03f8cc0c2d686ffcbebda979efe62fa920220391db6d23533d6cc0dbe9ffb863f696ca548e0547e16790cbaec44744acb6769:922c64590222798bb761d5b6d8e72950

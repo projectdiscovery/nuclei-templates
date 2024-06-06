@@ -1,0 +1,42 @@
+id: blind-ssrf
+
+info:
+  name: Blind SSRF OAST Detection
+  author: pdteam
+  severity: medium
+  tags: ssrf,dast,oast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      ssrf:
+        - "{{interactsh-url}}"
+        - "{{FQDN}}.{{interactsh-url}}"
+        - "{{RDN}}.{{interactsh-url}}"
+
+    fuzzing:
+      - part: query
+        mode: single
+        values:
+          - "https?://" # Replace HTTP URLs with alternatives
+        fuzz:
+          - "https://{{ssrf}}"
+
+      - part: query
+        mode: single
+        values:
+          - "^[A-Za-z0-9-._]+:[0-9]+$" # Replace <host>:<port> with alternative
+        fuzz:
+          - "{{ssrf}}:80"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: interactsh_protocol  # Confirms the HTTP Interaction
+        words:
+          - "http"
+# digest: 4a0a004730450221008e67c53d4368607db787a520c50ce1ae8c742483ea80c0e7d34ab8ef529d2c9902205c049079f166eae9a8e5c5c99b72a048bebaa05de3eb3828adb9d81fab3543aa:922c64590222798bb761d5b6d8e72950

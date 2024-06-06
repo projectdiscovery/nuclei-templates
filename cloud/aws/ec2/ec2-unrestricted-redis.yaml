@@ -1,0 +1,37 @@
+id: ec2-unrestricted-redis
+info:
+  name: Unrestricted Redis Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in Amazon EC2 security groups that allow unrestricted access to Redis cache server instances on TCP port 6379.
+  impact: |
+    Unrestricted access can expose Redis instances to unauthorized access and potential security breaches.
+  remediation: |
+    Restrict inbound access to Redis instances by updating EC2 security group rules to allow only specific, trusted IP addresses.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=6379 Name=ip-permission.to-port,Values=6379 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 6379"'
+# digest: 4b0a00483046022100a19a6281bbac4a97ec0b09a1eaa1f789d3eb364bb152c2110e8aacaba4da4895022100c385619aae77905775c394990ef99a35e78f11941d2cb7579db73b2f6a4ef013:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,40 @@
+id: smb-anonymous-access
+
+info:
+  name: SMB Anonymous Access Detection
+  author: pussycat0x
+  severity: high
+  description: |
+    Detects anonymous access to SMB shares on a remote server.
+  reference:
+    - https://wadcoms.github.io/wadcoms/SMBClient-List-Shares-Anonymous/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:445
+  tags: js,network,smb,enum,misconfig
+javascript:
+  - code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ListShares(Host,Port,User,Pass);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+      User: " "
+      Pass: " "
+
+    matchers:
+      - type: dsl
+        dsl:
+          - success == true
+          - contains(response, "IPC$")
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '.[]'
+# digest: 4a0a00473045022100ff496491c9b3cbee3dc68775e589068c010d1f38b066610934a93d7cceaa81ce02204aacf1e737e5fc49d15526a72571c0d6691e5bdee9001b0f96212d98f95b3648:922c64590222798bb761d5b6d8e72950

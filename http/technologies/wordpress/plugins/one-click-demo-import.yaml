@@ -1,0 +1,50 @@
+id: wordpress-one-click-demo-import
+
+info:
+  name: One Click Demo Import Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/one-click-demo-import/
+  metadata:
+    max-request: 1
+    plugin_namespace: one-click-demo-import
+    wpscan: https://wpscan.com/plugin/one-click-demo-import
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/one-click-demo-import/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/one-click-demo-import.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022077972335c3a0d408f920e062b7610c78e6457a63ce1b23d4fb9c9cf8016063680221008f30b757a087268ff71d8a514e7ab401035fad4b0318ebcfa7b8fa8bdf2f1958:922c64590222798bb761d5b6d8e72950

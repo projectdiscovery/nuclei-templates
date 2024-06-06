@@ -1,0 +1,50 @@
+id: wordpress-wp-file-manager
+
+info:
+  name: File Manager Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wp-file-manager/
+  metadata:
+    max-request: 1
+    plugin_namespace: wp-file-manager
+    wpscan: https://wpscan.com/plugin/wp-file-manager
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-file-manager/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wp-file-manager.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022033debe09d4702c4d57fff7b94e2b5694faa81301ba08be7e4ce414f26580be14022100e3b344cdbbd704dcd969c69b868f4305a34ef8e813dbb713cd1a102ebe88b33a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: wordpress-easy-wp-smtp
+
+info:
+  name: Easy WP SMTP by SendLayer – WordPress SMTP and Email Log Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/easy-wp-smtp/
+  metadata:
+    max-request: 1
+    plugin_namespace: easy-wp-smtp
+    wpscan: https://wpscan.com/plugin/easy-wp-smtp
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/easy-wp-smtp/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/easy-wp-smtp.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022034cfb31c9c9e8ff852fb37cb7eca9db5d4ed34e4510ef19621b414146094f3e3022056eb68893642be5f01d027511fa84b14442bfa6681978496d88dc4d13c45501f:922c64590222798bb761d5b6d8e72950

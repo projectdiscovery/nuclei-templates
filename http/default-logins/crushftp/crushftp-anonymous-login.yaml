@@ -1,0 +1,50 @@
+id: crushftp-anonymous-login
+
+info:
+  name: CrushFTP - Anonymous Login
+  author: pussycat0x
+  severity: high
+  description: |
+    CrushFTP Anonymous login credentials were discovered.
+  metadata:
+    shodan-query: html:"CrushFTP"
+    verified: true
+    max-request: 2
+  tags: default-logins,anonymous,crushftp
+
+http:
+  - raw:
+      - |
+        GET /WebInterface/ HTTP/1.1
+        Host: {{Hostname}}
+
+
+      - |
+        POST /WebInterface/function/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        command=getUsername&random=0.4186510822713485&c2f={{auth}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<username>anonymous</username>"
+
+      - type: word
+        part: header_2
+        words:
+          - "text/xml"
+
+
+    extractors:
+      - type: regex
+        name: auth
+        internal: true
+        part: header_1
+        group: 1
+        regex:
+          - 'currentAuth=([0-9a-zA-Z]+)'
+# digest: 490a00463044022047ed09e7cce78c6ef3d5812fd4d9f0c9b9325f82c20c0eeaaa4b280b7853ec810220750d2e91ea2a302be6eebf420b4dee340c13ff61593ff73ac8ba9db2582b68cf:922c64590222798bb761d5b6d8e72950

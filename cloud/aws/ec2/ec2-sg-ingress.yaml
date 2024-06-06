@@ -1,0 +1,57 @@
+id: ec2-sg-ingress
+info:
+  name: Unrestricted Access on Uncommon EC2 Ports
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure Amazon EC2 security groups do not allow unrestricted access (0.0.0.0/0, ::/0) on uncommon ports, protecting against brute force attacks on EC2 instances.
+  impact: |
+    Unrestricted ingress on uncommon ports increases the risk of unauthorized access and potential brute force attacks on EC2 instances.
+  remediation: |
+    Restrict access to uncommon ports in EC2 security groups, permitting only necessary traffic and implementing stringent access controls.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules-reference.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let SecurityGroup of iterate(template.securitygroups)){
+    set("groupid", SecurityGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-security-groups --region $region --group-ids $groupid --query 'SecurityGroups[*].IpPermissions[]'
+
+    matchers:
+      - type: word
+        words:
+          - "0.0.0.0/0"
+          - "::/0"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Amazon EC2 security group(s) " + groupid + " allows unrestricted inbound traffic"'
+# digest: 4b0a004830460221009b9e3e94679739de1a688c3b15bc4f592472272245df9bfbc675211eeaa6f45602210097597c2bae7f04a1d2440e25e37986679daa91e6e8fe277cb1fb99874d2e5fd0:922c64590222798bb761d5b6d8e72950

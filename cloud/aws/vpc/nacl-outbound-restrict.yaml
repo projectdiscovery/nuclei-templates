@@ -1,0 +1,63 @@
+id: nacl-outbound-restrict
+info:
+  name: Unrestricted NACL Outbound Traffic
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks for Amazon VPC NACLs allowing outbound traffic to all ports, recommending restriction to necessary ports only.
+  impact: |
+    Potential for data exfiltration or unauthorized access if outbound traffic is not properly restricted.
+  remediation: |
+    Modify NACL outbound rules to limit traffic to only the ports required for legitimate business needs.
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let NACLIDs of iterate(template.nacls)){
+    set("naclid", NACLIDs)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-network-acls --region $region --query 'NetworkAcls[*].NetworkAclId' --output json
+
+    extractors:
+      - type: json
+        name: nacls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-network-acls --region $region --network-acl-ids $naclid --query 'NetworkAcls[*].Entries[?(RuleAction==`allow`) && (Egress==`true`)] | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "allow"
+        condition: and
+
+      - type: word
+        words:
+          - "PortRange"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access to the VPC subnets associated with your NACL " + naclid + " is not restricted."'
+# digest: 4a0a00473045022021e25dd23124572a8f6dbe6381024f3ecb8f78907d7ba0aafa2eb9c63990e140022100ba7669b283e58bf5b0fd08f3d5501d54221fc7a48b73b088c95330ea4c633f67:922c64590222798bb761d5b6d8e72950

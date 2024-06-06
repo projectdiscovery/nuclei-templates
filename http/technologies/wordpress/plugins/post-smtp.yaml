@@ -1,0 +1,50 @@
+id: wordpress-post-smtp
+
+info:
+  name: POST SMTP Mailer – Email log, Delivery Failure Notifications and Best Mail SMTP for WordPress Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/post-smtp/
+  metadata:
+    max-request: 1
+    plugin_namespace: post-smtp
+    wpscan: https://wpscan.com/plugin/post-smtp
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/post-smtp/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/post-smtp.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a004830460221009ce574c13b186c5e556f73b89847cf74c02bbd8ad6861fd2cc4978e00a22a73c022100f6ce760511942148852958e0bf0dea5528438a7cd3eb8f8d4cfd40c78a361ddd:922c64590222798bb761d5b6d8e72950

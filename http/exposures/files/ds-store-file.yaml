@@ -1,0 +1,36 @@
+id: ds-store-file
+
+info:
+  name: Exposed DS_Store File
+  author: 0w4ys,pwnhxl
+  severity: info
+  description: A .DS_Store file was found. This file may contain names of files that exist on the server, including backups or other files that aren't meant to be publicly available.
+  reference:
+    - https://github.com/lijiejie/ds_store_exp
+  metadata:
+    max-request: 1
+  tags: exposure,files,ds_store,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.DS_Store"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body, '\0@\0')"
+          - "contains(hex_encode(body), '0000000142756431')"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+
+      - type: dsl
+        dsl:
+          - 'contains(to_lower(header), "accept-ranges: bytes")'
+          - 'contains(to_lower(header), "octet-stream")'
+        condition: or
+# digest: 4b0a00483046022100d3f35123cbd855e0ccab57c96f138dd54b3629cfb4784ee5c4161283a7656bbe0221009e8dc3c9bacb26eba104f28692289335bee62fe473c2c558bd1440c04997353c:922c64590222798bb761d5b6d8e72950

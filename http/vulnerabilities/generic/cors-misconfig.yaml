@@ -1,0 +1,44 @@
+id: cors-misconfig
+
+info:
+  name: CORS Misconfiguration
+  author: nadino,g4l1t0,convisoappsec,pdteam,breno_css,nodauf
+  severity: info
+  reference:
+    - https://portswigger.net/web-security/cors
+    - https://www.corben.io/advanced-cors-techniques/
+    - https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-cross-origin-resource-sharing/
+  metadata:
+    max-request: 11
+  tags: cors,generic,misconfig
+
+http:
+  - raw:
+      - |
+        GET  HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{cors_origin}}
+
+    payloads:
+      cors_origin:
+        - "https://{{tolower(rand_base(5))}}{{RDN}}" # Arbitrary domain
+        - "https://{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}_.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}%60.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "null" # null origin
+        - "https://{{tolower(rand_base(5))}}.{{RDN}}" # Arbitrary subdomain
+        - "http://{{tolower(rand_base(5))}}.{{RDN}}" # Arbitrary subdomain over http
+        - "https://{{replace(FQDN,'.','a')}}" # Replace . by a random character to abuse if regex is used
+        - "http://{{replace(FQDN,'.','a')}}" # Replace . by a random character to abuse if regex is used
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        name: arbitrary-origin
+        dsl:
+          - "contains(tolower(header), 'access-control-allow-origin: {{cors_origin}}')"
+          - "contains(tolower(header), 'access-control-allow-credentials: true')"
+        condition: and
+
+# digest: 4a0a0047304502206b1f7d2d431f28b64dfa6b919cf7f12dcaf7c318522caf013e28de52a6a50a96022100baf749a65dd2856645045362bfeb3f53149690c3ceb2f1e23e1c123298dac19c:922c64590222798bb761d5b6d8e72950
