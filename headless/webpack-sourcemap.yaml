@@ -1,0 +1,222 @@
+id: webpack-sourcemap
+
+info:
+  name: Webpack Sourcemap
+  author: lucky0x0d,PulseSecurity.co.nz
+  severity: low
+  description: |
+    Detects if Webpack source maps are exposed.
+  impact: |
+    Exposure of source maps can leak sensitive information about the application's source code and potentially aid attackers in identifying vulnerabilities.
+  remediation: |
+    Ensure that Webpack source maps are not exposed to the public by configuring the server to restrict access to them.
+  reference:
+    - https://pulsesecurity.co.nz/articles/javascript-from-sourcemaps
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage
+  metadata:
+    max-request: 9
+  tags: javascript,webpack,sourcemaps,headless
+headless:
+  - steps:
+      - args:
+          url: "{{BaseURL}}"
+        action: navigate
+
+      - action: sleep
+        args:
+          duration: 10
+
+      - action: script
+        name: extract
+        args:
+          code: |
+            () => {
+                 AAA = [];
+                 window.performance.getEntriesByType("resource").forEach((element) => { if (element.initiatorType === 'script' || element.initiatorType === 'fetch'|| element.initiatorType === 'xmlhttprequest') {AAA.push(element.name)}});
+                 BBB = [...new Set(Array.from(document.querySelectorAll('script')).map(i => i.src))]
+                 CCC = [...new Set(Array.from(document.querySelectorAll('link[as=script]')).map(i => i.href))]
+                 return [...new Set([...AAA, ...BBB, ...CCC])];
+            }
+
+    extractors:
+      - type: regex
+        name: allscripts
+        internal: true
+        part: extract
+        regex:
+          - (?i)http(.[~a-zA-Z0-9.\/\-_:]+)
+flow: |
+  headless();
+  http("check_base_srcmap_inline");
+  for (let scripturi of iterate(template["allscripts"])) {
+    set ("scripturi", scripturi);
+    http("check_for_srcmap_header");
+    http("check_for_srcmap_inline");
+    http("check_for_srcmap_url");
+     for (let mapuri of iterate(template["allmaps"])) {
+       set ("mapuri", mapuri);
+       http("fetch_absolute_srcmap");
+       http("fetch_relative_srcmap");
+       http("fetch_root_relative_srcmap");
+       http("fetch_noscheme_srcmaps");
+       };
+    set ("allmaps", null);
+    };
+
+http:
+  - method: GET
+    id: check_base_srcmap_inline
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{BaseURL}}'
+
+    matchers:
+      - type: regex
+        name: Inline_SourceMap
+        regex:
+          - '(?i)sourceMappingURL=.*eyJ2ZXJzaW9uIjo'
+
+      - type: regex
+        name: SourceMapConsumer_Present
+        regex:
+          - '(?i)SourceMapConsumer'
+
+  - method: GET
+    id: check_for_srcmap_url
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi}}'
+
+    extractors:
+      - type: regex
+        name: allmaps
+        internal: true
+        group: 1
+        regex:
+          - (?i)\/\/#\ssourceMappingURL=(.[~a-zA-Z0-9.\/\-_:]+)
+
+  - method: GET
+    id: check_for_srcmap_inline
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi}}'
+
+    matchers:
+      - type: regex
+        name: Inline_SourceMap
+        regex:
+          - '(?i)sourceMappingURL=.*eyJ2ZXJzaW9uIjo'
+
+      - type: regex
+        name: SourceMapConsumer_Present
+        regex:
+          - '(?i)SourceMapConsumer'
+
+  - method: GET
+    id: check_for_srcmap_header
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{scripturi}}'
+
+    matchers:
+      - type: dsl
+        name: Source_Map_Header
+        dsl:
+          - "regex('(?i)SourceMap', header)"
+          - "status_code != 301 && status_code != 302"
+        condition: and
+
+    extractors:
+      - type: kval
+        kval:
+          - X_SourceMap
+          - SourceMap
+
+  - method: GET
+    id: fetch_absolute_srcmap
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{mapuri}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    id: fetch_relative_srcmap
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{replace_regex(scripturi,"([^/]+$)","")}}{{replace_regex(mapuri,"(^\/+)","")}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    id: fetch_root_relative_srcmap
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{replace_regex(scripturi,replace_regex(scripturi,"http.+//[^/]+",""),"")}}{{mapuri}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    id: fetch_noscheme_srcmaps
+    disable-cookie: true
+    redirects: true
+    path:
+      - '{{Scheme}}{{mapuri}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        part: body
+        words:
+          - '"version":'
+          - '"mappings":'
+          - '"sources":'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450220010b004e9a80e7bcef4de9826e973992a8ea72217ce2d6813700f1aceded13db0221008b37c8a048d1a96621dae497d9241f2ee0b8920f952cfa6d9f92a69715504fff:922c64590222798bb761d5b6d8e72950
