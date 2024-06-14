@@ -4,11 +4,11 @@ info:
   name: Privileged Containers Found in Deployments
   author: princechaddha
   severity: critical
-  description: Checks for containers running in privileged mode within Kubernetes Deployments, which can pose significant security risks.
+  description: Checks for containers running in privileged mode within Kubernetes Deployments, and now also checks for user privileges and privilege escalation settings.
   impact: |
-    Running containers in privileged mode grants them access to host resources and could lead to security breaches if the container is compromised.
+    Running containers in privileged mode, as the root user, or with privilege escalation enabled can grant them access to host resources and could lead to security breaches if the container is compromised.
   remediation: |
-    Ensure that no container in Kubernetes Deployments runs in privileged mode. Modify the security context for each container to set `privileged: false`.
+    Ensure that no container in Kubernetes Deployments runs in privileged mode, as the root user, or with privilege escalation enabled. Modify the security context for each container to set `privileged: false`, `runAsUser` appropriately, and `allowPrivilegeEscalation: false`.
   reference:
     - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privileged
   tags: cloud,devops,kubernetes,k8s,devsecops,deployments
@@ -36,13 +36,17 @@ code:
 javascript:
   - code: |
         deployment = JSON.parse(template.deployment);
-        if (deployment.spec.template.spec.containers.some(container => container.securityContext && container.securityContext.privileged)) {
-          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' is running one or more containers in privileged mode.`);
-          Export(result);
+        for (let container of deployment.spec.template.spec.containers) {
+          let sc = container.securityContext || {};
+          if (sc.privileged || sc.runAsUser < 1000 || sc.allowPrivilegeEscalation) {
+            let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' is running container '${container.name}' with insecure settings: Privileged=${sc.privileged}, runAsUser=${sc.runAsUser}, allowPrivilegeEscalation=${sc.allowPrivilegeEscalation}.`);
+            Export(result);
+            break;
+          }
         }
 
     extractors:
       - type: dsl
         dsl:
           - response
-# digest: 4a0a00473045022100f896dc71c39119ecfd505a21a22dfcec6e06896f4d4b528cec13cf998181dd3902203458b94c2d0bf33603b64f5aa503123505a983941b01b9d0aada0b8985666044:366f2a24c8eb519f6968bd8801c08ebe
+# digest: 490a00463044022038295a725d25b77f920cfd32a5a407220f8f9c5faa37544670696f4cea356434022027fd56a2feae1101fe03c0d2e6e2452a2a89947f5c14e9711b8a744d11368b1e:366f2a24c8eb519f6968bd8801c08ebe

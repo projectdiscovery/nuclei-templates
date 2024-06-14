@@ -1,0 +1,47 @@
+id: k8s-host-network-namespace-shared
+
+info:
+  name: Host Network Namespace Sharing
+  author: princechaddha
+  severity: high
+  description: Checks if containers in Kubernetes Pods are configured to share the host's network namespace, which can lead to security risks.
+  impact: |
+    Sharing the host's network namespace allows containers to access the host network directly. This can lead to potential security breaches as containers might bypass network policies and gain unrestricted network access on the host.
+  remediation: |
+    Ensure that the 'hostNetwork' field is set to false in all Kubernetes Pods to prevent containers from sharing the host's network namespace.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#host-namespaces
+  tags: cloud,devops,kubernetes,k8s,devsecops,namespace
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    set("pod", pod)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        pod = JSON.parse(template.pod);
+        if (pod.spec.hostNetwork) {
+          let result = (`Pod '${pod.metadata.name}' in namespace '${pod.metadata.namespace}' is configured to share the host's network namespace.`);
+          Export(result);
+        }
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a004830460221008eef4a8e8215cf69d36f0d94aa83b3531ce19730942b461b27842147f7f39973022100dfc800230845da0fe800dac62b006dc4a27d52a9b1684e7153165782e7d3472b:366f2a24c8eb519f6968bd8801c08ebe
