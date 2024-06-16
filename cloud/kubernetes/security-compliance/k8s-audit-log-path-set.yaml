@@ -1,0 +1,40 @@
+id: audit-log-path-set
+
+info:
+  name: Ensure audit-log-path set
+  author: princechaddha
+  severity: medium
+  description: Checks if the audit-log-path argument is properly set in the Kubernetes API server configuration, which is essential for maintaining a reliable audit trail.
+  impact: |
+    Without the audit-log-path argument, Kubernetes does not record API server audit logs, reducing the visibility into operations and making it harder to detect and respond to malicious activities.
+  remediation: |
+    Configure the Kubernetes API server to include the audit-log-path argument pointing to a secure, writeable directory where audit logs will be stored. Ensure that this directory is properly secured and regularly monitored.
+  reference:
+    - https://kubernetes.io/docs/tasks/debug-application-cluster/audit/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+
+      - type: word
+        words:
+          - "audit-log-path"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "API server configuration is missing the audit-log-path argument."
+
+# digest: 4c0a006730b50222003e5c33fedeeb5d9b8b9af1d43e89b7b8b97c51aa77c345d7f976f9350e22e746022

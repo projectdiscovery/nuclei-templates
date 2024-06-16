@@ -1,0 +1,38 @@
+id: k8s-svc-acct-issuer-set
+
+info:
+  name: Checks if service-account-issuer is correctly configured
+  author: princechaddha
+  severity: medium
+  description: Checks if the service-account-issuer argument is correctly configured in the API server, critical for issuing valid service tokens.
+  impact: |
+    If the service-account-issuer argument is not set, the API server may issue tokens that are not accepted by other services, leading to authentication failures.
+  remediation: |
+    Set the service-account-issuer argument to a valid issuer URL in the API server's startup arguments or configuration file. This ensures the tokens issued are trusted across services.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+      
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+          
+      - type: word
+        words:
+          - "service-account-issuer"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "API server configuration lacks the service-account-issuer argument."
