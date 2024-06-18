@@ -43,7 +43,7 @@ for page_number in range(1, 11):
 
     # Parse HTML
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.find(class_="plugin-cards")
+    results = soup.find(id="main")
     articles = results.find_all("div", class_="plugin-card")
 
     # Setting the top tag
