@@ -28,7 +28,7 @@ regex = r"https://wordpress.org/plugins/(\w.+)/"
 ranking = 1
 
 # Top 200 Wordpress Plugins
-for page_number in range(2, 11):
+for page_number in range(1, 11):
 
     print(f"https://wordpress.org/plugins/browse/popular/page/{page_number}/")
     html = requests.get(url=f"https://wordpress.org/plugins/browse/popular/page/{page_number}/", headers={
