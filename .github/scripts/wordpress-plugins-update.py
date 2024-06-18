@@ -9,7 +9,7 @@ compares the detect version with the payload version.
 The generated template also includes the tags top-100 and top-200 allowing filtering.
 
 e.g.
-nuclei -t http/technologies/wordpress/plugins -tags top-100 -u https://www.example.com
+nuclei -t technologies/wordpress/plugins -tags top-100 -u https://www.example.com
 '''
 
 __author__ = "ricardomaia"
@@ -43,14 +43,9 @@ for page_number in range(1, 11):
 
     # Parse HTML
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.find("div", {"id": "main"}) 
-    if results is None:
-        print("Failed to find the main plugin list. Check if the page structure has changed.")
-        continue
-    articles = results.find_all("article", class_="plugin-card")
-    if not articles:
-        print("No articles found on the page.")
-        continue
+    
+    results = soup.find(id="main")
+    articles = results.find_all("div", class_="plugin-card")
 
     # Setting the top tag
     top_tag = "top-100,top-200" if page_number <= 5 else "top-200"
@@ -128,7 +123,7 @@ info:
     wpscan: https://wpscan.com/plugin/{name}
   tags: tech,wordpress,wp-plugin,{top_tag}
 
-http:
+requests:
   - method: GET
 
     path:
@@ -169,7 +164,7 @@ http:
         work_dir = os.getcwd()
         print(f"Current working directory: {work_dir}")
         helper_dir = f"{work_dir}/helpers/wordpress/plugins"
-        template_dir = f"{work_dir}/http/technologies/wordpress/plugins"
+        template_dir = f"{work_dir}/technologies/wordpress/plugins"
 
         if not os.path.exists(helper_dir):
             os.makedirs(helper_dir)
@@ -182,7 +177,7 @@ http:
         version_file.write(version)
         version_file.close()
 
-        template_path = f"http/technologies/wordpress/plugins/{name}.yaml"
+        template_path = f"technologies/wordpress/plugins/{name}.yaml"
         template_file = open(template_path, "w")  # Dev environment
         template_file.write(template)
         template_file.close()
