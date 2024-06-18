@@ -28,9 +28,10 @@ regex = r"https://wordpress.org/plugins/(\w.+)/"
 ranking = 1
 
 # Top 200 Wordpress Plugins
-for page_number in range(1, 11):
+for page_number in range(2, 11):
 
-    html = requests.get(url=f"https://wordpress.org/plugins/browse/popular/page/{page_number}", headers={
+    print(f"https://wordpress.org/plugins/browse/popular/page/{page_number}/")
+    html = requests.get(url=f"https://wordpress.org/plugins/browse/popular/page/{page_number}/", headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",
@@ -43,8 +44,8 @@ for page_number in range(1, 11):
 
     # Parse HTML
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.find(id="main")
-    articles = results.find_all("article", class_="plugin-card")
+    results = soup.find(class_="plugin-cards")
+    articles = results.find_all("div", class_="plugin-card")
 
     # Setting the top tag
     top_tag = "top-100,top-200" if page_number <= 5 else "top-200"
