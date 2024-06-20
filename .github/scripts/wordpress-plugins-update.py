@@ -43,8 +43,8 @@ for page_number in range(1, 11):
 
     # Parse HTML
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.find(id="main")
-    articles = results.find_all("article", class_="plugin-card")
+    results = soup.find(class_="plugin-cards")
+    articles = results.find_all("div", class_="plugin-card")
 
     # Setting the top tag
     top_tag = "top-100,top-200" if page_number <= 5 else "top-200"
