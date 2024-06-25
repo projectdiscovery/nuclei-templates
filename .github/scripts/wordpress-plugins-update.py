@@ -124,7 +124,6 @@ info:
 
 http:
   - method: GET
-
     path:
       - "{{{{BaseURL}}}}/wp-content/plugins/{name}/readme.txt"
 
@@ -171,7 +170,7 @@ http:
         if not os.path.exists(template_dir):
             os.makedirs(template_dir)
 
-        helper_path = f"helpers/wordpress/plugins/{name}.txt"
+        helper_path = f"{work_dir}/helpers/wordpress/plugins/{name}.txt"
         version_file = open(helper_path, "w")
         version_file.write(version)
         version_file.close()
