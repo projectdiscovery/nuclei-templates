@@ -1,0 +1,47 @@
+id: k8s-netpol-egress-rules
+
+info:
+  name: Network policies define egress rules
+  author: princechaddha
+  severity: medium
+  description: Checks for network policies in Kubernetes that do not define egress rules, which can leave the network exposed to external threats.
+  impact: |
+    Lack of egress rules in network policies can result in unrestricted outbound network traffic, which may allow data exfiltration or unauthorized access to external services.
+  remediation: Define egress rules in all network policies to control outbound traffic from your Kubernetes pods, thereby reducing security risks.
+  reference:
+    - https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  tags: cloud,devops,kubernetes,devsecops,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let policy of template.items) {
+    set("policy", policy)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get networkpolicies --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[] | {policy: .metadata.name, egress: .spec.egress}'
+
+javascript:
+  - code: |
+        let policyData = JSON.parse(template.policy);
+        if (!policyData.egress || policyData.egress.length === 0) {
+          let result = (`Network policy '${policyData.policy}' does not define egress rules.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100cab8502b8046e7ecf04c896fd8367a118f6fa5f4a4b29b06f90a31e4c7e2bc910220761d406117dce7f3116e5426ad24d79d82a1e9e6161fa944fa8195c498144eda:922c64590222798bb761d5b6d8e72950
