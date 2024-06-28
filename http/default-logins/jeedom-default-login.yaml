@@ -1,0 +1,46 @@
+id: jeedom-default-login
+
+info:
+  name: Jeedom - Default Login
+  author: ritikchaddha
+  severity: high
+  description: |
+    Jeedom default login has been detected.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"Jeedom"
+  tags: jeedom,default-login,misconfig
+
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /core/ajax/user.ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        action=login&username={{username}}&password={{password}}&twoFactorCode=&storeConnection=0
+
+      - |
+        GET /index.php?v=d&p=dashboard HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - 'state":"ok'
+          - 'result":'
+        condition: and
+
+      - type: word
+        part: body_2
+        words:
+          - "logout=1"
+          - "Plugins</span>"
+        condition: and
