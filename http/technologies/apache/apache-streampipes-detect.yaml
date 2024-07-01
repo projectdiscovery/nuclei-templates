@@ -1,39 +1,39 @@
 id: apache-streampipes-detect
 
 info:
-  name: Apache StreamPipes detect
+  name: Apache StreamPipes - Detect
   author: Alessandro Albani - DEVisions
   severity: info
-  description: Checks for the presence of Apache StreamPipes by looking in the body or matching the favicon hash.
+  description: |
+    Checks for the presence of Apache StreamPipes by looking in the body or matching the favicon hash.
   metadata:
-    shodan-query:
-      - http.title:"apache streampipes"
-      - http.favicon.hash:1937041138
-      - http.favicon.hash:480680877
-  tags: apache,streampipes,info,service,web-application,detection
+    max-request: 3
+    verified: true
+    shodan-query: title:"apache streampipes"
+    fofa-query: title="apache streampipes"
+  tags: tech,apache,streampipes,detect
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}'
       - '{{BaseURL}}/streampipes-backend/api/openapi.json'
+      - '{{BaseURL}}/assets/img/favicon/favicon.ico'
+      - '{{BaseURL}}'
+
     host-redirects: true
     max-redirects: 2
     stop-at-first-match: true
+
     matchers:
       - type: dsl
         dsl:
-          - contains(to_lower(body), "apache streampipes")
-  - method: GET
-    path:
-      - '{{BaseURL}}/assets/img/favicon/favicon.ico'
-    extractors:
-      - type: dsl
-        name: favicon-hash
-        dsl:
-          - mmh3(base64_py(body))
-    matchers:
-      - type: dsl
-        name: favicon-hash
-        dsl:
+          - contains_any(to_lower(body), "<title>apache streampipes", "apache streampipes api")
           - status_code==200 && ("1937041138" == mmh3(base64_py(body)) || "480680877" == mmh3(base64_py(body)))
+        condition: or
+
+    extractors:
+      - type: json
+        part: body
+        group: 1
+        json:
+          - '.info.version'
