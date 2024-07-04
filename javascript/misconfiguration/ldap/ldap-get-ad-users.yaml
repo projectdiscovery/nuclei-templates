@@ -1,0 +1,46 @@
+id: ldap-get-ad-users
+info:
+  name: LDAP Get Active Directory User - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    Retrieve users from Active Directory, where each user is represented by an ADObject.
+  reference:
+   - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.ADObject
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap,enum
+
+javascript:
+  - code: |
+      const ldap = require('nuclei/ldap');
+      const cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      const client = ldap.Client(Host, Port, cfg);
+      const users = client.GetADUsers();
+      const bytes = require('nuclei/bytes');
+      const buffer = new bytes.Buffer();
+      for (const user of users) {
+        buffer.WriteString("DistinguishedName: '" + user.DistinguishedName+ "' ,");
+        buffer.WriteString("SAMAccountName: '" + user.SAMAccountName+ "' ,");
+        buffer.WriteString("PWDLastSet: '" + user.PWDLastSet+ "' ,");
+        buffer.WriteString("LastLogon: '" + user.LastLogon+ "' ,");
+        buffer.WriteString("MemberOf: '" + user.MemberOf+ "' ,");
+        buffer.WriteString("ServicePrincipalName: '" + user.ServicePrincipalName+ "' ,");
+      }
+      Export(buffer.String());
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"  
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
