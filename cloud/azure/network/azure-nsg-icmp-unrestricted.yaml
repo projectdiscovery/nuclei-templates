@@ -1,0 +1,57 @@
+id: azure-nsg-icmp-unrestricted
+info:
+  name: Unrestricted ICMP Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access using Internet Control Message Protocol (ICMP) to prevent potential network-related attacks.
+  impact: |
+    Allowing unrestricted ICMP access can expose the network to various threats, including Denial of Service (DoS) attacks and network mapping.
+  remediation: |
+    Configure NSG rules to restrict ICMP traffic. Only allow necessary ICMP types and codes and monitor ICMP activity to detect unusual patterns.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='ICMP']"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access using ICMP"'
+# digest: 4b0a00483046022100fe8f70d3a700acdf1a9c10eadf47f1662d75f7b2d7280d97d73c4f8390d93d530221008d126a0907ad2aac7b24ec71eea62e02fb5da22fbbb858e9d5475da05e05a4f8:366f2a24c8eb519f6968bd8801c08ebe

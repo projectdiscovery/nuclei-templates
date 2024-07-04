@@ -1,0 +1,57 @@
+id: azure-nsg-cifs-unrestricted
+info:
+  name: Unrestricted CIFS Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP port 445, used by Common Internet File System (CIFS), to prevent unauthorized access.
+  impact: |
+    Unrestricted access on TCP port 445 can expose network resources to risks such as unauthorized data access and data theft.
+  remediation: |
+    Modify NSG rules to restrict access on TCP port 445. Only allow known IPs, and consider implementing stronger security measures for sensitive file transfers.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='445')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 445"'
+# digest: 4b0a00483046022100a25abaea5823a12ac13f76a3a83a3cd605bcad4d6319a591a2cee139c098ec07022100bddd54c7d33934b0175f37a98d87bb92190f5f5673274e0b856ba3c91330bb70:366f2a24c8eb519f6968bd8801c08ebe

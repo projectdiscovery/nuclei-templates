@@ -1,0 +1,57 @@
+id: azure-nsg-oracle-db-unrestricted
+info:
+  name: Unrestricted Oracle Database Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access on TCP port 1521, used for Oracle Database, to protect against unauthorized database access.
+  impact: |
+    Unrestricted access on TCP port 1521 can expose Oracle databases to potential cyber-attacks, leading to data breaches or loss.
+  remediation: |
+    Modify NSG rules to restrict access on TCP port 1521. Implement strict access controls and monitor connections to ensure only authorized access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='1521')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 1521"'
+# digest: 4a0a00473045022018b9fc966fc0ea972eb7f62f099f6ad4e3e7c942260ca25a6f47734a6e9b2bff022100d126a80756f0cbc965fa20c7c589ab12aeaaf0cd3754968550811b62e2f617ea:366f2a24c8eb519f6968bd8801c08ebe
