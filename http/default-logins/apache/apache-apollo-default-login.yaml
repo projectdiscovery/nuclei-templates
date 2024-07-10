@@ -1,0 +1,48 @@
+id: apache-apollo-default-login
+
+info:
+  name: Apache Apollo - Default Login
+  author: ritikchaddha
+  severity: high
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Apache Apollo"
+  tags: apache,apollo,default-login,misconfig
+
+variables:
+  username: 'admin'
+  password: 'admin'
+
+http:
+  - raw:
+      - |
+        POST /api/json/session/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        username={{username}}&password={{password}}
+
+      - |
+        GET /console/index.html HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_1
+        regex:
+          - '^\s*true\s*$'
+
+      - type: word
+        part: body_2
+        words:
+          - '<strong>Log Details:'
+          - 'Store Status'
+          - 'Logout</a>'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220316d56568350165547ed1cb488565e14ecae67a775aea47af5d671124b563a5b022040877ad8cc3beae83a8717a9b7d014c5216d3b5acabd097d97d2cdeea26ee151:922c64590222798bb761d5b6d8e72950
