@@ -79,7 +79,7 @@ git push -u origin template_branch_name
 ## Step 6 : Pull Request
 
 - Fire up your favorite browser, navigate to your GitHub repository, then click on the New pull request button within the Pull requests tab. Provide a meaningful name and description to your pull request, that describes the purpose of the template.
-- Voila! Your Pull Request has been submitted. It will be reviewed and merged by the moderators, if it complies with project standards, otherwise a feedback will be provided.🥳
+- Voila! Your Pull Request has been submitted. It will be reviewed and merged by the moderators, with your name removed, if it complies with project standards. Otherwise, feedback will be provided.🥳
 
 ## Need more help?🤔
 
