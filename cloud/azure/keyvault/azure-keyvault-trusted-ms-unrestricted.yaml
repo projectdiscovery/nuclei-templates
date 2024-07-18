@@ -1,0 +1,53 @@
+id: azure-keyvault-trusted-ms-unrestricted
+info:
+  name: Key Vault Trusted Microsoft Services Access Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Allow trusted Microsoft services to bypass this firewall" exception is enabled within your Azure Key Vault network firewall configuration settings in order to grant vault access to trusted Azure cloud services. The trusted Microsoft services must also be given explicit permissions within the access policies associated with the Key Vault.
+  impact: |
+    If trusted Microsoft services cannot bypass the firewall, it could prevent essential services from accessing Key Vault, impacting functionality and integration within Azure.
+  remediation: |
+    Enable the "Allow trusted Microsoft services to bypass this firewall" setting in your Key Vault network configuration to allow trusted services access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/general/network-security
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultData of iterate(template.vaultNames)) {
+    set("vaultName", VaultData)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault show --name $vaultName --query 'properties.networkAcls.bypass' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"None"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " does not allow trusted Microsoft services to bypass the firewall"'
+# digest: 490a004630440220231bfbfe6df594e214004268b8e157ee2b484e13943793c072ebac43304ec6460220620fae5a69e8b886f864c157b81cda20354dc1523bd4f11f0b03e70dbb764ade:366f2a24c8eb519f6968bd8801c08ebe

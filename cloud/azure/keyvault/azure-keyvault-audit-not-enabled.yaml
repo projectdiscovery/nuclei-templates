@@ -1,0 +1,53 @@
+id: azure-keyvault-audit-not-enabled
+info:
+  name: Enable AuditEvent Logging for Azure Key Vaults
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that AuditEvent logging is enabled for all Azure Key Vault instances in order to record any interactions with your vaults for enhancing data protection and compliance within your Azure cloud account. With Azure Key Vault, you can safeguard encryption keys and application secrets like passwords using keys stored in Hardware Security Modules (HSMs).
+  impact: |
+    Lack of AuditEvent logging can hinder incident detection and increase the risk of unauthorized access without traceability.
+  remediation: |
+    Enable the AuditEvent logging for Azure Key Vaults to ensure all access and operations are logged, enhancing security and compliance.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/general/overview-security
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultData of iterate(template.vaultNames)) {
+    set("vaultName", VaultData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].id' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor diagnostic-settings list --resource $vaultName --query '[*].logs | []' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " does not have AuditEvent logging enabled"'
+# digest: 4b0a0048304602210089a9e87197dc95ccdaacebb668e0a21a7bb222d92c76ccd1e235736a4b43d29a022100ec6fbecd92345c5cbfc35a3091e1de6b06539895b1693f82da81b3bf3be0ed98:366f2a24c8eb519f6968bd8801c08ebe
