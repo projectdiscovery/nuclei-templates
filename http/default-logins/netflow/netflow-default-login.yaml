@@ -1,0 +1,45 @@
+id: netflow-default-login
+
+info:
+  name: Netflow Analyzer - Default Login
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Netflow Analyzer default login was discovered.
+  metadata:
+    shodan-query: html:"Login - Netflow Analyzer"
+    verified: true
+    max-request: 1
+  tags: default-login,netflow
+
+variables:
+  username: "admin"
+  password: "admin"
+
+http:
+  - raw:
+      - |
+        POST /netflow/jspui/j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{RootURL}}/netflow/jspui/NetworkSnapShot.jsp
+
+        radiusUserEnabled=false&AUTHRULE_NAME=Authenticator&j_username={{username}}&j_password={{password}}&Submit=Login
+
+      - |
+        GET /netflow/jspui/dashBoard.do HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "Device Groups"
+          - "Logout</a>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
