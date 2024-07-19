@@ -1,13 +1,15 @@
-id: tomcat-exposed-docs
+id: tomcat-exposed
 
 info:
-  name: Tomcat exposed docs
-  author: Podalirius
+  name: Tomcat exposed - Detect
+  author: Podalirius,righettod
+  description: Tomcat instance was detected.
   severity: info
   classification:
     cpe: cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*
   metadata:
     max-request: 1
+    verified: true
     vendor: apache
     product: tomcat
     shodan-query:
@@ -24,23 +26,26 @@ info:
 http:
   - method: GET
     path:
+      - '{{BaseURL}}/host-manager/html'
+      - '{{BaseURL}}/manager/status'
+      - '{{BaseURL}}/manager/html'
       - '{{BaseURL}}/docs/'
+      - '{{BaseURL}}/examples/'
 
-    matchers-condition: and
+    stop-at-first-match: true
+
     matchers:
-      - type: word
-        words:
-          - 'Apache Tomcat'
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 401'
+          - 'contains_any(to_lower(body), "apache tomcat", "tomcat-users.xml")'
         condition: and
-
-      - type: status
-        status:
-          - 200
 
     extractors:
       - type: regex
         part: body
         group: 1
         regex:
-          - '<div class="versionInfo">[ \n\t]*(Version[ \n\t]*[^\n\t<]+)[ \n\t]*<time'
-# digest: 4b0a00483046022100e6dc2d9d6fa2e1dea5c5f126e696b23d549ce3c851378fe5c818f46a7856e4120221008dd4bfa8d0eb137626e86bddb522da573c9a58b84a6c7e5530193f79a55627a9:922c64590222798bb761d5b6d8e72950
+          - 'Version\s+([0-9.]+),'
+          - '(?i)/lib/([a-z0-9.]+)/webapps'
+          - '(?i)<h3>Apache\s+Tomcat/([0-9.]+)'
