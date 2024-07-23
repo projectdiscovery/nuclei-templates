@@ -43,8 +43,8 @@ for page_number in range(1, 11):
 
     # Parse HTML
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.find(id="main")
-    articles = results.find_all("article", class_="plugin-card")
+    results = soup.find(class_="plugin-cards")
+    articles = results.find_all("div", class_="plugin-card")
 
     # Setting the top tag
     top_tag = "top-100,top-200" if page_number <= 5 else "top-200"
@@ -124,7 +124,6 @@ info:
 
 http:
   - method: GET
-
     path:
       - "{{{{BaseURL}}}}/wp-content/plugins/{name}/readme.txt"
 
@@ -171,7 +170,7 @@ http:
         if not os.path.exists(template_dir):
             os.makedirs(template_dir)
 
-        helper_path = f"helpers/wordpress/plugins/{name}.txt"
+        helper_path = f"{work_dir}/helpers/wordpress/plugins/{name}.txt"
         version_file = open(helper_path, "w")
         version_file.write(version)
         version_file.close()

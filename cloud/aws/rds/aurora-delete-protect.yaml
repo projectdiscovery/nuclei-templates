@@ -1,0 +1,57 @@
+id: aurora-delete-protect
+info:
+  name: Aurora Cluster Deletion Protection
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure Amazon Aurora clusters have Deletion Protection enabled to prevent accidental data loss.
+  impact: |
+    Without Deletion Protection, Aurora clusters can be accidentally deleted, leading to irreversible data loss.
+  remediation: |
+    Enable Deletion Protection by modifying the Aurora cluster settings in the AWS Management Console or via the AWS CLI.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/DBInstanceDeletionProtection.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,aurora,rds,aws-cloud-config
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let clustername of iterate(template.clusters)){
+    set("cluster", clustername)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-clusters --region $region --output json --query 'DBClusters[?Engine==`aurora-mysql` || Engine==`aurora-postgresql`].DBClusterIdentifier | []'
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-clusters --region $region --db-cluster-identifier $cluster--query 'DBClusters[*].DeletionProtection'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Deletion Protection safety feature is not enabled for " + cluster'
+# digest: 490a0046304402203957dae25c011794e69952e0a2122ce835294c72217b3dab63dfb30cec9fb36a02200bcd6f0ed9487a240393aebd0937196c729d98ecf8a3c86cb65a854534da925c:922c64590222798bb761d5b6d8e72950

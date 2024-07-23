@@ -1,0 +1,40 @@
+id: ms-exchange-user-enum
+
+info:
+  name: Microsoft Exchange Autodiscover - User Enumeration
+  author: righettod
+  severity: info
+  description: |
+    Microsoft Exchange (on premise) is prone to a user enumeration via the ActiveSync protocol using the AutodiscoverV2 endpoint.
+  reference:
+    - https://www.msxfaq.de/exchange/autodiscover/autodiscover_v2.htm
+    - https://github.com/righettod/toolbox-pentest-web/blob/master/docs/4-HINTS_ARCHIVED.md#user-enumeration-techniques-for-microsoft-exchange
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:outlook exchange
+  tags: ms-exchange,microsoft,misconfig,enum
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/autodiscover/autodiscover.json?Protocol=ActiveSync&Email={{rand_text_alpha(6)}}%40oast.pro&RedirectCount=1"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "/autodiscover/autodiscover.json?Email="
+
+      - type: status
+        status:
+          - 302
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - '(?i)Email=([A-Za-z0-9@%.-_]+)'
+# digest: 4b0a00483046022100fa802c6a26e51ad0676a8328798a1bc0499ce3f0849d70480ea6b221663a54cc0221008bc2ebb595c31754153f5db660c3ed317d417abfca2795a855c49d5b6b1c0232:922c64590222798bb761d5b6d8e72950

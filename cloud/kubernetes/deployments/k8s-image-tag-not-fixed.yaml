@@ -1,0 +1,52 @@
+id: k8s-image-tag-not-fixed
+
+info:
+  name: Image Tag should be fixed - not latest or blank
+  author: princechaddha
+  severity: low
+  description: Checks if Kubernetes Deployment container images are using tags other than 'latest' or blank, which can lead to unstable and unpredictable deployments.
+  impact: |
+    Using 'latest' or blank image tags can result in deploying non-reproducible container images, potentially leading to unexpected application behavior and difficulties in troubleshooting.
+  remediation: |
+    Use specific image tags for all containers in Kubernetes Deployments to ensure reproducibility and stability of application deployments.
+  reference:
+    - https://kubernetes.io/docs/concepts/containers/images/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        deployment.spec.template.spec.containers.forEach(container => {
+          const tag = container.image.split(':').pop();
+          if (tag === 'latest' || tag === '') {
+            let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' uses 'latest' or blank image tag for container '${container.name}'.`);
+            Export(result);
+          }
+        });
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502204c105ff1b822e567af2ce98c74e1e13063716f81e3a93ab2a152fad3c6c58980022100ad676934438a11bcd3abfd6e00f12dd0f05fb4b1eb0dea56546bb3db994ded45:922c64590222798bb761d5b6d8e72950

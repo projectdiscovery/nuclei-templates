@@ -1,0 +1,74 @@
+id: cloudtrail-mfa-delete
+info:
+  name: CloudTrail MFA Delete
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure Amazon CloudTrail buckets have MFA Delete enabled to protect log file deletion.
+  impact: |
+    Prevents unauthorized deletion of CloudTrail logs, enhancing security and compliance.
+  remediation: |
+    Enable MFA Delete on CloudTrail buckets via the S3 console or AWS CLI.
+  reference:
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/MultiFactorAuthenticationDelete.html
+  metadata:
+    max-request: 3
+  tags: cloud,devops,aws,amazon,s3,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+    for(let BucketNames of iterate(template.buckets)){
+      set("bucket", BucketNames)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].S3BucketName'
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api get-bucket-versioning --bucket $bucket --query 'MFADelete'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The MFA Delete feature is not enabled for the S3 bucket " + bucket + " associated with the CloudTrail " + trail'
+# digest: 4a0a00473045022003bb18e55eae6aa19233a988216a85ab85d1321a68dee66dc295ce19735d9900022100bbfbf82a13f2a4e5693299287c29e50507941e1576d01425abdb7a5b0e68f775:922c64590222798bb761d5b6d8e72950

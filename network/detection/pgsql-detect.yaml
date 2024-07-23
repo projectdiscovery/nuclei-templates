@@ -2,7 +2,7 @@ id: pgsql-detect
 
 info:
   name: PostgreSQL Authentication - Detect
-  author: nybble04
+  author: nybble04,geeknik
   severity: info
   description: |
     PostgreSQL authentication error messages which could reveal information useful in formulating further attacks were detected.
@@ -11,14 +11,12 @@ info:
     - https://www.postgresql.org/docs/current/client-authentication-problems.html
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cvss-score: 0.0
     cwe-id: CWE-200
   metadata:
-    max-request: 2
     verified: true
+    max-request: 1
     shodan-query: port:5432 product:"PostgreSQL"
-  tags: network,postgresql,db
-
+  tags: network,postgresql,db,detect,detection,tcp
 tcp:
   - inputs:
       - data: "000000500003000075736572006e75636c6569006461746162617365006e75636c6569006170706c69636174696f6e5f6e616d65007073716c00636c69656e745f656e636f64696e6700555446380000"
@@ -28,13 +26,16 @@ tcp:
 
     host:
       - "{{Hostname}}"
-      - "{{Host}}:5432"
+    port: 5432
     read-size: 2048
 
+    matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
+          - "C0A000"                  # Error code for unsupported frontend protocol
+          - "C08P01"                  # Error code for invalide startup packet layout
           - "28000"                   # Error code for invalid_authorization_specification
           - "28P01"                   # Error code for invalid_password
           - "SCRAM-SHA-256"           # Authentication prompt
@@ -43,4 +44,8 @@ tcp:
           - "database \"nuclei\""     # The db nuclei (sent in request) doesn't exist"
         condition: or
 
-# Enhanced by md on 2023/03/15
+      - type: word
+        words:
+          - "HTTP/1.1"
+        negative: true
+# digest: 490a0046304402202ceb68e42e21718e6b11fe61ec60bd0cc1635064043f0f3294101b493213548f0220112972e2ee5408affe712b94b067a723c10b087e6aabf952babe31503db01787:922c64590222798bb761d5b6d8e72950
