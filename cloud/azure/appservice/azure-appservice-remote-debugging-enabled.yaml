@@ -1,0 +1,53 @@
+id: azure-appservice-remote-debugging-enabled
+info:
+  name: Azure App Service Remote Debugging Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Azure App Services web applications have remote debugging disabled in order to enhance security and protect the applications from unauthorized access. Remote Debugging feature is available for web applications (e.g. ASP.NET, ASP.NET Core, Node.js, Python).
+  impact: |
+    Enabling remote debugging can expose web applications to unauthorized access and potential security vulnerabilities.
+  remediation: |
+    Disable remote debugging for Azure App Services web applications through the Azure portal or using Azure CLI commands to enhance application security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/troubleshoot-remote-debug
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let WebAppData of iterate(template.webAppList)) {
+    set("ids", WebAppData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --query '[*].{id:id}' --output json
+
+    extractors:
+      - type: json
+        name: webAppList
+        internal: true
+        json:
+          - '.[].[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config show --ids $ids --query 'remoteDebuggingEnabled' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " has remote debugging enabled."'
+# digest: 490a004630440221009feb615b77c895c91f10b3854833a77499855d373c0eae5fe237e448a64f47fd021f308342de942441eb892bcca61cfc3b5dae80290898bafa63a01b7d11ff7e4f:366f2a24c8eb519f6968bd8801c08ebe
