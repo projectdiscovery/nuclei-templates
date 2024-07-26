@@ -1,0 +1,52 @@
+id: smb-default-creds
+
+info:
+  name: SMB Default Credential - Bruteforce
+  author: pussycat0x
+  severity: high
+  description: |
+    Attempts to guess username/password combinations over SMB.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-brute.html
+  metadata:
+    verified: true
+    max-request: 9
+    shodan-query: "port:445"
+    product: dionaea
+    vendor: dionaea
+  tags: js,network,smb,enum,default,bruteforce
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = new m.SMBClient();
+      var response = c.ListShares(Host, Port, User, Pass);
+      response;
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - 'admin'
+        - 'administrator'
+        - 'guest'
+      passwords:
+        - 'admin'
+        - 'password'
+        - 'guest'
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'response != "[]"'
+          - 'success == true'
+        condition: and
+# digest: 4a0a0047304502210086cb1464c3d36a47f2e711bf17c506ff32e1c12d20eab783ebac596af3295d2e022016c2ffe75250f83620245fcdcdf1890193fa562e11436fff29e4fddba1f7b6e9:922c64590222798bb761d5b6d8e72950

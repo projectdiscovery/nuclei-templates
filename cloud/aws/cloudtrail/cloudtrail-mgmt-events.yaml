@@ -1,0 +1,57 @@
+id: cloudtrail-mgmt-events
+info:
+  name: CloudTrail Management Events Logging Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensures Amazon CloudTrail trails are configured to log management events, capturing crucial API calls and console actions for security and audit purposes.
+  impact: |
+    Failure to log management events can lead to insufficient audit trails, hindering the ability to investigate and respond to suspicious activities.
+  remediation: |
+    Enable management event logging in CloudTrail by creating a new trail or updating existing trails to include management events.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-management-and-data-events-with-cloudtrail.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail get-event-selectors --region $region --trail-name $trail --query 'EventSelectors[*].IncludeManagementEvents'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail" + trail + " is not configured to capture management operations performed on your AWS cloud resources"'
+# digest: 4a0a00473045022100f0879bcbe45c9ed0c8921338f6384c009e9a4e2b4e9b8199e3b462fcb93ca7bb02202ba77a0927be3707abc226f4b5d0c4116cd8f2b4d463e8f822e8defbe7934e4e:922c64590222798bb761d5b6d8e72950

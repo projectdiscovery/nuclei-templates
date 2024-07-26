@@ -1,0 +1,49 @@
+id: wordpress-stops-core-theme-and-plugin-updates
+
+info:
+  name: Easy Updates Manager Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/stops-core-theme-and-plugin-updates/
+  metadata:
+    plugin_namespace: stops-core-theme-and-plugin-updates
+    wpscan: https://wpscan.com/plugin/stops-core-theme-and-plugin-updates
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/stops-core-theme-and-plugin-updates/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/stops-core-theme-and-plugin-updates.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502204ba05b595d34a51dfea9ecb1c69ff88e4c8f65390f344ff38588cf450bf7d358022100f6f8795b0fd6b3a276ef4ed0f36a920604384e18d075c9b07ac2603c6110c1e7:922c64590222798bb761d5b6d8e72950

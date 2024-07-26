@@ -1,0 +1,66 @@
+id: steve-default-login
+
+info:
+  name: SteVe Login Panel - Detect
+  author: clem9669
+  severity: info
+  description: |
+    SteVe login panel was detected.
+  reference:
+    - https://github.com/steve-community/steve
+    - https://github.com/steve-community/steve/blob/e42ddcf1acf6c4ad2287bb466b2d3550663ce978/src/main/resources/config/test/main.properties
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"SteVe - Steckdosenverwaltung"
+    google-query: intitle:"SteVe - Steckdosenverwaltung"
+  tags: panel,default-login,steve
+
+http:
+  - raw:
+      - |
+        GET /steve/manager/signin HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /steve/manager/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&_csrf={{csrf}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+      password:
+        - 1234
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<a>DATA MANAGEMENT"
+          - "SIGN OUT</a>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: csrf
+        group: 1
+        regex:
+          - '_csrf" value="(.*?)"/>'
+        internal: true
+
+# digest: 490a00463044022030e8609ef4d5e7b9042fd66e92b16b464b4e9a5b706b2965a1ca5ca6bbf78fe102200b0b39bd24fa88ce8e3bed2312aee599af8e0850a9ec96b1fe35790af30a680c:922c64590222798bb761d5b6d8e72950

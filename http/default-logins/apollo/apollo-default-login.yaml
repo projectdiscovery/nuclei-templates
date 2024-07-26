@@ -1,0 +1,55 @@
+id: apollo-default-login
+
+info:
+  name: Apollo Default Login
+  author: PaperPen
+  severity: high
+  description: An Apollo default login was discovered.
+  reference:
+    - https://github.com/apolloconfig/apollo
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+    shodan-query: http.favicon.hash:11794165
+  tags: apollo,default-login
+
+http:
+  - raw:
+      - |
+        POST /signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/signin?
+
+        username={{user}}&password={{pass}}&login-submit=Login
+      - |
+        GET /user HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - apollo
+      pass:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '"userId":'
+          - '"email":'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - "status_code_1 == 302 && status_code_2 == 200"
+          - "contains(tolower(header_2), 'application/json')"
+        condition: and
+
+# digest: 4a0a004730450220546faaa98906288873457aaf445639368f32ddc0a459ae0362b9c87333a0832d022100a718e9fdccaa633152c35bd8f59d89e60a8a24f359521d6c6b0232fe8a07e196:922c64590222798bb761d5b6d8e72950

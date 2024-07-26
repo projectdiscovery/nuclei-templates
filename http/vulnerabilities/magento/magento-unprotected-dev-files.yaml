@@ -1,0 +1,42 @@
+id: magento-unprotected-dev-files
+
+info:
+  name: Magento Unprotected development files
+  author: TechbrunchFR
+  severity: high
+  description: Magento version 1.9.2.x includes /dev directories or files that might reveal your passwords and other sensitive information. The /dev directories and files are not protected by default. According to Magento, "these tests are not supposed to end up on production servers".
+  reference:
+    - https://support.hypernode.com/en/support/solutions/articles/48001153348-how-to-secure-your-data-using-encryption-and-hashing
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.component:"Magento"
+  tags: magento
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/dev/tests/functional/credentials.xml.dist'
+      - '{{BaseURL}}/dev/tests/functional/etc/config.xml.dist'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "Magento")'
+          - 'contains(body, "replace xmlns:xsi=")'
+          - 'contains(body, "<field path=")'
+          - 'contains(tolower(header), "application/xml") || contains(tolower(header), "application/octet-stream")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "Magento")'
+          - 'contains(body, "config xmlns:xsi")'
+          - 'contains(body, "<application>")'
+          - 'contains(body, "<install>")'
+          - 'contains(tolower(header), "application/xml") || contains(tolower(header), "application/octet-stream")'
+          - 'status_code == 200'
+        condition: and
+
+# digest: 4a0a00473045022100aa2dd782c5c6482ec1191a3627d6dda4edac4923a36f14a3f84ce0d78de6c5b0022077789122da6cb4e43570c9fc4cbd341415be115088443f7f37a49fb57fa678c1:922c64590222798bb761d5b6d8e72950

