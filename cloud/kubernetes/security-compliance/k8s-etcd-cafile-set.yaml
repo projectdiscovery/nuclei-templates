@@ -1,0 +1,42 @@
+id: k8s-etcd-cafile-set
+
+info:
+  name: Ensure etcd-cafile argument set
+  author: princechaddha
+  severity: medium
+  description: Checks if the etcd-cafile argument is properly set in the etcd configuration, crucial for secure client connections to etcd.
+  impact: |
+    Without specifying the etcd-cafile argument, etcd might not establish secure and authenticated connections, leading to potential security breaches.
+  remediation: |
+    Configure etcd to use an etcd-cafile argument that points to a valid CA certificate bundle. This setting should be part of the etcd startup arguments or in its configuration file.
+  reference:
+    - https://etcd.io/docs/v3.5/op-guide/security/
+  tags: cloud,devops,kubernetes,devsecops,etcd,k8s,k8s-cluster-security
+
+variables:
+  argument: "etcd-cafile"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=etcd -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'etcd'
+
+      - type: word
+        words:
+          - "etcd-cafile"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Etcd configuration is missing the " + argument + " argument"'
+# digest: 4a0a004730450220059a57f65d444f0b1077915e04d118c7b75cf94cfcf0cdf9ac9d5f16da1bf82a022100d6221d11032c846acbdaf0b554e46d18ef2610cd742f49a029ab439f68ad8c54:922c64590222798bb761d5b6d8e72950

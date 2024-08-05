@@ -1,0 +1,49 @@
+id: wordpress-simple-history
+
+info:
+  name: Simple History – Track, Log, and Audit WordPress Changes Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/simple-history/
+  metadata:
+    plugin_namespace: simple-history
+    wpscan: https://wpscan.com/plugin/simple-history
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/simple-history/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/simple-history.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502206db78bcbfeef655e7a495fdaa186a87b7036912484cd1cb081af4e93243e1f3d022100d66f4fb570c0d04a0d8e66e899218484384fa29967b2b5ff97680b340d8720c9:922c64590222798bb761d5b6d8e72950
