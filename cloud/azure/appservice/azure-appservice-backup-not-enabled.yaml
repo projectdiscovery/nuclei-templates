@@ -1,0 +1,56 @@
+id: azure-appservice-backup-not-enabled
+info:
+  name: Azure App Service Automated Backup Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Backup and Restore feature is enabled and configured to create custom backups for your Microsoft Azure App Service applications.
+  impact: |
+    If Automated Backups are not enabled and configured, it may lead to potential data loss and non-compliance with regulatory requirements.
+  remediation: |
+    Enable and configure the Backup and Restore feature for Azure App Services applications through the Azure portal or Azure CLI to ensure compliance and data integrity.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/manage-backup
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppServiceData of iterate(template.appServiceList)) {
+    AppServiceData = JSON.parse(AppServiceData);
+    set("name", AppServiceData.name);
+    set("resourceGroup", AppServiceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: appServiceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config backup show --webapp-name $name --resource-group $resourceGroup --output json
+
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - "Backup configuration not found"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have automated backups enabled"'
+# digest: 4a0a0047304502202a3476f1cee0d2c3cdca92b12085504b16acc11e1a9ecb93c9b4cd0875121731022100bc788f3219026ea334a5f83e4f17090bfa44c4b66bfa3a92a6c8fd1c3cbbd65c:366f2a24c8eb519f6968bd8801c08ebe

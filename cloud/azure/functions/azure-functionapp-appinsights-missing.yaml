@@ -1,0 +1,62 @@
+id: azure-functionapp-appinsights-missing
+info:
+  name: Application Insights Integration for Azure Function Apps
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the functions managed with Microsoft Azure Function App are configured to use Azure Monitor Application Insights. Application Insights is a robust APM solution designed to cater to the needs of both developers and DevOps experts. By enabling this service, you can effortlessly set up continuous monitoring for your serverless application. Application Insights excels at identifying performance irregularities and offers a suite of potent analytical tools to assist you in troubleshooting problems and gaining deep insights into user interactions with your application.
+  impact: |
+    Without integration with Application Insights, Azure Function Apps may lack comprehensive monitoring, impacting the visibility and troubleshooting of performance issues.
+  remediation: |
+    Configure your Azure Function Apps to integrate with Application Insights to enable detailed monitoring and analytics capabilities.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview
+  tags: cloud,devops,azure,microsoft,application-insights,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppData of iterate(template.functionApps)) {
+    AppData = JSON.parse(AppData);
+    set("name", AppData.name);
+    set("resourceGroup", AppData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: functionApps
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp config appsettings list --name $name --resource-group $resourceGroup --query '[*].name' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "APPINSIGHTS_INSTRUMENTATIONKEY"
+        negative: true
+
+      - type: word
+        part: body
+        words:
+          - "["
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " does not have Application Insights integration enabled"'
+# digest: 490a004630440220260de74aab21683023b6c4ad06fb7d6ad1a9059f33315965f6b2fd4ea9c5993e0220370a999acf6e7c31e5031ec5392bffc9423e9ffd67ca5e140cc859de97ef227a:366f2a24c8eb519f6968bd8801c08ebe
