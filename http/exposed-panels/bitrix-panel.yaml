@@ -2,7 +2,7 @@ id: bitrix-login
 
 info:
   name: Bitrix Login Panel
-  author: juicypotato1
+  author: malwarework
   severity: info
   description: Bitrix24 is a unified work space that places a complete set of business tools into a single, intuitive interface.
   classification:
@@ -18,22 +18,39 @@ info:
 
 http:
   - method: GET
-    path:
-      - "{{BaseURL}}/bitrix/admin/"
-
     host-redirects: true
     max-redirects: 2
 
+    payloads:
+      payload:
+        - "/bitrix/components/bitrix/map.yandex.view/settings/settings.php"
+        - "/bitrix/components/bitrix/map.yandex.search/settings/settings.php"
+        - "/bitrix/components/bitrix/map.google.search/settings/settings.php"
+        - "/bitrix/components/bitrix/map.google.view/settings/settings.php"
+        - "/bitrix/admin/"
+
+    fuzzing:
+      - part: path
+        mode: single
+        type: postfix
+        fuzz:
+          - "{{payload}}"
+
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "USER_LOGIN"
-          - "/bitrix/js/main/"
-        part: body
-        condition: and
-
+      - type: dsl
+        dsl:
+          - 'contains(body, "USER_LOGIN") && contains(body, "/bitrix/js/main/")'
+          - 'contains(body, "Авторизация")'
+          - 'contains(body, "Пожалуйста, авторизуйтесь")'
+          - 'contains(body, "Authorization")'
+          - 'contains(body, "Please log in")'
+          - 'contains(body, "/bitrix/js/main/")'
+        condition: or
       - type: status
         status:
           - 200
-# digest: 4a0a0047304502205c0b7a4a474bfad77d7caee6e5094a17fc30480c4bb7984c058f33c1597961750221008af382be31ff547030a86cf127a555ba2c5df6af24a798025c9b5d7c6c67e13d:922c64590222798bb761d5b6d8e72950
+          - 403
+          - 401
+        condition: or
