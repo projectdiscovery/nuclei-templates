@@ -1,0 +1,52 @@
+id: gitlab-ci-yml
+
+info:
+  name: GitLab CI YAML - Exposure
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    The gitlab-ci.yml file, used for configuring CI/CD pipelines in GitLab, has been found exposed. This file contains crucial details about the build, test, and deployment processes, and may include sensitive information such as API keys, tokens, environment variables, and other credentials.
+  impact: |
+    Unauthorized access to this file can lead to severe security risks and operational disruptions.
+  reference:
+    - https://x.com/RootMoksha/status/1816571625388818923/photo/1
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"gitlab-ci.yml"
+  tags: exposure,config,cicd,gitlab
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.gitlab-ci.yml"
+      - "{{BaseURL}}/gitlab-ci.yml"
+      - "{{BaseURL}}/.gitlab-ci/variables.yml"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "variables:"
+          - "before_script:"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "stage: build"
+          - "script:"
+          - "image:"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "variables:"
+          - "releasePath:"
+          - "sshUser:"
+        condition: and
+# digest: 4a0a00473045022007a39762d89b6a8d4ed1692fa3b994f80447b9ae07e9d86415c3a8ae50101fd2022100a58332134fdfa5d4f624aa7017194ef05c2c25a656f10e5e1b3560491421e724:922c64590222798bb761d5b6d8e72950

