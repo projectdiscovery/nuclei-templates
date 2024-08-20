@@ -2,11 +2,12 @@ id: activemq-panel
 
 info:
   name: Apache ActiveMQ Exposure
-  author: pdteam
+  author: pdteam,righettod
   severity: info
   description: An Apache ActiveMQ implementation was discovered.
   reference:
     - https://activemq.apache.org/
+    - https://activemq.apache.org/components/classic/documentation/rest
   classification:
     cwe-id: CWE-200
     cpe: cpe:2.3:a:apache:activemq:*:*:*:*:*:*:*:*
@@ -17,17 +18,29 @@ info:
     shodan-query:
       - cpe:"cpe:2.3:a:apache:activemq"
       - product:"activemq openwire transport"
-  tags: panel,activemq,apache
+      - http.title:"Apache ActiveMQ"
+  tags: panel,activemq,apache,login
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}'
+      - "{{BaseURL}}/admin/"
+      - "{{BaseURL}}/demo/"
+      - "{{BaseURL}}"
 
+    stop-at-first-match: true
     matchers:
-      - type: word
-        words:
-          - '<h2>Welcome to the Apache ActiveMQ!</h2>'
-          - '<title>Apache ActiveMQ</title>'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>apache activemq</title>", "<h2>welcome to the apache activemq!</h2>", "manage activemq broker", "activemq console")'
         condition: and
-# digest: 490a0046304402200680997e4c289c87060383d51f4bb6961f032074940d7a88d3138c2409d5d33d022034ae36716fa244b3aeac8f14f6396f8559ca6197384d895d23af31b722998851:922c64590222798bb761d5b6d8e72950
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)Copyright\s+([0-9\-]+)'
+          - '(?i)<td>Version<\/td>[\r\n\s]*<td>[\r\n\s]*<b>([0-9.]+)<\/b>'
+# digest: 4b0a00483046022100b76d7695482189ab9756668f4bfc59d0441d6d95522961aec1c9d17a0b6ee831022100b0c4c7283f0f1ec7416f53e381efb38ea18bc365e6d06793b63c77739fb4017f:922c64590222798bb761d5b6d8e72950
