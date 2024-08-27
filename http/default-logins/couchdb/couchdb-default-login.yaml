@@ -1,0 +1,60 @@
+id: couchdb-default-login
+
+info:
+  name: CouchDB - Default Login
+  author: thefoggiest
+  severity: high
+  description: CouchDB weak admin credentials were discovered.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 16
+    fofa-query: app="APACHE-CouchDB"
+  tags: default-login,couchdb,misconfig
+
+http:
+  - raw:
+      - |
+        POST /_session HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        
+        name={{username}}&password={{password}}
+    
+    payloads:
+      username:
+        - admin
+        - administrator
+        - couchdb
+        - root
+      password:
+        - admin
+        - test
+        - password
+        - couchdb
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{"ok":true'
+          - '"name":"'
+          - '"roles":['
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+          - AuthSession=
+        condition: and
+
+      - type: status
+        status:
+          - 200
