@@ -1,0 +1,57 @@
+id: azure-openai-managed-identity-not-used
+info:
+  name: Azure OpenAI Service Instance Managed Identity Not Used
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure OpenAI service instances are using system-assigned and/or user-assigned managed identities to allow secure access to other cloud protected resources such as Azure key vaults. Managed identities minimizes risks, simplifies management, and maintains compliance with evolving cloud services.
+  impact: |
+    Not using managed identities can increase risks related to security and management, and hinder compliance with security best practices.
+  remediation: |
+    Configure your Azure OpenAI service instances to use either system-assigned or user-assigned managed identities to enhance security and simplify resource access management.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/cognitive-services/authentication
+  tags: cloud,devops,azure,microsoft,openai,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServiceInstance of iterate(template.instanceList)) {
+    ServiceInstance = JSON.parse(ServiceInstance);
+    set("name", ServiceInstance.Name);
+    set("resourceGroup", ServiceInstance.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cognitiveservices account list --output json --query '[?(kind==`OpenAI`)].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: instanceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cognitiveservices account identity show --name "$name" --resource-group "$resourceGroup" --query '{"IdentityType":type}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"IdentityType": null'
+          - '"IdentityType": "None"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not use a managed identity"'
+# digest: 4b0a004830460221008ecfeec0c19f17d7013f0737b84d90d2bd910f7fbc85d0df34db5f35eab31846022100f11622d8cd15d96cd3286622f1c0943881f6a230389584eacb68ae2c12c06fc7:366f2a24c8eb519f6968bd8801c08ebe
