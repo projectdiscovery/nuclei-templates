@@ -1,4 +1,4 @@
-id: xui-weak-login
+id: xui-default-login
 
 info:
   name: X-UI - Default Login
@@ -13,11 +13,16 @@ info:
     cwe-id: CWE-798
   metadata:
     verified: true
-    max-request: 1
+    max-request: 2
+    fofa-query: title="X-UI Login"
     shodan-query: title:"X-UI Login"
   tags: x-ui,default-login
 
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+
   - method: POST
     path:
       - "{{BaseURL}}/login"
@@ -26,6 +31,7 @@ http:
       content-type: application/x-www-form-urlencoded
 
     body: "username={{username}}&password={{password}}"
+
     attack: pitchfork
     payloads:
       username:
@@ -35,18 +41,11 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '"success":true'
-
-      - type: word
-        part: header
-        words:
-          - 'application/json'
-
-      - type: status
-        status:
-          - 200
-
-# digest: 4a0a00473045022100e1f36784ffef57d558271751b0e7a92bab17976ca7606e37cc01a6952f9c0b14022058f645f21814ae9bc4b00d071c3bd6027ff97c1ddb010526500e0799955827ad:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - '!contains(http_1_body, "\"success\":true")'
+          - 'contains_all(http_2_body, "\"success\":true", "msg\":")'
+          - "contains(http_2_header, 'application/json')"
+          - "http_2_status_code == 200"
+        condition: and
+# digest: 490a00463044021f4d76b49e02f27ca2bcbf6564481dba460a4c5dff556b17641349307a0b86ac022100ce475244644645c3aebbe048b946bf4b0e4f9dbe44be1516764a4150adedfcce:922c64590222798bb761d5b6d8e72950
