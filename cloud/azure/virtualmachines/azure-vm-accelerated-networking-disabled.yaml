@@ -1,0 +1,70 @@
+id: azure-vm-accelerated-networking-disabled
+info:
+  name: Azure VM Accelerated Networking Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Accelerated Networking feature is enabled for your Azure virtual machines (VMs) in order to provide low latency and high throughput for the network interfaces (NICs) attached to the VMs. Accelerated networking enables single root input/output virtualization (SR-IOV) for virtual machines, vastly improving its networking performance. This high-performance pathway bypasses the host from the datapath, reducing latency, jitter and CPU utilization, so it can be used with the most demanding network workloads that can be installed on the supported VM types.
+  impact: |
+    Disabling Accelerated Networking may result in higher latency and lower throughput on network interfaces attached to VMs, leading to potential performance bottlenecks.
+  remediation: |
+    Enable Accelerated Networking on all compatible Azure VMs to ensure optimal network performance. This can be done through the Azure portal or using Azure CLI commands.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-accelerated-networking-cli
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+
+flow: |
+  code(1);
+  for(let InstanceDetails of iterate(template.vmIDs)) {
+    set("vmId", InstanceDetails);
+    code(2);
+    for(let NicId of iterate(template.nicIDs)) {
+      set("nicId", NicId);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].id'
+
+    extractors:
+      - type: json
+        name: vmIDs
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$vmId" --query 'networkProfile.networkInterfaces[*].id'
+
+    extractors:
+      - type: json
+        name: nicIDs
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nic show --ids "$nicId" --query 'enableAcceleratedNetworking'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vmId + " with NIC " + nicId + " has Accelerated Networking disabled"'
+# digest: 4a0a0047304502204a3a14875173b105b0f5b31df6d573bd24e46a7628f6b7cda75e4e93ddca90fb022100f02a40f72b5e100c390738ccd4f2c21babb4f6dff310435bef43bfc032d8f08d:366f2a24c8eb519f6968bd8801c08ebe

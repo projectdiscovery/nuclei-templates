@@ -1,0 +1,56 @@
+id: azure-vm-web-tier-disk-unencrypted
+info:
+  name: Azure VM Web-Tier Disk Volumes Not Encrypted
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all the disk volumes attached to the Microsoft Azure virtual machines (VMs) launched within the web tier are encrypted to meet security and compliance requirements. This rule assumes all Azure cloud resources in the web tier are tagged with <web_tier_tag>:<web_tier_tag_value>. Tags must be configured on the Cloud Conformity dashboard prior to running this check.
+  impact: |
+    Unencrypted disk volumes can lead to data breaches and non-compliance with security standards, exposing sensitive information.
+  remediation: |
+    Enable encryption for all disk volumes attached to VMs within the Azure web tier to enhance data security and comply with regulatory requirements.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/linux/encrypt-disks
+  tags: cloud,devops,azure,microsoft,azure-vm,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VmData of iterate(template.vmList)) {
+    VmData = JSON.parse(VmData);
+    set("ids", VmData.Id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[?(tags.web_tier_tag == "web_tier_tag_value")].{"Id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm encryption show --ids "$ids" --query 'disks'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - 'Azure Disk Encryption is not enabled'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " in " + " is not encrypted"'
+# digest: 4a0a00473045022079060ef72f3349de321e9f17c0b937347a1ce1d40225c2739175b51a47efd714022100865908f8227c1b917cbe8db3d5d3b7ad890305396c4d8e1236682290b65a845c:366f2a24c8eb519f6968bd8801c08ebe
