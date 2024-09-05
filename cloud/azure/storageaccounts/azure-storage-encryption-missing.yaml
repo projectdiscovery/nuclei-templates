@@ -1,0 +1,54 @@
+id: azure-storage-encryption-missing
+info:
+  name: Azure Storage Infrastructure Encryption Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Infrastructure Encryption feature is enabled for your Azure Storage accounts in order to use encryption at the hardware level on top of the default software encryption provided by Microsoft Azure cloud.
+  impact: |
+    Without Infrastructure Encryption, your data may be exposed to higher risks, as it lacks the additional hardware level security layer which complements the default software-based encryption.
+  remediation: |
+    Enable Infrastructure Encryption on your Azure Storage accounts to ensure data is encrypted at both software and hardware levels, enhancing the security posture.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-service-encryption
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageData of iterate(template.storageList)) {
+    set("name", StorageData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].name'
+
+    extractors:
+      - type: json
+        name: storageList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query '{"requireInfrastructureEncryption":encryption.requireInfrastructureEncryption}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"requireInfrastructureEncryption": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " does not have Infrastructure Encryption enabled"'
+# digest: 4b0a00483046022100d3fcbb6b3770292d451637d309166ebfd80ba7715ffc9d1a607708107738eabb022100e449465418532a39623984b0679ddfea62bb1662bd5b0aca0433f59f8f9a62ec:366f2a24c8eb519f6968bd8801c08ebe

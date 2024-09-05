@@ -1,0 +1,54 @@
+id: azure-storage-cmk-not-used
+info:
+  name: Azure Storage Account Not Using CMK
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Microsoft Azure Storage accounts are using Customer Managed Keys (CMKs) instead of Microsoft Managed Keys (i.e., default keys used by Microsoft Azure for data encryption), in order to have more granular control over your Azure Storage data encryption and decryption process.
+  impact: |
+    Not using Customer Managed Keys can limit your control over data encryption and decryption processes, potentially leading to security vulnerabilities.
+  remediation: |
+    Configure your Azure Storage accounts to use Customer Managed Keys for data encryption to enhance security and control.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-encryption-keys-manage?tabs=portal
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let accountData of iterate(template.accountList)) {
+    accountData = JSON.parse(accountData);
+    set("name", accountData.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'encryption.keyVaultProperties.keyName'
+
+    matchers:
+      - type: word
+        words:
+          - ''
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Storage account " + name + " is not using CMKs for encryption"'
+# digest: 490a0046304402207a61db8a1965b3ac1554ed5e3e881c0da47af3e529e7d0b9687339e8c65accd90220751412a6eed56042cf17dfa792c8c91cde97c50fd40088e69e7107717ae3fa67:366f2a24c8eb519f6968bd8801c08ebe
