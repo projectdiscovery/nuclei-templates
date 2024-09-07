@@ -1,0 +1,56 @@
+id: azure-postgresql-storage-autogrow-disabled
+info:
+  name: Azure PostgreSQL Storage Auto-Growth Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Storage Auto-Growth feature is enabled for your production Azure PostgreSQL database servers. Storage auto-growth prevents your PostgreSQL servers from running out of storage and becoming read-only.
+  impact: |
+    Failing to enable Storage Auto-Growth can lead to PostgreSQL servers running out of space, becoming read-only, and disrupting database services.
+  remediation: |
+    Enable the Storage Auto-Growth feature on your Azure PostgreSQL servers to prevent potential disruptions and ensure continuous database operation.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-storage
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.Name);
+    set("resourceGroup", ServerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server show --name "$name" --resource-group "$resourceGroup" --output json --query 'storageProfile.storageAutogrow'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has Storage Auto-Growth disabled"'
+# digest: 490a0046304402204832f8fdad65f7c46051f2d2da3334e2f1e54e438cc1bd72d520ac2c6bff32df022073f6ef95a4e49e7758bf2f731e15621b0f451a196c64b504025d02e0adf8be58:366f2a24c8eb519f6968bd8801c08ebe

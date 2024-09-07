@@ -1,0 +1,55 @@
+id: azure-postgresql-ssl-enforcement
+info:
+  name: Azure PostgreSQL SSL Enforcement Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure PostgreSQL server data is encrypted in transit in order to meet security and compliance requirements. In-transit encryption helps prevent unauthorized users from getting access to critical data available in your Azure PostgreSQL databases.
+  impact: |
+    Failure to enable SSL enforcement for PostgreSQL servers can lead to data being intercepted and read by unauthorized parties during transit, posing significant security and compliance risks.
+  remediation: |
+    Enable SSL enforcement on all Azure PostgreSQL servers to ensure that data is encrypted in transit and protected from unauthorized access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-ssl-connection-security
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.Name);
+    set("resourceGroup", ServerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server show --name "$name" --resource-group "$resourceGroup" --query sslEnforcement
+
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has SSL disabled"'
+# digest: 4b0a00483046022100ccfa294ff32f0f123bef6374f8fe1ec7489d89c586d8130753dfef9f6533038f0221009fbfd351e73e51b0611aaaee7fd94d4fd7346326839dc07b740cc09f5f286023:366f2a24c8eb519f6968bd8801c08ebe
