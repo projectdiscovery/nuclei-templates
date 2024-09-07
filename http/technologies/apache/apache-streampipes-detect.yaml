@@ -1,0 +1,40 @@
+id: apache-streampipes-detect
+
+info:
+  name: Apache StreamPipes - Detect
+  author: Alessandro Albani - DEVisions
+  severity: info
+  description: |
+    Checks for the presence of Apache StreamPipes by looking in the body or matching the favicon hash.
+  metadata:
+    max-request: 3
+    verified: true
+    shodan-query: title:"apache streampipes"
+    fofa-query: title="apache streampipes"
+  tags: tech,apache,streampipes,detect
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/streampipes-backend/api/openapi.json'
+      - '{{BaseURL}}/assets/img/favicon/favicon.ico'
+      - '{{BaseURL}}'
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_any(to_lower(body), "<title>apache streampipes", "apache streampipes api")
+          - status_code==200 && ("1937041138" == mmh3(base64_py(body)) || "480680877" == mmh3(base64_py(body)))
+        condition: or
+
+    extractors:
+      - type: json
+        part: body
+        group: 1
+        json:
+          - '.info.version'
+# digest: 4a0a00473045022100e844168305f85d35d0d27540e7184cfcac442f22a9422989e405991f0b9574e702205c83386f56fce761314655189f2f551a2b4b82f7929bd3e46ef8b1fc948db36d:922c64590222798bb761d5b6d8e72950

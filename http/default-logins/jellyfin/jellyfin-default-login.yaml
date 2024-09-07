@@ -1,0 +1,58 @@
+id: jellyfin-default-login
+
+info:
+  name: Jellyfin Console - Default Login
+  author: thefoggiest
+  severity: high
+  description: Weak Jellyfin credentials were discovered.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    fofa-query: title="Jellyfin"
+  tags: default-login,jellyfin,misconfig
+
+http:
+  - raw:
+      - |
+        POST /Users/authenticatebyname HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        X-Emby-Authorization: MediaBrowser Client="Jellyfin Web", Device="Browser", DeviceId="DeviceID", Version="Version"
+
+        {"Username":"{{username}}","Pw":"{{password}}"}
+
+    payloads:
+      username:
+        - admin
+        - administrator
+        - jellyfin
+      password:
+        - admin
+        - test
+        - password
+        - jellyfin
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'User":{"Name'
+          - '"LastLoginDate":'
+          - 'AccessToken":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502201613514cc5a03b87e5db34b157adbd75c62cefcc0151e393d868467f14d199da022100aa7639aa3b811e342e0564b16a3760d051868897d7dcc5cc8dc5ca56c300ec3a:922c64590222798bb761d5b6d8e72950

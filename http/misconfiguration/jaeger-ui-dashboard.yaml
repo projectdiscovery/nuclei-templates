@@ -2,26 +2,35 @@ id: jaeger-ui-dashboard
 
 info:
   name: Jaeger UI
-  author: dhiyaneshDK
+  author: dhiyaneshDK,righettod
   severity: low
   description: Jaeger UI dashboard is exposed.
+  reference:
+    - https://www.jaegertracing.io/
   metadata:
     max-request: 1
+    verified: true
     shodan-query: http.title:"Jaeger UI"
   tags: misconfig
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/search"
+      - '{{BaseURL}}/search'
+      - '{{BaseURL}}/api/services'
 
-    matchers-condition: and
+    stop-at-first-match: true
     matchers:
-      - type: word
-        words:
-          - '<title>Jaeger UI</title>'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>jaeger ui", "jaeger_version", "jaeger_config_js", "jaeger-ui-root", "jaeger-query")'
+        condition: and
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220554f31341b2922ec383783e139d8de594ce47934ea00158c9d10f77b5261656b0221008ab7acf0248d074fe87f91d75d8731ad61a2f9b7a466ba4b265670f397ed168f:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)"gitVersion":\s*"([a-z0-9.]+)"'
+# digest: 4a0a004730450221009744e482a43765fcb4d6e9ca67516ee198f39abe9d78abecdb461f16af05dfb802206c97e9f23527f1d978b394c17b09d44c7c8f7c48fc6092bce26e67ad18e26a7a:922c64590222798bb761d5b6d8e72950
