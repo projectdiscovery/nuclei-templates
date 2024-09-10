@@ -1,7 +1,7 @@
 id: authentik-panel
 
 info:
-  name: authentik - Panel
+  name: Authentik Panel - Detect
   author: rxerium
   severity: info
   description: |
@@ -12,24 +12,29 @@ info:
     max-request: 1
     verified: true
     shodan-query: http.favicon.hash:-178113786
-  tags: authentik,sso,mfa,panel
+  tags: authentik,sso,mfa,panel,detect
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
-
+      - "{{BaseURL}}/static/dist/assets/icons/icon.png"
 
     host-redirects: true
     max-redirects: 2
+    stop-at-first-match: true
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
       - type: word
         part: body
         words:
           - "<title>authentik</title>"
+          - "window.authentik"
+          - "authentik.css"
+        condition: or
+        case-insensitive: true
 
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - "(\"-178113786\" == mmh3(base64_py(body)))"
