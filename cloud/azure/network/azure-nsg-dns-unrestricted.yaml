@@ -1,0 +1,57 @@
+id: azure-nsg-dns-unrestricted
+info:
+  name: Unrestricted DNS Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access on TCP and UDP port 53 to prevent DNS amplification attacks and other DNS-related threats.
+  impact: |
+    Allowing unrestricted access on TCP and UDP port 53 can make DNS servers vulnerable to various types of cyber attacks, disrupting network operations.
+  remediation: |
+    Restrict access to DNS services by configuring NSG rules to only allow trusted sources and necessary traffic on TCP and UDP port 53.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && (protocol=='TCP' || protocol=='UDP') && (destinationPortRange=='53')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP and UDP port 53"'
+# digest: 4b0a004830460221008b8f04054777f77d5380360bc515531774a4ad7e063edabe1619fd600aad455d0221009a10b51064b5f63c339c89146773b5e3c4fc834fd4fb3d609a3387c38a2b5d2d:922c64590222798bb761d5b6d8e72950

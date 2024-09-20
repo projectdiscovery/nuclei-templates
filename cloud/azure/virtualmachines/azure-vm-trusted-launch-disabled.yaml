@@ -1,0 +1,55 @@
+id: azure-vm-trusted-launch-disabled
+info:
+  name: Azure VM Trusted Launch Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Trusted Launch security feature is enabled for Gen 2 virtual machines (VMs) in order to protect against persistent and advanced attacks with configurable capabilities such as Secure Boot and virtual Trusted Platform Module (vTPM).
+  impact: |
+    Not enabling Trusted Launch for virtual machines can leave them susceptible to advanced persistent threats and compromise the integrity and security of your virtual environment.
+  remediation: |
+    Enable the Trusted Launch feature on your Azure VMs to utilize security enhancements such as Secure Boot and vTPM to protect against sophisticated attacks.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/trusted-launch
+  tags: cloud,devops,azure,microsoft,virtual-machine,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VmData of iterate(template.vmList)) {
+    set("ids", VmData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].id'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$ids" --query '{"securityProfile": securityProfile}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"securityProfile": null'
+          - '"secureBootEnabled": false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " does not have Trusted Launch enabled"'
+# digest: 490a00463044021f688136f6c0b2bce11fc001a6216fc034befec508670e8d058395743e36b476022100f6dd4a0b8553db35507d26669341710aa523f3f34d6f16abedfb36f497c4df69:922c64590222798bb761d5b6d8e72950

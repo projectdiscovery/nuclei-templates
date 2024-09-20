@@ -1,0 +1,59 @@
+id: azure-postgresql-db-delete-unalerted
+info:
+  name: Azure PostgreSQL Database Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Microsoft Azure activity log alert is fired whenever a “Delete PostgreSQL Database” event is triggered within your cloud account. An Azure activity log alert fires each time the action event that matches the condition specified in the alert configuration is triggered. The alert condition that this conformity rule checks for is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Delete PostgreSQL Database (Microsoft.DBforPostgreSQL/servers/databases)'".
+  impact: |
+    Lack of alerting for "Delete PostgreSQL Database" events can allow unauthorized or accidental deletions to occur without detection, posing a significant risk to data integrity and availability.
+  remediation: |
+    Configure alert rules to fire when events with the operation name "Microsoft.DBforPostgreSQL/servers/databases/delete" occur, ensuring these critical events are monitored effectively.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.DBforPostgreSQL/servers/databases/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete PostgreSQL Database events"'
+# digest: 490a00463044022076740e242aab0f4963361e641dfc268175f967393e9378f4efd8180a532289140220346b24ec76e856220dada8b42ad2ae5025f9aa7ec30074a922983886a4697264:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: azure-vnet-ddos-protection
+info:
+  name: Azure VNet DDoS Unprotected Check
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that DDoS Standard Protection feature is enabled for all your security-critical Microsoft Azure virtual networks (VNETs). DDoS Protection Standard is a premium paid cloud feature that offers enhanced Distributed Denial-of-Service (DDoS) mitigation capabilities via adaptive tuning, attack alert notifications, and telemetry to protect against the impacts of large DDoS attacks for all the protected resources available within your Azure virtual networks.
+  impact: |
+    Not enabling DDoS Standard Protection can leave your virtual networks vulnerable to distributed denial-of-service attacks, potentially leading to significant disruptions and loss of service.
+  remediation: |
+    Enable DDoS Standard Protection for all security-critical virtual networks in your Microsoft Azure subscription to mitigate the risks associated with DDoS attacks.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/ddos-protection-overview
+  tags: cloud,devops,azure,microsoft,ddos,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VnetData of iterate(template.vnetdata)) {
+    VnetData = JSON.parse(VnetData)
+    set("vnet", VnetData.name)
+    set("resourcegroup", VnetData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network vnet list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: vnetdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network vnet show --resource-group $resourcegroup --name $vnet --query "provisioningState" --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"DDoS Protection is not enabled for " + vnet + " virtual network"'
+# digest: 4a0a00473045022079f3fd1ea0ef3bed567c9132cc068b5ff780617c6622e25be47a1c6bd020151e022100931a102bffbee642f44f7b4a190f85dd82259274224cdf2305543ae08e079b91:922c64590222798bb761d5b6d8e72950

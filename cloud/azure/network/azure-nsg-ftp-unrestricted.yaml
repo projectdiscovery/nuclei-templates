@@ -1,0 +1,57 @@
+id: azure-nsg-ftp-unrestricted
+info:
+  name: Unrestricted FTP Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP ports 20 and 21, used for File Transfer Protocol (FTP), to protect against unauthorized file transfers.
+  impact: |
+    Unrestricted FTP access can lead to data breaches and unauthorized data manipulation or theft.
+  remediation: |
+    Update NSG rules to restrict FTP access by allowing only IP addresses that require FTP services on TCP ports 20 and 21.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='20' || destinationPortRange=='21')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP ports 20 and 21"'
+# digest: 4b0a004830460221009e68a095261b45aa301f5d0f011e86db0bc1556a09e3741096ddabb5b0887d48022100d4223b32fcfa29496206d92f1bee07fc10371a92e6da1b127389ccd3d9a737af:922c64590222798bb761d5b6d8e72950

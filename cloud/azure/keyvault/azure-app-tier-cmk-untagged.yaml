@@ -1,0 +1,70 @@
+id: azure-app-tier-cmk-untagged
+info:
+  name: Customer-Managed Key Not Tagged in Azure App Tier
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Customer-Managed Key (CMK), also known as Bring Your Own Key (BYOK), is created and configured for your Microsoft Azure application tier to meet cloud security and compliance requirements. The conformity rule assumes all Azure cloud resources in your app tier are tagged with <app_tier_tag>:<app_tier_tag_value>. The tag set for your Azure application tier must be pre-configured in the Cloud Conformity console.
+  impact: |
+    Not using properly tagged CMKs may lead to non-compliance with security standards and make cloud resources difficult to manage and audit.
+  remediation: |
+    Ensure all Customer-Managed Keys used in the application tier are properly tagged according to organizational policies. Update the key's metadata through the Azure portal or Azure CLI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/keys/about-keys-details
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let vaultName of iterate(template.vaultNames)) {
+    set("vaultName", vaultName)
+    code(2);
+    for (let keyId of iterate(template.keyIds)) {
+      set("keyId", keyId)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault key list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].kid' --output json
+
+    extractors:
+      - type: json
+        name: keyIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault key show --id $keyId --query 'tags' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '{}'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " CMK " + keyId + " is not properly tagged as part of the app-tier resource"'
+# digest: 4a0a0047304502205a8bce2af751faca4928f5b3f99ebb588b963bb5b8dd14def9d9926a8d0c4d89022100f9c28f4111a551b0badb02bfdfba256f8953c5df857f9f8d87499efbe4a0ae80:922c64590222798bb761d5b6d8e72950

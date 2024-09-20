@@ -1,0 +1,57 @@
+id: azure-storage-queue-logging-disabled
+info:
+  name: Azure Storage Queue Logging Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure Storage Queue service logging is enabled for read, write, and delete requests. The Storage Queue service records details of both successful and failed requests, including end-to-end latency, server latency, and authentication information, which is crucial for security and compliance.
+  impact: |
+    Not enabling logging for Azure Storage Queue can result in insufficient data for auditing and lack of visibility into access patterns, potentially leading to unauthorized access and data breaches.
+  remediation: |
+    Enable logging for read, write, and delete requests in Azure Storage Queue service to ensure compliance and improve security monitoring.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/queues/storage-queues-introduction
+  tags: cloud,devops,azure,microsoft,storage-queue,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageAccount of iterate(template.storageAccounts)) {
+    StorageAccount = JSON.parse(StorageAccount);
+    set("name", StorageAccount.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageAccounts
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage logging show --services q --account-name "$name" --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"delete": false'
+          - '"read": false'
+          - '"write": false'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " does not have logging enabled for delete, read, or write actions."'
+# digest: 4a0a00473045022100c5db242a555897d70052e2349d113127205465336893ed68da3c669d1e0b830b022028fe73310f728f13db0ccad3a3071ab8bf1d87e704e69a271a8b901fc2c685c1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,58 @@
+id: azure-postgres-allow-azure-services-disabled
+info:
+  name: Azure PostgreSQL Access From Azure Services Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the access from Microsoft Azure cloud services to Azure Database for PostgreSQL servers is disabled in order to secure access to PostgreSQL databases by allowing access from trusted Virtual Networks (Vnets) only.
+  impact: |
+    Not restricting access to Azure Database for PostgreSQL servers from Azure services can expose sensitive database resources to potentially malicious traffic from within Azure, increasing the risk of breaches and data exposure.
+  remediation: |
+    Configure firewall rules to disable the "Allow access to Azure services" setting for Azure PostgreSQL Database servers to restrict access to trusted sources only.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-firewall-rules
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.name);
+    set("resourceGroup", ServerData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server firewall-rule list --server "$name" --resource-group "$resourceGroup" --query '[*].{"ruleName":name,"startIpAddress":startIpAddress,"endIpAddress":endIpAddress}'
+
+    matchers:
+      - type: word
+        words:
+          - '"ruleName": "AllowAllWindowsAzureIps"'
+          - 'startIpAddress": "0.0.0.0"'
+          - '"endIpAddress": "0.0.0.0"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " allows access to Azure services"'
+# digest: 4a0a00473045022054a1af54729e7dc778f69640811e3584c34e936ba7abef75efb5a35c77bceb2d022100c3127b525482f1d4b8f7e3719b43e5ec5dccca6a2ae30dc9cbfd71f8427b0cd6:922c64590222798bb761d5b6d8e72950

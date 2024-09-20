@@ -1,0 +1,53 @@
+id: azure-appservice-ftp-deployment-disabled
+info:
+  name: Azure App Service Plain FTP Deployment Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure App Services web applications are not configured to be deployed over plain FTP. Instead, the deployment can be disabled over FTP or performed over FTPS. FTPS (Secure FTP) is used to enhance security for your Azure web application as it adds an extra layer of security to the FTP protocol, and helps you to comply with industry standards and regulations.
+  impact: |
+    Using plain FTP for deployment could expose sensitive data to interception. Enabling FTPS or disabling FTP deployment ensures compliance with security best practices and regulations.
+  remediation: |
+    Configure the Azure App Services to disable FTP deployment or to use FTPS, ensuring encrypted and secure file transfers.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/deploy-ftp
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let WebAppId of iterate(template.webAppIds)) {
+    set("ids", WebAppId);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].id'
+
+    extractors:
+      - type: json
+        name: webAppIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config show --ids $ids --output json --query 'ftpsState'
+
+    matchers:
+      - type: word
+        words:
+          - "AllAllowed"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " has FTP deployment enabled, which is not secure"'
+# digest: 4b0a0048304602210093e3a5c33cf1a714c55a6b7bf80003c6e13b3f67eed6016982faa02b61de57d6022100afdaa61b09bea49da0097017a351d4b5b1b84c8524d552778e75f393580079e3:922c64590222798bb761d5b6d8e72950
