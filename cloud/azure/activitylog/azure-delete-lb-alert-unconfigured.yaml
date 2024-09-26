@@ -1,0 +1,59 @@
+id: azure-delete-lb-alert-unconfigured
+info:
+  name: Azure Delete Load Balancer Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Microsoft Azure activity log alert is fired whenever a "Delete Load Balancer" event is triggered within your cloud account. An Azure activity log alert fires each time the action event that matches the condition specified in the alert configuration is triggered. The alert condition that this conformity rule searches for is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Delete Load Balancer (loadBalancers)'".
+  impact: |
+    Failing to configure alerts for "Delete Load Balancer" events can allow unauthorized or accidental deletions to go unnoticed, posing serious risks to network availability and security.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Delete Load Balancer" events by setting the alert condition to "Microsoft.Network/loadBalancers/delete" and attaching an action group for notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,load-balancer,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Network/loadBalancers/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Load Balancer events"'
+# digest: 4a0a00473045022100ee51b8128845566ce0b7924060e6ac75acc16c9235d55ad2f934d88cad12465f02202334498edd73fe78017d647f698f1cf4f09da23387f2da79f0f17d852ce91330:922c64590222798bb761d5b6d8e72950

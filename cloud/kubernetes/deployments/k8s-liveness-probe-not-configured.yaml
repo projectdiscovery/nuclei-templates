@@ -1,0 +1,47 @@
+id: k8s-liveness-probe-not-configured
+
+info:
+  name: Liveness Probe Not Configured in Deployments
+  author: princechaddha
+  severity: medium
+  description: Checks for missing liveness probes in Kubernetes Deployments, which are essential for managing container health and automatic recovery
+  impact: |
+    Absence of liveness probes can lead to unresponsive containers remaining in service, potentially degrading application performance and availability.
+  remediation: Configure liveness probes for all containers in Kubernetes Deployments to ensure proper health checks and automatic restarts of failing containers
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.some(container => container.livenessProbe)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' lacks a configured liveness probe.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502203467396f69842d95717ea1f6208909f0301e79ef8e16b19ad5e20978826124f2022100b31af5d5f6daf8463350c27aaf6398d6f27378fa5858cc4f1908749790a1dcc1:922c64590222798bb761d5b6d8e72950

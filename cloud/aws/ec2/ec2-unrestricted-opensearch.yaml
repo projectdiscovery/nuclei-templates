@@ -1,0 +1,37 @@
+id: ec2-unrestricted-opensearch
+info:
+  name: Unrestricted OpenSearch Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks EC2 security groups for inbound rules allowing unrestricted access to OpenSearch on TCP port 9200. Restricts access to essential IP addresses only.
+  impact: |
+    Unrestricted access to OpenSearch can lead to unauthorized data access, modification, or denial of service attacks.
+  remediation: |
+    Modify EC2 security group rules to limit access to TCP port 9200 for OpenSearch, allowing only necessary IPs, implementing the principle of least privilege.
+  reference:
+    - https://en.wikipedia.org/wiki/OpenSearch
+  tags: cloud,devops,aws,amazon,opensearch,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=9200 Name=ip-permission.to-port,Values=9200 Name=ip-permission.cidr,Values='0.0.0.0/0 or ::/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 9200"'
+# digest: 490a004630440220592b35acadc3d541d7bab687bb36ff879999897d4c57bee946714c37eef4c37a0220303632eb1d63cfd0d31301ed29423993181942dae0da7a842b80921b989b6b4c:922c64590222798bb761d5b6d8e72950

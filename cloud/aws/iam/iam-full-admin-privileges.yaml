@@ -1,0 +1,54 @@
+id: iam-full-admin-privileges
+info:
+  name: Overly Permissive IAM Policies
+  author: princechaddha
+  severity: high
+  description: |
+    Verifies that no Amazon IAM policies grant full administrative privileges, ensuring adherence to the Principle of Least Privilege
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/iam/get-policy-version.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,iam,aws-cloud-config
+
+flow: |
+  code(1)
+  for(let PolicyName of iterate(template.policies)){
+    set("policy", PolicyName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-policies --scope Local --query 'Policies[*].Arn'
+
+    extractors:
+      - type: json # type of the extractor
+        internal: true
+        name: policies
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws iam get-policy-version --policy-arn $policy --version-id v1 --query 'PolicyVersion.Document'
+
+    matchers:
+      - type: word
+        words:
+          - '"Effect": "Allow"'
+          - '"Action": "*"'
+          - '"Resource": "*"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The IAM policy " + policy +" is Overly Permissive"'
+# digest: 4a0a004730450221008bc9f722616e4216ee5bccead511cb6086d4f998014314d8a8478ec44f424f40022029c5288eda6b59b7217a8836cb5d506e7b7ad234f6272fe94570815dc7b0d0a6:922c64590222798bb761d5b6d8e72950

