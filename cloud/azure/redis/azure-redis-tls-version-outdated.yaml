@@ -1,0 +1,62 @@
+id: azure-redis-tls-version-outdated
+info:
+  name: Azure Redis Cache TLS Version Not Latest
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all your Microsoft Azure Redis Cache servers are using the latest available version of TLS encryption protocol in order to enhance the security of the SSL/TLS connection between the cache servers and their web applications, and comply with the industry standards.
+  impact: |
+    Using an outdated version of TLS can reduce the security level of communications between clients and servers, potentially exposing data to interception or manipulation.
+  remediation: |
+    Upgrade the TLS version of your Azure Redis Cache servers to the latest version supported by Microsoft Azure to enhance security and compliance with industry standards.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/redis-cache/
+  tags: cloud,devops,azure,microsoft,redis,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let RedisData of iterate(template.redisIdList)) {
+    set("name", RedisData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az redis list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: redisIdList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az redis show --ids "$name" --query '{"MinimumTLSVersion":minimumTlsVersion}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '1.0'
+          - '1.1'
+        negative: true
+
+      - type: word
+        part: body
+        words:
+          - '.'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " is using outdated TLS version"'
+# digest: 4a0a004730450221009539ceca8bebb8a1113741f0ac425582b482919a4cd811503afa00d4214a0aa1022049c7004277b81491246bfdc519dceea801cd8a0e955bf3ae29c1db03ea2009f0:922c64590222798bb761d5b6d8e72950
