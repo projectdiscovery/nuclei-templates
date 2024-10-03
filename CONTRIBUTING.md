@@ -27,7 +27,7 @@ Along with the P.O.C following are the required fields for submitting new templa
 
 1. `id`: It should be short ideally max of 3-4 words. For example `grafana-unauth-rce`
 2. `name` : The name should be short in this format `<Vendor> <Product> <Version> - <Vulnerability>` 
-3. `author`: It can be your github/twitter username or alias. You can also create a PR to add more details associated with the author name here (https://github.com/projectdiscovery/nuclei-templates/blob/master/contributors.json)
+3. `author`: It can be your github/twitter username or alias. You can also create a PR to add more details associated with the author name here (https://github.com/projectdiscovery/nuclei-templates/blob/main/contributors.json)
 4. `severity` : Based on the CVSS score but can vary based on the exploit and real-world impact
 5. `description` : Short description of the vulnerability
 6. `reference` : Please provide the reference to the POC, setup guide or the product details to help the team verify the template.
@@ -77,8 +77,8 @@ git remote add upstream https://github.com/projectdiscovery/nuclei-templates
 
 ```jsx
 git remote update
-git checkout master
-git rebase upstream/master
+git checkout main
+git rebase upstream/main
 ```
 
 **Create your Template Branch**
