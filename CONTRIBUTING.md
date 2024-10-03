@@ -65,6 +65,7 @@ Along with the P.O.C following are the required fields for submitting new templa
 **Fork the Project**
 
 - This will create a Local Copy of this Repository on your Github Profile. Keep a reference to the original project in `upstream` remote.
+<img width="928" alt="template-fork" src="https://user-images.githubusercontent.com/8293321/124467966-2afde200-ddb6-11eb-835f-8f8fc2fabedb.png">
 
 ```jsx
 git clone https://github.com/<your-username>/nuclei-templates
