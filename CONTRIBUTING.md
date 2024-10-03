@@ -23,7 +23,7 @@ This documentation contains a set of guidelines to help you during the contribut
 - Take a look at Existing Templates in [GitHub Issues](https://github.com/projectdiscovery/nuclei-templates/issues) and [Pull Request](https://github.com/projectdiscovery/nuclei-templates/pulls) section to avoid duplicate work.
 - Take a look at [Templates](https://nuclei.projectdiscovery.io/templating-guide/) and [Matchers](https://github.com/projectdiscovery/nuclei-templates/wiki/Unique-Template-Matchers) Guideline for creating new template.
 
-Along with the P.O.C following are the required fields for submitting new template.
+Along with the P.O.C following are the required fields in the info section for submitting new template.
 
 1. `id`: It should be short ideally max of 3-4 words. For example `grafana-unauth-rce`
 2. `name` : The name should be short in this format `<Vendor> <Product> <Version> - <Vulnerability>` 
@@ -32,26 +32,12 @@ Along with the P.O.C following are the required fields for submitting new templa
 5. `description` : Short description of the vulnerability
 6. `reference` : Please provide the reference to the POC, setup guide or the product details to help the team verify the template.
 
-**Best Practices**
-
-- If we receive any template for tech detect then if applicable we can create template for the panel for that tech and default password as well
-- Make sure the tag name starts with the folder/vulnerability name
-- Add part with the matchers. For example if the matcher is in response body add `part:` body
-- Use `cmd` variable for RCE templates so that they are unified throughout the repo
-- Use `{{username}}` and `{{password}}` variables in all authenticated templates
-- Use `{{token}}` variable in all the template that deals with keys or tokens
-- If there are more than 1 template for a tech create a separate folder for it
-- Add `good first issue` label on the PRs of first time contributors
-- Make use of  `epic` label if the template is creative so that we can reward such authors
-- Don't share any vulnerable URL publicly on Github or Discord channel.
-- We should only upload a web shell as a last resort to validate the vulnerability, and if we do upload a file, make sure the file name is random(`{{randstr}}`)
-
 **Do’s**
 
 - If you have verified the template, mark it as `verified: true` under metadata field and share the debug data using `-debug` flag after redacting the vulnerable server information in the PR
 - Make sure to add more than one matcher to prevent false positive results. Avoid short word that could be encountered anywhere
 - If possible submit the vulnerable environment based on docker-compose. For example: https://github.com/vulhub/vulhub.
-- Try to add complete P.O.C to the template instead of just detection based on version
+- We only accept templates with complete P.O.Cs instead of just detection based on version
 
 **Don’t**
 
@@ -59,6 +45,17 @@ Along with the P.O.C following are the required fields for submitting new templa
 - Avoid submitting templates with weak matchers. For example: Adding GET/POST data as the matchers in the template, as it can result in false positive results on few hosts
 - Don’t make unnecessary changes to the existing templates like adding more requests to the templates when the existing requests or paths are good enough to verify that the bug exists
 - Try to keep the requests per template as low as possible
+
+**Best Practices**
+
+- Make sure to add the template in the appropriate directory.
+- Add part with the matchers. For example if the matcher is in response body add `part:` body
+- Use `cmd` variable for RCE templates so that they are unified throughout the repo
+- Use `{{username}}` and `{{password}}` variables in all authenticated templates
+- Use `{{token}}` variable in all the template that deals with keys or tokens
+- If there are more than 1 template for a tech create a separate folder for it
+- Don't share any vulnerable URL publicly on Github or Discord channel.
+- We should only upload a web shell as a last resort to validate the vulnerability, and if we do upload a file, make sure the file name is random(`{{randstr}}`)
 
 ### **Submitting a PR**
 
