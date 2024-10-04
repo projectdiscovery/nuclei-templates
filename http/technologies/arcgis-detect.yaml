@@ -1,0 +1,40 @@
+id: arcgis-detect
+
+info:
+  name: ArcGIS - Detect
+  author: righettod
+  severity: info
+  description: |
+    ArcGIS products was detected.
+  reference:
+    - https://enterprise.arcgis.com/en/
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: http.title:"ArcGIS"
+  tags: tech,arcgis,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/portal/sharing/rest"
+      - "{{BaseURL}}/portal/portalhelp/en/rest/"
+      - "{{BaseURL}}/arcgis/rest/services"
+      - "{{BaseURL}}/server/rest/services"
+      - "{{BaseURL}}/arcgis/"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>arcgis portal directory", "search arcgis enterprise help", "<title>arcgis</title>", "arcgis rest services directory", "<title>arcgis hub</title>")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)&copy;\s+([0-9]+)\s+Esri\.'
+          - '<b>Current\s+Version:\s+<\/b>([0-9.]+)'
