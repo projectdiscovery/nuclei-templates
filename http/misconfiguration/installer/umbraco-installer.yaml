@@ -1,7 +1,7 @@
 id: umbraco-installer
 
 info:
-  name: Umbraco Install Exposure
+  name: Umbraco Install - Exposure
   author: DhiyaneshDk,stvnhrlnd
   severity: high
   description: Umbraco is susceptible to the Installation page exposure due to misconfiguration.
@@ -16,50 +16,25 @@ info:
   tags: misconfig,umbraco,install,oss
 
 http:
-  # Umbraco before 14.0.0
   - method: GET
     path:
       - '{{BaseURL}}/install'
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - 'Install Umbraco'
-          - 'umbracoInstallPageBody'
-        condition: and
-
-      - type: word
-        part: header
-        words:
-          - "text/html"
-
-      - type: status
-        status:
-          - 200
-          - 503
-
-  # Umbraco 14.0.0 and above
-  - method: GET
-    path:
       - "{{BaseURL}}/umbraco/management/api/v1/server/status"
 
+
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "serverStatus"
-          - "Install"
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "Install Umbraco", "umbracoInstallPageBody")'
+          - 'contains_all(body, "serverStatus", "Install")'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'contains_any(header, "text/html", "application/json")'
+          - 'status_code == 200 || status_code == 503'
         condition: and
 
-      - type: word
-        part: header
-        words:
-          - "application/json"
-
-      - type: status
-        status:
-          - 200
 # digest: 4a0a0047304502200cdaad2eba2dbf5f4d2a3ba5aac33e90193662760cf4a721f7435f4180ab7fb5022100c38b7725a7e5543c6f3a208d00b973b9ef98dcce3fe1a8ebbb28f769ca6bc7ba:922c64590222798bb761d5b6d8e72950
