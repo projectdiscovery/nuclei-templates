@@ -1,0 +1,40 @@
+id: netdisco-default-login
+
+info:
+  name: Netdisco Admin - Default Login
+  author: ritikchaddha
+  severity: critical
+  description: |
+    Detects use of hard-coded credentials in Netdisco.
+  impact: |
+    Attackers can potentially exploit this vulnerability to gain unauthorized access to sensitive information.
+  remediation: |
+    Update the application to remove hard-coded credentials and implement secure credential management practices.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Netdisco"
+    fofa-query: title="Netdisco"
+  tags: netdisco,default-login
+
+variables:
+  username: "netdisco"
+  password: "netdisco"
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&return_url=%2Finventory
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_all(body, "User Management", "/admin/discoverall", "Logged in as")
+          - status_code == 200
+        condition: and
