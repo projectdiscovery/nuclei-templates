@@ -1,0 +1,55 @@
+id: azure-storage-static-website-review
+info:
+  name: Azure Storage Static Website Configuration Review
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all the Microsoft Azure Storage accounts configured to host static websites are regularly reviewed for security and compliance purposes. Upon enabling this rule on your Cloud Conformity console, you must specify the storage account or the list of storage accounts that are expected to host static content (HTML, CSS, JavaScript, and image files).
+  impact: |
+    Failing to review storage accounts hosting static websites can lead to potential security risks and non-compliance with data handling standards.
+  remediation: |
+    Regularly review your Azure Storage accounts that host static websites and ensure they comply with security and data protection standards.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-static-website
+  tags: cloud,devops,azure,microsoft,storage-account,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let accountData of iterate(template.accountList)) {
+    accountData = JSON.parse(accountData);
+    set("name", accountData.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage blob service-properties show --account-name "$name" --query 'staticWebsite.enabled'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " is configured to host static websites"'
+# digest: 490a00463044022079c819dd499c91f95ced0a3232bf24ea83f9e87b42fb8da2379fcd48032162f9022034c24aafc0fcbad2c789530080c5b1000583b8b2594a08163777dcd18485265d:922c64590222798bb761d5b6d8e72950
