@@ -1,0 +1,55 @@
+id: azure-vm-managed-identity-unassigned
+info:
+  name: Azure VM Managed Identity Not Assigned
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure virtual machines (VMs) have system-assigned managed identities enabled in order to allow secure virtual machine access to Azure resources such as key vaults and storage accounts.
+  impact: |
+    VMs without system-assigned managed identities may have inadequate security configurations, increasing the risk of unauthorized access to Azure resources.
+  remediation: |
+    Enable system-assigned managed identities on all Azure VMs to ensure secure access to other Azure services.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
+  tags: cloud,devops,azure,microsoft,vm,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("ids", VMData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$ids" --query '{"IdentityConfig": identity}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"IdentityConfig": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " does not have a system-assigned managed identity enabled"'
+# digest: 4b0a00483046022100f838ee478e2c86d9cae920a109e4851448c3503ce13a7daa96fd40d3382f612f022100d5187686c3847d84bcbcb650515e43561c9c0939e42c08c40db43479532c14f1:922c64590222798bb761d5b6d8e72950
