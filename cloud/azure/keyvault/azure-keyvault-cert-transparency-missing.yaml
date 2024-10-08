@@ -1,0 +1,70 @@
+id: azure-keyvault-cert-transparency-missing
+info:
+  name: Missing Certificate Transparency in Azure Key Vaults
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Certificate Transparency feature is enabled for all Azure Key Vault SSL/TLS certificates to adhere to web security best practices. Certificate Transparency (CT) is a new Internet standard that helps to make the Transport Layer Security (TLS) ecosystem publicly auditable.
+  impact: |
+    Without Certificate Transparency, domain owners are unaware of certificates issued to their domain unless directly requested, compromising transparency and security.
+  remediation: |
+    Enable Certificate Transparency for all Azure Key Vault SSL/TLS certificates through the Azure portal or Azure CLI to meet the standards enforced by the Certification Authority Browser Forum (CA/Browser Forum).
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/certificates/how-to-enable-certificate-transparency
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let KeyVaultName of iterate(template.keyVaultNames)) {
+    set("vaultName", KeyVaultName)
+    code(2);
+    for (let CertificateId of iterate(template.certificateIds)) {
+      set("certificateId", CertificateId)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: keyVaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].id' --output json
+
+    extractors:
+      - type: json
+        name: certificateIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate show --id $certificateId --query 'policy.issuerParameters.certificateTransparency' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " SSL/TLS certificate " + certificateId + " does not have Certificate Transparency enabled"'
+# digest: 4a0a004730450220683ba37722ca45d1934be3ff6f8ab14693e9ddb0dccd08b766d470f942d52999022100bff340bf0fbf8c78a04c31e09f667be68223c76d98560caf9257ecfc93ada837:922c64590222798bb761d5b6d8e72950
