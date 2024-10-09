@@ -1,0 +1,42 @@
+id: ldap-get-ad-grp
+
+info:
+  name: LDAP Get Active Directory Group - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    Attempts to list the supported capabilities in a SMBv2 server for each enabled dialect.
+  reference:
+    - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Client#getadgroups
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap,enum
+
+javascript:
+  - code: |
+      const ldap = require('nuclei/ldap');
+      const cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      const client = new ldap.Client(Host, Port, cfg);
+      const groups = client.GetADGroups();
+      const bytes = require('nuclei/bytes');
+      const buffer = new bytes.Buffer();
+      for (const group of groups) {
+        buffer.WriteString("DistinguishedName: '" + group.DistinguishedName+ "' ,");
+        buffer.WriteString("SAMAccountName: '" + group.SAMAccountName+ "' ,");
+        buffer.WriteString("PWDLastSet: '" + group.PWDLastSet+ "' ,");
+        buffer.WriteString("LastLogon: '" + group.LastLogon+ "' ,");
+        buffer.WriteString("MemberOf: '" + group.MemberOf+ "' ,");
+        buffer.WriteString("ServicePrincipalName: '" + group.ServicePrincipalName+ "' ,");
+      }
+      Export(buffer.String());
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+      
+    extractors:
+      - type: dsl
+        dsl:
+          - response
