@@ -1,0 +1,71 @@
+id: exposed-backup-files
+
+info:
+  name: Exposed Backup Files Detection
+  author: Sujal Tuladhar
+  severity: critical
+  description: |
+    Advanced detection of unprotected GitLab/Bitbucket repository backups and exposed database backups (.sql, .bak, .db) with signatures for sensitive data such as credentials, API keys, and tokens.
+  reference:
+    - https://owasp.org/www-community/attacks/Backup_Files_Exposure
+  tags: backup, exposure, gitlab, bitbucket, sql, bak, credentials
+
+requests:
+  - method: GET
+    path:
+      # Common backup and repository files with date patterns
+      - "{{BaseURL}}/backup.tar.gz"
+      - "{{BaseURL}}/backup.zip"
+      - "{{BaseURL}}/backup_*.tar.gz"            # Backup with timestamps or auto-generated names
+      - "{{BaseURL}}/backup-*.zip"
+      - "{{BaseURL}}/db_backup.sql"
+      - "{{BaseURL}}/dump.sql"
+      - "{{BaseURL}}/database.bak"
+      - "{{BaseURL}}/backup-*.sql"
+      - "{{BaseURL}}/.git/config"
+    matchers:
+      - type: status
+        status:
+          - 200                                  # Publicly accessible file
+
+      # Advanced keyword detection for sensitive info inside the files
+      - type: word
+        words:
+          - "SQL"
+          - "version"
+          - "CREATE DATABASE"
+          - "INSERT INTO"
+          - "username"
+          - "password"
+          - "token"
+          - "API_KEY"
+          - "Authorization: Bearer"              # Check for sensitive tokens
+      - type: regex                              # Use regex to capture backup naming patterns
+        regex:
+          - "/backup-\d{4}-\d{2}-\d{2}\.zip/"    # e.g., backup-2024-10-05.zip
+          - "/backup_\d{8}\.sql/"                # e.g., backup_20241005.sql
+      - type: size                               # Match large files likely to contain significant data
+        condition: ">="
+        size: 10000                              # 10 KB or greater for meaningful backups
+
+      # Detect specific backup structures for GitLab/Bitbucket repositories
+      - type: binary
+        part: body                               # Analyze body content
+        signature:
+          - 50 4B 03 04                         # Signature for zip files (PK header)
+          - 1F 8B                               # Signature for gzip (tar.gz) files
+          - 53 51 4C                             # Signature for SQL dump files (e.g., SQLite or MySQL)
+    matchers-condition: and                      # Requires all conditions to be met
+  - method: GET
+    path:
+      # More targeted URLs for .git or repository configuration leaks
+      - "{{BaseURL}}/.git/config"
+      - "{{BaseURL}}/.git/HEAD"
+    matchers:
+      - type: status
+        status:
+          - 200                                  # Publicly accessible .git files
+      - type: word
+        words:
+          - "[core]"                             # Presence of Git repository structure
+          - "[remote]"                           # Git configuration for remote URLs
