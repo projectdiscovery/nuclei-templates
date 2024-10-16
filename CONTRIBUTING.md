@@ -56,6 +56,7 @@ Along with the P.O.C following are the required fields in the info section for s
 - If there are more than 1 template for a tech create a separate folder for it
 - Don't share any vulnerable URL publicly on Github or Discord channel.
 - We should only upload a web shell as a last resort to validate the vulnerability, and if we do upload a file, make sure the file name is random(`{{randstr}}`)
+- Do not include code templates for exploits that can be written using HTTP or JavaScript. We avoid adding additional exploit code to the project unless there is an exception.
 
 ### **Submitting a PR**
 
