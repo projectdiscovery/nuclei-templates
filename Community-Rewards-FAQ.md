@@ -22,6 +22,9 @@ Templates must meet the following criteria:
 2. **Declare Work**: Comment with `/attempt #<issue_number>` to claim the issue.
 3. **Submit Work**: Submit your pull request with `/claim #<issue_number>` in the PR description when ready.
 
+## How often are new bounty issues added?
+We add new bounty issues on a **weekly basis**, so make sure to check back regularly for fresh opportunities. In the future, you can expect many more bounty issues as the program expands, allowing more opportunities for contributors to participate and earn rewards.
+
 ## Can I collaborate with others?
 Yes, you can collaborate with other contributors and split rewards by commenting:
 ```
