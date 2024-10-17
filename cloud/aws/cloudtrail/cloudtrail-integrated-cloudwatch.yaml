@@ -1,0 +1,57 @@
+id: cloudtrail-integrated-cloudwatch
+info:
+  name: CloudTrail CloudWatch Integration
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure Amazon CloudTrail logs are integrated with CloudWatch Logs for real-time monitoring and analysis.
+  impact: |
+    Without integration, detecting and responding to critical events or unauthorized actions within AWS environment could be delayed.
+  remediation: |
+    Enable CloudTrail log file validation and configure CloudWatch Logs to monitor CloudTrail log files. Create CloudWatch Alarms for specific events of interest.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/send-cloudtrail-events-to-cloudwatch-logs.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,cloudwatch,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].CloudWatchLogsLogGroupArn'
+
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail" + trail + " is not configured to send events to CloudWatch Logs for monitoring purposes"'
+# digest: 4a0a004730450221008bdf150f8abb8be1e258c067aae73857443f219a130cf41d0cc3d9c0c6d45ab302205479a358041954f9d0aa04b2145860008c3732d303a381268f0c31a0148495dd:922c64590222798bb761d5b6d8e72950

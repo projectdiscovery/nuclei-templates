@@ -2,37 +2,32 @@ name: 📝 Template Checksum
 
 on:
   push:
-    tags:
-      - '*'
+    branches:
+      - main
+    paths:
+      - '**.yaml'
   workflow_dispatch:
 
+env:
+  CHECKSUM_FILE: 'templates-checksum.txt'
+
 jobs:
-  build:
+  checksum:
     runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-go@v2
-        with: 
-          go-version: 1.18
-
-      - name: install checksum generator
-        run: |
-          go install -v github.com/projectdiscovery/nuclei/v2/cmd/generate-checksum@dev
-
-      - name: generate checksum
-        run: |
-          generate-checksum /home/runner/work/nuclei-templates/nuclei-templates/ templates-checksum.txt
-
-      - name: Commit files
-        run: |
-          git pull
-          git add templates-checksum.txt
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Auto Generated Templates Checksum [$(date)] :robot:" -a
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
+      - uses: actions/checkout@v4
+      - uses: projectdiscovery/actions/generate/checksum@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: master
+          templates-directory: '${{ github.workspace }}'
+          checksum-file: '${{ env.CHECKSUM_FILE }}'
+      - run: git status
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '${{ env.CHECKSUM_FILE }}'
+          message: 'chore: generate templates checksum 🤖'
+      - name: Push changes
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

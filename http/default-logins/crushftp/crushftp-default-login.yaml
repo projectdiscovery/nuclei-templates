@@ -1,0 +1,60 @@
+id: crushftp-default-login
+
+info:
+  name: CrushFTP - Default Login
+  author: pussycat0x
+  severity: high
+  description: |
+    CrushFTP default login credentials were discovered.
+  classification:
+    cpe: cpe:2.3:a:crushftp:crushftp:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: crushftp
+    product: crushftp
+    shodan-query: html:"CrushFTP"
+  tags: default-login,crushftp
+
+http:
+  - raw:
+      - |
+        GET /WebInterface/ HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /WebInterface/function/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/WebInterface/login.html
+
+        command=login&username={{username}}&password={{password}}&encoded=true&language=en&random=0.34712915617878926
+
+    attack: pitchfork
+    payloads:
+      username:
+        - crushadmin
+      password:
+        - crushadmin
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<response>success</response>"
+
+      - type: word
+        part: header_2
+        words:
+          - "text/xml"
+
+    extractors:
+      - type: regex
+        name: auth
+        internal: true
+        part: header_2
+        group: 1
+        regex:
+          - 'currentAuth=([0-9a-zA-Z]+)'
+# digest: 4b0a00483046022100f534449363439818af2c641752a60899dc7fe9223faf4e3da834f8116b4572a0022100e8f43e3e089b0a011dec0ff700ffad444cda271dcd2dfa0a4154a9097604f53e:922c64590222798bb761d5b6d8e72950

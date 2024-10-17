@@ -1,0 +1,51 @@
+id: nextcloud-detect
+
+info:
+  name: Nextcloud Detect
+  author: skeltavik
+  severity: info
+  description: |
+    Nextcloud is a suite of client-server software for creating and using file hosting services
+  reference:
+    - https://nextcloud.com
+  classification:
+    cpe: cpe:2.3:a:nextcloud:nextcloud_server:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: nextcloud
+    product: nextcloud_server
+    shodan-query: http.title:"Nextcloud"
+  tags: tech,nextcloud,storage
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+      - '{{BaseURL}}/login'
+      - '{{BaseURL}}/nextcloud/login'
+      - '{{BaseURL}}/nextcloud/index.php/login'
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'var nc_lastLogin'
+          - 'var nc_pageLoad'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '(?m)"version":"([0-9.]+)",'
+# digest: 490a00463044022071d01b0145201a6f58c9de061410bd430c19acc67bea1e3f2dac1857ef4d0be4022018dabb4527d98df09d7b91e379249d01f928ded94290fc3ac318ff8295af8d16:922c64590222798bb761d5b6d8e72950

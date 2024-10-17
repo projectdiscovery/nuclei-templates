@@ -1,0 +1,34 @@
+id: https-to-http-redirect
+
+info:
+  name: HTTPS to HTTP redirect Misconfiguration
+  author: kazet,idealphase
+  severity: info
+  description: |
+    Detects whether there is a redirect from https:// to http://
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misconfig,http,https
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'startswith(tolower(location), "http://")'
+          - 'startswith(tostring(BaseURL), "https://")'
+          - '(status_code == 300 || status_code == 301 || status_code == 302 || status_code == 303 || status_code == 307 || status_code == 308)'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'startswith(tostring(BaseURL), "https://")'
+          - 'status_code == 200'
+          - 'contains(tolower(body), "<meta http-equiv=\"refresh\" content=\"0; url=http://")'
+        condition: and
+# digest: 490a0046304402201ebc2a7d3ff9de891f5ecc6240683d2ca327aeaa7b9bc901e59ef1667735185f0220691a10ba9255d331c965f9e24b766805177d22ca175adfc7097d6b73f336bc14:922c64590222798bb761d5b6d8e72950

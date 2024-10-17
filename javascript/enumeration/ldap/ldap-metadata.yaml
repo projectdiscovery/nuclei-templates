@@ -1,0 +1,45 @@
+id: ldap-metadata
+
+info:
+  name: LDAP Metadata - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    LDAP metadata refers to the data that describes the structure, schema, and attributes of the LDAP directory
+  reference:
+    - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Metadata
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const ldap = require('nuclei/ldap');
+      const cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      const client = new ldap.Client(Host, Port, cfg);
+      const metadata = client.CollectMetadata();
+      Export(metadata)
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: json
+        json:
+          - '"BaseDN: " + .BaseDN'
+          - '"DnsHostName: " + .DnsHostName '
+          - '"DefaultNamingContext: "+ .DefaultNamingContext'
+          - '"DomainFunctionality: "+ .DomainFunctionality'
+          - '"ForestFunctionality: " + .ForestFunctionality'
+          - '"DomainControllerFunctionality: "+ .DomainControllerFunctionality'
+# digest: 490a0046304402207c979fbb9dd9497508e76e1ac54c24d496263ea7f115d00581f514e1cf56a5b3022025e707947e35b5533fa1b01483f4e3553338775cda2389549a12145dc1c60873:922c64590222798bb761d5b6d8e72950

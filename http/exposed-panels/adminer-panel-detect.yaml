@@ -1,0 +1,56 @@
+id: adminer-panel-detect
+
+info:
+  name: Adminer Login Panel - Detect
+  author: random_robbie,meme-lord
+  severity: info
+  description: Adminer login panel was detected.
+  reference:
+    - https://blog.sorcery.ie/posts/adminer/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:adminer:adminer:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 741
+    vendor: adminer
+    product: adminer
+    shodan-query:
+      - cpe:"cpe:2.3:a:adminer:adminer"
+      - http.title:"login - adminer"
+    fofa-query:
+      - title="login - adminer"
+      - app="adminer" && body="4.7.8"
+    hunter-query: app.name="adminer"&&web.body="4.7.8"
+    google-query: intitle:"login - adminer"
+  tags: panel,fuzz,adminer,login,sqli
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+
+    payloads:
+      path: helpers/wordlists/adminer-paths.txt
+
+    threads: 50
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "System<td>")'
+          - 'contains_any(body, "- Adminer</title>>", "Adminer</a>")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'
+# digest: 4b0a00483046022100916f8911d4df2f79d56199029dca3d19567a9b235fa2d1aad0add32cfaaba48e022100a335c716f2fe9668aff599a7a89415f5838906520e0519dcd07a4f70676fd805:922c64590222798bb761d5b6d8e72950

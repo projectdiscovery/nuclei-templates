@@ -1,0 +1,49 @@
+id: dell-dpi-default-login
+
+info:
+  name: Dell DPI Remote Power Management - Default Login
+  author: megamansec
+  severity: medium
+  description: |
+    The Dell Metered Rack Power Distribution Unit uses a default username and password which is widely known, and any user could change the default password with access.
+  reference:
+    - https://dl.dell.com/manuals/all-products/esuprt_ser_stor_net/esuprt_rack_infrastructure/dell-metered-pdu_user%27s%20guide3_en-us.pdf
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    max-request: 2
+  tags: dell,dpi,rpm,default-login
+variables:
+  str: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST /index2.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64('{{username}}:{{password}}')}}
+      - |
+        POST /index2.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64('{{str}}:{{str}}')}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 401'
+          - 'contains(body_2, "Unauthorized")'
+          - '!contains(body_1, "/index.html")'
+          - 'contains_any(tolower(body_1), "<TITLE>DELL DPI Remote Power Management", "title=\"DELL DPI Remote Power Management")'
+        condition: and
+
+# digest: 4a0a0047304502207ec3715d4ce799a65597cc52dda3045bd8212193918fb00d7639d9c737068a33022100e94aa17ac15af55326a8ed2f244192b2d5d309fc753539a92bf72d15b74bf963:922c64590222798bb761d5b6d8e72950

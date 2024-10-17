@@ -1,0 +1,50 @@
+id: wordpress-worker
+
+info:
+  name: ManageWP Worker Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/worker/
+  metadata:
+    plugin_namespace: worker
+    wpscan: https://wpscan.com/plugin/worker
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/worker/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/worker.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+# digest: 4a0a00473045022100dd75fa27596d7c1e864eaee08ee5729326dcda2e7dd22852ac9eccd33e213060022051bdd0adf65a656d3083f2af3aca0aa5a9fe25dd0847f45992375ff004618f36:922c64590222798bb761d5b6d8e72950

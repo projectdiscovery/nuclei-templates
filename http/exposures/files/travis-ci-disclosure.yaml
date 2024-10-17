@@ -1,0 +1,48 @@
+id: travis-ci-disclosure
+
+info:
+  name: Travis CI Disclosure
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Travis CI is a Software as a Service (SaaS) based continuous integration service used to build and test software projects. By defining a configuration file named `.travis.yml` in their source code repositories, developers can customize their applications build workflows.
+  remediation: |
+    Ensure that the `.travis.yml` file is not deployed with the application or, at least, is not exposed in a web server directory by setting proper permissions on it. If sensitive information like credentials are leaked in the exposed file, they should be revoked and reset on the affected assets.
+  reference:
+    - https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt
+    - https://arstechnica.com/information-technology/2021/09/travis-ci-flaw-exposed-secrets-for-thousands-of-open-source-projects/
+    - https://www.tenable.com/plugins/was/113156
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"travis.yml"
+  tags: exposure,file,config,tenable
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/.travis.yml'
+      - '{{BaseURL}}/matomo/.travis.yml'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'before_script:'
+          - 'jobs:'
+          - 'language:'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/octet-stream"
+
+      - type: status
+        status:
+          - 200
+
+# digest: 4a0a00473045022100e9022b886a94e939c335a02625d8571bc683c0633b50b41ded1254297dc513ee02200544a6d79be4326542b39dd76592b2442dfdcc60cbcb53572199b95de212f430:922c64590222798bb761d5b6d8e72950

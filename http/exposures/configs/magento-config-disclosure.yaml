@@ -1,0 +1,59 @@
+id: magento-config-disclosure
+
+info:
+  name: Magento Configuration Panel - Detect
+  author: ptonewreckin,danigoland,geeknik
+  severity: high
+  description: |
+    Magento configuration panel was detected. Misconfigured instances of Magento may disclose usernames, passwords, and database configurations via /app/etc/local.xml.
+  reference:
+    - https://github.com/ptonewreckin/cmsDetector/blob/master/signatures/magento.py
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:magento:magento:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.component:"Magento"
+    product: magento
+    vendor: magento
+  tags: magento,exposure,credential,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/etc/local.xml"
+      - "{{BaseURL}}/app/etc/local.xml.additional"
+      - "{{BaseURL}}/store/app/etc/local.xml"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "* Magento"
+          - "<dbname>"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/xml"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: xpath
+        part: body
+        xpath:
+          - "/config/global/resources/default_setup/connection/host"
+          - "/config/global/resources/default_setup/connection/username"
+          - "/config/global/resources/default_setup/connection/password"
+          - "/config/global/resources/default_setup/connection/dbname"
+# digest: 4a0a00473045022100e44fe62f5a98df3ff0b5dcfd01e31722ab4cf96fea5eadc1d4ee20c00420375002203743d163293aff83873aab20722d97832aa12e237f97f36669e7badee4bb36a9:922c64590222798bb761d5b6d8e72950

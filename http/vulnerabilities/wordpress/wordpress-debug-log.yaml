@@ -1,0 +1,50 @@
+id: wp-debug-log
+
+info:
+  name: WordPress Debug Log - Exposure
+  author: geraldino2,dwisiswant0,philippedelteil
+  severity: low
+  description: Exposed Wordpress debug log.
+  metadata:
+    max-request: 4
+  tags: wp,wordpress,log,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{paths}}/debug.log"
+
+    payloads:
+      paths:
+        - 'wp-content'
+        - 'wordpress'
+        - 'wp'
+        - 'blog'
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 3
+    max-size: 5000
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - octet-stream
+          - text/plain
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "[[0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3}] PHP"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - to_string(content_length)+ " bytes"
+# digest: 490a00463044022028a0ab9520f3995840f37d06270d896f35a8c68056494389d4786560d16078b2022015af70691201270893eb8e9c70f755619c606a68aa07c2c78f2a85be9b4ef587:922c64590222798bb761d5b6d8e72950

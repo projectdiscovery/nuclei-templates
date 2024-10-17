@@ -1,0 +1,77 @@
+id: csrf-guard-detect
+
+info:
+  name: OWASP CSRFGuard 3.x/4.x - Detect
+  author: forgedhallpass
+  severity: info
+  description: OWASP CSRFGuard 3.x and 4.x were checked for whether token-per-page support is enabled based on default configuration.
+  reference:
+    - https://github.com/OWASP/www-project-csrfguard
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  metadata:
+    max-request: 3
+  tags: tech,csrfguard,owasp
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /JavaScriptServlet HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{BaseURL}}
+      - |
+        POST /JavaScriptServlet HTTP/1.1
+        Host: {{Hostname}}
+        OWASP-CSRFTOKEN: {{masterToken}}
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: "CSRFGuard-v3.x"
+        words:
+          - "FETCH-CSRF-TOKEN"
+
+      - type: word
+        name: "CSRFGuard-v4.x"
+        words:
+          - "masterTokenValue"
+
+      - type: dsl
+        name: "Disabled-token-per-page"
+        condition: and
+        dsl:
+          - 'status_code_3==400'
+          - 'contains(body, "Token-Per-Page functionality is disabled")'
+
+      - type: dsl
+        name: "Enabled-token-per-page"
+        condition: and
+        dsl:
+          - 'status_code_3==200'
+          - 'contains(body, "{\"pageTokens")'
+
+    extractors:
+      - type: regex
+        name: masterToken
+        internal: true
+        group: 1
+        regex:
+          - "(?:masterTokenValue\\s*=\\s*')([^']+)';"
+
+      - type: regex
+        group: 1
+        name: "master-token"
+        regex:
+          - "(?:masterTokenValue\\s*=\\s*')([^']+)';"
+
+      - type: json
+        name: "page-token"
+        json:
+          - '.pageTokens'
+
+# digest: 4a0a00473045022100be9f0de5a4ed056ec8b1e162a22cd7e372cb88f262008a0f459d95a8b07463c80220102efa4fe89248e28958130257b44a7e4af82ac033f6c447f6c5a99ca5ba299f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: graphql-field-suggestion
+
+info:
+  name: GraphQL Field Suggestion Information Disclosure
+  author: Dolev Farhi
+  severity: info
+  description: |
+    If introspection is disabled on your target, Field Suggestion can allow users to still earn information on the GraphQL schema.
+    By default, GraphQL backends have a feature for fields and operations suggestions.
+    If you try to query a field but you have made a typo, GraphQL will attempt to suggest fields that are similar to the initial attempt.
+  reference:
+    - https://github.com/webonyx/graphql-php/issues/454
+    - https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application
+    - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+    - https://graphql.security
+  metadata:
+    max-request: 2
+  tags: graphql,misconfig
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query {\n  __schema {\n directive\n }\n}","variables":null}
+      - |
+        POST /api/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query {\n  __schema {\n directive\n }\n}","variables":null}
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Did you mean"
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+# digest: 4a0a00473045022100f5316ae1a3de8e167424760b404e4f463b495138d3760a6b2fd3e506430e98ff02204480e1f6186cd2fdc82c1ad5cb8a8cadf5174b9a4023dbe8ddf0c2eeace340d3:922c64590222798bb761d5b6d8e72950

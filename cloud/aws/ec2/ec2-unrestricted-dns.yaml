@@ -1,0 +1,37 @@
+id: ec2-unrestricted-dns
+info:
+  name: Unrestricted DNS Access in EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in Amazon EC2 security groups that allow unrestricted access (0.0.0.0/0 or ::/0) on TCP/UDP port 53, which can expose DNS servers to potential attacks.
+  impact: |
+    Allowing unrestricted access to DNS services can lead to DNS spoofing, DDoS attacks, and unauthorized access to internal networks.
+  remediation: |
+    Restrict the inbound rules for TCP/UDP port 53 in EC2 security groups to known, trusted IPs only. Ensure security group rules are tightly controlled and monitored.
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html#SecurityGroupRules
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=53 Name=ip-permission.to-port,Values=53 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 53"'
+# digest: 490a0046304402207a2ebb618db4c24fc0d9e868b09e8689a7ccee1c419c1e446d549e2231bf20d202202c9b7cdcef58014affe10a86649a319995447be182a50a5910e13f4911bb9676:922c64590222798bb761d5b6d8e72950

