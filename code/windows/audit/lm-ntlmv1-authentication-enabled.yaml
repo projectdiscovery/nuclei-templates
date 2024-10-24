@@ -1,0 +1,32 @@
+id: lm-ntlmv1-authentication-enabled
+
+info:
+  name: LM and NTLMv1 Authentication Enabled
+  author: princechaddha
+  severity: high
+  description: Checks if LM and NTLMv1 authentication protocols are enabled, which are insecure.
+  impact: |
+    Legacy authentication methods such as LM and NTLMv1 are vulnerable to brute-force and pass-the-hash attacks.
+  remediation: |
+    Disable LM and NTLMv1 and enforce NTLMv2 or Kerberos for secure authentication.
+  tags: lm,ntlmv1,authentication,code,windows-audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $level = (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'LmCompatibilityLevel' -ErrorAction SilentlyContinue).LmCompatibilityLevel; if ($level -lt 3 -or $level -eq $null) { if ($level -eq $null) {"LM Compatibility Level is not set"} else {"LM Compatibility Level is misconfigured (current value: $level)"}} else {"LM Compatibility Level is securely configured (current value: $level)"}
+
+    matchers:
+      - type: word
+        words:
+          - "LM Compatibility Level is misconfigured"
