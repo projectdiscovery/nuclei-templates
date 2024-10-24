@@ -10,8 +10,10 @@ info:
     - https://github.com/zricethezav/gitleaks/blob/master/cmd/generate/config/rules/mapbox.go
   metadata:
     verified: true
-    max-request: 1
+    max-request: 2
   tags: token,exposure,mapbox,disclosure
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
@@ -20,8 +22,23 @@ http:
 
     extractors:
       - type: regex
-        name: mapbox-secret-token
         part: body
+        name: token
         regex:
-          - 'sk\.eyJ1Ijoi\w+\.[\w-]*'
-# digest: 490a0046304402202130f47c3a7ae00539c0c9361e16a262701adb95680ac7c8040458c236dc1c9302205a3499d6a73c3a5916ce6114479d863b4c8678c9fdf417eda549efbbf8215325:922c64590222798bb761d5b6d8e72950
+          - pk\.[a-z0-9]{60}\.[a-z0-9]{22}
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://api.mapbox.com:443
+        GET /geocoding/v5/mapbox.places/Los%20Angeles.json?access_token={{token}} HTTP/1.1
+        Host: api.mapbox.com
+
+    self-contained: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "type","query","features")'
+        condition: and
