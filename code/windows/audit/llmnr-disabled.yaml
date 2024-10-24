@@ -1,0 +1,33 @@
+id: llmnr-disabled
+
+info:
+  name: LLMNR Disabled
+  author: princechaddha
+  severity: medium
+  description: Determine if LLMNR (Link-Local Multicast Name Resolution) is disabled.
+  impact: |
+    Enabling LLMNR can expose systems to man-in-the-middle attacks.
+  remediation: |
+    Disable LLMNR to reduce the risk of such attacks.
+  tags: windows,llmnr,network,security,code,windows-audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $lmnrStatus = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' -Name 'EnableMulticast' -ErrorAction SilentlyContinue
+      if ($lmnrStatus -and $lmnrStatus.EnableMulticast -eq 0) {"LLMNR is correctly disabled"} else {"LLMNR is misconfigured or enabled by default"}
+
+    matchers:
+      - type: word
+        words:
+          - "LLMNR is misconfigured or enabled by default"
