@@ -1,0 +1,60 @@
+id: cloudfront-compress-object
+
+info:
+  name: CloudFront Compress Objects Automatically
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Ensure that your Amazon CloudFront Content Delivery Network (CDN) distributions are configured to automatically compress content for web requests that include "Accept-Encoding: gzip" in the request header, in order to increase the websites/web applications performance and reduce bandwidth costs.
+  impact: |
+    Disabling "Compress Objects Automatically" in CloudFront can lead to increased data transfer costs and slower page load times, negatively impacting user experience and performance.
+  remediation: |
+    Enable "Compress Objects Automatically" in CloudFront to reduce data transfer sizes, enhance loading speeds, and improve overall performance for end users.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/compress-objects-automatically.html
+    - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution-config --id $distribution --query 'DistributionConfig.CacheBehaviors.Items[*].Compress' --region $region --output text
+
+    matchers:
+      - type: word
+        words:
+          - "False"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFront Compress Objects Automatically " + distribution + " is Disabled"'
