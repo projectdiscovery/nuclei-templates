@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2604 | dhiyaneshdk   |  1360 | http       |  7723 | info     |  3802 | file |   402 |
-| panel     |  1173 | daffainfo     |   864 | file       |   402 | high     |  1843 | dns  |    25 |
-| wordpress |  1008 | dwisiswant0   |   803 | workflows  |   192 | medium   |  1588 |      |       |
-| exposure  |   971 | pussycat0x    |   447 | network    |   137 | critical |  1083 |      |       |
-| xss       |   919 | ritikchaddha  |   393 | cloud      |   134 | low      |   272 |      |       |
-| wp-plugin |   878 | pikpikcu      |   353 | code       |    81 | unknown  |    41 |      |       |
-| osint     |   805 | princechaddha |   303 | javascript |    61 |          |       |      |       |
-| tech      |   703 | pdteam        |   297 | ssl        |    29 |          |       |      |       |
-| lfi       |   685 | ricardomaia   |   241 | dast       |    25 |          |       |      |       |
-| misconfig |   678 | geeknik       |   231 | dns        |    22 |          |       |      |       |
+| cve       |  2773 | dhiyaneshdk   |  1420 | http       |  8042 | info     |  3887 | file |   402 |
+| panel     |  1212 | daffainfo     |   866 | file       |   402 | high     |  2039 | dns  |    25 |
+| wordpress |  1046 | dwisiswant0   |   802 | cloud      |   325 | medium   |  1742 |      |       |
+| exposure  |   997 | princechaddha |   498 | workflows  |   192 | critical |  1158 |      |       |
+| xss       |   956 | ritikchaddha  |   455 | network    |   137 | low      |   280 |      |       |
+| wp-plugin |   915 | pussycat0x    |   452 | code       |    84 | unknown  |    43 |      |       |
+| osint     |   807 | pikpikcu      |   353 | javascript |    65 |          |       |      |       |
+| tech      |   729 | pdteam        |   302 | ssl        |    30 |          |       |      |       |
+| lfi       |   713 | ricardomaia   |   243 | dast       |    25 |          |       |      |       |
+| misconfig |   713 | geeknik       |   231 | dns        |    22 |          |       |      |       |

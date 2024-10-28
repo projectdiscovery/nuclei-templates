@@ -1,0 +1,56 @@
+id: azure-lb-unused
+info:
+  name: Azure Unused Load Balancer Check
+  author: princechaddha
+  severity: low
+  description: |
+    Identify any unused load balancers available within your Azure cloud account and delete them in order to eliminate unnecessary costs and meet compliance requirements when it comes to cloud resource management. A Microsoft Azure load balancer is considered unused when it doesn't have any associated backend pool instances. The backend pool instances can be individual virtual machines or instances running within a virtual machine scale set.
+  impact: |
+    Unused load balancers incur unnecessary costs and complicate compliance and resource management.
+  remediation: |
+    Review and remove unused load balancers that do not have any backend pool instances.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview
+  tags: cloud,devops,azure,microsoft,load-balancer,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let BalancerData of iterate(template.balancerList)) {
+    BalancerData = JSON.parse(BalancerData);
+    set("name", BalancerData.Name);
+    set("resourceGroup", BalancerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network lb list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: balancerList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network lb show --name "$name" --resource-group "$resourceGroup" --query 'backendAddressPools[*].backendIpConfigurations[*].id | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is unused with no backend instances"'
+# digest: 4a0a00473045022100fbbae0e4df9ec9a5be12bf299bf652ed6c7f9c7186b44a73cbbdef41052e3f9b02203f4fafdaa3898004e06eebe6340e6bb92523430d2ea14b76c1d4300a4d7f470f:922c64590222798bb761d5b6d8e72950
