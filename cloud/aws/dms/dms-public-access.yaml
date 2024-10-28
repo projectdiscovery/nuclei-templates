@@ -1,0 +1,59 @@
+id: dms-public-access
+
+info:
+  name: Publicly Accessible DMS Replication Instances
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that your Amazon Database Migration Service (DMS) are not publicly accessible from the Internet in order to avoid exposing private data and minimize security risks.
+  impact: |
+    Publicly accessible DMS replication instances expose your database to unauthorized access and potential attacks, increasing the risk of data breaches and compromising the security of sensitive information.
+  remediation: |
+    Restrict access to your DMS replication instances by configuring security groups and network access controls to allow connections only from trusted IP addresses and private subnets, ensuring that they are not publicly accessible.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/DMS/publicly-accessible.html
+    - https://docs.aws.amazon.com/dms/latest/userguide/CHAP_ReplicationInstance.html
+  tags: cloud,devops,aws,amazon,dms,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let ReplicationInstances of iterate(template.replications)){
+    set("replication", ReplicationInstances)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws dms describe-replication-instances --region $region --query "ReplicationInstances[*].ReplicationInstanceArn" --output json
+
+    extractors:
+      - type: json
+        name: replications
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws dms describe-replication-instances --region $region --filters Name=replication-instance-arn,Values=$replication --query "ReplicationInstances[*].PubliclyAccessible" --output json
+
+    matchers:
+      - type: word
+        words:
+          - "true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"DMS Replication Instances  " + replication + " Publicly Accessible"'
+# digest: 4b0a00483046022100c2e4b02073095257867ae2f880894485ce4395d427a0f5797433d453d16557b4022100f11bea387537d175614dcbe4c0e1f7a3d19cfe18b2eb5177157de179677aaea4:922c64590222798bb761d5b6d8e72950
