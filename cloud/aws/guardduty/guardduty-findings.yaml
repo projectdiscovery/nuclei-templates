@@ -1,7 +1,7 @@
 id: guardduty-findings
 
 info:
-  name: GuardDuty Findings
+  name: Open GuardDuty Findings
   author: DhiyaneshDK
   severity: medium
   description: |
@@ -23,10 +23,6 @@ flow: |
   for(let DetectorIds of iterate(template.detectors)){
     set("detector", DetectorIds)
     code(2)}
-  for(let FindingIds of iterate(template.findings)){
-    set("finding", FindingIds)
-    code(3)
-  }
 
 self-contained: true
 
@@ -50,27 +46,12 @@ code:
     source: |
         aws guardduty list-findings --region $region --detector-id $detector --query 'FindingIds' --output json
 
-    extractors:
-      - type: json
-        name: findings
-        internal: true
-        json:
-          - '.[]'
-
-  - engine:
-      - sh
-      - bash
-    source: |
-        aws guardduty get-findings --region $region --detector-id $detector --finding-ids $finding --output json
-
     matchers:
-      - type: word
-        words:
-          - '"Title":'
-          - '"Type":'
-        condition: and
+      - type: regex
+        regex:
+          - '\"(.*)\"'
 
     extractors:
       - type: dsl
         dsl:
-          - '"GuardDuty Findings " + finding + " is present"'
+          - '"The AWS account has open GuardDuty Findings"'
