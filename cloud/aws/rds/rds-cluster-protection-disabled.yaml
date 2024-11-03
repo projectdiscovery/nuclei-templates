@@ -1,0 +1,60 @@
+id: rds-cluster-protection-disabled
+
+info:
+  name: RDS Cluster Deletion Protection - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that all your provisioned Amazon Aurora database clusters are protected from accidental deletion by having the Deletion Protection feature enabled at the Aurora cluster level.
+  impact: |
+    The RDS cluster can be accidentally deleted, leading to potential data loss and service disruption.
+  remediation: |
+    Enable deletion protection for the RDS cluster via the AWS Management Console, CLI, or API to prevent accidental deletion.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/cluster-deletion-protection.html
+    - https://aws.amazon.com/about-aws/whats-new/2018/09/amazon-rds-now-provides-database-deletion-protection/
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DBClusterIdentifier of iterate(template.dbclusters)){
+    set("dbcluster", DBClusterIdentifier)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-clusters --region $region --output json --query 'DBClusters[?Engine==`aurora-mysql`].DBClusterIdentifier | []'
+
+    extractors:
+      - type: json
+        name: dbclusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws rds describe-db-clusters --region $region --db-cluster-identifier $dbcluster --query 'DBClusters[*].DeletionProtection' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'dbcluster + " RDS Cluster Deletion Protection is Disabled"'
+# digest: 490a0046304402200739860f75125c05a20a0938ad2c851bf23e4a3ec2fc60607ebb2029aec85cc20220553d51f85cb4ffe450af721605d778bf0e121cf14e589cddabdcd07263038a01:922c64590222798bb761d5b6d8e72950

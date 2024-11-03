@@ -1,0 +1,61 @@
+id: ebs-encryption-disabled
+
+info:
+  name: EBS Encryption - Disabled
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Ensure that all your Amazon Elastic Block Store (EBS) volumes are encrypted in order to meet security and compliance requirements. With encryption enabled, your EBS volumes can hold sensitive, confidential, and critical data.
+  impact: |
+    Disabling AWS EBS encryption exposes sensitive data to unauthorized access, increasing the risk of data breaches and compliance violations.
+  remediation: |
+    Enable encryption for all existing EBS volumes and ensure that all new volumes created are configured to use encryption by default. Additionally, update any snapshots to be encrypted and use AWS Key Management Service (KMS) to manage encryption keys securely.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/EBS/ebs-encrypted.html
+    - http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html
+  tags: cloud,devops,aws,amazon,ebs,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let VolumesVolumeId of iterate(template.volumes)){
+    set("volume", VolumesVolumeId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws ec2 describe-volumes --region $region --query 'Volumes[*].VolumeId'  --output json
+
+    extractors:
+      - type: json
+        name: volumes
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws ec2 describe-volumes --region $region --volume-ids $volume --query 'Volumes[*].Encrypted' --output text
+
+    matchers:
+      - type: word
+        words:
+          - "False"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EBS Encryption  " + volumes + " is Disabled"'
+# digest: 4a0a00473045022100fe98ba08fe06c9398f905a0651ac60c5cfbdbeaf2fa0c524aa9d2c0e29d3c75902200ab089e32558f42e2a7f8d5fafb3e309dfe261bad4e417532734222a7cbaa7cf:922c64590222798bb761d5b6d8e72950
