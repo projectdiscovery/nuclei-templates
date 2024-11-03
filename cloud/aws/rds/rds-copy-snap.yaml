@@ -1,0 +1,60 @@
+id: rds-copy-snap
+
+info:
+  name: RDS Copy Tags to Snapshots - Disabled
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Ensure that your Amazon RDS database instances make use of the Copy Tags to Snapshots feature in order to allow tags set on your database instances to be automatically copied to any automated or manual database snapshots that are created from these RDS instances.
+  impact: |
+    Tags are not copied to snapshots, making it harder to track, manage, and identify snapshots for cost allocation, compliance, or organization.
+  remediation: |
+    Enable the "Copy Tags to Snapshots" option for the RDS instance in the AWS Management Console, CLI, or API to ensure that tags are automatically applied to any created snapshots.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/copy-tags-to-snapshot.html
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Tagging.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DBClusterIdentifier of iterate(template.dbclusters)){
+    set("dbcluster", DBClusterIdentifier)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output json --query 'DBInstances[?Engine==`mysql` || Engine==`postgres`].DBInstanceIdentifier | []'
+
+    extractors:
+      - type: json
+        name: dbclusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws rds describe-db-instances --region $region --db-instance-identifier $dbcluster --query 'DBInstances[*].CopyTagsToSnapshot'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Copy Tags To Snapshot is not enable for instance " + dbcluster'
+# digest: 490a00463044022051022f479a0afd2afcaf9d9d367a89ea9ec98a164addc7348dfef195b6c5fbcd02205b2c561640b25055cd8ef27cb924f349dac20be3c13b32840c35835adcf6b48f:922c64590222798bb761d5b6d8e72950
