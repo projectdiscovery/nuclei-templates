@@ -1,0 +1,60 @@
+id: cloudfront-logging-disabled
+
+info:
+  name: Cloudfront Logging Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that access (standard) logging is enabled for your Amazon CloudFront distributions in order to track all viewer requests for the web content delivered through the Content Delivery Network (CDN).
+  impact: |
+    Disabling CloudFront logging reduces visibility into traffic patterns, hinders incident response and forensic analysis, compromises compliance efforts, and limits troubleshooting capabilities, increasing security risks.
+  remediation: |
+    Enable encryption for all existing EBS volumes and ensure that all new volumes created are configured to use encryption by default. Additionally, update any snapshots to be encrypted and use AWS Key Management Service (KMS) to manage encryption keys securely.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/cloudfront-logging-enabled.html
+    - http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution --id $distribution --query 'Distribution.DistributionConfig.Logging.Enabled' --region $region --output text
+
+    matchers:
+      - type: word
+        words:
+          - "False"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Cloudfront Logging " + distribution + " is Disabled"'
