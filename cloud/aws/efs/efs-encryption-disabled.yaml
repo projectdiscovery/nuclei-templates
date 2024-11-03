@@ -1,0 +1,60 @@
+id: efs-encryption-disabled
+
+info:
+  name: EFS Encryption - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that the data available on your Amazon EFS file systems is encrypted at rest in order to meet security and compliance requirements.
+  impact: |
+    Sensitive data transmitted or stored in Redis could be exposed, leading to potential data breaches or unauthorized access.
+  remediation: |
+    Enable encryption for AWS EFS by configuring encryption at rest in the EFS settings to protect data from unauthorized access.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ElastiCache/in-transit-and-at-rest-encryption.html
+    - https://docs.aws.amazon.com/efs/latest/ug/encryption.html
+  tags: cloud,devops,aws,amazon,efs-encryption-disabled,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let FileSystemId of iterate(template.filesystemids)){
+    set("filesystemid", FileSystemId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws efs describe-file-systems --region $region --output json --query 'FileSystems[*].FileSystemId'
+
+    extractors:
+      - type: json
+        name: filesystemids
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws efs describe-file-systems --region $region --file-system-id $filesystemid --query 'FileSystems[*].Encrypted' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'filesystemid + " EFS Encryption is Disabled"'
+# digest: 490a0046304402202f3524493875a0119ee2ee6e8fc65a74c5f15c1e355ac921c5835d100f13bc7302200d7986a9d0b33d821a24772e250381523a6c47374b1f84ca39891df988fefc87:922c64590222798bb761d5b6d8e72950
