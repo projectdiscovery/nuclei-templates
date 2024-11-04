@@ -1,0 +1,58 @@
+id: stack-termination-disabled
+
+info:
+  name: CloudFormation Termination Protection - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that Termination Protection safety feature is enabled for your Amazon CloudFormation stacks in order to protect them from being accidentally deleted.
+  impact: |
+    Disabled termination protection increases the risk of accidental deletion of critical CloudFormation stacks.
+  remediation: |
+    Enable termination protection for critical CloudFormation stacks by setting TerminationProtection to true in the stack settings, preventing accidental deletions.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFormation/stack-termination-protection.html
+    - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-protect-stacks.html
+  tags: cloud,devops,aws,amazon,cloudformation,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let StackSummaries of iterate(template.stacksummaries)){
+    set("stacksummary", StackSummaries)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE --output json --query 'StackSummaries[*].StackName'
+
+    extractors:
+      - type: json
+        name: stacksummaries
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws cloudformation describe-stacks --region $region --stack-name $stacksummary --query 'Stacks[*].EnableTerminationProtection' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFormation Termination Protection " + stacksummary + " is Disabled"'
