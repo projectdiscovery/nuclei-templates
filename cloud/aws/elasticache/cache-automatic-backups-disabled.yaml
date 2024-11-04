@@ -1,0 +1,60 @@
+id: cache-automatic-backups-disabled
+
+info:
+  name: ElastiCache Automatic Backups - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that Amazon ElastiCache is configured to take automatic daily backups for Redis cache clusters.
+  impact: |
+    Disabling ElastiCache automatic backups increases the risk of data loss, as you won't have point-in-time recovery options in case of data corruption or accidental deletion.
+  remediation: |
+    enable automatic backups in the AWS Management Console for your ElastiCache Redis or Memcached cluster to ensure regular snapshots for data recovery.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ElastiCache/enable-automatic-backups.html
+    - https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/backups-automatic.html
+  tags: cloud,devops,aws,amazon,elasticache,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let ReplicationGroupId of iterate(template.replicationgroupids)){
+    set("replicationgroup", ReplicationGroupId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws elasticache describe-replication-groups --region $region --output json --query 'ReplicationGroups[*].ReplicationGroupId'
+
+    extractors:
+      - type: json
+        name: replicationgroupids
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws elasticache describe-replication-groups --replication-group-id $replicationgroup --query 'ReplicationGroups[*].SnapshotRetentionLimit' --region $region --output json
+
+    matchers:
+      - type: word
+        words:
+          - '0'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'replicationgroup + " ElastiCache Automatic Backups is Disabled"'
+# digest: 4a0a0047304502210087c54085d08d635a332b799ec9ec22d6ddfa6740d360649eab91c74f128664ca0220747eef461974f2e267e2356c4f18a67918ca9b085d0e0cf0b81be01288315ebd:922c64590222798bb761d5b6d8e72950
