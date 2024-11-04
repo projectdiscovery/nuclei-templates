@@ -1,0 +1,46 @@
+id: minio-console-default-login
+
+info:
+  name: MinIO Console - Default Admin Discovery
+  author: johnk3r
+  severity: high
+  description: MinIO default admin credentials were discovered.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:minio:minio:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"MinIO Console"
+    product: minio
+    vendor: minio
+  tags: minio,default-login
+
+http:
+  - raw:
+      - |
+        POST /api/v1/login HTTP/1.1
+        Host: {{BaseURL}}
+        Content-Type: application/json
+        Connection: keep-alive
+
+        {"accessKey":"minioadmin","secretKey":"minioadmin"}
+
+      - |
+        GET /api/v1/session HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'serverEndPoint'
+          - 'ok'
+        part: body
+        condition: or
+
+      - type: status
+        status:
+          - 200
