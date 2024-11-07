@@ -1,0 +1,46 @@
+id: velocityjs-injection
+
+info:
+  name: VelocityJS 2.0.6 - Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference: 
+    - https://www.npmjs.com/package/velocityjs
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  result: "{{first}}{{second}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      reflection:
+        - '%23set($X="{{first}}")%23set($Y="{{second}}")$X$Y' #VelocityJS 2.0.6
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{reflection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+
+      - type: word
+        part: header
+        words:
+          - "Express"

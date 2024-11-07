@@ -1,0 +1,48 @@
+id: jinja2-injection
+
+info:
+  name: Jinja2 3.1.3 - Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://pypi.org/project/Jinja2/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  third: "{{rand_int(1000, 9999)}}"
+  result: "{{first}}{{second}}{{third}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '{{first}}{{"{{second}}"}}{{third}}' #Jinja2 3.1.3
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+
+      - type: word
+        part: header
+        words:
+          - "Werkzeug"
+          - "Python"

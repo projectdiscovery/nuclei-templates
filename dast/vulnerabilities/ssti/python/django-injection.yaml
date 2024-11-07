@@ -1,0 +1,48 @@
+id: django-injection
+
+info:
+  name: Django 4.2.15  - Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://www.djangoproject.com/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  third: "{{rand_int(1000, 9999)}}"
+  result: "{{first}}{{second}}{{third}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '{{first}}{{"{{second}}"}}{{third}}' #Django 4.2.15
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+
+      - type: word
+        part: header
+        words:
+          - "Werkzeug"
+          - "Python"
