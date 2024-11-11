@@ -1,0 +1,43 @@
+id: freemarker-java-injection
+
+info:
+  name: Freemarker 2.3.33 - Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://mvnrepository.com/artifact/org.freemarker/freemarker
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  third: "{{rand_int(1000, 9999)}}"
+  payload: '{{first}}${"{{second}}"}{{third}}'
+  result: "{{first}}{{second}}{{third}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '{{url_encode(payload)}}' #Freemarker 2.3.33
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
