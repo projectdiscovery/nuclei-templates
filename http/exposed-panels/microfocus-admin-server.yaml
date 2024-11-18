@@ -2,7 +2,7 @@ id: microfocus-admin-server
 
 info:
   name: Micro Focus Enterprise Server Admin Panel - Detect
-  author: theabhinavgaur
+  author: theabhinavgaur,righettod
   severity: info
   description: Micro Focus Enterprise Server Admin panel was detected.
   classification:
@@ -10,26 +10,40 @@ info:
     cwe-id: CWE-200
     cpe: cpe:2.3:a:microfocus:enterprise_server:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 1
-    product: enterprise_server
-    shodan-query: Micro Focus DSD
-    vendor: microfocus
     verified: true
-  tags: panel,exposure,microfocus,admin
+    max-request: 4
+    vendor: microfocus
+    product: "enterprise_server"
+    shodan-query:
+      - "Micro Focus DSD"
+      - micro focus dsd
+  tags: panel,microfocus,detect,login
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
+      - "{{BaseURL}}/nps/servlet/portalservice"
+      - "{{BaseURL}}/nds"
+      - "{{BaseURL}}/_LOGIN_SERVER_"
 
-    matchers-condition: and
+    stop-at-first-match: true
+
+    redirects: true
+    max-redirects: 2
+
     matchers:
-      - type: word
-        part: header
-        words:
-          - "Micro Focus DSD"
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(to_lower(header), "micro focus dsd")'
+          - 'status_code == 200 && contains_any(to_lower(body), "micro focus imanager", "micro focus imonitor", "micro focus remote manager", "micro focus open enterprise server")'
+        condition: or
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a004730450220434535888e9d2c7013c1604e095f8495b8b77f8f89b5dcee304bc4053c58c9d8022100ec370d625fc73d009cc2b2e158d64bf5b44186713c098461bbbabb34482fb73a:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)Micro\s+Focus\s+Open\s+Enterprise\s+Server\s+([A-Z0-9\s]+)'
+          - '(?i)Copyright\s+([0-9]+)\s+Micro\s+Focus'
+# digest: 4a0a00473045022100de811c0f940c1f71230703f8e687ff2df71329fd070d1ed5c69baf47a8e262e902205640bfdf7aa81a62700be494020467a11256ba8750f72c1813aeccf401f71b78:922c64590222798bb761d5b6d8e72950

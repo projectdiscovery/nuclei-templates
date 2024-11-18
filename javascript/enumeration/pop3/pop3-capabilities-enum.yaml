@@ -2,27 +2,28 @@ id: pop3-capabilities-enum
 
 info:
   name: POP3 Capabilities - Enumeration
-  author: pussycat0x
+  author: pussycat0x,daffainfo
   severity: info
   description: |
     POP3 capabilities are defined in RFC 2449. The CAPA command allows a client to ask a server what commands it supports and possibly any site-specific policy. Besides the list of supported commands, the IMPLEMENTATION string giving the server version may be available.
   reference:
     - https://nmap.org/nsedoc/scripts/pop3-capabilities.html
   metadata:
+    verified: true
     max-request: 1
     shodan-query: "port:110"
-    verified: true
   tags: js,network,pop3,enum
 
 javascript:
-  - code: |
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
       let data = "CAPA\r\n"
       let c = require("nuclei/net");
       let conn = c.Open('tcp', `${Host}:${Port}`);
       conn.Send(data);
       let result = conn.RecvString();
-      let cleanedData = result.replace(/\+OK Dovecot ready\.\r\n\+OK|\r\n|\s/g, " ");
-      console.log(Export(cleanedData))
+      Export(result);
 
     args:
       Host: "{{Host}}"
@@ -34,6 +35,10 @@ javascript:
         dsl:
           - "success == true"
 
+      - type: regex
+        regex:
+          - '\+OK.*'
+
       - type: word
         words:
           - "HTTP/1.1"
@@ -41,7 +46,6 @@ javascript:
 
     extractors:
       - type: dsl
-        name:
         dsl:
-          - response
-# digest: 4a0a00473045022100c6e43b222a90204f57d0cb949f774e69b162741de5f8fa7e00e3486e3c8e459c022069add72265a2601f9c2e86d26367e0961a781520ac9eadb40d0c8f79636933aa:922c64590222798bb761d5b6d8e72950
+          - replace_regex(replace_regex(response, "\\+OK.*\\r\\n\\+OK.*\\r\\n", ""), "\\r\\n", " ")
+# digest: 4b0a00483046022100a6a76a8646e2c13b3725c08b6147a79dba19f54b89918b42d1b1cf67137ee3f3022100ba72e4587dabaf290bfbf0c1abf3bfbd0f09a17b583dfaa4006fd700201edffd:922c64590222798bb761d5b6d8e72950

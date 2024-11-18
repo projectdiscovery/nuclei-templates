@@ -14,39 +14,17 @@ jobs:
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
       - uses: actions/checkout@v4
-        with: 
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.21.x
-
-      - name: nuclei install
-        run: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-
-      - name: Template Sign
-        id: sign
-        run: |
-          nuclei -lfa -duc -sign -t /home/runner/work/nuclei-templates/nuclei-templates
-          nuclei -lfa -duc -t /home/runner/work/nuclei-templates/nuclei-templates
-          git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
+      - uses: projectdiscovery/actions/setup/nuclei@v1
+      - run: nuclei -lfa -duc -sign -ud $GITHUB_WORKSPACE -t .
         env:
           NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
           NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
-          
-      - name: Commit files
-        if: steps.sign.outputs.CHANGES > 0
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add cves.json cves.json-checksum.txt
-          git commit -m "Auto Template Signing [$(date)] :robot:" -a
-
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '.'
+          message: 'chore: sign templates 🤖'
       - name: Push changes
-        if: steps.sign.outputs.CHANGES > 0
         run: |
-          git pull --rebase
-          git push origin ${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

@@ -1,0 +1,50 @@
+id: k8s-host-ports-check
+
+info:
+  name: Host ports should not be used
+  author: princechaddha
+  severity: medium
+  description: Checks Kubernetes Deployments to ensure they are not configured to use host ports, which can expose the host to potential security risks.
+  impact: |
+    Using host ports can compromise the isolation between the host and the containers, increasing the risk of unauthorized access to host resources. This can lead to security breaches.
+  remediation: |
+    Avoid using host ports in Kubernetes Deployments. Use services or other networking mechanisms to expose container applications.
+  reference:
+    - https://kubernetes.io/docs/concepts/services-networking/service/
+  tags: cloud,devops,kubernetes,devsecops,deployments,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[] | {name: .metadata.name, namespace: .metadata.namespace, containers: .spec.template.spec.containers}'
+
+javascript:
+  - code: |
+        let deploymentData = JSON.parse(template.deployment);
+        deploymentData.containers.forEach(container => {
+          if (container.ports && container.ports.some(port => port.hostPort)) {
+            let result = (`Deployment '${deploymentData.name}' in namespace '${deploymentData.namespace}' uses host ports.`);
+            Export(result);
+          }
+        });
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a00463044022011532f20237cf541dbf6f961b6c194239b93619beb27129817c467cd266c48e90220338b47466ecff7995c0c920a541f2ec4bc5d7d062ddaf96260079033ceee08eb:922c64590222798bb761d5b6d8e72950

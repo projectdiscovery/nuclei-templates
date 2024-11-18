@@ -9,28 +9,36 @@ info:
   reference:
     - https://github.com/sjhilt/Nmap-NSEs/blob/master/minecraft-info.nse
   metadata:
+    verified: true
     max-request: 1
     shodan-query: product:"Minecraft"
-    verified: true
   tags: js,network,minecraft,enum
 
 javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
   - code: |
       let data = "fe01"
       let c = require("nuclei/net");
       let conn = c.Open('tcp', `${Host}:${Port}`);
       conn.SendHex(data);
       let response = conn.RecvString();
-      const version = response.slice(16, 30).replace(/(\d+)(\d{1})(\d+)/, "$1.$2.$3");
-      const description = response.slice(30, -4);
-      const onlinePlayers = response.slice(-1);
-      const maxPlayers = response.slice(-3);
-      Export("Version: ", version , " Description:", description ," Online Players:", onlinePlayers, " Maximum Players:", maxPlayers)
+      if (response.includes("HTTP/1.1")) {
+        conn.Close();
+      } else {
+        let cleanedResponse = response.replace(/\x00/g, '');
+        const version = cleanedResponse.slice(16, 30).replace(/(\d+)(\d{1})(\d+)/, "$1.$2.$3");
+        const description = cleanedResponse.slice(30, -4);
+        const onlinePlayers = cleanedResponse.slice(-1);
+        const maxPlayers = cleanedResponse.slice(-3);
+        Export("Version: ", version , " Description:", description ," Online Players:", onlinePlayers, " Maximum Players:", maxPlayers);
+      }
 
     args:
       Host: "{{Host}}"
       Port: 25565
 
+    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
@@ -40,4 +48,4 @@ javascript:
       - type: dsl
         dsl:
           - response
-# digest: 4b0a0048304602210097a010ea589db898dd8dfb9813cef0ddf6a92c583644a11ed95aa50ef8147b28022100ea4cfe825571c9cf2c1afc8dd0db45993bbd5e5b5145b18485b60ea965d66fc1:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100836c53aa611dcdc1d55fab77f47baad253e37cd7b8e0e5b6db345386575d3636022100fe3ae75584586caf4c14cacee94ad6ad12a373150e8b61f6e142e3d9dba7ee59:922c64590222798bb761d5b6d8e72950

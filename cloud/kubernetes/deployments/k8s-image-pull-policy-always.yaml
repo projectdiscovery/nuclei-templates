@@ -1,0 +1,48 @@
+id: k8s-image-pull-policy-always
+
+info:
+  name: Image Pull Policy set to Always
+  author: princechaddha
+  severity: low
+  description: Ensures that Kubernetes deployments have the image pull policy set to 'Always', which guarantees the most up-to-date version of the image is used.
+  impact: |
+    Not setting the image pull policy to 'Always' may cause pods to use outdated versions of images, which can lead to security vulnerabilities if the images contain fixes or updates.
+  remediation: Update the image pull policy in Kubernetes Deployments to 'Always' to ensure that the latest container images are always used.
+  reference:
+    - https://kubernetes.io/docs/concepts/containers/images/#updating-images
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,images,docker,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.every(container => container.imagePullPolicy === 'Always')) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' does not have image pull policy set to Always.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502202f64c7e602834310b2e9a8c304d75b632cd1588374ae925560e396b61b209068022100c443b2a1a22e5404a2d851928394720efdbed1798415a186e6e0fef8f6001d83:922c64590222798bb761d5b6d8e72950

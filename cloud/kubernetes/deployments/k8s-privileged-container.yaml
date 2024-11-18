@@ -1,0 +1,52 @@
+id: k8s-privileged-containers
+
+info:
+  name: Privileged Containers Found in Deployments
+  author: princechaddha
+  severity: critical
+  description: Checks for containers running in privileged mode within Kubernetes Deployments, and now also checks for user privileges and privilege escalation settings.
+  impact: |
+    Running containers in privileged mode, as the root user, or with privilege escalation enabled can grant them access to host resources and could lead to security breaches if the container is compromised.
+  remediation: |
+    Ensure that no container in Kubernetes Deployments runs in privileged mode, as the root user, or with privilege escalation enabled. Modify the security context for each container to set `privileged: false`, `runAsUser` appropriately, and `allowPrivilegeEscalation: false`.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privileged
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        for (let container of deployment.spec.template.spec.containers) {
+          let sc = container.securityContext || {};
+          if (sc.privileged || sc.runAsUser < 1000 || sc.allowPrivilegeEscalation) {
+            let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' is running container '${container.name}' with insecure settings: Privileged=${sc.privileged}, runAsUser=${sc.runAsUser}, allowPrivilegeEscalation=${sc.allowPrivilegeEscalation}.`);
+            Export(result);
+            break;
+          }
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100b7c380b0fdf17140426a4a3f480f73ec33789c08b9975e1206a6c1078a2d6b45022012b453c2fe3a6501a2aebafbc2ff35422c301b9d7c8c0973cf666de045e5b163:922c64590222798bb761d5b6d8e72950

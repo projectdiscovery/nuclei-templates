@@ -1,0 +1,43 @@
+id: k8s-etcd-files-set
+
+info:
+  name: Ensure etcd cert and key set
+  author: princechaddha
+  severity: medium
+  description: Checks if the etcd-certfile and etcd-keyfile arguments are properly set in the etcd server configuration, crucial for secure communication.
+  impact: |
+    If the etcd-certfile and etcd-keyfile arguments are not set, the etcd server might not encrypt its communications, potentially allowing unauthorized access to sensitive data.
+  remediation: |
+    Configure the etcd server to use etcd-certfile and etcd-keyfile arguments that point to valid certificate and key files respectively. This ensures that communications to and from the etcd server are properly encrypted.
+  reference:
+    - https://etcd.io/docs/v3.4.0/op-guide/security/
+  tags: cloud,devops,kubernetes,devsecops,etcd,k8s,k8s-cluster-security
+
+variables:
+  argument: "etcd-certfile or etcd-keyfile"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=etcd -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'etcd'
+
+      - type: word
+        words:
+          - "etcd-certfile"
+          - "etcd-keyfile"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"etcd server configuration is missing the " + argument + " arguments."'
+# digest: 4b0a00483046022100bb84d21742988a88161e6550e0daba0c168c98de320123f6093e7a72ef91fcda022100ca1d3ec4487917633206b06c427a030e03aff246088870c7fc385dfd20076608:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: azure-vm-unapproved-image
+info:
+  name: Azure VM Not Using Approved Image
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all the Azure virtual machine (VM) instances necessary for your application stack are launched from an approved base Azure machine image, known as golden machine image, in order to enforce application security best practices, consistency, and save time when scaling your application.
+  impact: |
+    Using unapproved machine images can lead to inconsistencies and potential security vulnerabilities in your application stack.
+  remediation: |
+    Ensure all Azure VM instances are launched from approved machine images. Update any instances that are not using the approved images.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/windows/overview
+  tags: cloud,devops,azure,microsoft,virtual-machine,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("name", VMData.Name);
+    set("resourceGroup", VMData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --name "$name" --resource-group "$resourceGroup" --query '{"ImageId": storageProfile.imageReference.id}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"ImageId": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is using an unapproved Azure machine image"'
+# digest: 4b0a0048304602210082d104bc2fc55eec65d801e3f64ef98e6e0fb6347f5830c9a287b3310248e220022100cb16983e40a0b63c3b1718e7ff6cb02aa10f0af8ef2567292400e1e68ebc5dee:922c64590222798bb761d5b6d8e72950

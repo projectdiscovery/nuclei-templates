@@ -2,27 +2,41 @@ id: api-sendgrid
 
 info:
   name: Sendgrid API Test
-  author: zzeitlin
+  author: zzeitlin,0xpugal
   severity: info
+  description: |
+    A REST-like interface that enables you to send email at scale, ensuring your application can handle high-volume email with ease.
   reference:
-    - https://docs.sendgrid.com/for-developers/sending-email/getting-started-smtp
+    - https://www.twilio.com/docs/sendgrid/api-reference/how-to-use-the-sendgrid-v3-api
   metadata:
+    verified: true
     max-request: 1
   tags: token-spray,sendgrid
 
 self-contained: true
-tcp:
-  - inputs:
-      - data: "ehlo\r\n"
-        read: 1024
 
-      - data: "AUTH PLAIN {{base64(hex_decode('00')+'apikey'+hex_decode('00')+token)}}\r\n"
-        read: 1024
-    host:
-      - "tls://smtp.sendgrid.net:465"
+http:
+  - method: GET
+    path:
+      - "https://api.sendgrid.com/v3/scopes"
+
+    headers:
+      Authorization: Bearer {{token}}
+      Content-Type: application/json
+
+    matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
-          - "Authentication successful"
+          - '"scopes":['
 
-# digest: 4b0a004830460221008e0e74cc516e39557ab0c6778b54c5057b78391e494874ccb1cb0affe9888d67022100892b564dc499c64d59217eb15a6fdecdf2c0b5873366ee7093b857e2a2b43e92:922c64590222798bb761d5b6d8e72950
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100bfec8ef43250a5deeaddf82e4b5479d31149745b1b236041b9e9e707154dc562022100e8b38dec5cd4a3de4997df78b3278ebac2a8e954727b5ffc1f186634b3956e6a:922c64590222798bb761d5b6d8e72950

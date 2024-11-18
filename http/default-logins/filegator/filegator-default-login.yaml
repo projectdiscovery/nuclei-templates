@@ -1,0 +1,60 @@
+id: filegator-default-login
+
+info:
+  name: Filegator - Default-Login
+  author: ritikchaddha
+  severity: high
+  reference:
+    - https://serverpilot.io/docs/how-to-install-a-file-manager-on-your-server/#:~:text=You%20should%20see%20the%20FileGator,Password%3A%20admin123
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"FileGator"
+  tags: filegator,default-login,misconfig
+
+variables:
+  username: "admin"
+  password: "admin123"
+
+http:
+  - raw:
+      - |
+        GET /#/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /?r=/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        X-Csrf-Token: {{csrf_token}}
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'role":"admin'
+          - 'permissions":['
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        part: header_2
+        status:
+          - 200
+
+    extractors:
+      - type: kval
+        name: csrf_token
+        kval:
+          - 'x_csrf_token'
+        internal: true
+# digest: 4b0a00483046022100a9c390246eb114d52815a665e209cf52be580b5f3d4e66c71b2ee05a9a87ef93022100c03f58ce4361898d92ab9f1c06b106a1a42a95717df8ef7c98f2cd68f57c0f93:922c64590222798bb761d5b6d8e72950

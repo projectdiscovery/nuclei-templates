@@ -1,0 +1,47 @@
+id: k8s-memory-limits-not-set
+
+info:
+  name: Memory limits not set in Deployments
+  author: princechaddha
+  severity: medium
+  description: Checks for missing memory limits in Kubernetes Deployments, which can lead to resource contention and instability
+  impact: |
+    Missing memory limits in Kubernetes Deployments can cause resource contention and potential application instability.
+  remediation: Set memory limits for all containers in Kubernetes Deployments to ensure resource management and application stability
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.some(container => container.resources && container.resources.limits && container.resources.limits.memory)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' lacks memory limits.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a00463044022069a4646a0a3d856a79d0af6dc2b73cdd7b2835038feb1d5598a4f86577786994022063f8b629719eefe92da4c7c879e1828b087f04d37360ce743b62305d4f395730:922c64590222798bb761d5b6d8e72950

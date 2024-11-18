@@ -1,0 +1,53 @@
+id: k8s-seccomp-profile-set
+
+info:
+  name: Set appropriate seccomp profile
+  author: princechaddha
+  severity: medium
+  description: Checks if the seccomp profile is set to docker/default or runtime/default in Kubernetes Deployments.
+  impact: |
+    Using a default seccomp profile helps in reducing the attack surface of the container by limiting the syscalls containers can make, which can prevent certain types of exploits.
+  remediation: |
+    Ensure that all containers in Kubernetes Deployments have a seccomp profile of docker/default or runtime/default set in their security contexts.
+  reference:
+    - https://kubernetes.io/docs/tutorials/clusters/seccomp/
+  tags: cloud,devops,kubernetes,devsecops,containers,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        deployment.spec.template.spec.containers.forEach(container => {
+          if (container.securityContext && container.securityContext.seccompProfile &&
+              (container.securityContext.seccompProfile.type === 'RuntimeDefault' || container.securityContext.seccompProfile.type === 'DockerDefault')) {
+            // No action needed, configured properly
+          } else {
+            let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' does not have an appropriate seccomp profile set.`);
+            Export(result);
+          }
+        });
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a0048304602210088b5afd30016fb2a61fd300e6a13bfa07252a0d4972eb11b70583499ab79a4c20221009aba524227d19ead61e2c75a7b2840b90b708f236054cedf8b3531fb4e3ee49b:922c64590222798bb761d5b6d8e72950

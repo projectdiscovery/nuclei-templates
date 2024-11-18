@@ -1,0 +1,60 @@
+id: cache-event-notification-disabled
+
+info:
+  name: ElastiCache Event Notifications - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that your Amazon ElastiCache clusters are configured to send event notifications via Amazon Simple Notification Service (SNS) in order to monitor your cache clusters for important events and quickly mitigate any issues with your cache system.
+  impact: |
+    Disabling ElastiCache event notifications prevents timely alerts about cluster events, such as failovers, maintenance updates, or configuration changes, which can hinder proactive incident response and monitoring.
+  remediation: |
+    To remediate the disabled ElastiCache event notifications, enable event notifications in the AWS Management Console by configuring an Amazon SNS topic to receive alerts for important cluster events.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ElastiCache/enable-cluster-event-notifications.html
+    - https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/ECEvents.SNS.html
+  tags: cloud,devops,aws,amazon,elasticache,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let CacheClusterId of iterate(template.cacheclusterids)){
+    set("cacheclusterid", CacheClusterId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws elasticache describe-cache-clusters --region $region --output json --query 'CacheClusters[*].CacheClusterId'
+
+    extractors:
+      - type: json
+        name: cacheclusterids
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws elasticache describe-cache-clusters --region $region --cache-cluster-id $cacheclusterid --query 'CacheClusters[*].NotificationConfiguration.TopicArn' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'replicationgroup + " ElastiCache Event Notifications is Disabled"'
+# digest: 4b0a00483046022100ab045d9b41360da2b45ee3b9c537ba52e19a0755acb19ec581b2ed23f9dc20a5022100ffa958947047b3edf93b57eef8be1044206e78ca23573a7a1afaf60fdf92b531:922c64590222798bb761d5b6d8e72950

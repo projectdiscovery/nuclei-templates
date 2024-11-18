@@ -1,0 +1,54 @@
+id: azure-sql-mi-tde-cmk-not-enabled
+info:
+  name: Azure SQL MI TDE Not Using Customer-Managed Keys
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Transparent Data Encryption (TDE) with Customer-Managed Keys (CMKs) is enabled for your Microsoft Azure SQL managed instances. The TDE protector configured for your Azure SQL managed instances must be encrypted with a Customer-Managed Key in order to protect your managed SQL databases with a key from your own Azure key vault. This enables you to have full control over the encryption and decryption process and meet strict compliance requirements.
+  impact: |
+    Not using Customer-Managed Keys for Transparent Data Encryption can compromise data security by relying on less controlled service-managed keys and potentially fail to meet compliance requirements.
+  remediation: |
+    Configure Transparent Data Encryption to use Customer-Managed Keys by setting the TDE protector to use a key from your Azure key vault for your SQL managed instances.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-sql/database/transparent-data-encryption-tde-overview
+  tags: cloud,devops,azure,microsoft,sql-managed-instance,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let SQLMI of iterate(template.sqlManagedInstanceList)) {
+    set("ids", SQLMI);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql mi list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: sqlManagedInstanceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql mi tde-key show --ids "$ids" --query 'serverKeyType'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"ServiceManaged"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " is using a service-managed key for TDE, not a CMK"'
+# digest: 4a0a004730450221008c21361d450470bd8150645073a8e20ba29b3a6507d126922738c49b63d36079022028aeb52875e26e4875bea1e46f120ae23bd3c8eac3974263f8989b23ed7edc5a:922c64590222798bb761d5b6d8e72950
