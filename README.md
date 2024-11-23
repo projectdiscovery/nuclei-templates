@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2824 | dhiyaneshdk   |  1456 | http       |  8128 | info     |  3910 | file |   402 |
-| panel     |  1225 | daffainfo     |   866 | file       |   402 | high     |  2069 | dns  |    25 |
-| wordpress |  1057 | dwisiswant0   |   802 | cloud      |   353 | medium   |  1784 |      |       |
-| exposure  |   999 | princechaddha |   498 | workflows  |   192 | critical |  1175 |      |       |
-| xss       |   975 | ritikchaddha  |   479 | network    |   137 | low      |   284 |      |       |
-| wp-plugin |   920 | pussycat0x    |   452 | code       |    84 | unknown  |    43 |      |       |
+| cve       |  2850 | dhiyaneshdk   |  1475 | http       |  8180 | info     |  3938 | file |   404 |
+| panel     |  1241 | daffainfo     |   866 | file       |   404 | high     |  2079 | dns  |    25 |
+| wordpress |  1063 | dwisiswant0   |   802 | cloud      |   369 | medium   |  1805 |      |       |
+| exposure  |  1002 | princechaddha |   498 | workflows  |   192 | critical |  1185 |      |       |
+| xss       |   981 | ritikchaddha  |   486 | network    |   137 | low      |   287 |      |       |
+| wp-plugin |   926 | pussycat0x    |   453 | code       |    85 | unknown  |    43 |      |       |
 | osint     |   807 | pikpikcu      |   353 | javascript |    65 |          |       |      |       |
-| tech      |   736 | pdteam        |   302 | ssl        |    30 |          |       |      |       |
-| misconfig |   718 | ricardomaia   |   243 | dast       |    26 |          |       |      |       |
-| lfi       |   716 | geeknik       |   231 | dns        |    22 |          |       |      |       |
+| tech      |   741 | pdteam        |   302 | ssl        |    30 |          |       |      |       |
+| misconfig |   720 | ricardomaia   |   243 | dast       |    26 |          |       |      |       |
+| lfi       |   719 | geeknik       |   231 | dns        |    22 |          |       |      |       |
 
-**736 directories, 9771 files**.
+**741 directories, 9844 files**.
 
 </td>
 </tr>
