@@ -10,6 +10,7 @@ on:
 
 jobs:
   build:
+    name: Sign All Templates
     runs-on: ubuntu-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
@@ -24,6 +25,28 @@ jobs:
         with:
           files: '.'
           message: 'chore: sign templates 🤖'
+      - name: Push changes
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF
+
+  build-windows:
+    name: Re-sign Windows Templates
+    needs: build
+    runs-on: windows-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: projectdiscovery/actions/setup/nuclei@v1
+      - run: nuclei -lfa -duc -sign -ud $GITHUB_WORKSPACE -t .\code\windows
+        env:
+          NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
+          NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '.'
+          message: 'chore: re-sign windows templates 🤖'
       - name: Push changes
         run: |
           git pull origin $GITHUB_REF --rebase
