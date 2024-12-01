@@ -1,0 +1,49 @@
+name: Windows Template Resign
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows-resign:
+    name: Re-sign Templates on Windows
+    runs-on: windows-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          
+      - name: Install Nuclei
+        run: |
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+          nuclei -version
+        shell: bash
+          
+      - name: Sign Templates
+        run: nuclei -lfa -duc -sign -ud "${{ github.workspace }}" -t "."
+        shell: bash
+        env:
+          NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
+          NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
+          
+      - name: Configure Git
+        run: |
+          git config --global user.name "Ghost"
+          git config --global user.email "ghost@users.noreply.github.com"
+        shell: bash
+          
+      - name: Commit Changes
+        run: |
+          git add .
+          git commit -m "chore: re-sign templates on windows 🤖" || echo "No changes to commit"
+        shell: bash
+          
+      - name: Push Changes
+        run: |
+          git remote update
+          git pull origin ${{ github.ref }} --rebase || exit 1
+          git push origin ${{ github.ref }} || (git remote update && git pull origin ${{ github.ref }} --rebase && git push origin ${{ github.ref }})
+        shell: bash
