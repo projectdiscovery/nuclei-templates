@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import subprocess
-
+langs = ["","_CN","_JA","_KR"]
 def countTpl(path):
 	return len(glob.glob(path + "/*.*"))
 
@@ -14,10 +14,10 @@ def get_top10():
 	return HEADER + TOP10 if len(TOP10) > 0 else ""
 
 if __name__ == "__main__":
-	version = command(["git", "describe", "--tags", "--abbrev=0"])
-	template = eval(open(".github/scripts/README.tmpl", "r").read())
-
-	print(template)
-	f = open("README.md", "w")
-	f.write(template)
-	f.close()
+	for lang in langs:
+		version = command(["git", "describe", "--tags", "--abbrev=0"])
+		template = eval(open(".github/scripts/README{}.tmpl".format(lang), "r").read())
+		print(template)
+		f = open("README{}.md".format(lang), "w")
+		f.write(template)
+		f.close()
