@@ -1,0 +1,54 @@
+id: azure-appservice-auth-disabled
+info:
+  name: Azure App Service Authentication Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that App Service Authentication feature is enabled for Microsoft Azure App Service to add an extra layer of security to the authentication process implemented by your web applications.
+  impact: |
+    Disabling App Service Authentication can expose the application to unauthorized access and potential security vulnerabilities.
+  remediation: |
+    Enable the App Service Authentication feature for Azure App Services to ensure an additional layer of security for your web applications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/overview-authentication-authorization
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let WebAppData of iterate(template.webAppList)) {
+    WebAppData = JSON.parse(WebAppData);
+    set("id", WebAppData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{id:id}'
+
+    extractors:
+      - type: json
+        name: webAppList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp auth show --ids "$id" --query 'enabled' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have App Service Authentication enabled"'
+# digest: 490a004630440220566eb15ec4b35e34f6bbb874fad0bec010b65d93d3b1106081bf336fc815f8f9022031beb97c6be59bff1c9106119ebecf71dc726501e2987fa5af9d93c71b1b5fe5:922c64590222798bb761d5b6d8e72950

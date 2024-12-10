@@ -1,0 +1,73 @@
+id: azure-apim-nv-plaintext-exposure
+info:
+  name: Azure API Management Non-Encrypted Named Values Exposure
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all the named values used to define secret data within Azure API Management policies are encrypted in order to prevent the exposure of credentials and secrets.
+  impact: |
+    Using plaintext for sensitive information in named values can expose credentials and secrets to unauthorized access, increasing the risk of data breaches.
+  remediation: |
+    Convert all named values storing secrets to use the secret (encrypted) type in Azure API Management to mitigate the risk of exposing sensitive information.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-properties
+  tags: cloud,devops,azure,microsoft,api-management,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServiceData of iterate(template.serviceList)) {
+    ServiceData = JSON.parse(ServiceData);
+    set("name", ServiceData.name);
+    set("resourceGroup", ServiceData.resourceGroup);
+    code(2);
+    for (let namedvalue of iterate(template.nvList)) {
+      set("nv", namedvalue);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serviceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim nv list --service-name $name --resource-group $resourceGroup --query '[].name'
+
+    extractors:
+      - type: json
+        name: nvList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim nv show --service-name $name --resource-group $resourceGroup --named-value-id $nv --query 'secret'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has named values exposed in plaintext"'
+# digest: 490a0046304402206aa6631506699e9fb29cfd960d75b4e8aa09662033b723a5771e4b11a0611696022062815277722a6d88063a4f8ffa55f37c16b952fd73c8af48a40b20313972542c:922c64590222798bb761d5b6d8e72950

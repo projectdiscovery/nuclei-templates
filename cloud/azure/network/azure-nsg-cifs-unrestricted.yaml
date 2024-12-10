@@ -1,0 +1,57 @@
+id: azure-nsg-cifs-unrestricted
+info:
+  name: Unrestricted CIFS Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP port 445, used by Common Internet File System (CIFS), to prevent unauthorized access.
+  impact: |
+    Unrestricted access on TCP port 445 can expose network resources to risks such as unauthorized data access and data theft.
+  remediation: |
+    Modify NSG rules to restrict access on TCP port 445. Only allow known IPs, and consider implementing stronger security measures for sensitive file transfers.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='445')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 445"'
+# digest: 4a0a0047304502200ff7aed9f297814db0f36856e6bd6d32b2bed920955fd728ea4551af25b775d502210090983432a86c2dd81e3c8b97d6523e922eb9587df5ba286bbae2fa8b0688a515:922c64590222798bb761d5b6d8e72950

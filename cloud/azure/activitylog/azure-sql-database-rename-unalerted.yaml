@@ -1,0 +1,59 @@
+id: azure-sql-database-rename-unalerted
+info:
+  name: Azure SQL Database Rename Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Rename Azure SQL Database" events are triggered within your Microsoft Azure cloud account. Activity log alerts get triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Rename Azure SQL Database (servers/databases)'".
+  impact: |
+    If no alert is configured to monitor SQL Database rename events, unauthorized or unintended database renames might go unnoticed, potentially leading to security breaches or data inconsistencies.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Rename Azure SQL Database" events by setting the alert condition to "Microsoft.Sql/servers/databases/move/action" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,sql-database,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Sql/servers/databases/move/action"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Rename Azure SQL Database events"'
+# digest: 490a0046304402207581c55930838bc48ed9520121905a53125cfb5a8779ab404eb06edd31a580ec02203c32edbbb818726fba8ecfb4a2e254cdf90bfce0e1220a388273dfc701d8d836:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,60 @@
+id: rds-backtrack-disabled
+
+info:
+  name: AWS RDS Backtrack - Disabled
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Ensure that the Backtrack feature is enabled for your Amazon Aurora (with MySQL compatibility) database clusters in order to backtrack your clusters to a specific time, without using backups.
+  impact: |
+    Unable to quickly revert the database to a previous state, leading to longer recovery times in case of accidental changes or data corruption.
+  remediation: |
+    Enable Backtrack for the RDS instance through the AWS Management Console, CLI, or API, and configure the desired backtrack window to allow quick recovery.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/backtrack.html
+    - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Backtrack.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DBClusterIdentifier of iterate(template.dbclusters)){
+    set("dbcluster", DBClusterIdentifier)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-clusters --region $region --output json --query 'DBClusters[?Engine==`aurora-mysql`].DBClusterIdentifier | []'
+
+    extractors:
+      - type: json
+        name: dbclusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws rds describe-db-clusters --region $region --db-cluster-identifier $dbcluster --query 'DBClusters[*].BacktrackWindow' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'dbcluster + " AWS RDS Backtrack is Disabled"'
+# digest: 4a0a00473045022100cd16d9b7260f34a59060612c8c33b53463ae33022ce24b9a1b019d3e3c50f15b0220793fd5d67b01a6c17952e4eb20a97e8d947cbe9a04dedded9e201000deeca2a0:922c64590222798bb761d5b6d8e72950

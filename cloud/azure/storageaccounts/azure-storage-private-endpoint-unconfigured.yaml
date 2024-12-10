@@ -1,0 +1,55 @@
+id: azure-storage-private-endpoint-unconfigured
+info:
+  name: Azure Storage Private Endpoint Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that private endpoints are configured for Microsoft Azure Storage accounts in order to allow clients and services to securely access data located over a network via an encrypted Private Link connection.
+  impact: |
+    Not using private endpoints for Azure Storage accounts can expose sensitive data to potential breaches by allowing data transmission over less secure networks.
+  remediation: |
+    Configure private endpoints for your Azure Storage accounts to ensure secure access via Private Link.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-private-endpoints
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageAccount of iterate(template.storageAccounts)) {
+    StorageAccount = JSON.parse(StorageAccount);
+    set("name", StorageAccount.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageAccounts
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'privateEndpointConnections' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " does not have any configured private endpoints."'
+# digest: 490a00463044022019d3cb02a2ff0c90b9e27e712ef3d14df944021c648146c42b15255bded981c002205222331c4b2027f4b15f24400cb180ae29f8e388a9b71cd17dbd8254bfe455a2:922c64590222798bb761d5b6d8e72950

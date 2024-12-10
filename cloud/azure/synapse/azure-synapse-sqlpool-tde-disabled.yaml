@@ -1,0 +1,70 @@
+id: azure-synapse-sqlpool-tde-disabled
+info:
+  name: Azure Synapse Analytics SQL Pool Transparent Data Encryption Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Transparent Data Encryption (TDE) is enabled for all dedicated SQL pools within Microsoft Azure Synapse Analytics workspaces in order to protect your data at rest and help meet compliance requirements.
+  impact: |
+    Failing to enable Transparent Data Encryption (TDE) can result in non-compliance with regulatory requirements and increased risk of unauthorized access to sensitive data at rest.
+  remediation: |
+    Enable Transparent Data Encryption (TDE) for all Azure Synapse Analytics dedicated SQL pools to ensure your data at rest is encrypted and secure.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/sql-data-warehouse-overview-what-is
+  tags: cloud,devops,azure,microsoft,synapse,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let workspaceId of iterate(template.workspaceIds)) {
+    set("workspaceId", workspaceId);
+    code(2);
+    for (let sqlPoolId of iterate(template.sqlPoolIds)) {
+      set("sqlPoolId", sqlPoolId);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az synapse workspace list --query '[*].id'
+
+    extractors:
+      - type: json
+        name: workspaceIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az synapse sql pool list --workspace-name "$workspaceId" --resource-group "$resourceGroup" --query '[*].id'
+
+    extractors:
+      - type: json
+        name: sqlPoolIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az synapse sql pool tde show --ids "$sqlPoolId" --transparent-data-encryption-name current --query 'status'
+
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'workspaceId + " " + sqlPoolId + " does not have TDE enabled"'
+# digest: 4b0a00483046022100d1bf8c0b94ccc83007bdf0bc346ec0c2b78e34e7ab1246ee4a1b3545faba924d022100a86dc75b0764b050974230a9391e772463a3c0ae6767d3a6e45f6bb66ae90b3b:922c64590222798bb761d5b6d8e72950

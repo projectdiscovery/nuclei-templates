@@ -1,0 +1,57 @@
+id: azure-nsg-udp-unrestricted
+info:
+  name: Unrestricted UDP Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access on UDP ports to prevent unauthorized access and potential exploitation of vulnerabilities.
+  impact: |
+    Allowing unrestricted access on UDP ports can expose network resources to various types of cyber attacks, including DDoS attacks and data exfiltration.
+  remediation: |
+    Restrict access to UDP ports by configuring NSG rules to only allow trusted sources and necessary traffic. Implement additional security measures where possible.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='UDP']"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on UDP ports"'
+# digest: 490a004630440220479c5e2619d3075f930464189966765a8c6214f1d5627837077dfa3bf6fc478f022018bb56ac10f03fcfad227b5d30456c4218b84af0a45a7b2bc0f5406d29fb3ff9:922c64590222798bb761d5b6d8e72950

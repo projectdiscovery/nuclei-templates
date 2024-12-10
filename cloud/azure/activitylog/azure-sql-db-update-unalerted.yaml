@@ -1,0 +1,58 @@
+id: azure-sql-db-update-unalerted
+info:
+  name: Azure SQL Database Create/Update Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Create/Update Azure SQL Database" events are triggered within your Microsoft Azure cloud account. Activity log alerts get triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Create/Update Azure SQL Database (servers/databases)'".
+  impact: |
+    Not configuring alerts for monitoring "Create or Update Azure SQL Database" events can allow unauthorized changes to go unnoticed, potentially leading to data loss or security breaches.
+  remediation: |
+    Configure Azure activity log alerts to monitor and notify on "Create or Update Azure SQL Database" events by setting the alert condition to "Microsoft.Sql/servers/databases/write" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,sql-database,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Sql/servers/databases/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Create/Update Azure SQL Database events"'
+# digest: 490a0046304402201f15453014d8699a5ee3c8b920011d2554d6e6329c34cd83472df04eebfcf7be02200b6cee1061b2232ae4a215c50b4c25684ca8dc616bdea95f1fb19c5bc297820b:922c64590222798bb761d5b6d8e72950

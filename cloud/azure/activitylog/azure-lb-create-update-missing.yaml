@@ -1,0 +1,59 @@
+id: azure-lb-create-update-missing
+info:
+  name: Azure Load Balancer Create or Update Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Create or Update Load Balancer" events are triggered within your Microsoft Azure cloud account. Activity log alerts get triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Create or Update Load Balancer (loadBalancers)'".
+  impact: |
+    Without proper alerts, unauthorized or unintended changes to load balancers might not be detected, potentially leading to security risks or operational issues.
+  remediation: |
+    Configure Azure activity log alerts to include events for "Create or Update Load Balancer" with proper conditions to ensure compliance and operational awareness.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,loadbalancer,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertIds)) {
+    set("ids", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids $ids --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "allOf"
+
+      - type: word
+        words:
+          - "Microsoft.Network/loadBalancers/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " does not have correct Create or Update Load Balancer alert configured"'
+# digest: 4a0a004730450220202edf54205ae7f469993ba247fabb0860c5e009b4a057dc7dbc696355c2b8d6022100e1e561b98dbe6f1a23609ba8722b59fbb2023835ce506be4125836b77301f832:922c64590222798bb761d5b6d8e72950
