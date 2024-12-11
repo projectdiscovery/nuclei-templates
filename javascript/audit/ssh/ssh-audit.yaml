@@ -1,0 +1,80 @@
+id: ssh-audit
+
+info:
+  name: SSH - Audit
+  author: pussycat0x
+  severity: unknown
+  description: |
+    SSH (Secure Shell) is a critical tool for administering Linux servers remotely. However, its powerful capabilities also make it a prime target for attackers. SSH hardening refers to the process of strengthening SSH configuration and practices to protect against unauthorized access and potential security breaches.
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+    - https://github.com/projectdiscovery/nuclei-templates/tree/main/file/audit/ssh
+  tags: js,ssh,audit,network
+
+javascript:
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+
+      let result = "";
+      if (sshConfig.includes('#Port 22') && !sshConfig.includes('Port  ')) {
+      result += "Default SSH Port Detected; ";
+       }
+      if (sshConfig.includes('PermitEmptyPasswords yes')) {
+      result += "Disable SSH Empty Password Access; ";
+      }
+      if (sshConfig.includes('PermitRootLogin yes')) {
+      result += "Disable SSH Root Login; ";
+      }
+      if (sshConfig.includes('AllowTcpForwarding yes') && !sshConfig.includes('#AllowTcpForwarding yes') || sshConfig.includes('X11Forwarding yes')) {
+      result += "Disable SSH Forwarding; ";
+      }
+      if (!sshConfig.includes('Protocol 2')) {
+      result += "Disable SSH Protocol 1; ";
+      }
+      if (!sshConfig.includes('UsePrivilegeSeparation yes')) {
+      result += "Enable Privilege Separation in SSH; ";
+      }
+      if (!sshConfig.includes('PrintLastLog no')) {
+      result += "Hide SSH Last Login Information; ";
+      }
+      if (sshConfig.includes('#ClientAliveInterval') && sshConfig.includes('#ClientAliveCountMax') && !sshConfig.includes('ClientAliveInterval  ') && !sshConfig.includes('ClientAliveCountMax  ')){
+      result += "Set SSH  Idle Timeout Interval; ";
+      }
+      if (sshConfig.includes('#MaxAuthTries') && !sshConfig.includes('MaxAuthTries  ')){
+      result += "Set Maximum Limit SSH Authentication Attempts; ";
+      }
+      if (!sshConfig.includes('AllowGroups')){
+      result += "Set or Limit SSH Users Group Access; ";
+      }
+      if (!sshConfig.includes('AllowUsers')){
+      result += "Set or Limit SSH Users Access; ";
+      }
+      if (sshConfig.includes('#ListenAddress') && !sshConfig.includes('ListenAddress  ')){
+      result += "Limit SSH Access by IP Address / Whitelist IP; ";
+      }
+      if (sshConfig.includes('#PasswordAuthentication yes') && !sshConfig.includes('PasswordAuthentication yes')){
+      result += "Setup/Use SSH Key-Based Authentication; ";
+      }
+
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "root"
+      Password: "toor"
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
