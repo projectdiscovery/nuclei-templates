@@ -1,0 +1,63 @@
+id: unrestricted-rdp-access
+
+info:
+  name: Unrestricted - RDP Access
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Unrestricted RDP (Remote Desktop Protocol) access allows anyone on the internet to attempt to connect to your instance using port 3389, which is commonly used for RDP. This can expose the instance to potential brute force attacks, unauthorized access attempts, and exploitation of vulnerabilities in the RDP service.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ECS/unrestricted-rdp-access.html
+    - https://www.alibabacloud.com/help/en/ecs/use-cases/best-practices-of-the-security-group
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ecs
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let SecurityGroupId of iterate(template.securitygroup)){
+    set("securitygroup", SecurityGroupId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun ecs DescribeSecurityGroups --RegionId $region
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.SecurityGroups.SecurityGroup[].SecurityGroupId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId "$securitygroup" --Direction ingress --RegionId $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"IpProtocol": "TCP"'
+          - '"PortRange": "3389/3389"'
+          - '"SourceCidrIp": "0.0.0.0/0"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'securitygroup + " contains Unrestricted RDP Access"'
+# digest: 4b0a00483046022100bf55578af54ff83f807ef0f3f0e5def3032381df5c2cb0021017bbde90996ea302210094c8c1a5c7a92e2a8203d43ee193700b626ef684d8ac1187817f6a34d2495702:922c64590222798bb761d5b6d8e72950
