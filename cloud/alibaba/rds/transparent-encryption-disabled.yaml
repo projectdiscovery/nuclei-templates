@@ -1,0 +1,60 @@
+id: transparent-encryption-disabled
+
+info:
+  name: Transparent Data Encryption - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Alibaba Cloud Transparent Data Encryption (TDE) is disabled, meaning sensitive data at rest is not encrypted automatically. This may expose the data to unauthorized access, compromising confidentiality and security.
+  reference:
+    - https://www.alibabacloud.com/help/en/rds/apsaradb-rds-for-postgresql/enable-tde-for-an-apsaradb-rds-for-postgresql-instance-and-use-tde
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-RDS/enable-sql-database-tde.html
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,alibaba-rds
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let DBInstanceId of iterate(template.dbinstanceid)){
+    set("dbinstanceid", DBInstanceId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun rds DescribeDBInstances --region $region
+
+    extractors:
+      - type: json
+        name: dbinstanceid
+        internal: true
+        json:
+          - '.Items.DBInstance[].DBInstanceId'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun rds DescribeDBInstanceTDE --DBInstanceId $dbinstanceid --region $region
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"TDEStatus": "Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'dbinstanceid + " Transparent Data Encryption is Disabled "'
+# digest: 4a0a00473045022100c807f1f2ac2b6dda7e98da87b9f2c2bba35c20ef991f410eb8c8076a149a3ba302207e50fc47efe36300c43d0a8af98357c0cd154c3b13468358de747d7ca36fe111:922c64590222798bb761d5b6d8e72950
