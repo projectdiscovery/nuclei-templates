@@ -1,0 +1,50 @@
+id: os-patches-outdated
+
+info:
+  name: OS Patches - Outdated
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that the latest OS patches for ECS virtual machines (VM) instances are applied in order to mitigate security vulnerabilities and ensure optimal performance and stability.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ECS/apply-latest-os-patches.html
+    - https://www.alibabacloud.com/help/en/security-center/user-guide/fix-software-vulnerabilities
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ecs
+
+variables:
+  region: "cn-hangzhou"
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun sas DescribeVulList --Type cve --region $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"RaspStatus":'
+          - '"Type":'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"TotalCount": 0'
+          - '"VulRecords":'
+        condition: and
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '" OS Patches are Outdated "'
+# digest: 490a0046304402203722771629cc0537203157b7e985989c539c18ad902dd1e7791f709ce90f8b250220696bd192ade1a9fcf30288158468885e57f5a6476ee704edb801aebc36eacf1d:922c64590222798bb761d5b6d8e72950

