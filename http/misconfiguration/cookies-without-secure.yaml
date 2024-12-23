@@ -2,7 +2,7 @@ id: cookies-without-secure
 
 info:
   name: Cookies without Secure attribute - Detect
-  author: vthiery
+  author: vthiery,RJ Coleman
   severity: info
   description: |
     Checks whether cookies in the HTTP response contain the Secure attribute. If the Secure flag is set, it means that the cookie can only be transmitted over HTTPS
@@ -20,24 +20,32 @@ info:
     max-request: 1
   tags: misconfig,http,cookie,generic
 
+flow: |
+    http()
+    javascript()
+
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
-
     host-redirects: true
     max-redirects: 2
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: header
-        words:
-          - 'Set-Cookie'
 
-      - type: word
-        part: header
-        case-insensitive: true
-        words:
-          - "Secure"
-        negative: true
-# digest: 4b0a00483046022100dffefbb63ea597eb9a70ea7399e794d615b0454639db4c51dd0da5ec1ec434ac022100fdd3133a8b522eff06f2ca5f5ebf51b982b1e08f6da665139bec8484c6d493b6:922c64590222798bb761d5b6d8e72950
+javascript:
+  - code: |
+      content = template.http_all_headers
+      const setCookieLines = content
+        .split(/\r\n/)
+        .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));
+      const nonSecureCookies = setCookieLines.filter(line => !line.toLowerCase().includes('secure'));
+      const cookieNames = nonSecureCookies.map(line => {
+        const match = line.match(/set-cookie:\s*([^=]+)=/i);
+        return match ? match[1] : null;
+      }).filter(Boolean);
+      cookieNames
+
+    extractors:
+      - type: regex
+        regex:
+          - '[a-zA-Z0-9_-]+'
+# digest: 490a0046304402203c40f31794d6d2667d13faa55d201451ba8eee9cf390a4fe6c7d62b06031880b02205d896a6a3cab707c824d7092f7a346e8c38e30fcac61e935c09eb26e40cdad94:922c64590222798bb761d5b6d8e72950
