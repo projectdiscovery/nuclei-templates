@@ -1,0 +1,63 @@
+id: ack-cluster-health-disable
+
+info:
+  name: ACK Clusters Check - Disable
+  author: ritikchaddha
+  severity: medium
+  description: |
+    Ensure that the Cluster Check feature is triggered at least once per week to guarantee proactive health monitoring for your ACK clusters, minimizing downtime and optimizing the reliability of your containerized applications. By default, Cluster Check is not automatically triggered, the cluster inspection can be started using the Container Service for Kubernetes (ACK) console.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ACK/cluster-check.html
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ack
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let cluster_id of iterate(template.cluster)) {
+    set("cluster", cluster_id)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters --header "Content-Type=application/json;" --body "{}"
+
+    extractors:
+      - type: json
+        name: cluster
+        internal: true
+        json:
+          - '.[].cluster_id'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters/$cluster/checks --header "Content-Type=application/json;" --body "{}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'check_id":'
+          - 'status":'
+
+      - type: word
+        words:
+          - '"status": "Succeeded'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'cluster + " Cluster Health Check is Disabled"'
