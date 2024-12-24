@@ -1,0 +1,70 @@
+id: limit-networkaccess-disabled
+
+info:
+  name: Limit Network Access to Selected Networks - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Limit Network Access to Selected Networks in Alibaba OSS allows you to restrict access to your object storage service (OSS) to specific IP addresses or IP ranges, enhancing security by ensuring that only trusted networks can interact with your data."
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/publicly-accessible-oss-bucket.html
+    - https://www.alibabacloud.com/help/en/oss/user-guide/block-public-access
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,alibaba-oss
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let BucketName of iterate(template.bucketname)) {
+    set("bucket", BucketName)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun oss ls --region $region
+
+    extractors:
+      - type: regex
+        name: bucketname
+        internal: true
+        regex:
+          - 'oss://([a-zA-Z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun oss bucket-policy --method get $bucket --region $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"IpAddress":'
+          - '"acs:SourceIp":'
+        negative: true
+
+      - type: word
+        words:
+          - '"Principal":'
+          - '"Resource":'
+          - '"Action":'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'bucket + " Limit Network Access to Selected Networks is Disabled "'
+# digest: 4a0a0047304502207e35a18d8164528de48029765a8fe55797af61fff934bb5d0b18d47fed41ae9a022100fab60e8b59b6a61f40ea8a69ca9b3e268c81ece8809a37425fc72b11ac7bc5ac:922c64590222798bb761d5b6d8e72950

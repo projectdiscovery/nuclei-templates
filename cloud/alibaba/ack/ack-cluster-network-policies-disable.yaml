@@ -1,0 +1,63 @@
+id: ack-cluster-network-policies-disable
+
+info:
+  name: Enforced Cluster Support for Network Policies - Disabled
+  author: ritikchaddha
+  severity: medium
+  description: |
+    Ensure that your ACK clusters are using Kubernetes network policies to implement secure policy-based access control. Container Service for Kubernetes (ACK) employs the Terway network plugin to enforce network policies at the cluster level.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ACK/enable-network-policy-support.html
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ack
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let cluster_id of iterate(template.cluster)) {
+    set("cluster", cluster_id)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters --header "Content-Type=application/json;" --body "{}"
+
+    matchers:
+      - type: word
+        words:
+          - '"Network": "terway-eniip"'
+        internal: true
+
+    extractors:
+      - type: json
+        name: cluster
+        internal: true
+        json:
+          - '.[].cluster_id'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters/$cluster --header "Content-Type=application/json;" --body "{}" --output cols=meta_data
+
+    matchers:
+      - type: word
+        words:
+          - 'NetworkPolicy\":\"false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'cluster + " Cluster is not using the plugin to enforce network policies"'
+# digest: 490a004630440220640da8dee3686d45b8d38d62d63cf5d7449b99340f644d1095463046e03db60602204eb932c45b8397a18c4562f067d09bd397bf4ddd06c5efeed9d66fc82f681f19:922c64590222798bb761d5b6d8e72950
