@@ -1,0 +1,55 @@
+id: elasticsearch
+
+info:
+  name: ElasticSearch Information Disclosure
+  author: Shine,c-sh0,geeknik
+  severity: low
+  description: Internal information is exposed in elasticsearch to external users.
+  classification:
+    cpe: cpe:2.3:a:elasticsearch:elasticsearch:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: elasticsearch
+    product: elasticsearch
+    shodan-query: "ElasticSearch"
+  tags: elastic,unauth,elasticsearch,misconfig
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/?pretty'
+      - '{{BaseURL}}/_cat/indices?v'
+      - '{{BaseURL}}/_all/_search'
+      - "{{BaseURL}}/_cluster/health?pretty"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"took":'
+          - '"number" :'
+          - '"number_of_nodes"'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - application/json
+          - application/vnd.api+json
+          - text/plain
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"number"\s:\s"([0-9.]+)"'
+# digest: 4b0a0048304602210092dc538843d4e0b8aba2e8b09b424a9647bc3a26db4b457d2dc5f5284fee56320221008c4440f5f4d067ba573b45824dc58220a50855154a2ee35616590faa22a4b611:922c64590222798bb761d5b6d8e72950

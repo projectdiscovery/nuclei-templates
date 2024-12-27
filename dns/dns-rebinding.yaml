@@ -1,0 +1,50 @@
+id: dns-rebinding
+info:
+  name: DNS Rebinding Attack
+  author: ricardomaia
+  severity: unknown
+  description: |
+    Detects DNS Rebinding attacks by checking if the DNS response contains a private IPv4 or IPv6 address.
+  reference:
+    - https://capec.mitre.org/data/definitions/275.html
+    - https://payatu.com/blog/dns-rebinding/
+    - https://heimdalsecurity.com/blog/dns-rebinding/
+  metadata:
+    max-request: 2
+  tags: redirect,dns,network
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+    matchers:
+      # IPv4
+      - type: regex
+        part: answer
+        regex:
+          - 'IN\s+A\s+(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$'
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv4
+        group: 1
+        regex:
+          - 'IN\s+A\s+(127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})'
+
+  - name: "{{FQDN}}"
+    type: AAAA
+    matchers:
+      # IPv6 Compressed and Full
+      - type: regex
+        part: answer
+        regex:
+          - "IN\\s+AAAA\\s+(fd[0-9a-fA-F]{2}(:[0-9a-fA-F]{0,4}){0,7})"
+
+    extractors:
+      - type: regex
+        part: answer
+        name: IPv6_ULA
+        group: 1
+        regex:
+          - "IN\\s+AAAA\\s+(fd[0-9a-fA-F]{2}(:[0-9a-fA-F]{0,4}){0,7})"
+# digest: 4b0a00483046022100cc7e9489d9230ef689d85896f60415ef214bcf1228b7178eea6797b163365257022100bef4ef720d7d205bf753196429c0e5cbfeab3210c246b56a057ce4fe374054c9:922c64590222798bb761d5b6d8e72950

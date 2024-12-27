@@ -1,0 +1,64 @@
+id: cloudtrail-logs-not-encrypted
+info:
+  name: CloudTrail Logs Not Encrypted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure Amazon CloudTrail logs are encrypted at rest using AWS Key Management Service (KMS) to secure log data.
+  impact: |
+    Non-encrypted CloudTrail logs pose a risk of unauthorized access, compromising the integrity and confidentiality of log data.
+  remediation: |
+    Enable Server-Side Encryption (SSE) for CloudTrail logs using an AWS KMS key through the CloudTrail console or AWS CLI.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/encrypting-cloudtrail-log-files-with-aws-kms.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    set("region", template.trailregion)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].[Name, HomeRegion]' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[] | .[0]'
+
+      - type: json
+        name: trailregion
+        internal: true
+        json:
+          - '.[] | .[1]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].KmsKeyId'
+
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail " + trail + " is not configured to encrypt log files using SSE-KMS encryption"'
+# digest: 4a0a0047304502205431dba97a21f5853b99739cb31114a978e5cce863034217b4dd523e67d4cb9d022100b809d1b226bffa89d8a592b2f08cd1063512e36b200cb911f11899a60a81d56d:922c64590222798bb761d5b6d8e72950

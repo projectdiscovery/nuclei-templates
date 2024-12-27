@@ -1,0 +1,47 @@
+id: elasticbeanstalk-takeover
+
+info:
+  name: ElasticBeanstalk Subdomain Takeover Detection
+  author: philippedelteil,rotemreiss,zy9ard3,joaonevess
+  severity: high
+  description: ElasticBeanstalk subdomain takeover detected. A subdomain takeover occurs when an attacker gains control over a subdomain of a target domain. Typically, this happens when the subdomain has a canonical name (CNAME) in the Domain Name System (DNS), but no host is providing content for it.
+  reference:
+    - https://github.com/EdOverflow/can-i-take-over-xyz/issues/147
+    - https://twitter.com/payloadartist/status/1362035009863880711
+    - https://www.youtube.com/watch?v=srKIqhj_ki8
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-404
+  metadata:
+    max-request: 1
+    comments: |
+      Only CNAMEs with region specification are hijackable.
+      You need to claim the CNAME in AWS portal (https://aws.amazon.com/) or via AWS CLI to confirm the takeover.
+      Do not report this without claiming the CNAME.
+      CLI command to verify the availability of the environment:
+      aws elasticbeanstalk check-dns-availability --region {AWS_REGION} --cname-prefix {CNAME_PREFIX}
+      For example:
+      CNAME - 2rs3c.eu-west-1.elasticbeanstalk.com
+      Command - aws elasticbeanstalk check-dns-availability --region eu-west-1 --cname-prefix 2rs3c
+  tags: dns,takeover,aws,elasticbeanstalk
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - CNAME\t[a-z0-9_-]*\.(us|af|ap|ca|eu|me|sa|il)\-(north|east|west|south|northeast|southeast|central)\-[1-9]+\.elasticbeanstalk\.com
+
+      - type: word
+        words:
+          - NXDOMAIN
+
+    extractors:
+      - type: dsl
+        dsl:
+          - cname
+# digest: 490a00463044022065e172ebfcfc4aa8868bb6edd30e1b2a790366eaebf33b8956e760564f8a5ae402205ed5bd9be6c5cf5f6f76338561b3480c32564ea539074f753dfd7bd5d9766cc8:922c64590222798bb761d5b6d8e72950

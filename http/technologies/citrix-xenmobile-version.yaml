@@ -1,0 +1,55 @@
+id: citrix-xenmobile-version
+
+info:
+  name: Citrix XenMobile Version - Detect
+  author: Puben
+  severity: info
+  description: |
+    Template for XenMobile-detection (even if login-page is deactivated) and the specific version and rolling patch from js/app/init.js endpoint
+  classification:
+    cpe: cpe:2.3:a:citrix:xenmobile_server:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: citrix
+    product: xenmobile_server
+    shodan-query: "title:\"XenMobile - Console\""
+  tags: tech,edb,citrix,version,detect
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'contains(header, "Location: /zdm/login_xdm_uc.jsp")'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/js/app/init.js'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - 'v=([^"]+)'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'v=([^"]+)'
+# digest: 4a0a00473045022052d4e5b76eabddbb0f7bc39566df2dc19dfbf07b2ae4d0f86836a2647cdef01a022100b7ee4a9ae4675bf23e8443cb20ab0c6023c233eb92c8f4355d7e1cfa4698e44d:922c64590222798bb761d5b6d8e72950

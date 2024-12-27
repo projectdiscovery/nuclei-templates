@@ -1,0 +1,57 @@
+id: cw-alarms-actions
+info:
+  name: CloudWatch Alarms Actions Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all Amazon CloudWatch alarms have actions enabled (ActionEnabled: true) to respond to state changes.
+  impact: |
+    Without actions enabled, CloudWatch alarms cannot perform automated actions in response to state changes, potentially missing critical alerts.
+  remediation: |
+    Enable actions for each CloudWatch alarm by setting the ActionEnabled parameter to true, allowing for automated responses to alarms.
+  reference:
+    - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudwatch,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let AlarmName of iterate(template.alarms)){
+    set("alarm", AlarmName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudwatch describe-alarms --region $region --query 'MetricAlarms[].AlarmName' --output json
+
+    extractors:
+      - type: json
+        name: alarms
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws cloudwatch describe-alarms --region $region --alarm-names "DiskWritesOpsAlarm" --query 'MetricAlarms[*].ActionsEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The Amazon CloudWatch " + alarm + " does not have any active actions configured"'
+# digest: 4a0a00473045022100ede2c7feac5d47c4f073d7d85d6334cc220a65dacf1cea096983d1a464343dbc022018c9b15d0dfb8bf7d39afcebf8b0731a790cd21ac2ff470fd5abf2b245ee30a5:922c64590222798bb761d5b6d8e72950

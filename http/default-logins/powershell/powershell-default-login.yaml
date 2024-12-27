@@ -1,0 +1,58 @@
+id: powershell-default-login
+
+info:
+  name: PowerShell Universal - Default Login
+  author: ap3r
+  severity: high
+  description: |
+    PowerShell Universal default admin credentials were discovered.
+  reference:
+    - https://ironmansoftware.com/powershell-universal
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: "html:\"PowerShell Universal\""
+  tags: default-login,powershell-universal
+
+http:
+  - raw:
+      - |
+        POST /api/v1/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+        - password
+        - powershell
+
+    host-redirects: true
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie'
+
+      - type: word
+        part: body
+        words:
+          - '{"returnUrl":"/admin"}'
+
+      - type: word
+        part: body
+        words:
+          - '{"errorMessage":"Bad username or password"}'
+        negative: true
+# digest: 4a0a00473045022100afcaa4cc71c191df48e83b966ca76b0cfb852bcfe4b3216fec8526c89641644e0220209fb2e586464b38b37d47df9c1ef1f1656be1c25dd6f3dac3d74564b93f015e:922c64590222798bb761d5b6d8e72950

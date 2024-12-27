@@ -1,0 +1,43 @@
+id: avnil-pdf-generator-check
+
+info:
+  name: useanvil.com Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid avnil pdf generator account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 1
+  tags: cloud,creds-stuffing,login-check,avnil-pdf
+
+self-contained: true
+
+http:
+  - raw:
+      - |
+        POST https://graphql.useanvil.com/ HTTP/1.1
+        Host: graphql.useanvil.com
+        Content-Length: 367
+        Content-Type: application/json
+
+        {"operationName":"LoginMutation","variables":{"email":"{{username}}","password":"{{password}}"},"query":"mutation LoginMutation($email: String, $password: String) {\n  login(email: $email, password: $password) {\n    eid\n    firstName\n    lastName\n    email\n    preferences {\n      require2FA\n      __typename\n    }\n    extra\n    __typename\n  }\n}\n"}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"email":"'
+          - '"eid":"'
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100803474365b31dd131179fe72a16964c32cb86f4ebd0d3293ba63f1b4decde41c022100e29b34c19a0f2535bf74cc50d68bdf2b5205838cf55b6ff7f3a4dd5621e55f13:922c64590222798bb761d5b6d8e72950

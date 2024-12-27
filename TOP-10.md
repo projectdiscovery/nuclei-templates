@@ -1,12 +1,12 @@
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1071 | daffainfo     |   546 | cves             |  1069 | info     |  1094 | http    |  2949 |
-| panel     |   469 | dhiyaneshdk   |   407 | exposed-panels   |   471 | high     |   794 | file    |    57 |
-| lfi       |   433 | pikpikcu      |   313 | vulnerabilities  |   422 | medium   |   625 | network |    49 |
-| xss       |   338 | pdteam        |   257 | technologies     |   227 | critical |   389 | dns     |    17 |
-| wordpress |   329 | geeknik       |   174 | exposures        |   199 | low      |   173 |         |       |
-| exposure  |   282 | dwisiswant0   |   165 | misconfiguration |   193 | unknown  |     6 |         |       |
-| rce       |   272 | 0x_akoko      |   115 | workflows        |   185 |          |       |         |       |
-| cve2021   |   260 | princechaddha |   109 | token-spray      |   149 |          |       |         |       |
-| tech      |   238 | gy741         |   109 | default-logins   |    78 |          |       |         |       |
-| wp-plugin |   235 | pussycat0x    |   104 | takeovers        |    67 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
+| cve       |  2907 | dhiyaneshdk   |  1571 | http       |  8302 | info     |  3996 | file |   404 |
+| panel     |  1249 | daffainfo     |   866 | cloud      |   419 | high     |  2173 | dns  |    25 |
+| wordpress |  1085 | dwisiswant0   |   803 | file       |   404 | medium   |  1877 |      |       |
+| exposure  |  1044 | princechaddha |   569 | workflows  |   192 | critical |  1211 |      |       |
+| xss       |   994 | ritikchaddha  |   523 | code       |   158 | low      |   289 |      |       |
+| wp-plugin |   949 | pussycat0x    |   453 | network    |   138 | unknown  |    57 |      |       |
+| osint     |   807 | pikpikcu      |   352 | javascript |    65 |          |       |      |       |
+| tech      |   748 | pdteam        |   302 | dast       |    40 |          |       |      |       |
+| lfi       |   735 | ricardomaia   |   245 | ssl        |    36 |          |       |      |       |
+| misconfig |   721 | geeknik       |   232 | dns        |    22 |          |       |      |       |

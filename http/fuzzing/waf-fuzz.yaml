@@ -1,0 +1,794 @@
+id: waf-fuzz
+
+info:
+  name: WAF Fuzzing
+  author: dwisiswant0,lu4nx,Myst7ic
+  severity: info
+  description: A web application firewall was detected.
+  reference:
+    - https://github.com/Ekultek/WhatWaf
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 58
+  tags: waf,fuzz,fuzzing
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _={{whatwaf-payloads}}
+      - |
+        GET /?_={{whatwaf-payloads}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      whatwaf-payloads:
+        - 484029\") AS xDKy WHERE 5427=5427 UNION ALL SELECT NULL,NULL
+        - \' AND 1=1 \'
+        - \'))) AND \'1\'=\'1\' (((\'
+        - AND 1=1
+        - \' AND 1=1 \' OR 10=11,<script>alert(\'\');</script>
+        - \"\"\' AND 1=1 \" OR 1=10 \'\"\"
+        - \' AND 1=1 OR 2=2
+        - \' AND 1=1 OR 2=2 \'
+        - \' )) AND 1=1 \' OR \'2\'=\'3 --\'
+        - \' AND 1=1 OR 24=25 \'
+        - \' AND 1=1 OR 9=10 ORDERBY(1,2,3,4,5)
+        - \' AND 1=1 ORDERBY(1,2,3,4,5) \'; asdf
+        - AND 1=1,<script>alert(\"1,2,3,4,5);</script>
+        - AND 1=1,<script>alert(\\"test\\");</script>
+        - \' AND 1=1;SELECT * FROM information_schema.tables \'
+        - AS start WHERE 1601=1601 UNION ALL SELECT NULL,NULL
+        - /bin/cat /etc/passwd
+        - <img src=x onerror=\\"input\\">
+        - r\"\"\"&\lt\' AND 1=1 \',<script>alert(\"test\");</script>\"\"\"
+        - <script>alert(\'1\');</script>
+        - <script>alert(1);</script>
+        - <script>alert(\"\");</script>
+        - <script>alert(\"test\");</script>
+        - <script>alert(\'test\');</script>
+        - \'/><script>alert(\'whatwaf\');</script>
+        - <script>alert(\\"XSS\\");</script>
+        - SELECT * FROM information_schema.tables
+        - SELECT user FROM information_schema.tables AND user = \'test user\';
+        - UNION SELECT * FROM users WHERE user = \'admin\';
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        name: instart
+        regex:
+          - '(?i)instartrequestid'
+        part: body
+
+      - type: regex
+        name: perimx
+        regex:
+          - '(?i)access.to.this.page.has.been.denied.because.we.believe.you.are.using.automation.tool'
+          - '(?i)http(s)?://(www.)?perimeterx.\w+.whywasiblocked'
+          - '(?i)perimeterx'
+          - '(?i)(..)?client.perimeterx.*/[a-zA-Z]{8,15}/*.*.js'
+        condition: or
+        part: response
+
+      - type: regex
+        name: webknight
+        regex:
+          - '(?i)\bwebknight'
+          - '(?i)webknight'
+        condition: or
+        part: response
+
+      - type: regex
+        name: zscaler
+        regex:
+          - '(?i)zscaler(.\d+(.\d+)?)?'
+          - '(?i)zscaler'
+        condition: or
+        part: response
+
+      - type: regex
+        name: fortigate
+        regex:
+          - '(?i).>powered.by.fortinet<.'
+          - '(?i).>fortigate.ips.sensor<.'
+          - '(?i)fortigate'
+          - '(?i).fgd_icon'
+          - '(?i)\AFORTIWAFSID='
+          - '(?i)application.blocked.'
+          - '(?i).fortiGate.application.control'
+          - '(?i)(http(s)?)?://\w+.fortinet(.\w+:)?'
+          - '(?i)fortigate.hostname'
+          - '(?i)the.page.cannot.be.displayed..please.contact.[^@]+@[^@]+\.[^@]+.for.additional.information'
+        condition: or
+        part: response
+
+      - type: regex
+        name: teros
+        regex:
+          - '(?i)st8(id|.wa|.wf)?.?(\d+|\w+)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: stricthttp
+        regex:
+          - '(?i)the.request.was.rejected.because.the.url.contained.a.potentially.malicious.string'
+        condition: or
+        part: response
+
+      - type: regex
+        name: stricthttp
+        regex:
+          - '(?i)rejected.by.url.scan'
+          - '(?i)/rejected.by.url.scan'
+        condition: or
+        part: response
+
+      - type: regex
+        name: shadowd
+        regex:
+          - '(?i)<h\d>\d{3}.forbidden<.h\d>'
+          - '(?i)request.forbidden.by.administrative.rules.'
+        condition: and
+        part: response
+
+      - type: regex
+        name: bigip
+        regex:
+          - '(?i)\ATS\w{4,}='
+          - '(?i)bigipserver(.i)?|bigipserverinternal'
+          - '(?i)^TS[a-zA-Z0-9]{3,8}='
+          - '(?i)BigIP|BIG-IP|BIGIP'
+          - '(?i)bigipserver'
+        condition: or
+        part: response
+
+      - type: regex
+        name: edgecast
+        regex:
+          - '(?i)\Aecdf'
+        condition: or
+        part: response
+
+      - type: regex
+        name: radware
+        regex:
+          - '(?i).\bcloudwebsec.radware.com\b.'
+          - '(?i).>unauthorized.activity.has.been.detected<.'
+          - '(?i)with.the.following.case.number.in.its.subject:.\d+.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: varnish
+        regex:
+          - '(?i)varnish'
+          - '(?i).>.?security.by.cachewall.?<.'
+          - '(?i)cachewall'
+          - '(?i).>access.is.blocked.according.to.our.site.security.policy.<+'
+        condition: or
+        part: response
+
+      - type: regex
+        name: infosafe
+        regex:
+          - '(?i)infosafe'
+          - '(?i)by.(http(s)?(.//)?)?7i24.(com|net)'
+          - '(?i)infosafe.\d.\d'
+          - '(?i)var.infosafekey='
+        condition: or
+        part: response
+
+      - type: regex
+        name: aliyundun
+        regex:
+          - '(?i)error(s)?.aliyun(dun)?.(com|net)'
+          - '(?i)http(s)?://(www.)?aliyun.(com|net)'
+        condition: or
+        part: response
+
+      - type: regex
+        name: ats
+        regex:
+          - '(?i)(\()?apachetrafficserver((\/)?\d+(.\d+(.\d+)?)?)'
+          - '(?i)ats((\/)?(\d+(.\d+(.\d+)?)?))?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: malcare
+        regex:
+          - '(?i)malcare'
+          - '(?i).>login.protection<.+.><.+>powered.by<.+.>(<.+.>)?(.?malcare.-.pro|blogvault)?'
+          - '(?i).>firewall<.+.><.+>powered.by<.+.>(<.+.>)?(.?malcare.-.pro|blogvault)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: wts
+        regex:
+          - '(?i)(<title>)?wts.wa(f)?(\w+(\w+(\w+)?)?)?'
+        part: response
+
+      - type: regex
+        name: dw
+        regex:
+          - '(?i)dw.inj.check'
+        part: response
+
+      - type: regex
+        name: denyall
+        regex:
+          - '(?i)\Acondition.intercepted'
+          - '(?i)\Asessioncookie='
+        condition: or
+        part: response
+
+      - type: regex
+        name: yunsuo
+        regex:
+          - '(?i)<img.class=.yunsuologo.'
+          - '(?i)yunsuo.session'
+        condition: or
+        part: response
+
+      - type: regex
+        name: litespeed
+        regex:
+          - '(?i)litespeed.web.server'
+        part: response
+
+      - type: regex
+        name: cloudfront
+        regex:
+          - '(?i)[a-zA-Z0-9]{,60}.cloudfront.net'
+          - '(?i)cloudfront'
+          - '(?i)x.amz.cf.id|nguardx'
+        condition: or
+        part: response
+
+      - type: regex
+        name: anyu
+        regex:
+          - '(?i)sorry.{1,2}your.access.has.been.intercept(ed)?.by.anyu'
+          - '(?i)anyu'
+          - '(?i)anyu-?.the.green.channel'
+        condition: or
+        part: response
+
+      - type: regex
+        name: googlewebservices
+        regex:
+          - '(?i)your.client.has.issued.a.malformed.or.illegal.request'
+          - '(?i)our.systems.have.detected.unusual.traffic'
+          - '(?i)block(ed)?.by.g.cloud.security.policy.+'
+        condition: or
+        part: response
+
+      - type: regex
+        name: didiyun
+        regex:
+          - '(?i)(http(s)?://)(sec-waf.|www.)?didi(static|yun)?.com(/static/cloudwafstatic)?'
+          - '(?i)didiyun'
+        condition: or
+        part: response
+
+      - type: regex
+        name: blockdos
+        regex:
+          - '(?i)blockdos\.net'
+        part: response
+
+      - type: regex
+        name: codeigniter
+        regex:
+          - '(?i)the.uri.you.submitted.has.disallowed.characters'
+        part: response
+
+      - type: regex
+        name: stingray
+        regex:
+          - '(?i)\AX-Mapping-'
+        part: response
+
+      - type: regex
+        name: west263
+        regex:
+          - '(?i)wt\d*cdn'
+        part: response
+
+      - type: regex
+        name: aws
+        regex:
+          - '(?i)<RequestId>[0-9a-zA-Z]{16,25}<.RequestId>'
+          - '(?i)<Error><Code>AccessDenied<.Code>'
+          - '(?i)x.amz.id.\d+'
+          - '(?i)x.amz.request.id'
+        condition: or
+        part: response
+
+      - type: regex
+        name: yundun
+        regex:
+          - '(?i)YUNDUN'
+          - '(?i)^yd.cookie='
+          - '(?i)http(s)?.//(www\.)?(\w+.)?yundun(.com)?'
+          - '(?i)<title>.403.forbidden:.access.is.denied.{0,2}<.{0,2}title>'
+        condition: or
+        part: response
+
+      - type: regex
+        name: barracuda
+        regex:
+          - '(?i)\Abarra.counter.session=?'
+          - '(?i)(\A|\b)?barracuda.'
+          - '(?i)barracuda.networks.{1,2}inc'
+        condition: or
+        part: response
+
+      - type: regex
+        name: dodenterpriseprotection
+        regex:
+          - '(?i)dod.enterprise.level.protection.system'
+        part: response
+
+      - type: regex
+        name: secupress
+        regex:
+          - '(?i)<h\d*>secupress<.'
+          - '(?i)block.id.{1,2}bad.url.contents.<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: aesecure
+        regex:
+          - '(?i)aesecure.denied.png'
+        part: response
+
+      - type: regex
+        name: incapsula
+        regex:
+          - '(?i)incap_ses|visid_incap'
+          - '(?i)incapsula'
+          - '(?i)incapsula.incident.id'
+        condition: or
+        part: response
+
+      - type: regex
+        name: nexusguard
+        regex:
+          - '(?i)nexus.?guard'
+          - '(?i)((http(s)?://)?speresources.)?nexusguard.com.wafpage'
+        condition: or
+        part: response
+
+      - type: regex
+        name: cloudflare
+        regex:
+          - '(?i)cloudflare.ray.id.|var.cloudflare.'
+          - '(?i)cloudflare.nginx'
+          - '(?i)..cfduid=([a-z0-9]{43})?'
+          - '(?i)cf[-|_]ray(..)?([0-9a-f]{16})?[-|_]?(dfw|iad)?'
+          - '(?i).>attention.required!.\|.cloudflare<.+'
+          - '(?i)http(s)?.//report.(uri.)?cloudflare.com(/cdn.cgi(.beacon/expect.ct)?)?'
+          - '(?i)ray.id'
+          - '(?i)__cfduid'
+        condition: or
+        part: response
+
+      - type: regex
+        name: akamai
+        regex:
+          - '(?i).>access.denied<.'
+          - '(?i)akamaighost'
+          - '(?i)ak.bmsc.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: webseal
+        regex:
+          - '(?i)webseal.error.message.template'
+          - '(?i)webseal.server.received.an.invalid.http.request'
+        condition: or
+        part: response
+
+      - type: regex
+        name: dotdefender
+        regex:
+          - '(?i)dotdefender.blocked.your.request'
+        part: response
+
+      - type: regex
+        name: pk
+        regex:
+          - '(?i).>pkSecurityModule\W..\WSecurity.Alert<.'
+          - '(?i).http(s)?.//([w]{3})?.kitnetwork.\w'
+          - '(?i).>A.safety.critical.request.was.discovered.and.blocked.<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: expressionengine
+        regex:
+          - '(?i).>error.-.expressionengine<.'
+          - '(?i).>:.the.uri.you.submitted.has.disallowed.characters.<.'
+          - '(?i)invalid.(get|post).data'
+        condition: or
+        part: response
+
+      - type: regex
+        name: comodo
+        regex:
+          - '(?i)protected.by.comodo.waf'
+        part: response
+
+      - type: regex
+        name: ciscoacexml
+        regex:
+          - '(?i)ace.xml.gateway'
+        part: response
+
+      - type: regex
+        name: barikode
+        regex:
+          - '(?i).>barikode<.'
+          - '(?i)<h\d{1}>forbidden.access<.h\d{1}>'
+        condition: or
+        part: response
+
+      - type: regex
+        name: watchguard
+        regex:
+          - '(?i)(request.denied.by.)?watchguard.firewall'
+          - '(?i)watchguard(.technologies(.inc)?)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: binarysec
+        regex:
+          - '(?i)x.binarysec.via'
+          - '(?i)x.binarysec.nocache'
+          - '(?i)binarysec'
+        condition: or
+        part: response
+
+      - type: regex
+        name: bekchy
+        regex:
+          - '(?i)bekchy.(-.)?access.denied'
+          - '(?i)(http(s)?://)(www.)?bekchy.com(/report)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: bitninja
+        regex:
+          - '(?i)bitninja'
+          - '(?i)security.check.by.bitninja'
+          - '(?i).>visitor.anti(\S)?robot.validation<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: apachegeneric
+        regex:
+          - '(?i)apache'
+          - '(?i).>you.don.t.have.permission.to.access+'
+          - '(?i)was.not.found.on.this.server'
+          - '(?i)<address>apache/([\d+{1,2}](.[\d+]{1,2}(.[\d+]{1,3})?)?)?'
+          - '(?i)<title>403 Forbidden</title>'
+        condition: or
+        part: response
+
+      - type: regex
+        name: greywizard
+        regex:
+          - '(?i)greywizard(.\d.\d(.\d)?)?'
+          - '(?i)grey.wizard.block'
+          - '(?i)(http(s)?.//)?(\w+.)?greywizard.com'
+          - '(?i)grey.wizard'
+        condition: or
+        part: response
+
+      - type: regex
+        name: configserver
+        regex:
+          - '(?i).>the.firewall.on.this.server.is.blocking.your.connection.<+'
+        part: response
+
+      - type: regex
+        name: viettel
+        regex:
+          - '(?i)<title>access.denied(...)?viettel.waf</title>'
+          - '(?i)viettel.waf.system'
+          - '(?i)(http(s).//)?cloudrity.com(.vn)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: safedog
+        regex:
+          - '(?i)(http(s)?)?(://)?(www|404|bbs|\w+)?.safedog.\w'
+          - '(?i)waf(.?\d+.?\d+)'
+        condition: or
+        part: response
+
+      - type: regex
+        name: baidu
+        regex:
+          - '(?i)yunjiasu.nginx'
+        part: response
+
+      - type: regex
+        name: alertlogic
+        regex:
+          - '(?i).>requested.url.cannot.be.found<.'
+          - '(?i)proceed.to.homepage'
+          - '(?i)back.to.previous.page'
+          - "(?i)we('re|.are)?sorry.{1,2}but.the.page.you.are.looking.for.cannot"
+          - '(?i)reference.id.?'
+          - '(?i)page.has.either.been.removed.{1,2}renamed'
+        condition: or
+        part: response
+
+      - type: regex
+        name: armor
+        regex:
+          - '(?i)blocked.by.website.protection.from.armour'
+        part: response
+
+      - type: regex
+        name: dosarrest
+        regex:
+          - '(?i)dosarrest'
+          - '(?i)x.dis.request.id'
+        condition: or
+        part: response
+
+      - type: regex
+        name: paloalto
+        regex:
+          - 'has.been.blocked.in.accordance.with.company.policy'
+          - '.>Virus.Spyware.Download.Blocked<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: aspgeneric
+        regex:
+          - '(?i)this.generic.403.error.means.that.the.authenticated'
+          - '(?i)request.could.not.be.understood'
+          - '(?i)<.+>a.potentially.dangerous.request(.querystring)?.+'
+          - '(?i)runtime.error'
+          - '(?i).>a.potentially.dangerous.request.path.value.was.detected.from.the.client+'
+          - '(?i)asp.net.sessionid'
+          - '(?i)errordocument.to.handle.the.request'
+          - '(?i)an.application.error.occurred.on.the.server'
+          - '(?i)error.log.record.number'
+          - '(?i)error.page.might.contain.sensitive.information'
+          - "(?i)<.+>server.error.in.'/'.application.+"
+          - '(?i)\basp.net\b'
+        condition: or
+        part: response
+
+      - type: regex
+        name: powerful
+        regex:
+          - '(?i)Powerful Firewall'
+          - '(?i)http(s)?...tiny.cc.powerful.firewall'
+        condition: or
+        part: response
+
+      - type: regex
+        name: uewaf
+        regex:
+          - '(?i)http(s)?.//ucloud'
+          - '(?i)uewaf(.deny.pages)'
+        condition: or
+        part: response
+
+      - type: regex
+        name: janusec
+        regex:
+          - '(?i)janusec'
+          - '(?i)(http(s)?\W+(www.)?)?janusec.(com|net|org)'
+        condition: or
+        part: response
+
+      - type: regex
+        name: siteguard
+        regex:
+          - '(?i)>Powered.by.SiteGuard.Lite<'
+          - '(?i)refuse.to.browse'
+        condition: or
+        part: response
+
+      - type: regex
+        name: sonicwall
+        regex:
+          - '(?i)This.request.is.blocked.by.the.SonicWALL'
+          - '(?i)Dell.SonicWALL'
+          - '(?i)\bDell\b'
+          - '(?i)Web.Site.Blocked.+\bnsa.banner'
+          - '(?i)SonicWALL'
+          - '(?i).>policy.this.site.is.blocked<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: jiasule
+        regex:
+          - '(?i)^jsl(_)?tracking'
+          - '(?i)(__)?jsluid(=)?'
+          - '(?i)notice.jiasule'
+          - '(?i)(static|www|dynamic).jiasule.(com|net)'
+        condition: or
+        part: response
+
+      - type: regex
+        name: nginxgeneric
+        regex:
+          - '(?i)nginx'
+          - '(?i)you.do(not|n.t)?.have.permission.to.access.this.document'
+        condition: or
+        part: response
+
+      - type: regex
+        name: stackpath
+        regex:
+          - '(?i)action.that.triggered.the.service.and.blocked'
+          - '(?i)<h2>sorry,.you.have.been.blocked.?<.h2>'
+        condition: or
+        part: response
+
+      - type: regex
+        name: sabre
+        regex:
+          - '(?i)dxsupport@sabre.com'
+        part: response
+
+      - type: regex
+        name: wordfence
+        regex:
+          - '(?i)generated.by.wordfence'
+          - '(?i)your.access.to.this.site.has.been.limited'
+          - '(?i).>wordfence<.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: '360'
+        regex:
+          - '(?i).wzws.waf.cgi.'
+          - '(?i)wangzhan\.360\.cn'
+          - '(?i)qianxin.waf'
+          - '(?i)360wzws'
+          - '(?i)transfer.is.blocked'
+        condition: or
+        part: response
+
+      - type: regex
+        name: asm
+        regex:
+          - '(?i)the.requested.url.was.rejected..please.consult.with.your.administrator.'
+        condition: or
+        part: response
+
+      - type: regex
+        name: rsfirewall
+        regex:
+          - '(?i)com.rsfirewall.403.forbidden'
+          - '(?i)com.rsfirewall.event'
+          - '(?i)(\b)?rsfirewall(\b)?'
+          - '(?i)rsfirewall'
+        condition: or
+        part: response
+
+      - type: regex
+        name: sucuri
+        regex:
+          - '(?i)access.denied.-.sucuri.website.firewall'
+          - '(?i)sucuri.webSite.firewall.-.cloudProxy.-.access.denied'
+          - '(?i)questions\?.+cloudproxy@sucuri\.net'
+          - '(?i)http(s)?.\/\/(cdn|supportx.)?sucuri(.net|com)?'
+        condition: or
+        part: response
+
+      - type: regex
+        name: airlock
+        regex:
+          - '(?i)\Aal[.-]?(sess|lb)=?'
+        part: response
+
+      - type: regex
+        name: xuanwudun
+        regex:
+          - '(?i)class=.(db)?waf.?(-row.)?>'
+        part: response
+
+      - type: regex
+        name: chuangyudun
+        regex:
+          - '(?i)(http(s)?.//(www.)?)?365cyd.(com|net)'
+        part: response
+
+      - type: regex
+        name: securesphere
+        regex:
+          - '(?i)<h2>error<.h2>'
+          - '(?i)<title>error<.title>'
+          - '(?i)<b>error<.b>'
+          - '(?i)<td.class="(errormessage|error)".height="[0-9]{1,3}".width="[0-9]{1,3}">'
+          - '(?i)the.incident.id.(is|number.is).'
+          - '(?i)page.cannot.be.displayed'
+          - '(?i)contact.support.for.additional.information'
+        condition: or
+        part: response
+
+      - type: regex
+        name: anquanbao
+        regex:
+          - '(?i).aqb_cc.error.'
+        part: response
+
+      - type: regex
+        name: modsecurity
+        regex:
+          - '(?i)ModSecurity|NYOB'
+          - '(?i)mod_security'
+          - '(?i)this.error.was.generated.by.mod.security'
+          - '(?i)web.server at'
+          - '(?i)page.you.are.(accessing|trying)?.(to|is)?.(access)?.(is|to)?.(restricted)?'
+          - '(?i)blocked.by.mod.security'
+        condition: or
+        part: response
+
+      - type: regex
+        name: modsecurityowasp
+        regex:
+          - '(?i)not.acceptable'
+          - '(?i)additionally\S.a.406.not.acceptable'
+        condition: or
+        part: response
+
+      - type: regex
+        name: squid
+        regex:
+          - '(?i)squid'
+          - '(?i)Access control configuration prevents'
+          - '(?i)X.Squid.Error'
+        condition: or
+        part: response
+
+      - type: regex
+        name: shieldsecurity
+        regex:
+          - '(?i)blocked.by.the.shield'
+          - '(?i)transgression(\(s\))?.against.this'
+          - '(?i)url.{1,2}form.or.cookie.data.wasn.t.appropriate'
+        condition: or
+        part: response
+
+      - type: regex
+        name: wallarm
+        regex:
+          - '(?i)nginix.wallarm'
+        part: response
+
+      - type: regex
+        part: response
+        name: huaweicloud
+        condition: and
+        regex:
+          - '(?)content="CloudWAF"'
+          - 'Server: CloudWAF'
+          - 'Set-Cookie: HWWAFSESID='
+# digest: 4a0a004730450221008162d7e9d8912d9a4c834eca797851908dd470ff097ef2697e9243ad2ae97581022026be4bae3f48a9ef537a3a8413e781568a7355a556ce059d920fa95a0f119468:922c64590222798bb761d5b6d8e72950

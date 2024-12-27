@@ -1,0 +1,58 @@
+id: azure-appservice-insights-not-enabled
+info:
+  name: Azure App Service Application Insights Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Application Insights feature is enabled for all your Microsoft Azure App Services applications in order to provide advanced application monitoring. Application Insights is an extensible Application Performance Management (APM) service for developers and DevOps professionals available as monitoring feature within Azure cloud. The feature monitors your live App Services applications to automatically detect performance anomalies. It includes powerful analytics tools to help diagnose issues and understand what users do with your application. Application Insights can be enabled for apps on various platforms including .NET, Node.js, and Java EE, hosted on-premises, hybrid, or other public cloud platforms.
+  impact: |
+    Not enabling Application Insights may lead to a lack of vital application performance data and missed opportunities for optimizing application responsiveness and troubleshooting issues.
+  remediation: |
+    Enable Application Insights for Azure App Services applications through the Azure portal or by using the Azure CLI to ensure comprehensive monitoring and management of application performance.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview
+  tags: cloud,devops,azure,microsoft,application-insights,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppServiceData of iterate(template.appServiceList)) {
+    AppServiceData = JSON.parse(AppServiceData);
+    set("name", AppServiceData.name);
+    set("resourceGroup", AppServiceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: appServiceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config appsettings list --name $name --resource-group $resourceGroup --output json
+
+    matchers:
+      - type: word
+        words:
+          - "APPLICATIONINSIGHTS_CONNECTION_STRING"
+          - "APPINSIGHTS_INSTRUMENTATIONKEY"
+        condition: and
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have Application Insights enabled"'
+# digest: 4a0a00473045022100b7d4d123a734684a582677c106f7c31c1353932f8bbc92618ed8468367db0a3d02201af6f1dd405f37e7a9b101bbd08e9bac9a5d2b74dfd9bc4da7e078fc3d5fc34a:922c64590222798bb761d5b6d8e72950

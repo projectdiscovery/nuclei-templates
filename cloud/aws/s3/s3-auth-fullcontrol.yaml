@@ -1,0 +1,51 @@
+id: s3-auth-fullcontrol
+info:
+  name: Restrict S3 Buckets FULL_CONTROL Access for Authenticated Users
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks if Amazon S3 buckets grant FULL_CONTROL access to authenticated users, preventing unauthorized operations
+  reference:
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-versioning-examples.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,s3,aws-cloud-config
+
+flow: |
+  code(1)
+  for(let bucketName of iterate(template.buckets)){
+    set("bucket", bucketName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api list-buckets --query 'Buckets[*].Name'
+
+    extractors:
+      - type: json # type of the extractor
+        internal: true
+        name: buckets
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws s3api get-bucket-acl --bucket $bucket --query 'Grants[?(Grantee.URI==`http://acs.amazonaws.com/groups/global/AuthenticatedUsers`)]'
+
+    matchers:
+      - type: word
+        words:
+          - '"Permission": "FULL_CONTROL"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"FULL_CONTROL is enabled for Authenticated Users on S3 Bucket " + bucket'
+# digest: 490a0046304402201b8296a6828ae2b35d3454c1f92ef6d96b2a09cb4b22967494d3313f39d114030220579ce49b530440be34e8d11749678af4fbea901d9f0471403cee2bb284368d72:922c64590222798bb761d5b6d8e72950

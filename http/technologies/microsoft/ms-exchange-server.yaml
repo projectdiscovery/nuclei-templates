@@ -1,0 +1,46 @@
+id: ms-exchange-server
+
+info:
+  name: Microsoft Exchange Server Detect
+  author: pikpikcu,dhiyaneshDK
+  severity: info
+  description: Check for presence of Exchange Server using Outlook Web App path data.
+  reference:
+    - https://github.com/GossiTheDog/scanning/blob/main/http-vuln-exchange.nse
+  metadata:
+    max-request: 1
+  tags: microsoft,exchange,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/owa/auth/logon.aspx"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)(X-Owa-Version:)"
+
+      - type: regex
+        part: body
+        regex:
+          - "/owa/auth/[0-9.]+/"
+
+      - type: word
+        words:
+          - '<title>Exchange Log In</title>'
+          - '<title>Microsoft Exchange - Outlook Web Access</title>'
+
+    extractors:
+      - type: kval
+        kval:
+          - x_owa_version
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "/owa/auth/([0-9.]+)/"
+# digest: 490a0046304402207c37a22e43cf9af77e271aa2502f9be5c9102123b34d26ea2ffcc24a02461d3502207baa9c4c6beb214ac319b0593a96eed03ed9dfca04899f938094e35273be4170:922c64590222798bb761d5b6d8e72950

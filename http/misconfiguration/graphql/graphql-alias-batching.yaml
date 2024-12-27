@@ -1,0 +1,59 @@
+id: graphql-alias-batching
+
+info:
+  name: GraphQL Alias-based Batching
+  author: Dolev Farhi
+  severity: info
+  description: |
+    GraphQL supports aliasing of multiple sub-queries into a single queries. This allows users to request multiple objects or multiple instances of objects efficiently.
+    However, an attacker can leverage this feature to evade many security measures, including rate limit.
+  remediation: |
+    Limit queries aliasing in your GraphQL Engine to ensure mitigation of aliasing-based attacks.
+  reference:
+    - https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application
+    - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+    - https://graphql.security/
+    - https://stackoverflow.com/questions/62421352/graphql-difference-between-using-alias-versus-multiple-query-objects-when-doin
+  classification:
+    cpe: cpe:2.3:a:graphql:playground:*:*:*:*:node.js:*:*:*
+  metadata:
+    max-request: 2
+    product: playground
+    vendor: graphql
+  tags: graphql,misconfig
+
+variables:
+  str: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query {\n {{str}}1:__typename \n {{str}}2:__typename \n {{str}}3:__typename \n {{str}}4:__typename \n {{str}}5:__typename \n {{str}}6:__typename \n }"}
+      - |
+        POST /api/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query {\n {{str}}1:__typename \n {{str}}2:__typename \n {{str}}3:__typename \n {{str}}4:__typename \n {{str}}5:__typename \n {{str}}6:__typename \n }"}
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"data":'
+          - '"{{str}}1":'
+          - '"{{str}}6":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+# digest: 4a0a00473045022100e078bff6d9541fae36e43297b629675f275eb4f29562e2b112ae93a373fcae3802207c81e087fa61b9bf01a560875e093df203c24b9d86464ede1a0bd47097aa08a0:922c64590222798bb761d5b6d8e72950

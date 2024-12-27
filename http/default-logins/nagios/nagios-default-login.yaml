@@ -1,0 +1,51 @@
+id: nagios-default-login
+
+info:
+  name: Nagios Default Login
+  author: iamthefrogy
+  severity: high
+  description: Nagios default admin credentials were discovered.
+  reference:
+    - https://www.nagios.org
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: nagios,default-login
+
+http:
+  - raw:
+      - |
+        GET /nagios/side.php HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    payloads:
+      username:
+        - nagiosadmin
+        - root
+      password:
+        - nagiosadmin
+        - nagiosxi
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: word
+        part: body
+        words:
+          - 'Current Status'
+          - 'Reports'
+        condition: and
+# digest: 4a0a0047304502200b425e70a824378c3845c48a365fca360b8c0dff7dfbac233e7e1a02095d2594022100cdde48e50d175f10c7de0ec617f92d4b2863fb1bd9cbaf1d4e40027b0be81233:922c64590222798bb761d5b6d8e72950

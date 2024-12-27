@@ -1,0 +1,55 @@
+id: aws-code-env
+info:
+  name: AWS Cloud Environment Validation
+  author: princechaddha
+  severity: info
+  description: |
+    Checks if AWS CLI is set up and all necessary tools are installed on the environment.
+  reference:
+    - https://aws.amazon.com/cli/
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazone,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: code(1) && code(2)
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws sts get-caller-identity --output json
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - '"UserId"'
+
+    extractors:
+      - type: json
+        name: account
+        internal: true
+        json:
+          - '.Account'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      jq --version >/dev/null 2>&1 && echo "jq is installed." || echo "jq is not installed."
+
+    matchers:
+      - type: word
+        words:
+          - "jq is installed"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"AWS CLI is properly configured for account \"" + account + "\" and all the necessary tools required are installed"'
+# digest: 4a0a00473045022052484996550fb7281548c8303d5073f5afe21282edd02f6b44327849754db470022100e00b95fbe7c0069c51b67f29380e776144f64464de6aa670a8bcf248722b0e69:922c64590222798bb761d5b6d8e72950

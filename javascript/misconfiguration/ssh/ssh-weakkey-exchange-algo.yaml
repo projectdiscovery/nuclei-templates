@@ -1,0 +1,44 @@
+id: ssh-weakkey-exchange-algo
+
+info:
+  name: SSH Weak Key Exchange Algorithms Enabled
+  author: pussycat0x
+  severity: low
+  description: |
+    SSH Weak Key Exchange Algorithms Enabled indicates that the SSH server or client is configured to allow the use of less secure key exchange methods, posing a potential security risk during the establishment of secure connections. It's crucial to update configurations to prioritize stronger key exchange algorithms.
+  reference:
+    - https://www.tenable.com/plugins/nessus/153953
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: js,enum,ssh,misconfig,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      Export(response);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "ServerKex"
+
+      - type: word
+        words:
+          - "diffie-hellman-group-exchange-sha1"
+          - "diffie-hellman-group1-sha1"
+          - "gss-gex-sha1"
+          - "gss-group1-sha1"
+          - "gss-group14-sha1"
+          - "rsa1024-sha1"
+        condition: or
+# digest: 490a00463044022028dd86f6d97bb9b27a0e6fba7cc85375e0ae28a6dd27d9bd9fbb887822aa04bc02206016b4cabe1d3219394b1dd02f67f529ebc18a892ecacda0dc7291e43431d0e9:922c64590222798bb761d5b6d8e72950

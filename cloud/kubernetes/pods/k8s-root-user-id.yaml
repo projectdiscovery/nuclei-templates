@@ -1,0 +1,49 @@
+id: k8s-root-user-id
+
+info:
+  name: Pods run with root user ID
+  author: princechaddha
+  severity: low
+  description: Checks for pods running with the user ID of the root user, increasing security risks.
+  impact: |
+    Running pods with the root user ID can allow malicious entities to gain unnecessary privileges, leading to potential compromises in the Kubernetes environment.
+  remediation: Configure pods to run with a non-root user ID by setting the 'securityContext' for each container and the pod itself.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  tags: cloud,devops,kubernetes,devsecops,pods,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    set("pod", pod)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[] | {pod: .metadata.name, containers: .spec.containers}'
+
+javascript:
+  - code: |
+        let podData = JSON.parse(template.pod);
+        podData.containers.forEach(container => {
+          if (container.securityContext && container.securityContext.runAsUser === 0) {
+            let result = (`Container '${container.name}' in pod '${podData.pod}' is running with root user ID.`);
+            Export(result);
+          }
+        });
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100b34e940621c720a8ca24adefbd72f704cab4e9aa13fedd11b2849547f066c767022005dfd7e4040a3172afaf3e29faedc22c20c342e72dd671f5e1621f2efe7e6797:922c64590222798bb761d5b6d8e72950

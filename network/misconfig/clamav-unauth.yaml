@@ -1,0 +1,33 @@
+id: clamav-unauth
+
+info:
+  name: ClamAV Server - Unauthenticated Access
+  author: dwisiswant0
+  severity: high
+  description: |
+    ClamAV server 0.99.2, and possibly other previous versions, allow the execution
+    of dangerous service commands without authentication. Specifically, the command 'SCAN'
+    may be used to list system files and the command 'SHUTDOWN' shut downs the service.
+  reference:
+    - https://seclists.org/nmap-dev/2016/q2/201
+    - https://bugzilla.clamav.net/show_bug.cgi?id=11585
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:3310 product:"ClamAV" version:"0.99.2"
+  tags: network,clamav,unauth,seclists,misconfig,tcp
+tcp:
+  - inputs:
+      - data: "SCAN /nonexistent/{{to_lower(rand_text_alpha(10))}}\r\n"
+    host:
+      - "{{Hostname}}"
+    port: 3310
+    read-size: 48
+
+    matchers:
+      - type: word
+        words:
+          - "No such"
+          - "lstat() failed"
+        condition: and
+# digest: 4a0a004730450220385da99dc6fff8ae2a07f4bace0ea73fac51e107bd7be8e0d71e8976756ce717022100f7fc891c147825bd2e0ae25b8f2abb9eadec9f85961e6f8e4d785fc8b4b8a5da:922c64590222798bb761d5b6d8e72950

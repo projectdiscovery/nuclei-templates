@@ -1,0 +1,62 @@
+id: cors-misconfig
+
+info:
+  name: CORS Misconfiguration
+  author: nadino,g4l1t0,convisoappsec,pdteam,breno_css,nodauf,amirmsafari
+  severity: info
+  reference:
+    - https://portswigger.net/web-security/cors
+    - https://portswigger.net/web-security/ssrf/url-validation-bypass-cheat-sheet
+    - https://www.corben.io/advanced-cors-techniques/
+    - https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-cross-origin-resource-sharing/
+  metadata:
+    max-request: 29
+  tags: cors,generic,misconfig
+
+http:
+  - raw:
+      - |
+        GET  HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{cors_origin}}
+
+    payloads:
+      cors_origin:
+        - "https://{{tolower(rand_base(5))}}{{RDN}}" # Arbitrary domain
+        - "http://{{tolower(rand_base(5))}}{{RDN}}" # Arbitrary domain
+        - "https://{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://localhost.{{tolower(rand_base(5))}}.com" # Localhost regex implementation edge case
+        - "http://localhost.{{tolower(rand_base(5))}}.com" # Localhost regex implementation edge case over http
+        - "http://s{{RDN}}" # Unencrypted domain ends with
+        - "https://{{FQDN}}_.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}%60.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}.$.{{tolower(rand_base(5))}}.com" # Firefox and Safari allows $ as subdomain
+        - "https://{{FQDN}}.~.{{tolower(rand_base(5))}}.com" # Safari allows ~ as subdomain
+        - "https://{{FQDN}}.=.{{tolower(rand_base(5))}}.com" # Safari allows = as subdomain
+        - "https://{{FQDN}}.+.{{tolower(rand_base(5))}}.com" # Firefox and Safari allows + as subdomain
+        - "https://{{FQDN}}.&.{{tolower(rand_base(5))}}.com" # Safari allows & as subdomain
+        - "https://{{FQDN}}.*.{{tolower(rand_base(5))}}.com" # Safari allows * as subdomain
+        - "https://{{FQDN}}.).{{tolower(rand_base(5))}}.com" # Safari allows ) as subdomain
+        - "https://{{FQDN}}.(.{{tolower(rand_base(5))}}.com" # Safari allows ( as subdomain
+        - "https://{{FQDN}}.'.{{tolower(rand_base(5))}}.com" # Safari allows ' as subdomain
+        - "https://{{FQDN}}.!.{{tolower(rand_base(5))}}.com" # Safari allows ! as subdomain
+        - "https://{{FQDN}}.;.{{tolower(rand_base(5))}}.com" # Safari allows ; as subdomain
+        - "https://{{FQDN}}.,.{{tolower(rand_base(5))}}.com" # Safari allows , as subdomain
+        - "https://{{FQDN}}.-.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "https://{{FQDN}}._.{{tolower(rand_base(5))}}.com" # Arbitrary domain
+        - "null" # null origin
+        - "https://{{tolower(rand_base(5))}}.{{RDN}}" # Arbitrary subdomain
+        - "http://{{tolower(rand_base(5))}}.{{RDN}}" # Arbitrary subdomain over http
+        - "https://{{replace(FQDN,'.','a')}}" # Replace . by a random character to abuse if regex is used
+        - "http://{{replace(FQDN,'.','a')}}" # Replace . by a random character to abuse if regex is used
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        name: arbitrary-origin
+        dsl:
+          - "contains(tolower(header), 'access-control-allow-origin: {{cors_origin}}')"
+          - "contains(tolower(header), 'access-control-allow-credentials: true')"
+        condition: and
+# digest: 4b0a00483046022100b09debda3e317ae2d104702ebb41468f8c662f8d39c9bd871a64553ade5860f4022100ba93bf5c826c0b8618b6f07d3301098790e789948142fcde0cddc3cbf9ae8454:922c64590222798bb761d5b6d8e72950

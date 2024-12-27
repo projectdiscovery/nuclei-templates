@@ -1,0 +1,76 @@
+id: wazuh-default-login
+
+info:
+  name: Wazuh - Default Login
+  author: theamanrawat,denandz,PulseSecurity.co.nz
+  severity: high
+  description: |
+    Wazuh contains default credentials. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://documentation.wazuh.com/current/user-manual/user-administration/password-management.html
+    - https://wazuh.com
+    - https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html#single-node-deployment
+  classification:
+    cpe: cpe:2.3:a:wazuh:wazuh:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 7
+    vendor: wazuh
+    product: wazuh
+    shodan-query: "title:\"Wazuh\""
+  tags: wazuh,default-login
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/login"
+
+    extractors:
+      - type: regex
+        part: body
+        name: osd
+        group: 1
+        internal: true
+        regex:
+          - '&quot;version&quot;:&quot;([0-9.]+)&quot;'
+
+  - raw:
+      - |
+        POST /auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Osd-Version: {{osd}}
+        osd-xsrf: osd-fetch
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - "admin"
+        - "wazuh"
+      password:
+        - "admin"
+        - "wazuh"
+        - "SecretPassword"
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"username":'
+          - '"roles":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100aca7bbbb749653943f26192c2bb39a5a83889241e8a6ac72e457b842238a89280221008901a5d5e1e7e5ecabf6f1cedea365ea8a26bd3d39e410a2e47fadfd02ac355f:922c64590222798bb761d5b6d8e72950

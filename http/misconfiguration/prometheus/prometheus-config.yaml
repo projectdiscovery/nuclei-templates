@@ -1,0 +1,36 @@
+id: prometheus-config
+
+info:
+  name: Prometheus Config API Endpoint Discovery
+  author: geeknik
+  severity: info
+  description: A Prometheus config API endpoint was discovered. The config endpoint returns the loaded Prometheus configuration file along with the addresses of targets and alerting/discovery services alongside the credentials required to access them. Usually, Prometheus replaces the passwords in the credentials config configuration field with the placeholder <secret> (although this still leaks the username).
+  reference:
+    - https://jfrog.com/blog/dont-let-prometheus-steal-your-fire/
+  metadata:
+    max-request: 1
+  tags: prometheus,config,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/status/config"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - '"status": "success":'
+          - '"data":'
+          - '"yaml":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - 'application/json'
+# digest: 490a0046304402200e9dd5edaa7bc2389eff7be96dc5339229b1e53cf5ea0d341111ae11fff0f8420220475c036236d4c003d7d7fce958ee651000e1c619e5c85fd207a1cbf781eee2c2:922c64590222798bb761d5b6d8e72950

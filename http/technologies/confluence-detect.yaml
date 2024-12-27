@@ -1,0 +1,53 @@
+id: confluence-detect
+
+info:
+  name: Confluence Detection
+  author: philippedelteil,AdamCrosser,6mile
+  severity: info
+  description: |
+    This nuclei template is used to detect the presence of Confluence, a popular collaboration software.
+  classification:
+    cpe: cpe:2.3:a:atlassian:confluence_server:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 5
+    vendor: atlassian
+    product: confluence_server
+    shodan-query:
+      - http.component:"Atlassian Confluence"
+      - http.component:"atlassian confluence"
+    category: productivity
+  tags: tech,confluence,atlassian,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/dologin.action"
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/pages"
+      - "{{BaseURL}}/confluence"
+      - "{{BaseURL}}/wiki"
+
+    redirects: true
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(to_lower(header), '-confluence-')
+          - contains(to_lower(body), 'confluence-base-url')
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - '<meta name="ajs-version-number" content="(.*)">'
+          - 'Atlassian Confluence ([a-z0-9-._]+)'
+
+      - type: regex
+        name: hostname
+        group: 1
+        regex:
+          - '<meta id="confluence-base-url" name="confluence-base-url" content="https://(.*)">'
+          - '<meta name="ajs-base-url" content="https://(.*)">'
+          - '<meta name="ajs-server-name" content="(.*)">'
+# digest: 4a0a00473045022034b597bb44d44f1fd1b88eea666e2722fc766d3b3cbce3cd7fb972123784c97c0221009bd6a9977356ba9455f6bbafd32ba99af1c800fa36c3a6f6c71376bcefd83c6f:922c64590222798bb761d5b6d8e72950

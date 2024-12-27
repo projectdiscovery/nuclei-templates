@@ -1,0 +1,46 @@
+id: ssh-weak-mac-algo
+
+info:
+  name: SSH Weak MAC Algorithms Enabled
+  author: pussycat0x
+  severity: low
+  description: |
+    The system's SSH configuration poses a security risk by allowing weak Message Authentication Code (MAC) algorithms, potentially exposing it to vulnerabilities and unauthorized access. It is crucial to update and strengthen the MAC algorithms for enhanced security.
+  reference:
+    - https://www.tenable.com/plugins/nessus/71049
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: js,enum,ssh,misconfig,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      Export(response);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "server_to_client_macs"
+          - "client_to_server_macs"
+        condition: and
+
+      - type: word
+        words:
+          - "hmac-md5"
+          - "hmac-md5-96"
+          - "hmac-sha1-96"
+          - "hmac-md5"
+          - "hmac-md5-96"
+          - "hmac-sha1-96"
+        condition: or
+# digest: 4a0a00473045022100cf218b62b4faf52f96edb7800dacb7e86730046c4b6c1ec2eb43f6ac24323708022020ee69a84ba80957568922aff4c7ee3f1d2f08616f896d5c47c4f5818ec12006:922c64590222798bb761d5b6d8e72950

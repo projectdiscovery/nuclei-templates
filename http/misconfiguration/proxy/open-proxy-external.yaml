@@ -1,0 +1,49 @@
+id: open-proxy-external
+
+info:
+  name: Open Proxy To External Network
+  author: gtrrnr
+  severity: medium
+  description: The host is configured as a proxy which allows access to other hosts on the external network.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports.
+  reference:
+    - https://en.wikipedia.org/wiki/Open_proxy
+    - https://www.acunetix.com/vulnerabilities/web/apache-configured-to-run-as-proxy/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-441
+  metadata:
+    max-request: 3
+  tags: exposure,config,proxy,misconfig
+
+http:
+  - raw:
+      - |+
+        GET https://test.s3.amazonaws.com HTTP/1.1
+        Host: test.s3.amazonaws.com
+
+      - |+
+        GET http://{{interactsh-url}} HTTP/1.1
+        Host: {{interactsh-url}}
+
+      - |+
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    unsafe: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_any(body_1, "<HostId>", "</HostId>")
+          - contains(header_2, "X-Interactsh-Version")
+        condition: and
+
+      - type: dsl
+        dsl:
+          - '!contains(body_3, "<HostId>")'
+          - '!contains(header_3, "X-Interactsh-Version")'
+        condition: and
+# digest: 490a0046304402204d8b696b11a0e4e514a61064c159012a084637f19975fb5845fca801a5f2a2250220346dfc075c75097ff1b5ff3294aacf90af2132cf78e6e7252aacc8183c7312e5:922c64590222798bb761d5b6d8e72950

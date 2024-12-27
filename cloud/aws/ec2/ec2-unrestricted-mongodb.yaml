@@ -1,0 +1,39 @@
+id: ec2-unrestricted-mongodb
+info:
+  name: Unrestricted MongoDB Access in EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Identifies open access to MongoDB in AWS EC2 security groups, where inbound rules allow unrestricted access (0.0.0.0/0 or ::/0) to TCP port 27017. This poses a significant risk as it can lead to unauthorized access and potential data breaches.
+  impact: |
+    Allowing unrestricted access to MongoDB in EC2 can lead to unauthorized data access, data manipulation, or denial of service attacks, potentially resulting in critical data breaches and compliance violations.
+  remediation: |
+    Restrict MongoDB's TCP port 27017 access in EC2 security groups to only those IP addresses that require it, adhering to the principle of least privilege.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+    - https://www.mongodb.com/docs/manual/security/
+  tags: cloud,devops,aws,amazon,ec2,mongodb,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=27017 Name=ip-permission.to-port,Values=27017 Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=27017 Name=ip-permission.to-port,Values=27017 Name=ip-permission.ipv6-cidr,Values='::/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted mongodb access (0.0.0.0/0 or ::/0) on port 27017"'
+# digest: 4a0a0047304502203a465249f028257d171c49320ac105363f845610d742358a5202ed495dfcf5d7022100af5268b013aca1dac33f4317fac268c5414f3003238986333b575c5a46deb398:922c64590222798bb761d5b6d8e72950

