@@ -1,0 +1,73 @@
+id: smtp-commands-enum
+
+info:
+  name: SMTP Commands Enumeration
+  author: pussycat0x,userdehghani,AV-IO
+  severity: info
+  description: |
+    Attempts to use EHLO and HELP to gather the Extended commands supported by an SMTP server.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smtp-commands.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: smtp
+  tags: network,enum,smtp,mail,tcp
+
+tcp:
+  - inputs:
+      - data: ""
+        read: 256
+      - data: "EHLO x\r\n"
+        name: ehlo
+        read: 1024
+      - data: "QUIT\r\n"
+        read: 8
+
+    host:
+      - "{{Hostname}}"
+    port: 25,2525,465,587
+
+    matchers:
+      - type: word
+        name: ehlo
+        part: ehlo
+        words:
+          - '250'
+
+    extractors:
+      - type: regex
+        part: ehlo
+        group: 1
+        regex:
+          - '250[\- ]([A-Z0-9 \-]+)'
+
+  - inputs:
+      - data: ""
+        read: 256
+      - data: "HELP\r\n"
+        name: help
+        read: 2048
+      - data: "QUIT\r\n"
+        read: 8
+
+    host:
+      - "{{Hostname}}"
+    port: 25,2525,465,587
+
+    matchers:
+      - type: word
+        name: help
+        part: help
+        words:
+          - "214"
+          - "This server supports"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: help
+        group: 1
+        regex:
+          - '214[\- ](.*)'
+# digest: 4b0a00483046022100e201b79752ff2467a9403fe8eba836af578b5076a1e2263132484eeaf00e431e022100d2cf5754895911a12321200f67896d89511f17269279bea256b8ceacfa1cb185:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: azure-nsg-rpc-unrestricted
+info:
+  name: Unrestricted RPC Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP port 135, used by Remote Procedure Call (RPC), to prevent unauthorized access and potential exploitation of network services.
+  impact: |
+    Unrestricted access on TCP port 135 can expose services to remote execution attacks or unauthorized procedures calls, leading to significant security vulnerabilities.
+  remediation: |
+    Configure NSG rules to restrict access on TCP port 135. Ensure only necessary systems can initiate RPC, and apply strict monitoring and logging to detect unusual activities.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='135')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 135"'
+# digest: 4a0a00473045022100d1f8acdd182598809ad7e962914639af5eaf97e33b8a6e065cf89ba96288918502200c9a4c0506bd03a27bc0939c468d695147cd9eed438100731f436ecef8ae03ff:922c64590222798bb761d5b6d8e72950

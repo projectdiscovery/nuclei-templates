@@ -1,11 +1,6 @@
 name: 🤖 TemplateMan
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '**.yaml'
   workflow_dispatch:
 
 jobs:
@@ -13,36 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
+      - uses: projectdiscovery/actions/setup/templateman@v1
         with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
+          token: '${{ secrets.ACCESS_TOKEN }}'
+      - run: tmc -mr -e -at <<< "$(pwd)"
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
         with:
-          go-version: 1.20.x
-
-      - name: Install TemplateMan CLI Client
-        run: |
-          go install -v github.com/projectdiscovery/nuclei/v2/cmd/tmc@dev
-
-      - name: Run TemplateMan
-        id: tmc
-        run: |
-          tmc -i $GITHUB_WORKSPACE -mr
-          git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
-
-      - name: Commit files
-        if: steps.tmc.outputs.CHANGES > 0
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit --allow-empty -m "TemplateMan Update [$(date)] :robot:" -a
-
+          message: 'chore: update TemplateMan 🤖'
       - name: Push changes
-        if: steps.tmc.outputs.CHANGES > 0
         run: |
-          git pull --rebase
-          git push origin ${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

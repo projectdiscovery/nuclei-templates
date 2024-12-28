@@ -1,0 +1,61 @@
+id: azure-openai-public-access-disabled
+info:
+  name: Azure OpenAI Public Network Access Not Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that public network access (i.e. all network access) to Microsoft Azure OpenAI service instances is disabled in order to enhance security by preventing unauthorized access.
+  impact: |
+    Enabling public network access to Azure OpenAI service instances can lead to unauthorized access, compromising the security and integrity of the instances.
+  remediation: |
+    Configure the Azure OpenAI service instances to disable public network access to secure them against unauthorized external access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account-cli?tabs=windows
+  tags: cloud,devops,azure,microsoft,openai,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServiceData of iterate(template.serviceList)) {
+    ServiceData = JSON.parse(ServiceData);
+    set("name", ServiceData.name);
+    set("resourceGroup", ServiceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cognitiveservices account list --output json --query '[?(kind==`OpenAI`)].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serviceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cognitiveservices account show --name "$name" --resource-group "$resourceGroup" --query '{networkAcls:properties.networkAcls.defaultAction,publicNetworkAccess:properties.publicNetworkAccess}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"networkAcls": "Allow"'
+          - '"networkAcls": "null"'
+
+      - type: word
+        words:
+          - '"publicNetworkAccess": "Enabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"$name in $resourceGroup has public network access enabled"'
+# digest: 4a0a00473045022100a307116679a3bfcde8e8e662e343e414b7eb0307b7b48e8caab463a8fb1c4d1802200d15c837eb1ef033e38fdb9f6d48da4240a04cfb03831bfce2f082d7a64020a0:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: azure-postgresql-storage-autogrow-disabled
+info:
+  name: Azure PostgreSQL Storage Auto-Growth Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Storage Auto-Growth feature is enabled for your production Azure PostgreSQL database servers. Storage auto-growth prevents your PostgreSQL servers from running out of storage and becoming read-only.
+  impact: |
+    Failing to enable Storage Auto-Growth can lead to PostgreSQL servers running out of space, becoming read-only, and disrupting database services.
+  remediation: |
+    Enable the Storage Auto-Growth feature on your Azure PostgreSQL servers to prevent potential disruptions and ensure continuous database operation.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-storage
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.Name);
+    set("resourceGroup", ServerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server show --name "$name" --resource-group "$resourceGroup" --output json --query 'storageProfile.storageAutogrow'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has Storage Auto-Growth disabled"'
+# digest: 4b0a00483046022100c1fcb96d6048283e8a271c2bc21e249a8cc130f21a9f42e04043cd423aa6cebc022100c5465023d90658dcc6cd4fe607e1cb9c1ce27b3daa21d451f4a8a4428da5a976:922c64590222798bb761d5b6d8e72950

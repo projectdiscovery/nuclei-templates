@@ -1,0 +1,43 @@
+id: umami-panel
+
+info:
+  name: Umami Panel - Detect
+  author: userdehghani
+  severity: info
+  description: |
+    simple, fast, privacy-focused, open-source analytics solution.
+  reference:
+    - https://umami.is/
+    - https://umami.is/docs
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.favicon.hash:-130447705
+  tags: panel,umami,login,detect
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/favicon.ico"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==200 && contains_any(tolower(body), "Login | umami", "umami</div>", "umami</h1>", "<title>umami - login")'
+          - "status_code==200 && (\"-130447705\" == mmh3(base64_py(body)))"
+        condition: or
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/~404"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'v(?P<version>\d+\.\d+\.\d+)'
+# digest: 4a0a00473045022050494258e005228b262de725302318fd9bd9db17152d015fc4f06b90d7ec5296022100e25a1ed580288bc78e76c850e4507df8e5c5d74c0022dc15dfbb27a82723b8db:922c64590222798bb761d5b6d8e72950

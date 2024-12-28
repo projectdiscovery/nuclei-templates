@@ -1,0 +1,48 @@
+id: k8s-readiness-probe-not-set
+
+info:
+  name: Readiness Probes not set in Deployments
+  author: princechaddha
+  severity: medium
+  description: Checks for missing readiness probes in Kubernetes Deployments, which can lead to traffic being sent to unready containers
+  impact: |
+    Not configuring readiness probes in Kubernetes Deployments can result in the routing of traffic to containers that are not ready to handle requests, leading to potential downtime or degraded performance.
+  remediation: |
+    Define readiness probes in all containers within your Kubernetes Deployments to ensure that traffic is only routed to containers that are fully prepared to handle it.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.some(container => container.readinessProbe)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' lacks readiness probes.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100f3532be79d2d779078d270835cb31ea360eff95e2f13306d2b3366fe00a0315502207244b4f487c1d958cfbbbed085d102f15cce534c60ac42e17b962851b1bd5b30:922c64590222798bb761d5b6d8e72950

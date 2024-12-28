@@ -1,0 +1,54 @@
+id: azure-appservice-https-only-not-enforced
+info:
+  name: Azure App Service HTTPS-Only Not Enforced
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure App Service web applications redirect all non-secure HTTP traffic to HTTPS in order to encrypt the communication between applications and web clients. HTTPS uses the Secure Sockets Layer (SSL)/Transport Layer Security (TLS) protocol to provide a secure connection, which is both encrypted and authenticated. This adds an extra layer of security to the HTTP requests made to the web application.
+  impact: |
+    Not enforcing HTTPS only for web applications can lead to unencrypted and unauthenticated traffic, which can be intercepted by attackers.
+  remediation: |
+    Enable the HTTPS-only feature on all Azure App Services to enforce all traffic to be encrypted and secure.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/configure-ssl-bindings#enforce-https
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppServiceData of iterate(template.appServiceList)) {
+    AppServiceData = JSON.parse(AppServiceData);
+    set("id", AppServiceData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{id:id}'
+
+    extractors:
+      - type: json
+        name: appServiceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp show --ids $id --query 'httpsOnly' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not enforce HTTPS-only traffic"'
+# digest: 4a0a0047304502205b21176ba572cb91591fb075421949ef2c81b4bba37e8a3e3daa49566c478191022100b393a4a46fcb2b7a7f30d54a587d1e7c9676c6d969605790a87890b51807c8e7:922c64590222798bb761d5b6d8e72950

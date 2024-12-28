@@ -1,0 +1,52 @@
+id: cisco-implant-detect
+
+info:
+  name: Cisco IOS XE - Impant Detection
+  author: DhiyaneshDK,rxerium
+  severity: critical
+  description: |
+    Cisco is aware of active exploitation of a previously unknown vulnerability in the web UI feature of Cisco IOS XE Software when exposed to the internet or to untrusted networks. This vulnerability allows a remote, unauthenticated attacker to create an account on an affected system with privilege level 15 access. The attacker can then use that account to gain control of the affected system.
+  remediation: |
+    Disable the HTTP server feature on internet-facing systems by running one of the following commands in global configuration mode: 'no ip http server' or 'no ip http secure-server'.
+  reference:
+    - https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-iosxe-webui-privesc-j22SaA4z
+    - https://www.bleepingcomputer.com/news/security/cisco-warns-of-new-ios-xe-zero-day-actively-exploited-in-attacks/
+    - https://socradar.io/cisco-warns-of-exploitation-of-a-maximum-severity-zero-day-vulnerability-in-ios-xe-cve-2023-20198
+    - https://github.com/vulncheck-oss/cisco-ios-xe-implant-scanner/blob/main/implant-scanner.go
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html_hash:1076109428
+    product: ios_xe
+    vendor: cisco
+  tags: backdoor,cisco,ios,kev
+
+http:
+  - raw:
+      - |
+        GET /webui HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /webui/logoutconfirm.html?logon_hash=1 HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: 0ff4fbf0ecffa77ce8d3852a29263e263838e9bb
+
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_1
+        regex:
+          - 'webui-centerpanel-title'
+
+      - type: regex
+        part: body_2
+        regex:
+          - '^([a-f0-9]{18})\s*$'
+
+      - type: dsl
+        dsl:
+          - status_code_2 == 200
+# digest: 4a0a00473045022100fa74a1a202a7b1c6830a0f6aac28c6d558650ecf0cc43c52bc86f87338fa2a0702203af2e4f611bb6e3cbc5cbdef2bca957e85da7e4837f398c8fc8c8996e913f9a3:922c64590222798bb761d5b6d8e72950

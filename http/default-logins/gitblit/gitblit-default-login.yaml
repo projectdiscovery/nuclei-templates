@@ -1,0 +1,53 @@
+id: gitblit-default-login
+
+info:
+  name: Gitblit - Default Login
+  author: ritikchaddha
+  severity: high
+  description: |
+    Gitblit Default login credentials were discovered.
+  reference:
+    - https://www.gitblit.com/administration.html
+  classification:
+    cpe: cpe:2.3:a:gitblit:gitblit:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: gitblit
+    product: gitblit
+    shodan-query: title:"Gitblit"
+  tags: gitblit,default-login
+
+http:
+  - raw:
+      - |
+        POST /?wicket:interface=:0:userPanel:loginForm::IFormSubmitListener:: HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        wicket%3AbookmarkablePage=%3Acom.gitblit.wicket.pages.MyDashboardPage&id1_hf_0=&username={{username}}&password={{password}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: set_cookie
+        words:
+          - "JSESSIONID="
+          - "Gitblit="
+        condition: and
+
+      - type: status
+        status:
+          - 302
+
+      - type: dsl
+        dsl:
+          - "len(body) == 0"
+# digest: 4a0a004730450221008fd699819684a311b33c5fde1205eaa185156546ebf7f3fee4099ef26411a3f10220517dc3c1eaa0ccc3ae2d008c695b62c71d231c96b4c7c1352b4a542d92d61aa0:922c64590222798bb761d5b6d8e72950

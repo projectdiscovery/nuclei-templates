@@ -1,47 +1,16 @@
 ## Description
 
-OSINT templates are available for conducting user enumeration across many websites. By utilizing the flag to input a user, Nuclei can verify the user's existence across all websites listed in the templates and report any instances of success.
+Nuclei-templates provide a comprehensive suite of security checks, including OSINT templates in this directory for user-enumeration and phishing templates for the identification and analysis of phishing sites. 
+
+The **User Enumeration templates** are tailored for user enumeration across various websites, allowing Nuclei to verify user existence. They expect input such as username, email, or phone number through the `V`/`var` flag.
+
+The **Phishing templates** are crafted for detecting and analyzing phishing sites. These templates are essential for OSINT analysts, threat researchers, and security professionals to uncover and study phishing campaigns. 
 
 ## Usage
 
-The templates within the `osint` directory are **self-contained** and do NOT require URLs as input because the OSINT templates have pre-defined static URLs. Each template in this directory expects the user(name), email, or phone number or list of it to be supplied as input using the `V`/`var` flag through the Nuclei engine.
-
-```bash
-# Running OSINT templates against a single user to test
-nuclei -tags osint -var user=elon
-```
-
-**OSINT** templates can be also ran against list of usernames as well.
+These templates are specifically added to help OSINT analysts, threat researchers therefore, we have added them to the OSINT scan profile [here](https://github.com/projectdiscovery/nuclei-templates/blob/main/config/osint.yml). 
+Users can execute the OSINT scan configuration profile with the following command:
 
 ```console
-$ cat user_names.txt
-
-user_1
-user_2
-user_3
-user_4
-user_5
+nuclei -u <host> -config ~/nuclei-templates/config/osint.yml
 ```
-
-```bash
-# Running OSINT templates against a list of users to test
-nuclei -tags osint -var user=user_names.txt
-```
-
-### Categories
-
-The OSINT templates are classified into categories such as `archived`, `art`, `blog`, `business`, `coding`, `dating`, `finance`, `gaming`, `health`, `hobby`, `images`, `misc`, `music`, `news`, `political`, `search`, `shopping`, `social`, `tech`, `video`, `porn`.
-
-To execute OSINT templates within a particular category, you can apply a filter using the `tags` flag and set the prefix value to `osint-`.
-
-```bash
-# Running OSINT templates against the social category
-nuclei -t osint/ -tags osint-social -var user=some-user
-
-# Running OSINT templates against the multiple categories
-nuclei -t osint/ -tags osint-social,osint-finance -var user=some-user
-```
-
-## Acknowledgment
-
-These OSINT templates were inspired by the [WebBreacher/WhatsMyName](https://github.com/WebBreacher/WhatsMyName) repository.

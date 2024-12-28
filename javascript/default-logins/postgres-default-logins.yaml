@@ -1,0 +1,45 @@
+id: postgres-default-logins
+
+info:
+  name: Postgres - Default Logins
+  author: Ice3man
+  severity: high
+  description: |
+    Postgres service was accessed with easily guessed credentials.
+  metadata:
+    max-request: 9
+    shodan-query: port:5432
+  tags: js,postgresql,default-login,network
+
+javascript:
+  - pre-condition: |
+      var m = require("nuclei/postgres");
+      var c = m.PGClient();
+      c.IsPostgres(Host, Port);
+    code: |
+      var m = require("nuclei/postgres");
+      var c = m.PGClient();
+      c.Connect(Host, Port, User, Pass);
+    args:
+      Host: "{{Host}}"
+      Port: "5432"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - "postgres"
+        - "admin"
+      passwords:
+        - "password"
+        - "secret"
+        - "admin"
+        - "postgres"
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "response == true"
+          - "success == true"
+        condition: and
+# digest: 4a0a004730450220428eb992430b1171dc1957a0ffd41590749e97e389cf6efb9ce90cfb473be162022100ea4e5f97ec736da63034cef4275cb6fbba9aa0225f52db54eaaf987c81b9206e:922c64590222798bb761d5b6d8e72950

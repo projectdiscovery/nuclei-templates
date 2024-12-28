@@ -1,0 +1,55 @@
+id: azure-keyvault-recoverability-unconfigured
+info:
+  name: Key Vault Recoverability Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that production Azure Key Vaults are recoverable to prevent permanent deletion/purging of encryption keys, secrets, and certificates stored within these vaults. To make your Azure Key Vault instances recoverable, you need to enable both "Soft Delete" and "Do Not Purge" features. "Soft Delete" ensures recoverability for 90 days post-deletion, whereas "Do Not Purge" prevents any purging of the vault and its contents.
+  impact: |
+    Failure to configure recoverability settings can lead to irreversible loss of critical data stored in Azure Key Vaults due to permanent deletion.
+  remediation: |
+    Enable "Soft Delete" and "Do Not Purge" on all Azure Key Vaults to ensure they are recoverable and protected against permanent deletion.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/general/soft-delete-overview
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultName of iterate(template.vaultNames)) {
+    set("name", VaultName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault show --name $name --query 'properties.{"enableSoftDelete":enableSoftDelete,"enablePurgeProtection":enablePurgeProtection}' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'enablePurgeProtection": null'
+          - 'enableSoftDelete": null'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " is not configured for recoverability with both Soft Delete and Do Not Purge enabled"'
+# digest: 4a0a0047304502201e5dff74fed01a29fd5740eddb132fc8216efab74f019ab6a87395787885386c022100ad324292574c0cd0cac7c41872517a5855c608ae76ddea1c57739c53b8794b9e:922c64590222798bb761d5b6d8e72950

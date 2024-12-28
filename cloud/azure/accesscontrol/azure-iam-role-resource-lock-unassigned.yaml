@@ -1,0 +1,71 @@
+id: azure-iam-role-resource-lock-unassigned
+info:
+  name: Azure IAM Role for Resource Locking Not Assigned
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure there is a custom IAM role assigned to manage resource locking within each Microsoft Azure subscription. Azure resource locking is a powerful protection mechanism that can prevent inadvertent modification or deletion of resources. This role should have specific permissions to read, write, and delete resource locks.
+  impact: |
+    Failure to assign a custom IAM role for resource locking can lead to unauthorized changes or deletions of Azure resources, increasing the risk of service disruption and non-compliance with security best practices.
+  remediation: |
+    Create a custom IAM role with permissions for Microsoft.Authorization/locks/read, Microsoft.Authorization/locks/write, and Microsoft.Authorization/locks/delete and ensure it is assigned to an identity.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/role-based-access-control/custom-roles
+  tags: cloud,devops,azure,microsoft,resource-lock,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let roleName of iterate(template.roleNameList)) {
+    set("roleName", roleName);
+    code(2) && code(3)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role definition list --custom-role-only true --query '[].{roleName:roleName}' --output json
+
+    extractors:
+      - type: json
+        name: roleNameList
+        internal: true
+        json:
+          - '.[].roleName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role definition list --name "$roleName" --query '[*].permissions[].actions[]' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Microsoft.Authorization/locks/read"
+          - "Microsoft.Authorization/locks/write"
+          - "Microsoft.Authorization/locks/delete"
+        condition: and
+        negative: true
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role assignment list --role "$roleName" --query '[*].principalName' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "[]"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Role " + roleName + " is not assigned to any identity. Role unutilized for resource lock management."'
+# digest: 4a0a004730450220528292880851a01be7d5d5e53c8417aa350464ae227befe76f6f1d92cc47ed05022100a67e65a5bb69ad277015f02dbd260fc3676e3c24dcdb485ee37ffd5020474770:922c64590222798bb761d5b6d8e72950

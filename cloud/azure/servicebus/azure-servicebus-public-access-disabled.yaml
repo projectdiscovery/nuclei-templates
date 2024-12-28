@@ -1,0 +1,57 @@
+id: azure-servicebus-public-access-disabled
+info:
+  name: Azure Service Bus Public Network Access Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that public network access (i.e., all network access) to Microsoft Azure Service Bus namespaces is disabled in order to enhance security by preventing unauthorized access.
+  impact: |
+    Enabling public network access to Service Bus namespaces can allow unauthorized access, potentially leading to data leakage or unauthorized operations.
+  remediation: |
+    Disable public network access to all your Azure Service Bus namespaces to ensure that they are only accessible through authorized private networks.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-networking
+  tags: cloud,devops,azure,microsoft,service-bus,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NamespaceData of iterate(template.namespaceList)) {
+    NamespaceData = JSON.parse(NamespaceData);
+    set("name", NamespaceData.name);
+    set("resourceGroup", NamespaceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az servicebus namespace list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: namespaceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az servicebus namespace network-rule-set show --namespace-name "$name" --resource-group "$resourceGroup" --query '{publicNetworkAccess:publicNetworkAccess,ipRules:ipRules}'
+
+    matchers:
+      - type: word
+        words:
+          - '"ipRules": []'
+          - '"publicNetworkAccess": "Enabled"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has public network access enabled with no IP rules set"'
+# digest: 4a0a0047304502210090215128fbd39cf5d9964572e55fe8c85fd3ea7594bf654c6328ae8cd5ac0a7702204509b7acd9b5d7e1b37f1ad656e13f2127e78624fd3cdefb5c917cce1ba245bc:922c64590222798bb761d5b6d8e72950

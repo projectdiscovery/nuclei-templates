@@ -7,12 +7,12 @@ id: metadata-service-alibaba
 #
 # The proxy may also be vulnerable to host/port enumeration on localhost or
 # inside the private network.
-
 info:
   name: Alibaba Metadata Service Check
-  author: sullo
+  author: sullo,pwnhxl
   severity: critical
   description: The Alibaba host is configured as a proxy which allows access to the metadata service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
   reference:
     - https://www.alibabacloud.com/help/doc-detail/108460.htm
     - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
@@ -21,24 +21,31 @@ info:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
     cvss-score: 9.3
     cwe-id: CWE-441
-  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
-  tags: exposure,config,alibaba,proxy,misconfig,metadata
   metadata:
-    max-request: 2
+    max-request: 4
+  tags: exposure,config,alibaba,proxy,misconfig,metadata
 
 http:
   - raw:
       - |+
-        GET http://{{hostval}}/dynamic/instance-identity/document HTTP/1.1
+        GET http://{{hostval}}/{{path}} HTTP/1.1
         Host: {{hostval}}
 
     payloads:
       hostval:
-        - alibaba.interact.sh
+        - alibaba.oast.pro
         - 100.100.100.200
+      path:
+        - latest/dynamic/instance-identity/document
+        - 2016-01-01/dynamic/instance-identity/document
+    attack: clusterbomb
+
     unsafe: true
     matchers:
       - type: word
         part: body
         words:
-          - "zone-id"
+          - '"serial-number"'
+          - '"zone-id":"'
+        condition: and
+# digest: 4a0a004730450220059523b4ebfe1800cb6762dc0f16934b1fac3c757366d088e484746112021598022100b09951af6a7248bd926653c13175b92ed6c0214769d0ed4bf44e28c3c97e9563:922c64590222798bb761d5b6d8e72950

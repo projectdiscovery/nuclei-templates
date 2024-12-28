@@ -1,0 +1,55 @@
+id: azure-blob-soft-delete-disabled
+info:
+  name: Azure Blob Storage Soft Delete Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Soft Delete feature is enabled for all your Microsoft Azure Storage blob objects (blobs and snapshots). Soft Delete enables you to save and recover blob data in case your Azure Storage blobs or blob snapshots are deleted. This extra layer of protection also extends to the Microsoft Azure blob data that is erased as the result of an overwrite operation. With Soft Delete feature enabled, when blob objects are deleted, they are transitioned to a soft deleted state instead of being permanently erased. When blob objects are overwritten, soft deleted snapshots are created to save the state of the overwritten blob data.
+  impact: |
+    Not having Soft Delete enabled can lead to permanent loss of blob data which cannot be recovered, leading to potential data breaches and compliance issues.
+  remediation: |
+    Enable the Soft Delete feature for all blob storage accounts via the Azure Portal or using Azure CLI commands to ensure data is recoverable even after deletion or overwriting.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/blobs/soft-delete-overview
+  tags: cloud,devops,azure,microsoft,blob-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let storageAccount of iterate(template.storageAccountNames)) {
+    storageAccount = JSON.parse(storageAccount);
+    set("name", storageAccount.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageAccountNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage blob service-properties delete-policy show --account-name "$name" --output json --query 'enabled'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " blob storage does not have Soft Delete enabled"'
+# digest: 4a0a0047304502210082ad860c75907b971b496d685af667a30184facd2ad6ba15a5922407666b193e022025e8347950124fe15ebba20460d505d60b3fb0b74bc70f7e965f5f97cf6fc891:922c64590222798bb761d5b6d8e72950

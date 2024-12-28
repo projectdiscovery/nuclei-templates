@@ -1,0 +1,54 @@
+id: azure-storage-byok-not-used
+info:
+  name: Azure Storage Account Not Using BYOK
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Azure Storage accounts are using customer-managed keys (also known as Bring Your Own Keys - BYOKs) instead of service-managed keys (default keys used by Microsoft Azure for data encryption), in order to have a more granular control over your Azure Storage data encryption and decryption process.
+  impact: |
+    Not using BYOK for data encryption in Azure Storage accounts can limit your control over the encryption keys and may not comply with certain regulatory requirements.
+  remediation: |
+    Configure your Azure Storage accounts to use customer-managed keys (BYOK) for data encryption to ensure compliance and enhanced security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-encryption-keys-manage
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageData of iterate(template.storageList)) {
+    StorageData = JSON.parse(StorageData);
+    set("name", StorageData.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'encryption.keyVaultProperties.keyName' --output json
+
+    matchers:
+      - type: word
+        words:
+          - ''
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " Storage Account is not using BYOK"'
+# digest: 4a0a00473045022070c8f774c3749a3835b4b35324a83b87fb5cb2f479cb5528f181998e6caa9935022100f504b4196ef4ffd4aa26e10b56530260ecdcb6592afeda757d7acaf9b9889080:922c64590222798bb761d5b6d8e72950

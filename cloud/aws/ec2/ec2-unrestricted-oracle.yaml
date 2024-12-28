@@ -1,0 +1,37 @@
+id: ec2-unrestricted-oracle
+info:
+  name: Unrestricted Oracle DB Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Identifies unrestricted inbound access to Oracle databases in Amazon EC2 instances, which increases the risk of unauthorized access and attacks.
+  impact: |
+    Allows potential unauthorized access to the Oracle database, leading to data leakage, data manipulation, or further exploitation.
+  remediation: |
+    Restrict inbound traffic on TCP port 1521 to known IPs or ranges and employ strict access controls.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules-reference.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=1521 Name=ip-permission.to-port,Values=1521 Name=ip-permission.cidr,Values='0.0.0.0/0' --query 'SecurityGroups[*].GroupId' --output json
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 1521"'
+# digest: 4b0a00483046022100ece90528d2a01b89f8b9e456f29d546cc38f803ac1cdbf2dfecf2115fe30ea9f0221008c11f50da4ca6e2852bbae8f47db243348aec84e1566e3df378e633c5e2f40d9:922c64590222798bb761d5b6d8e72950

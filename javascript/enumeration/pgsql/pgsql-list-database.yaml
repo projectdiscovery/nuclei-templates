@@ -1,0 +1,51 @@
+id: pgsql-list-database
+
+info:
+  name: PostgreSQL List Database
+  author: pussycat0x
+  severity: high
+  description: |
+    A single Postgres server process can manage multiple databases at the same time. Each database is stored as a separate set of files in its own directory within the server’s data directory.
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#postgresql-list-password-hashes
+    - https://launchbylunch.com/posts/2024/Jan/16/postgres-password-encryption/#postgresql-password-encryption-scram-sha-256
+  metadata:
+    verified: true
+    max-request: 8
+    shodan-query: "product:\"PostgreSQL\""
+  tags: js,network,postgresql,authenticated,enum
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const postgres = require('nuclei/postgres');
+      const client = new postgres.PGClient;
+      connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, "SELECT datname FROM pg_database");
+      Export(connected);
+
+    args:
+      Host: "{{Host}}"
+      Port: 5432
+      User: "{{usernames}}"
+      Pass: "{{password}}"
+      Db: "{{database}}"
+
+    payloads:
+      usernames:
+        - postgres
+        - admin
+      password:
+        - postgres
+        -
+        - 123
+        - amber
+      database:
+        - postgres
+
+    attack: clusterbomb
+
+    extractors:
+      - type: json
+        json:
+          - '.Rows[].datname'
+# digest: 4b0a0048304602210089e9d948a2e627ecd132a966a859aac5cb50fb75a797b271d647762060a9a500022100d3e17c92f9ee569bb1c2481384d681c2f56fae0e40327062507a3ebb64fd6e20:922c64590222798bb761d5b6d8e72950

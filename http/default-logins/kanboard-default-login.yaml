@@ -13,10 +13,13 @@ info:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
     cwe-id: CWE-522
+    cpe: cpe:2.3:a:kanboard:kanboard:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 3
     verified: true
-    shodan-query: http.favicon.hash:2056442365
+    max-request: 2
+    fofa-query: app="Kanboard"
+    product: kanboard
+    vendor: kanboard
   tags: default-login,kanboard
 
 http:
@@ -24,7 +27,6 @@ http:
       - |
         GET /?controller=AuthController&action=login HTTP/1.1
         Host: {{Hostname}}
-
       - |
         POST /?controller=AuthController&action=check HTTP/1.1
         Host: {{Hostname}}
@@ -32,34 +34,25 @@ http:
 
         username={{user}}&password={{pass}}&csrf_token={{csrf_token}}
 
-      - |
-        GET /?controller=DashboardController&action=show HTTP/1.1
-        Host: {{Hostname}}
-
     attack: pitchfork
     payloads:
       user:
         - admin
       pass:
         - admin
+
     extractors:
       - type: regex
         name: csrf_token
         part: body
-        internal: true
         group: 1
         regex:
           - "hidden\" name=\"csrf_token\" value=\"([0-9a-z]+)\""
-    cookie-reuse: true
-    matchers-condition: and
+        internal: true
     matchers:
-      - type: word
-        words:
-          - 'New project'
-          - 'Project management'
+      - type: dsl
+        dsl:
+          - contains(location, 'controller=DashboardController&action=show')
+          - status_code == 302
         condition: and
-        case-insensitive: true
-
-      - type: status
-        status:
-          - 200
+# digest: 4a0a00473045022100e9784cac54727d0ed2923931e4a891fcf34d566cf0e4b87bdb3979f1e4257b6502206dc84115adb7ad23c472e8d9dc3100a44cbf16c0e35bab106f028ed0b3049cde:922c64590222798bb761d5b6d8e72950

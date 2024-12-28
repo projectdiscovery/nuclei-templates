@@ -1,0 +1,58 @@
+id: acm-cert-renewal-30days
+info:
+  name: ACM Certificates Pre-expiration Renewal
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure AWS ACM SSL/TLS certificates are renewed at least 30 days before expiration to prevent service disruptions.
+  impact: |
+    Failure to renew certificates timely may lead to expired certificates causing service access issues or downtimes.
+  remediation: |
+    Set up Amazon CloudWatch to monitor ACM certificate expiration and automate renewal notifications or processes.
+  reference:
+    - https://docs.aws.amazon.com/acm/latest/userguide/acm-renewal.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,acm,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let arns of iterate(template.certificatearns)){
+    set("certificatearn", arns)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws acm list-certificates --region $region --certificate-statuses ISSUED --query 'CertificateSummaryList[*].CertificateArn' --output json
+
+    extractors:
+      - type: json
+        name: certificatearns
+        internal: true
+        json:
+          - '.CertificateSummaryList[] | .CertificateArn'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws acm describe-certificate --region $region --certificate-arn $certificatearn --query 'Certificate.[NotAfter, CertificateArn]' --output json | jq -r 'select((.[0] | fromdateiso8601 | mktime) - (now | mktime) < (30 * 86400)) | .[1]'
+
+    extractors:
+      - type: regex # type of the extractor
+        name: certificate
+        internal: true
+        regex:
+          - '^arn.*'
+
+      - type: dsl
+        dsl:
+          - '"The AWS ACM Certificate " + certificate +" is about to expire in 30 days"'
+# digest: 490a004630440220243fb2914333499fae730b472688256b5a3efec50ba804e061787fe3e4ca514402204e288a97312494ca3b200361da1cac4bf86c99217569211c89a30c226389e960:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,59 @@
+id: stack-notification-disabled
+
+info:
+  name: CloudFormation Stack Notification - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that your Amazon CloudFormation stacks are using SNS topics to send notifications when important events occur.
+  impact: |
+    Disabling CloudFormation Stack Notifications can lead to reduced visibility into stack events and errors, delaying the detection of issues and hindering effective monitoring of changes and deployments in the cloud environment.
+  remediation: |
+    Enable CloudFormation Stack Notifications by configuring SNS (Simple Notification Service) topics for your CloudFormation stack. This will ensure real-time alerts on stack events, including updates, errors, and resource creation, providing better monitoring and visibility.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFormation/cloudformation-stack-notification.html
+    - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
+  tags: cloud,devops,aws,amazon,cloudformation,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let StackSummaries of iterate(template.stacksummaries)){
+    set("stacksummary", StackSummaries)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE --output json --query 'StackSummaries[*].StackName'
+
+    extractors:
+      - type: json
+        name: stacksummaries
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws cloudformation describe-stacks --region $region --stack-name $stacksummary --query 'Stacks[*].NotificationARNs[]'
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFormation Stack Notification " + stacksummary + " is Disabled"'
+# digest: 4a0a00473045022100bc25a76faa0c7e58a4a92eb2f19a3274305669771d48c016d498e89c11662c5e02203a98e65faea988f9df8e4a27ba1c90ebfe9fb35920fbdaaaa0d8e8231552a475:922c64590222798bb761d5b6d8e72950

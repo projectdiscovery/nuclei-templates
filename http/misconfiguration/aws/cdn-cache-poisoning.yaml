@@ -1,0 +1,36 @@
+id: cdn-cache-poisoning
+
+info:
+  name: Misconfigured CDN Cache Poisoning via X-Amz-Server-Side-Encryption Header
+  author: 0xcharan
+  severity: unknown
+  description: |
+    When the X-Amz-Server-Side-Encryption header is sent with user controlled value, it can lead to a misconfigured CDN cache response with a 400 status code, making the page inaccessible.
+  reference:
+    - https://portswigger.net/web-security/web-cache-poisoning
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: X-Amz-Server-Side-Encryption
+  tags: cache,aws,poisoning,cdn,misconfig
+variables:
+  string: "{{to_lower(rand_base(8))}}={{to_lower(rand_base(8))}}"
+
+http:
+  - raw:
+      - |
+        GET /?{{string}} HTTP/1.1
+        Host: {{Hostname}}
+        X-Amz-Server-Side-Encryption: {{randstr}}
+
+      - |
+        GET /?{{string}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "{{randstr}}")'
+          - 'status_code_2==400'
+        condition: and
+# digest: 4a0a0047304502203a67ffa44993964079a182bcd558ce1a04b26f229bef1e667b7ed3e846465d490221009569c1170ba8bb03588e36fbe85e19d27a89ada68a82c5731e745b9de88e4633:922c64590222798bb761d5b6d8e72950

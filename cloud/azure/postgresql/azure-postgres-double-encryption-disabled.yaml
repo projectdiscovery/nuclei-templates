@@ -1,0 +1,56 @@
+id: azure-postgres-double-encryption-disabled
+info:
+  name: Azure PostgreSQL Single Server Double Encryption Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that infrastructure double encryption is enabled for your Single Server Azure PostgreSQL database servers in order to add a second layer of encryption for your PostgreSQL databases using a different encryption algorithm which provides enhanced data protection.
+  impact: |
+    Lack of double encryption can lead to inadequate data protection and increased risk of data breach or unauthorized access.
+  remediation: |
+    Enable infrastructure double encryption on all your Azure PostgreSQL Single Server databases to ensure an additional layer of security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-data-security-encryption
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.Name);
+    set("resourceGroup", ServerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server show --name "$name" --resource-group "$resourceGroup" --query 'infrastructureEncryption'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have double encryption enabled"'
+# digest: 4a0a0047304502202b31db846d675076611ec761ec07d4ac1dbbad3afe67ca6cbaa2a877d30f9b35022100b8c91575335d2e85e2f2d9800413eab6ca73ae96a13c6bdee2d655856a7b18f9:922c64590222798bb761d5b6d8e72950

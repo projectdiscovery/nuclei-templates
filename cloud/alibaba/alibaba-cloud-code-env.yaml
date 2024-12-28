@@ -1,0 +1,69 @@
+id: alibaba-cloud-code-env
+
+info:
+  name: Alibaba Cloud Environment Validation
+  author: DhiyaneshDK
+  severity: info
+  description: |
+    Checks if Aliyun CLI is set up and all necessary tools are installed on the environment.
+  reference:
+    - https://github.com/aliyun/aliyun-cli
+  metadata:
+    max-request: 3
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config
+
+variables:
+  region: "cn-hangzhou"
+
+flow: code(1) && code(2) && code (3)
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun sts GetCallerIdentity
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - '"UserId":'
+
+    extractors:
+      - type: json
+        name: account
+        internal: true
+        json:
+          - '.AccountId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      jq --version >/dev/null 2>&1 && echo "jq is installed." || echo "jq is not installed."
+
+    matchers:
+      - type: word
+        words:
+          - "jq is installed"
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil --version >/dev/null 2>&1 && echo "ossutil is installed." || echo "ossutil is not installed."
+
+    matchers:
+      - type: word
+        words:
+          - "ossutil is installed"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Aliyun CLI is properly configured for account \"" + account + "\" and all the necessary tools required are installed."'
+# digest: 4a0a0047304502201c12ee70fb96893100a7ac8999e01834ac017716a0cdf13249855690a2c096a70221008644bea38cae55a580d6f044fd2b944e416d9f13ab32c1662a1c30cd60542014:922c64590222798bb761d5b6d8e72950

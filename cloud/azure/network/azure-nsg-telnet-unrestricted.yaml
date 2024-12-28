@@ -1,0 +1,57 @@
+id: azure-nsg-telnet-unrestricted
+info:
+  name: Unrestricted Telnet Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP port 23, used by Telnet, to prevent unauthorized command execution.
+  impact: |
+    Unrestricted Telnet access can lead to unauthorized command execution, allowing attackers to gain control over network resources.
+  remediation: |
+    Modify NSG rules to restrict access on TCP port 23. Only allow access from secure, authenticated sources and consider using more secure alternatives like SSH.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='23')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 23"'
+# digest: 490a0046304402203ee06d83ef3e9a13b3e5f05f5b6f6e6f7ee88e4b354b23aba69995693d8ff89d02203a37f4cb28d4c529bab7466548b181750acb685e91704759ccb8925157e1e23f:922c64590222798bb761d5b6d8e72950

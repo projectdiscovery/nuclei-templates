@@ -1,0 +1,70 @@
+id: azure-keyvault-ssl-autorenewal-missing
+info:
+  name: Missing SSL Certificate Auto-Renewal in Azure Key Vaults
+  author: princechaddha
+  severity: high
+  description: |
+    Microsoft Azure Key Vault service can renew your SSL certificates automatically to prevent application or service outages, credential leaks, or process violations that can disrupt your business. Ensure that your SSL certificates in Azure Key Vaults are set to auto-renew.
+  impact: |
+    Not enabling auto-renewal for SSL certificates can lead to expired certificates, potentially causing outages and security risks.
+  remediation: |
+    Configure SSL certificates in Azure Key Vaults to automatically renew by setting the correct policies in the Azure portal or through Azure CLI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/certificates/how-to-renew-certificate
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let KeyVaultName of iterate(template.keyVaultNames)) {
+    set("vaultName", KeyVaultName)
+    code(2);
+    for (let CertificateId of iterate(template.certificateIds)) {
+      set("certificateId", CertificateId)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: keyVaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].id' --output json
+
+    extractors:
+      - type: json
+        name: certificateIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate show --id $certificateId --query 'policy.lifetimeActions[*].action.actionType' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"EmailContacts"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " SSL certificate " + certificateId + " does not have auto-renewal enabled"'
+# digest: 490a0046304402205274191a83b2edc77c52e0de27ca279e7d55fa404864355e91a5ade7bc57da87022049fde2dacb979bebf7044dac0a369f61e16120dc51128bca81d57f9e7ee578fb:922c64590222798bb761d5b6d8e72950

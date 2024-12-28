@@ -1,0 +1,43 @@
+id: cloudstack-default-login
+
+info:
+  name: Apache CloudStack - Default Login
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    CloudStack instance discovered using weak default credentials, allows the attacker to gain admin privilege.
+  classification:
+    cpe: cpe:2.3:a:apache:cloudstack:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: apache
+    product: cloudstack
+    shodan-query: http.title:"Apache CloudStack"
+  tags: default-login,apache,cloudstack
+
+http:
+  - raw:
+      - |
+        POST /client/api/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-Type: application/x-www-form-urlencoded
+
+        command=login&username={{username}}&password={{password}}&domain=%2F&response=json
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - password
+    host-redirects: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(content_type, 'application/json')"
+          - "contains_all(body, 'sessionkey','domainid','userid')"
+        condition: and
+# digest: 4b0a00483046022100a352bd90b7794eec086ff9439b572d479a97d8fdd05859eff6a5858d1ad8c854022100adc7f494458ce301ca6c58277cc1f7ff75caa76c128a5e888ce7cec02d3d930d:922c64590222798bb761d5b6d8e72950
