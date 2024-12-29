@@ -2,7 +2,7 @@ id: django-admin-panel
 
 info:
   name: Python Django Admin Login Panel - Detect
-  author: pdteam
+  author: pdteam,righettod
   severity: info
   description: Python Django admin login panel was detected.
   classification:
@@ -10,21 +10,30 @@ info:
     cwe-id: CWE-200
     cpe: cpe:2.3:a:djangoproject:django:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 1
+    max-request: 2
     vendor: djangoproject
     product: django
-    shodan-query: cpe:"cpe:2.3:a:djangoproject:django"
-  tags: panel,django,python,djangoproject
+    shodan-query: cpe:"cpe:2.3:a:djangoproject:django" || http.title:"Django administration"
+  tags: panel,django,python,djangoproject,login
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/admin/login/?next=/admin/"
+      - "{{BaseURL}}/admin/login/"
 
+    redirects: true
+    max-redirects: 2
     matchers:
-      - type: word
-        words:
-          - "<a href=\"/admin/\">Django administration</a>"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "| django administration", "| django-administration", "django-admin-interface", "<span>django administration</span>")'
         condition: and
+
+    extractors:
+      - type: regex
         part: body
-# digest: 4a0a00473045022100ac02c54225e975d3158eb41af01a31c5140aed18e7d38914fc03d73c3f52e4f1022046df2c0f2c1ac45625152b39485a91c7dc569d88b0b24fc5349d458d836c7961:922c64590222798bb761d5b6d8e72950
+        group: 1
+        regex:
+          - '(?i)django-admin-interface\s+([0-9.]+)'
+# digest: 4b0a0048304602210087eec31a121840c0e9a0b5ee2432366d20b7b58259911e03f4d04a4ddc84fd4a022100b261bf46eb4732a606866130a934ffba05877a71d6201955dc2a19ec8ed8d556:922c64590222798bb761d5b6d8e72950

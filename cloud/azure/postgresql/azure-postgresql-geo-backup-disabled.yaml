@@ -1,0 +1,55 @@
+id: azure-postgresql-geo-backup-disabled
+info:
+  name: Azure PostgreSQL Geo-Redundant Backup Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Microsoft Azure PostgreSQL database servers have geo-redundant backups enabled, to allow you to restore your PostgreSQL servers to a different Azure region in the event of a regional outage or a disaster.
+  impact: |
+    Not having geo-redundant backups enabled can lead to data loss in the event of regional failures, affecting disaster recovery capabilities.
+  remediation: |
+    Enable geo-redundant backups in the Azure portal or use Azure CLI to update your PostgreSQL server's backup configuration to enable geo-redundancy.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-backup
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.name);
+    set("resourceGroup", ServerData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"name":name, "resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server show --name "$name" --resource-group "$resourceGroup" --query 'storageProfile.geoRedundantBackup'
+
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have geo-redundant backups enabled"'
+# digest: 490a004630440220150341d6f4e33f0cd8d822d5e0105798567a5bb64cb8c3a08c6167c77731fead0220675f54c54d43e0fac3ebabf0c1381b6eca056b9ca8768880064d192d296b0ba1:922c64590222798bb761d5b6d8e72950

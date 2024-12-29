@@ -1,0 +1,57 @@
+id: azure-custom-admin-role-unrestricted
+info:
+  name: Azure Subscription Administrator Custom Role Unrestricted Access
+  author: princechaddha
+  severity: high
+  description: |
+    To provide optimal access security and adhere to the Principle of Least Privilege (POLP), ensure there are no custom administrator roles created for your Microsoft Azure cloud subscriptions. POLP involves assigning only the necessary privileges instead of granting full administrative access.
+  impact: |
+    Having custom administrator roles that provide full administrative privileges can lead to overprivileged accounts, increasing the risk of security breaches or accidental changes.
+  remediation: |
+    Review and restrict the permissions of custom roles in Azure cloud subscriptions. Ensure that custom roles do not grant more privileges than necessary by conforming to the Principle of Least Privilege.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/role-based-access-control/custom-roles
+  tags: cloud,devops,azure,microsoft,role-based-access,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let RoleData of iterate(template.roleList)) {
+    set("roleName", RoleData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role definition list --custom-role-only true --output json --query '[].{roleName:roleName}'
+    extractors:
+      - type: json
+        name: roleList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role definition list --name "$roleName" --query '[*].{"assignableScopes":assignableScopes,"actions":permissions[].actions[]}' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"assignableScopes": "/'
+
+      - type: word
+        words:
+          - '"actions": "*"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'roleName + " grants full administrative access and should not exist under POLP guidelines"'
+# digest: 4a0a00473045022100822239ddb671a5e70f68529020acc913c61378fb22e9a5b638d9411213677994022005f83c01f95860223d5f12c7c1c1f605290958af6c1818b5ad356224b7f8d9ce:922c64590222798bb761d5b6d8e72950

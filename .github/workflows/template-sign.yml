@@ -9,44 +9,70 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  linux-sign:
+    name: Sign All Templates (Linux)
     runs-on: ubuntu-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
       - uses: actions/checkout@v4
-        with: 
-          fetch-depth: 0
+      - uses: projectdiscovery/actions/setup/nuclei@v1
+        with:
+          token: '${{ secrets.GITHUB_TOKEN}}'
+      - run: nuclei -lfa -duc -sign -ud $GITHUB_WORKSPACE -t .
+        env:
+          NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
+          NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '.'
+          message: 'chore: sign templates 🤖'
+      - name: Push changes
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF
 
+  windows-sign:
+    name: Sign Windows Templates
+    needs: linux-sign
+    runs-on: windows-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v4
+      
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21.x
-
-      - name: nuclei install
-        run: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-
-      - name: Template Sign
-        id: sign
+          go-version: '1.21'
+          
+      - name: Install Nuclei
         run: |
-          nuclei -lfa -duc -sign -t /home/runner/work/nuclei-templates/nuclei-templates
-          nuclei -lfa -duc -t /home/runner/work/nuclei-templates/nuclei-templates
-          git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+          nuclei -version
+        shell: bash
+          
+      - name: Sign Windows Templates
+        run: nuclei -lfa -duc -sign -ud "${{ github.workspace }}" -t "code/windows/audit"
+        shell: bash
         env:
           NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
           NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
           
-      - name: Commit files
-        if: steps.sign.outputs.CHANGES > 0
+      - name: Configure Git
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add cves.json cves.json-checksum.txt
-          git commit -m "Auto Template Signing [$(date)] :robot:" -a
-
-      - name: Push changes
-        if: steps.sign.outputs.CHANGES > 0
+          git config --global user.name "Ghost"
+          git config --global user.email "ghost@users.noreply.github.com"
+        shell: bash
+          
+      - name: Commit Changes
         run: |
-          git pull --rebase
-          git push origin ${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git add code/windows/audit
+          git commit -m "chore: re-sign windows templates 🤖" || echo "No changes to commit"
+        shell: bash
+          
+      - name: Push Changes
+        run: |
+          git remote update
+          git pull origin ${{ github.ref }} --rebase || exit 1
+          git push origin ${{ github.ref }} || (git remote update && git pull origin ${{ github.ref }} --rebase && git push origin ${{ github.ref }})
+        shell: bash

