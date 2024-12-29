@@ -1,0 +1,58 @@
+id: guardduty-findings
+
+info:
+  name: Open GuardDuty Findings
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Check for AWS GuardDuty findings and resolve them step by step to ensure that your AWS infrastructure is protected against security threats.
+  impact: |
+    GuardDuty findings indicate potential security threats, such as compromised instances, unauthorized access, or malicious activities within your AWS environment, requiring immediate investigation.
+  remediation: |
+    Investigate and respond to GuardDuty findings by analyzing the threat details and taking corrective actions, such as blocking malicious IPs, revoking compromised credentials, or isolating affected instances. Use AWS Security Hub or AWS Config for automated remediation where applicable.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/GuardDuty/findings.html
+    - https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings.html
+  tags: cloud,devops,aws,amazon,guardduty,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DetectorIds of iterate(template.detectors)){
+    set("detector", DetectorIds)
+    code(2)}
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws guardduty list-detectors --region $region --query 'DetectorIds' --output json
+
+    extractors:
+      - type: json
+        name: detectors
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws guardduty list-findings --region $region --detector-id $detector --query 'FindingIds' --output json
+
+    matchers:
+      - type: regex
+        regex:
+          - '\"(.*)\"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The AWS account has open GuardDuty Findings"'
+# digest: 490a0046304402203dff45dcd7e46ca62326da78a40136f82f51d6454a15b57e9a23ae5b9682b3b602200242dfb3552d1831c3b1c45d9bc6ee5bdf92ea439f90488529c16aff262da4d8:922c64590222798bb761d5b6d8e72950
