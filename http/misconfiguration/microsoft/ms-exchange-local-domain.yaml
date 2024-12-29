@@ -1,0 +1,48 @@
+id: ms-exchange-local-domain
+
+info:
+  name: Microsoft Exchange Autodiscover - Local Domain Exposure
+  author: userdehghani
+  severity: info
+  description: |
+    Microsoft Exchange is prone to a local domain exposure using the Autodiscover v2 endpoint.
+  impact: |
+    An attacker can leverage this information for reconnaissance and targeted attacks.
+  remediation: |
+    Restrict access to the Autodiscover service or configure it to not expose local domain information.
+  reference:
+    - https://support.microsoft.com/en-gb/topic/autodiscover-v2-returns-internalurl-not-externalurls-in-other-site-774301e2-2d1e-d5e0-aa41-a49f6e9b06f4
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:microsoft:exchange_server:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:outlook exchange
+    product: exchange_server
+    vendor: microsoft
+  tags: misconfig, microsoft,ms-exchange,ad,dc
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/autodiscover/autodiscover.json?Protocol=ActiveSync&Email=user@domain.tld&RedirectCount=1"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)(X-Calculatedbetarget:)"
+
+      - type: status
+        status:
+          - 200
+          - 302
+
+    extractors:
+      - type: kval
+        kval:
+          - x_calculatedbetarget
+# digest: 4a0a0047304502210098ed614b0123624f7a67c4b5487f5831925d23da990846ebac46f04f8269fc3d02202c7a09a84befb943fb82e3dd3321d2685b5a5dc88123d456821e1b45a90a5683:922c64590222798bb761d5b6d8e72950

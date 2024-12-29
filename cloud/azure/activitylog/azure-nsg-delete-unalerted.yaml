@@ -1,0 +1,59 @@
+id: azure-nsg-delete-unalerted
+info:
+  name: Azure Network Security Group Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is used to detect "Delete Network Security Group" events in your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the condition used is 'Whenever the Administrative Activity Log "Delete Network Security Group (networkSecurityGroups)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Without proper alert rules configured for monitoring "Delete Network Security Group" events, unauthorized or unwanted changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Configure alert rules to monitor and notify on "Delete Network Security Group" events by setting the alert condition to "Microsoft.Network/networkSecurityGroups/delete" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,network-security-group,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("nsg", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$nsg" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Network/networkSecurityGroups/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " does not have the correct alert configuration for Delete Network Security Group events"'
+# digest: 4a0a0047304502204e3355a4baf57150230afa270354d3bfedacc86d72d5b8ee14ad12085e8303e5022100fb9273c6cebbd6f54cacad733f3b5d3ba0c4fca378008912d9982f24a8fcb407:922c64590222798bb761d5b6d8e72950

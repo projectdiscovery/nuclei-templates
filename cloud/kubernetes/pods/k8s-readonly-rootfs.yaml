@@ -1,0 +1,50 @@
+id: k8s-readonly-rootfs
+
+info:
+  name: Pods with read-only root filesystem
+  author: princechaddha
+  severity: medium
+  description: Checks for pods and containers running with a read-only root filesystem to prevent modifications to the filesystem, enhancing security.
+  impact: |
+    Running containers with a read-only root filesystem ensures that applications are not able to write to the filesystem or modify existing content. This is a common security practice to prevent malicious changes.
+  remediation: |
+    Configure all pods and containers to have their root filesystem set to read-only mode. This can be achieved by setting the securityContext.readOnlyRootFilesystem parameter to true in the pod or container configuration.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
+  tags: cloud,devops,kubernetes,devsecops,pods,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    set("pod", pod)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[] | {pod: .metadata.name, containers: .spec.containers}'
+
+javascript:
+  - code: |
+        let podData = JSON.parse(template.pod);
+        podData.containers.forEach(container => {
+          if (container.securityContext && container.securityContext.readOnlyRootFilesystem !== true) {
+            let result = (`Container '${container.name}' in pod '${podData.pod}' is not running with a read-only root filesystem.`);
+            Export(result);
+          }
+        });
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100a7b48676a224172a58389ab7a0e3bfab88d82412b94a449b2f4568848ef7d6f20220660e303dd733119023821c2a1059a03fc9fb6e01220f066d8217a868e5cf9c64:922c64590222798bb761d5b6d8e72950

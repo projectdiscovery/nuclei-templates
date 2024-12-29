@@ -1,0 +1,57 @@
+id: cloudtrail-data-events
+info:
+  name: CloudTrail S3 Data Events Logging
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure Amazon CloudTrail trails log S3 data events to monitor object-level operations like GetObject, DeleteObject, and PutObject.
+  impact: |
+    Without logging S3 data events, you lose visibility into object-level operations which could help detect unauthorized access or modifications.
+  remediation: |
+    Enable data event logging in CloudTrail for S3 buckets to ensure detailed activity monitoring and logging for better security and compliance.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,s3,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail get-event-selectors --region $region --trail-name $trail --query 'EventSelectors[*].DataResources[]'
+
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail" + trail + " is not configured to capture resource operations performed on or within an AWS cloud resource"'
+# digest: 4b0a00483046022100d8d3d3939bb96ea7f7ede4cfb901cb01a7d9b4b1013bb775455332dc60c4d0e9022100d15ded970f22179552bc315212e51e4e8afb058dd5cfed5a4e7f020c4a16bba4:922c64590222798bb761d5b6d8e72950

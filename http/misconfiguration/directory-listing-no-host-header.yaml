@@ -1,0 +1,44 @@
+id: directory-listing-no-host-header
+
+info:
+  name: Directory Listing - No Host header
+  author: kazet
+  severity: unknown
+  description: |
+    The HTTP server is configured to list files in the root directory when no Host header is provided.
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misconfig,listing
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - '!contains_any(body,"<title>Index of","<title>Directory listing of")'
+        internal: true
+
+  - raw:
+      - |+
+        @Host: {{Hostname}}
+        GET / HTTP/1.0
+
+    unsafe: true
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body,"<title>Index of","<title>Directory listing of")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a0046304402205cb25ea9ba3bfdb6efa631e6feca1881841d7ae851ecb142a63fe097ba1c670e02207812eb9f66fc51907c8265ad556bc01926156a7d655880e93921a39d3a89b47d:922c64590222798bb761d5b6d8e72950

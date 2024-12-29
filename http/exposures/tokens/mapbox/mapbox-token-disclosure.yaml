@@ -11,7 +11,7 @@ info:
   metadata:
     verified: true
     max-request: 2
-  tags: token,exposure,mapbox,disclosure
+  tags: token,exposure,mapbox
 
 flow: http(1) && http(2)
 
@@ -20,12 +20,12 @@ http:
     path:
       - "{{BaseURL}}"
 
-    extractors:
+    matchers:
       - type: regex
         part: body
         name: token
         regex:
-          - pk\.[a-z0-9]{60}\.[a-z0-9]{22}
+          - 'sk\.eyJ1Ijoi\w+\.[\w-]*'
         internal: true
 
   - raw:
@@ -34,11 +34,16 @@ http:
         GET /geocoding/v5/mapbox.places/Los%20Angeles.json?access_token={{token}} HTTP/1.1
         Host: api.mapbox.com
 
-    self-contained: true
-
+    disable-path-automerge: true
     matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
           - 'contains_all(body, "type","query","features")'
         condition: and
+
+    extractors:
+      - type: dsl
+        name: token
+        dsl:
+          - token

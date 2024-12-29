@@ -1,0 +1,37 @@
+id: ec2-unrestricted-memcached
+info:
+  name: Unrestricted Access to Memcached
+  author: princechaddha
+  severity: critical
+  description: |
+    Detects unrestricted inbound access to Memcached on Amazon EC2 instances, which can lead to cache poisoning, unauthorized access, and DDoS attacks.
+  impact: |
+    Unrestricted access increases the risk of cache poisoning, unauthorized data access, and potential DDoS attacks on the Memcached server.
+  remediation: |
+    Restrict inbound access to Memcached by updating EC2 security group rules to allow only trusted IPs to connect on TCP/UDP port 11211.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=11211 Name=ip-permission.to-port,Values=11211 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 11211"'
+# digest: 4a0a00473045022100bdeb933cb3e42cbb6599207000e595d0cd58d4321fa615ffa506cc1cf41424bf02202403467ee782ccd57ddb6b1810e7d3dfcadcd55232c1fa8846365af53448e1c8:922c64590222798bb761d5b6d8e72950

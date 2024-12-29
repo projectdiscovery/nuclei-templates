@@ -1,0 +1,54 @@
+id: azure-vm-unmanaged-disk-volumes
+info:
+  name: Azure VM Unmanaged Disk Volumes Detected
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure virtual machines (VMs) are configured to use managed disk volumes for reliable, efficient, and simplified disk management. A managed disk is an abstraction of current Standard/Premium storage disk in Azure Storage. Managed disks provide granular access control with RBAC and better reliability for the virtual machines deployed within an Azure Availability Set.
+  impact: |
+    Using unmanaged disk volumes can lead to less efficient management and potential reliability issues in disk access within Azure VMs.
+  remediation: |
+    Configure your Azure VMs to use managed disks for better reliability and simplified management of disk resources.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/managed-disks-overview
+  tags: cloud,devops,azure,microsoft,virtual-machine,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    set("ids", VMData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$ids" --query 'storageProfile.{"osDiskType":osDisk.managedDisk.id,"dataDiskType":dataDisks[*].managedDisk.id}'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " is not using managed OS/data disk volume(s)"'
+# digest: 4a0a00473045022100983c14fe6dc8ab5c09c2753322bc00f0c975d9504f34e75659dcb2d75f0b588e0220611736a56db24d160bb7378277b7c7cb32e5531061d8fb6fcbaffdc845ca0024:922c64590222798bb761d5b6d8e72950

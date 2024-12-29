@@ -1,0 +1,57 @@
+id: cloudtrail-dup-logs
+info:
+  name: CloudTrail Duplicate Log Avoidance
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure CloudTrail logging is configured to prevent duplicate recording of global service events across multiple trails.
+  impact: |
+    Duplicate log entries can lead to increased storage costs and complicate log analysis and anomaly detection efforts.
+  remediation: |
+    Configure only one multi-region trail to log global service events and disable global service logging for all other trails.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-find-log-files.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].IncludeGlobalServiceEvents' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Ensure only one trail in Amazon CloudTrail is configured for global service events to avoid duplicates: " + trail'
+# digest: 4b0a00483046022100d1139235f7eab3bb93560b30c88ceda4eb8fa8c658cc821693198e7640bea17902210086106d9e04a589f3e46bbfa41593f4a8979c3af2fe342e2842e20a6ee03a35aa:922c64590222798bb761d5b6d8e72950

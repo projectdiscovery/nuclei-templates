@@ -1,0 +1,59 @@
+id: azure-storage-account-update-unalerted
+info:
+  name: Azure Storage Account Create/Update Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Create/Update Storage Account" events are triggered in your Microsoft Azure cloud account. Activity log alerts get triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is `Whenever the Activity Log has an event with Category="Administrative", Signal name="Create/Update Storage Account (Microsoft.Storage/storageAccounts)"`.
+  impact: |
+    Without proper alert rules configured for monitoring "Create or Update Storage Account" events, unauthorized or unwanted changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Create or Update Storage Account" events by setting the alert condition to "Microsoft.Storage/storageAccounts/write" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,storage-account,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Storage/storageAccounts/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Create/Update Storage Account events"'
+# digest: 4a0a00473045022100e632af3e94fe6c03fba36b2a2fe47e4c4f0a77fd017682bcc2868404f810944002207fb5756547e7c272a76c77c684b2c3f6c35a4b95b153a63976d99aebf25d7e02:922c64590222798bb761d5b6d8e72950

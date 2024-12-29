@@ -1,0 +1,48 @@
+id: k8s-default-namespace-used
+
+info:
+  name: Default Namespace Usage in Deployments
+  author: princechaddha
+  severity: high
+  description: Checks if Kubernetes Deployments are using the default namespace, which can lead to security risks and mismanagement issues.
+  impact: |
+    Using the default namespace for Kubernetes Deployments can increase security risks as it might allow broader access than necessary. It also complicates resource management across multiple teams and applications.
+  remediation: |
+    Avoid using the default namespace for Kubernetes Deployments. Create and specify dedicated namespaces tailored to specific applications or teams to enhance security and manage resources effectively.
+  reference:
+    - https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+  tags: cloud,devops,kubernetes,k8s,devsecops,namespaces,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (deployment.metadata.namespace.toLowerCase() === "default") {
+          let result = (`Deployment '${deployment.metadata.name}' is using the default namespace, which is not recommended.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100b71eb5a7941e4eac93b5edecbbf8c81ef9cd2ec9b2c6690f6dd66dc385a954030220797e5e846a6cf5276a2f7f25a0f6a800dcf23f163b114046373a827a3e070623:922c64590222798bb761d5b6d8e72950

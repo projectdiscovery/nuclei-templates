@@ -1,0 +1,59 @@
+id: azure-vm-deallocate-unalerted
+info:
+  name: Azure Virtual Machine Deallocate Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Deallocate Virtual Machine" events are triggered within your Microsoft Azure cloud account. An Azure activity log alert is triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is `Whenever the Administrative Activity Log "Deallocate Virtual Machine (Microsoft.Compute/virtualMachines)" has "any" Event level, with "any" Status and Event initiated by "any"`.
+  impact: |
+    Without an alert for "Deallocate Virtual Machine" events, unauthorized or unintended shutdowns of VMs may occur without detection, leading to potential disruptions and security risks.
+  remediation: |
+    Configure Azure activity log alerts to detect "Deallocate Virtual Machine" events by setting the alert condition to "Microsoft.Compute/virtualMachines/deallocate/action" and ensuring that alerts trigger notifications appropriately.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Compute/virtualMachines/deallocate/action"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Deallocate Virtual Machine events"'
+# digest: 4b0a004830460221009f1599f6aca8ce9d8c82686aac7e14e2efc1e43c721f1159ecf00f6c51de86eb022100af9cf2e205a44f4a410ec342fec57796d5c61755b54ff10f8b78ebcf9ba143c2:922c64590222798bb761d5b6d8e72950

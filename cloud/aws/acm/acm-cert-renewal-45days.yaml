@@ -1,0 +1,58 @@
+id: acm-cert-renewal-45days
+info:
+  name: ACM Certificates Pre-expiration Renewal
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure AWS ACM SSL/TLS certificates are renewed at least 45 days before expiration to prevent service disruptions.
+  impact: |
+    Failure to renew certificates timely may lead to expired certificates causing service access issues or downtimes.
+  remediation: |
+    Set up Amazon CloudWatch to monitor ACM certificate expiration and automate renewal notifications or processes.
+  reference:
+    - https://docs.aws.amazon.com/acm/latest/userguide/acm-renewal.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,acm,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let arns of iterate(template.certificatearns)){
+    set("certificatearn", arns)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws acm list-certificates --region $region --certificate-statuses ISSUED --query 'CertificateSummaryList[*].CertificateArn' --output json
+
+    extractors:
+      - type: json
+        name: certificatearns
+        internal: true
+        json:
+          - '.CertificateSummaryList[] | .CertificateArn'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws acm describe-certificate --region $region --certificate-arn $certificatearn --query 'Certificate.[NotAfter, CertificateArn]' --output json | jq -r 'select((.[0] | fromdateiso8601 | mktime) - (now | mktime) < (45 * 86400)) | .[1]'
+
+    extractors:
+      - type: regex # type of the extractor
+        name: certificate
+        internal: true
+        regex:
+          - '^arn.*'
+
+      - type: dsl
+        dsl:
+          - '"The AWS ACM Certificate " + certificate +" is about to expire in 30 days"'
+# digest: 4b0a00483046022100afa1e5b4ba6aeef0412564db36b6a727b3b10a17c6e90c745eaa7bf211398e18022100c5777c658dfc8695d06f6583b161f77b996454b09af2203bb799d85034fe6e12:922c64590222798bb761d5b6d8e72950

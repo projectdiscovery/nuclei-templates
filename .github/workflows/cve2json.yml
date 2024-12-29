@@ -5,41 +5,27 @@ on:
     branches:
       - main
     paths:
-      - '*/cves/**'
-  workflow_dispatch: # allows manual triggering of the workflow
+      - '**/cves/**'
+  workflow_dispatch:
 
 jobs:
   cve2json:
     runs-on: ubuntu-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - uses: actions/checkout@master
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: projectdiscovery/actions/setup/go@v1
         with:
-          go-version: 1.19
-          
-      - name: Run YAML2JSON
-        id: cves
-        run: |
-          go env -w GO111MODULE=off
-          go get gopkg.in/yaml.v3
-          go run .github/scripts/yaml2json.go $GITHUB_WORKSPACE/http/cves/,$GITHUB_WORKSPACE/network/cves/ cves.json
-          md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
-          git status -s | wc -l | xargs -I {} echo CHANGES={} >> $GITHUB_OUTPUT
-          
-      - name: Commit files
-        if: steps.cves.outputs.CHANGES > 0
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add cves.json cves.json-checksum.txt
-          git commit -m "Auto Generated cves.json [$(date)] :robot:" -a
-
+          go-version: 'stable'
+      - run: go run main.go $GITHUB_WORKSPACE/http/cves/,$GITHUB_WORKSPACE/network/cves/,$GITHUB_WORKSPACE/javascript/cves/ $GITHUB_WORKSPACE/cves.json
+        working-directory: .github/scripts/yaml2json
+      - run: md5sum cves.json | cut -d' ' -f1 > cves.json-checksum.txt
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: 'cves.json*'
+          message: 'chore: generate CVEs metadata 🤖'
       - name: Push changes
-        if: steps.cves.outputs.CHANGES > 0
         run: |
-          git pull --rebase
-          git push origin ${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

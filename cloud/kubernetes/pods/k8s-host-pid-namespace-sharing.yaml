@@ -1,0 +1,47 @@
+id: k8s-host-pid-namespace-sharing
+
+info:
+  name: Host PID Namespace Sharing
+  author: princechaddha
+  severity: critical
+  description: Checks if containers in Kubernetes pods share the host's process ID namespace, which can pose a security risk.
+  impact: |
+    Sharing the host's PID namespace allows processes within the pod to view all of the processes on the host, potentially leading to privilege escalation and other security vulnerabilities.
+  remediation: |
+    Ensure that the 'hostPID' field is set to 'false' in Kubernetes Pod specifications to prevent containers from sharing the host's PID namespace.
+  reference:
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#host-namespaces
+  tags: cloud,devops,kubernetes,k8s,devsecops,pods,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    set("pod", pod)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        pod = JSON.parse(template.pod);
+        if (pod.spec.hostPID) {
+          let result = (`Pod '${pod.metadata.name}' in namespace '${pod.metadata.namespace}' is sharing the host's PID namespace.`);
+          Export(result);
+        }
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a004630440220132cec00e11e6e75b6861b85596700ee6649387258a67748eebecae1f43e343502206eb8e71a719d664fe8b67f0a04ba54067e665edd329c8ccd19e53b6feaad3392:922c64590222798bb761d5b6d8e72950

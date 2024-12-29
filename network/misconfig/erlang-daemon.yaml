@@ -2,7 +2,7 @@ id: erlang-daemon
 
 info:
   name: Erlang Port Mapper Daemon
-  author: pussycat0x
+  author: pussycat0x,daffainfo
   severity: low
   description: |
     The erlang port mapper daemon is used to coordinate distributed erlang instances. His job is to keep track of which node name listens on which address. Hence, epmd map symbolic node names to machine addresses.
@@ -11,11 +11,10 @@ info:
     - https://book.hacktricks.xyz/network-services-pentesting/4369-pentesting-erlang-port-mapper-daemon-epmd
     - https://medium.com/@_sadshade/couchdb-erlang-and-cookies-rce-on-default-settings-b1e9173a4bcd
   metadata:
+    verified: true
     max-request: 1
     shodan-query: product:"Erlang Port Mapper Daemon"
-    verified: true
-  tags: demon,enum,erlang,epmd
-
+  tags: demon,enum,erlang,epmd,network,misconfig,tcp
 tcp:
   - inputs:
       - data: "\x00\x01\x6e"
@@ -24,9 +23,21 @@ tcp:
       - "{{Hostname}}"
     port: 4369
 
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "HTTP/1.1"
+        negative: true
+
+      - type: word
+        words:
+          - "name"
+          - "at port"
+        condition: and
+
     extractors:
-      - type: dsl
-        name: default-instances
-        dsl:
-          - trim(raw, '[ ]')
-# digest: 4a0a004730450220355188af0f9857f623bc4acc4a4be1bf35256e1aada20409924789891020dc19022100f4de4851b2259ca96fef0a174af79c129a8fc270ee9a965b22422c0d1d0e6d3b:922c64590222798bb761d5b6d8e72950
+      - type: regex
+        regex:
+          - 'name (.*?) at port ([0-9]+)'
+# digest: 490a0046304402203a15bfaeb83663694a1263e073b7a8d842d7a397f69761897081d839d5bed11c02207a75e7a2b272b5aac31feab63bbeec6d7fd8564d275c5285bde99adcd88fdfe3:922c64590222798bb761d5b6d8e72950

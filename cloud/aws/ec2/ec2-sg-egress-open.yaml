@@ -1,0 +1,58 @@
+id: ec2-sg-egress-open
+info:
+  name: Open Egress in EC2 Security Group
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for unrestricted outbound/egress rules in Amazon EC2 security groups, highlighting potential over-permissive configurations.
+  impact: |
+    Allows unrestricted outbound traffic from EC2 instances, increasing the risk of data exfiltration and malicious external communications.
+  remediation: |
+    Restrict egress traffic in EC2 security groups to only necessary IP addresses and ranges, adhering to the Principle of Least Privilege.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html#sg-rules
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let SecurityGroup of iterate(template.securitygroups)){
+    set("groupid", SecurityGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-security-groups --region $region --group-ids $groupid --query 'SecurityGroups[*].IpPermissionsEgress[]'
+
+    matchers:
+      - type: word
+        words:
+          - "0.0.0.0/0"
+          - "::/0"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Amazon EC2 security group(s) " + groupid + " allows unrestricted outbound traffic"'
+# digest: 4a0a00473045022100fab25cd451861c61bd395688f05669575673619b29cf554770dcea2403af9a9a022073e8fc297a89cbc2c42c6be3765db214bd465ac621135cb152a8c2e0cc97b346:922c64590222798bb761d5b6d8e72950
