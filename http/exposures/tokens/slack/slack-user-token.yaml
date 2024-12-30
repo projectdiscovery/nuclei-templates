@@ -2,21 +2,62 @@ id: slack-user-token
 
 info:
   name: Slack User token disclosure
-  author: Ice3man
-  severity: info
+  author: Ice3man,DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/slack.yml
+    - https://api.slack.com/methods/users.list/test
+    - https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-user-token.yaml
+    - https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-user-token.txt
   metadata:
     max-request: 1
+    verified: true
   tags: exposure,token,slack
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
-    extractors:
+    matchers:
       - type: regex
         part: body
+        name: token
         regex:
-          - "xoxp-[0-9A-Za-z\\-]{72}"
+          - 'xoxp-[0-9A-Za-z\\-]{74}'
+          - '(xox[pe](?:-[0-9]{10,13}){3}-[a-zA-Z0-9-]{28,34})'
+        internal: true
 
-# digest: 490a004630440220446d24679a1b64f64b2ad0ef8ea1c189e7cc05d08b99d36ceae78b6c896a61c90220670ee63e037869c8b0bbdf5b639ce96100bb5862933f4d7077df37139e73ee98:922c64590222798bb761d5b6d8e72950
+  - raw:
+      - |
+        @Host: https://slack.com:443
+        POST /api/users.list?pretty=1 HTTP/1.1
+        Host: slack.com
+        Origin: https://api.slack.com
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDL3VHEC7cFaxeAhK
+
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="content"
+
+        null
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="token"
+
+        {{token}}
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "is_admin", "is_app_user", "is_email_confirmed")
+          - contains(content_type, "application/json")
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4b0a00483046022100de9135e609edc931f16437f65b2d2d819eab396d1c758f1272b01eaa614be77c0221009f86e0b107f43991f64bcb55cd1525e04a9e6c313d208d1b4a01c0db62bdb5e8:922c64590222798bb761d5b6d8e72950
