@@ -3,23 +3,52 @@ id: square-access
 info:
   name: Square Access Token
   author: DhiyaneshDK
-  severity: info
+  severity: high
   reference:
+    - https://developer.squareup.com/docs/build-basics/access-tokens
     - https://github.com/praetorian-inc/noseyparker/blob/main/data/default/rules/square.yml
+    - https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/square-access-token.yaml
   metadata:
     verified: true
     max-request: 1
   tags: square,token,exposure
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
-    extractors:
+    matchers:
       - type: regex
         part: body
+        name: token
         regex:
-          - '(?i)\b(sq0atp-[a-z0-9_-]{22})\b'
+          - 'EAAAl[^\s]+'
+        internal: true
 
-# digest: 4b0a00483046022100a7c03e561633fbb0f926f357370abae3985687a1726065246762050657950b0f0221008199ea6636ee1d2d26e1514ed279bbc41ec0d73d0aa22b1a60b945ba900b7d53:922c64590222798bb761d5b6d8e72950
+  - raw:
+      - |
+        @Host: https://connect.squareup.com:443
+        GET /v2/locations HTTP/1.1
+        Host: connect.squareup.com
+        Square-Version: 2023-01-19
+        Authorization: Bearer {{token}}
+        Content-Type: application/json
+
+    disable-path-automerge: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'locations'
+          - 'longitude'
+          - 'country'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4a0a00473045022100805faa687d1cf1a2cf4ae4079cc9b9841f86765291d999d977db07252ac2c0a302201eb6c319b5ceb75b76c8745cb65aac2eda3a09a390830ae2f63023d6890bcd88:922c64590222798bb761d5b6d8e72950

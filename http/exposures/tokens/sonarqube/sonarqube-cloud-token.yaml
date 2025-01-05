@@ -1,0 +1,51 @@
+id: sonarqube-cloud-token
+
+info:
+  name: SonarQube Cloud Token Disclosure
+  author: DhiyaneshDk
+  severity: high
+  reference:
+    - https://sonarcloud.io/web_api/api/authentication
+    - https://docs.sonarsource.com/sonarqube/latest/user-guide/user-account/generating-and-using-tokens/#types-of-tokens
+  metadata:
+    max-request: 1
+    verified: true
+  tags: exposure,token,sonarqube
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '\b[a-fA-F\d]{40}\b'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://sonarcloud.io:443
+        GET /api/authentication/validate HTTP/1.1
+        Host: sonarcloud.io
+        Authorization: Basic {{base64(token + ':')}}
+
+    disable-path-automerge: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'valid') && contains(body, 'true')
+          - contains(content_type, "application/json")
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4a0a0047304502205b2e8bb8638e8108d87f285a3c69ce6849fdf65102d9a63b7ce60c4cc07a1ef5022100c208686b36f6edfda80dd7604cbaad41b7d120fa27250f8d11f41bbbac26d40a:922c64590222798bb761d5b6d8e72950
