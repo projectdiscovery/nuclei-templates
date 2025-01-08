@@ -1,0 +1,39 @@
+id: powershell-execution-policy-check
+
+info:
+  name: PowerShell Execution Policy Check
+  author: JeonSungHyun[nukunga]
+  severity: medium
+  description: |
+    Checks if the PowerShell Execution Policy is set to an insecure level 
+    (e.g., Bypass or Unrestricted).
+  impact: |
+    Malicious scripts can be run silently, increasing the risk of malware execution.
+  remediation: |
+    Set execution policy to RemoteSigned or AllSigned according to your organization's policy.
+  tags: windows,powershell,audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $policies = Get-ExecutionPolicy -List
+      foreach ($p in $policies) {
+        if ($p -in [String[]]("Bypass","Unrestricted")) {
+          Write-Output "Insecure Execution Policy found: $p"
+        }
+      }
+    matchers:
+      - type: word
+        words:
+          - "Insecure Execution Policy found:"
+# digest: 4a0a00473045022100f226a4d4a56a2a52eb6f42270b07dffa4218f7812a2236bb52e206f192b0bf9a022021c436f5e3c9cfb753fe2fa12da08cd31d31faa68257277db1f847d1477ec3fa:6107285756468496532c649643fc40fb
