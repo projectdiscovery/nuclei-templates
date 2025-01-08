@@ -1,0 +1,39 @@
+id: powershell-script-block-logging-disabled
+
+info:
+  name: PowerShell Script Block Logging Disabled
+  author: JeonSungHyun[nukunga]
+  severity: medium
+  description: |
+    Checks if PowerShell script block logging is disabled. 
+    Without logging, detecting malicious PowerShell usage is difficult.
+  impact: |
+    Potential stealthy PowerShell attacks without detection in event logs.
+  remediation: |
+    Enable PowerShell script block logging in Group Policy or Registry.
+  tags: windows,powershell,logging,audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $regPath = "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+      $logValue = (Get-ItemProperty -Path $regPath -Name "EnableScriptBlockLogging" -ErrorAction SilentlyContinue).EnableScriptBlockLogging
+      
+      if ($logValue -ne 1) {
+        Write-Output "PowerShell Script Block Logging is disabled!"
+      }
+    matchers:
+      - type: word
+        words:
+          - "PowerShell Script Block Logging is disabled!"
+# digest: 4a0a00473045022055382ca7afff9e722580973437588aad012d5f7da9cf97cd496391f5041ad5fb022100e95a52d0c7a66fa06363ce40d04423f371078fb03158c7f659c2ca12d7123a34:6107285756468496532c649643fc40fb
