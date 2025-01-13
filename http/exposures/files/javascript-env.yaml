@@ -1,0 +1,57 @@
+id: javascript-env
+
+info:
+  name: JavaScript Environment Configuration - Detect
+  author: pdp,geeknik,hetyh
+  severity: low
+  description: Multiple common JavaScript environment configuration files were detected.
+  metadata:
+    max-request: 7
+  tags: javascript,config,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/env.js"
+      - "{{BaseURL}}/env.development.js"
+      - "{{BaseURL}}/env.production.js"
+      - "{{BaseURL}}/env.test.js"
+      - "{{BaseURL}}/env.dev.js"
+      - "{{BaseURL}}/env.prod.js"
+      - "{{BaseURL}}/__ENV.js"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(content_type), 'application/javascript')"
+
+      - type: word
+        part: body
+        words:
+          - "module.exports"
+          - "const audience"
+          - "const domain"
+          - "NODE_ENV"
+          - "LOG_LEVEL"
+          - "TOKEN"
+          - "KEY"
+          - "PASSWORD"
+          - "VERSION"
+          - "window.__ENV ="
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "Bootstrap"
+          - "jQuery"
+          - "CSS TRANSITION SUPPORT"
+          - "is_ad_blocked"
+        condition: or
+        negative: true
