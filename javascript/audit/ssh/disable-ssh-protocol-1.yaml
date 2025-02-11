@@ -1,0 +1,46 @@
+id: disable-ssh-protocol-1
+
+info:
+  name: Disable SSH Protocol 1
+  author: pussycat0x
+  severity: low
+  description: |
+    Using SSH Protocol 1 is insecure as it lacks strong encryption and integrity checks, making it vulnerable to man-in-the-middle attacks, session hijacking, and other exploits. It is recommended to use SSH Protocol 2 for enhanced security.
+  remediation: |
+    Set Protocol 2 in /etc/ssh/sshd_config to disable SSH Protocol 1 and restart the SSH service.
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+    - https://www.ktchost.com/blog/enable-ssh-protocol-2/
+  metadata:
+    verified: true
+  tags: audit,config,ssh,auth
+
+javascript:
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+      let result = "";
+      if (!sshConfig.includes('Protocol 2')) {
+      result += "Disable SSH Protocol 1; ";
+      }
+      else{
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "root"
+      Password: "toor"
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+    extractors:
+      - type: dsl
+        dsl:
+          - response

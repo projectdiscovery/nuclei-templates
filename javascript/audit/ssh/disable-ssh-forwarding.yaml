@@ -1,0 +1,46 @@
+id: disable-ssh-forwarding
+
+info:
+  name: Disable SSH Forwarding
+  author: pussycat0x
+  severity: unknown
+  description: |
+    SSH forwarding can enhance security by encrypting traffic (X11, agent, or port forwarding), but it also poses risks if misused. Attackers with access to a compromised system can pivot to other machines, potentially escalating privileges or stealing credentials.
+  remediation: |
+    Set X11Forwarding no and AllowTcpForwarding no in /etc/ssh/sshd_config to disable SSH forwarding and restart the SSH service.
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+  metadata:
+    verified: true
+  tags: audit,config,ssh,auth
+
+javascript:
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+      let result = "";
+      if (sshConfig.includes('AllowTcpForwarding yes') && !sshConfig.includes('#AllowTcpForwarding yes') || sshConfig.includes('X11Forwarding yes')) {
+      result += "Disable SSH Forwarding;";}
+       }
+      else{
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "root"
+      Password: "toor"
+     
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+    extractors:
+      - type: dsl
+        dsl:
+          - response

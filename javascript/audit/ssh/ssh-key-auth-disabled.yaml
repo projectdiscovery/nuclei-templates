@@ -1,0 +1,47 @@
+id: ssh-key-auth-disabled
+
+info:
+  name: SSH Key-Based Authentication - Disabled
+  author: pussycat0x
+  severity: low
+  description: |
+    SSH key-based authentication is disabled, allowing password-based logins, which increases the risk of brute-force attacks and unauthorized access.
+  remediation: |
+    Enable SSH key-based authentication by adding the public key to ~/.ssh/authorized_keys and disabling password authentication in /etc/ssh/sshd_config (PasswordAuthentication no).
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+    - https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server
+  metadata:
+    verified: true
+  tags: audit,config,ssh,auth
+
+javascript:
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+      let result = "";
+      if (sshConfig.includes('#PasswordAuthentication yes') && !sshConfig.includes('PasswordAuthentication yes')){
+      result += "SSH Key-Based Authentication Disabled";
+      }
+      else{
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "root"
+      Password: "toor"
+     
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+    extractors:
+      - type: dsl
+        dsl:
+          - response

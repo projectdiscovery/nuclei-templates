@@ -1,0 +1,45 @@
+id: change-default-port
+
+info:
+  name: Change SSH Default Port
+  author: pussycat0x
+  severity: info
+  description: |
+    Reduces Automated Attacks: Changing the default port can help avoid most automated attacks that target port 22.
+  remediation: |
+    Set Port 2222 in /etc/ssh/sshd_config to change the default SSH port and restart the SSH service.
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+    - https://gcore.com/learning/how-to-change-ssh-port/
+  metadata:
+    verified: true
+  tags: audit,config,ssh,auth
+
+javascript:
+  - code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+      let result = "";
+      if (sshConfig.includes('#Port 22') && !sshConfig.includes('Port  ')) {
+      result += "Default SSH Port Detected; ";
+       }
+      else{
+      exit();
+      }
+      result
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "root"
+      Password: "toor"
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+    extractors:
+      - type: dsl
+        dsl:
+          - response
