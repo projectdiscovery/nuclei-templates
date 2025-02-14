@@ -1,0 +1,101 @@
+id: hop-by-hop-header-abuse-advanced
+
+info:
+  name: Hop-by-Hop Header Abuse Detection with Enhanced False Positive Mitigation
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    Detects response inconsistencies caused by improper handling of hop-by-hop headers, with detailed response comparisons to reduce false positives.
+  reference:
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://owasp.org/www-community/vulnerabilities/Cache_Poisoning
+  remediation: |
+    Ensure that all intermediaries properly handle hop-by-hop headers by consuming them locally and not forwarding them. Regularly audit and update intermediary configurations to prevent unexpected header leakage.
+
+flow: |
+  http(1) && http(2) && http(3)
+
+http:
+  # Baseline Request
+  - method: GET
+    path:
+      - "{{BaseURL}}?cb={{randstr}}"  # Cache-busting query parameter
+    headers:
+      User-Agent: "HopByHop-Test"
+    extractors:
+      - type: regex
+        name: baseline_body_content
+        part: body
+        regex:
+          - "(?s)(.*)"  # Captures the full response body for comparison
+        group: 0
+      - type: regex
+        name: baseline_headers
+        part: header
+        regex:
+          - "(?s)(.*)"  # Captures all response headers for comparison
+        group: 0
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+  # Request with Hop-by-Hop Headers
+  - method: GET
+    path:
+      - "{{BaseURL}}?cb={{randstr}}"  # New cache-buster
+    headers:
+      Connection: "keep-alive, X-Forwarded-For"
+      X-Forwarded-For: "test"
+    extractors:
+      - type: regex
+        name: modified_body_content
+        part: body
+        regex:
+          - "(?s)(.*)"  # Captures the full response body for comparison
+        group: 0
+      - type: regex
+        name: modified_headers
+        part: header
+        regex:
+          - "(?s)(.*)"  # Captures all response headers for comparison
+        group: 0
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 404
+          - 500
+      - type: regex
+        part: body
+        regex:
+          - "{{baseline_body_content}}"  # Body content comparison
+        negative: true
+      - type: regex
+        part: header
+        regex:
+          - "{{baseline_headers}}"  # Header comparison
+        negative: true
+
+  # Request Without Any Hop-by-Hop Headers (Validation Request)
+  - method: GET
+    path:
+      - "{{BaseURL}}?cb={{randstr}}"  # Same cache-buster
+    headers:
+      User-Agent: "HopByHop-Test"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - "{{baseline_body_content}}"  # Body content must match baseline
+      - type: regex
+        part: header
+        regex:
+          - "{{baseline_headers}}"  # Headers must match baseline
