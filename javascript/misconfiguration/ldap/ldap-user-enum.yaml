@@ -1,0 +1,44 @@
+id: ldap-user-enum
+
+info:
+  name: LDAP UserNames - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    Ldap Usrname Enumeration.
+  reference:
+    - https://cxyy4rle.blogspot.com/2019/09/testing-ldap-servers-with-examples.html
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap,anonymous
+
+javascript:
+  - code: |
+      const ldap = require('nuclei/ldap');
+      const cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      const client = new ldap.Client(Host, Ldap, Port, cfg);
+      const dcs = client.Search('cn=admin','dc=acme','dc=com');
+      log(to_json(dcs));
+
+    args:
+      Host: "ldap://{{Host}}"
+      Ldap: "{{Host}}"
+      Port: 389
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - 'root'
+      passwords:
+        - 'toor'
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'response != "[]"'
+          - 'success == true'
+        condition: and
