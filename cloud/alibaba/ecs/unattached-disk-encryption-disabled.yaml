@@ -14,8 +14,13 @@ info:
     verified: true
   tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,ecs
 
-variables:
-  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let DiskName of iterate(template.diskname)){
+    set("disk", DiskName)
+    code(2)
+  }
 
 self-contained: true
 
@@ -23,16 +28,30 @@ code:
   - engine:
       - sh
       - bash
+
     source: |
-      aliyun ecs DescribeDisks --Status Available --region $region
+      aliyun ecs DescribeDisks --Status Available
+      
+    extractors:
+      - type: json
+        name: diskname
+        internal: true
+        json:
+          - '.Disks.Disk[].DiskName'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun ecs DescribeDisks --DiskName $disk 
 
     matchers:
       - type: word
         words:
-          - '"Encrypted": false'
+          - '"Encrypted": false,'
 
     extractors:
       - type: dsl
         dsl:
-          - '" Encryption for Unattached Disks is Disabled "'
-# digest: 4a0a00473045022100e3f1eb9d2f25397e2c3f9b1fc03ff807b1f188d0168bd3bb3f37314a23a68d6f02200a78f4cbcbf9c402d5e827134acfe497858577368c7c4ee8792fd1cd97198c32:922c64590222798bb761d5b6d8e72950
+          - 'disk + " Encryption for Unattached Disk is Disabled"'
