@@ -1,0 +1,40 @@
+id: intercom-identity-verification
+
+info:
+  name: Intercom Identity Verification
+  author: domwhewell-sage
+  severity: medium
+  description: Identity Verification is not setup on the Intercom widget, allowing an attacker to impersonate a user and access their chat history.
+  reference:
+    - https://medium.com/@hellother18/uncovering-a-vulnerability-in-intercom-widget-chat-configuration-e5633d06df60
+    - https://www.intercom.com/help/en/articles/183-set-up-identity-verification-for-web-and-mobile
+  tags: intercom,unauth,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    redirects: true
+    max-redirects: 3
+
+    extractors:
+      - type: regex
+        name: intercom_app_id
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - 'app_id:\s*"([a-zA-Z0-9\-]+)"'
+
+  - method: POST
+    path:
+      - "https://api-iam.intercom.io/messenger/web/ping"
+    body: app_id={{intercom_app_id}}&user_data={{url_encode(user_data)}}
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+variables:
+  user_data: '{"email":"test@example.com"}'
