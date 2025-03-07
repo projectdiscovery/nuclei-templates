@@ -1,0 +1,36 @@
+id: remote-desktop-default-port
+
+info:
+  name: Remote Desktop Listening Default Port - Detect
+  author: asteria121
+  severity: info
+  description: |
+    The Remote Desktop Protocol (RDP) service listens on a default port (TCP 3389), which is commonly targeted by attackers.
+  impact: |
+    Exposure of the default RDP port (TCP 3389) increases the risk of brute-force attacks and unauthorized access. This can lead to system compromise, data breaches, and ransomware deployment.
+  remediation: |
+    Change the default RDP listening port to a non-standard port to reduce exposure.
+  tags: windows,rdp,audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $rdpService = Get-Service -Name TermService;
+      $rdpPort = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp").PortNumber;
+      if ($rdpService.Status -eq 'Running' -and $rdpPort -eq 3389) { Write-Host "True" } else { Write-Host "False" }
+
+    matchers:
+      - type: word
+        words:
+          - "True"
+# digest: 4a0a0047304502203cf68ab0745eccbb239d22000f87708c3173f59b0f02c50e27b64ae7a6652d0c02210092bd0786242b83434a3f954599cce2f64d78ba54eef35b9686232c67f712dc7f:922c64590222798bb761d5b6d8e72950
