@@ -1,0 +1,57 @@
+id: disable-server-header
+
+info:
+  name: Disable Server Header in Apache2
+  author: pussycat0x
+  severity: medium
+  description: |
+    Ensures that 'ServerTokens Prod' and 'ServerSignature Off' are correctly set in Apache to prevent server information leakage.
+  remediation: |
+    Set 'ServerTokens Prod' and 'ServerSignature Off' in Apache configuration and restart the service.
+  reference:
+    - https://httpd.apache.org/docs/2.4/mod/core.html#servertokens
+    - https://httpd.apache.org/docs/2.4/mod/core.html#serversignature
+  metadata:
+    verified: true
+  tags: audit,config,auth,apache
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const ApacheConfig = c.Run(Code)
+      ApacheConfig
+      let result = "";
+      if (ApacheConfig.includes("<Directory") && !ApacheConfig.includes("ServerTokens Prod") && !ApacheConfig.includes("ServerSignature Off")) {
+      result += "Disable HTTP Headers";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/apache2/apache2.conf       #apache2 Debian
+        - /etc/httpd/conf/httpd.conf      #apache RHEL
+        - /etc/httpd/conf.d               #apache Virtual Host
+        - /usr/local/etc/httpd/httpd.conf #macos
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
