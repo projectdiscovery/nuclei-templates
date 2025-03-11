@@ -1,0 +1,50 @@
+id: missing-nginx-xss-protection
+
+info:
+  name: Missing Nginx XSS Protection
+  author: pussycat0x
+  severity: high
+  description: |
+    Ensures that XSS protection is enabled in Nginx by checking for the 'X-XSS-Protection' header.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+  tags: audit,nginx,ssh,auth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const NginxConfig = c.Run(Code)
+      NginxConfig
+      let result = "";
+      if (NginxConfig.includes("http") && NginxConfig.includes("events") && !NginxConfig.includes("add_header X-XSS-Protection") && !NginxConfig.includes("mode=block")) {
+      result += "Missing Nginx XSS protection";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "root"
+      Pass: "prithivmeow"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/nginx/nginx.conf       #apache2 Debian
+        - /usr/local/etc/nginx/nginx.conf      #apache RHEL
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
