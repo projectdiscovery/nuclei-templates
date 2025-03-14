@@ -1,0 +1,50 @@
+id: missing-nginx-bof-protection
+
+info:
+  name: Missing Nginx Buffer Overflow Protection
+  author: pussycat0x
+  severity: medium
+  description: |
+    Ensures that buffer overflow protection is properly configured in Nginx to prevent large request attacks.
+  reference:
+    - https://nginx.org/en/docs/http/ngx_http_proxy_module.html
+  tags: nginx,file,audit,ssh,auth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const NginxConfig = c.Run(Code)
+      NginxConfig
+      let result = "";
+      if (NginxConfig.includes("http") && NginxConfig.includes("events") && !NginxConfig.includes("proxy_buffer_size") && !NginxConfig.includes("proxy_buffers") && !NginxConfig.includes("proxy_busy_buffers_size")) {
+      result += "Missing Nginx Buffer Overflow Protection";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "root"
+      Pass: "prithivmeow"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/nginx/nginx.conf       #apache2 Debian
+        - /usr/local/etc/nginx/nginx.conf      #apache RHEL
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response

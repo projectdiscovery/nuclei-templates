@@ -1,0 +1,52 @@
+id: missing-nginx-hsts
+
+info:
+  name: Missing Nginx HSTS
+  author: pussycat0x
+  severity: high
+  description: |
+    Ensures that HSTS (Strict-Transport-Security) is enabled in Nginx.
+  remediation: |
+    Add 'add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";' in /etc/nginx/nginx.conf under the server block.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+  tags: audit,nginx,ssh,auth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const NginxConfig = c.Run(Code)
+      NginxConfig
+      let result = "";
+      if (NginxConfig.includes("http") && NginxConfig.includes("events") && !NginxConfig.includes("add_header Strict-Transport-Security")) {
+      result += "Nginx HSTS Missing";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "root"
+      Pass: "prithivmeow"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/nginx/nginx.conf       #apache2 Debian
+        - /usr/local/etc/nginx/nginx.conf      #apache RHEL
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
