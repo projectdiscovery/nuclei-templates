@@ -2,9 +2,11 @@ id: springboot-metrics
 
 info:
   name: Detect Springboot metrics Actuator
-  author: pussycat0x
+  author: pussycat0x,TheZakMan
   severity: low
-  description: Additional routes may be displayed
+  description: |
+    Spring Boot Metrics Actuator endpoint was detected, which may expose system metrics information.
+    This template detects both older Spring Boot 1.x format and newer 2.x/3.x format.
   metadata:
     max-request: 2
   tags: springboot,exposure,misconfig
@@ -19,19 +21,26 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "mem"
-          - "mem.free"
-          - "processors"
-          - "instance.uptime"
-          - "systemload.average"
-          - "nonheap.init"
-          - "heap.committed"
-        condition: and
-
       - type: status
         status:
           - 200
-# digest: 4b0a0048304602210094550c4cd8d9db056b85fd7ff04601dfbfc962fc13c288f86fc710c908ba3a22022100aea32b3050d6a3d321a26f29fc7b0577408a652ac7715c86356c69fcf6c87201:922c64590222798bb761d5b6d8e72950
+      
+      - type: dsl
+        dsl:
+          - "contains(tolower(content_type), 'application/json') || contains(tolower(content_type), 'application/vnd.spring-boot')"
+      
+      - type: word
+        condition: or
+        part: body
+        words:
+          # Spring Boot 1.x format indicators
+          - '{"mem":'
+          - '{"heap":'
+          - '{"nonheap":'
+          - '{"threads":'
+          - '{"gc":'
+          
+          # Spring Boot 2.x/3.x format indicators
+          - '{"names":['
+          - '"jvm.memory'
+          - '"process.cpu'
