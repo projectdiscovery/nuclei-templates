@@ -1,0 +1,54 @@
+id: ingress-nginx-valid-admissionreview
+info:
+  name: Kubernetes Ingress-Nginx Valid AdmissionReview Detection
+  author: burso
+  severity: info
+  description: |
+    Sends a valid minimal AdmissionReview JSON to reliably detect Kubernetes Ingress-Nginx Admission webhook endpoints.
+  tags: tech,kubernetes,ingress-nginx,ingress,nginx,admission-controller
+
+http:
+  - raw:
+      - |
+        POST /validate HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "kind": "AdmissionReview",
+          "apiVersion": "admission.k8s.io/v1",
+          "request": {
+            "uid": "{{randstr}}",
+            "kind": {
+              "group": "networking.k8s.io",
+              "version": "v1",
+              "kind": "Ingress"
+            },
+            "operation": "CREATE",
+            "object": {
+              "metadata": {
+                "name": "test-{{randstr}}",
+                "namespace": "default"
+              },
+              "spec": {
+                "rules": [
+                  {
+                    "host": "example.com",
+                    "http": {
+                      "paths": []
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+        
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'AdmissionReview'
+          - 'response'
+          - 'test-{{randstr}}'
+        condition: and
