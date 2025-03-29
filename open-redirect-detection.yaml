@@ -1,0 +1,42 @@
+id: open-redirect-detection
+info:
+  name: Open Redirect Detection
+  author: ProjectDiscoveryAI
+  severity: medium
+  description: |
+    Detects possible open redirect vulnerabilities by injecting redirect payloads into query parameters and checking for reflected redirection in the response.
+
+http:
+  - payloads:
+      redirect_payload:
+        - "https://example.com"
+        - "//example.com"
+        - "http://example.com"
+        - "//example.com/%2e%2e"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        keys-regex:
+          - "(?i)(redirect|url|next|return|target|dest|uri|continue)"
+        fuzz:
+          - "{{redirect_payload}}"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "location"
+
+      - type: regex
+        part: header
+        regex:
+          - "https?:\\/\\/example\\.com"
+
+      - type: status
+        status:
+          - 302
+          - 301
