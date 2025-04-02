@@ -2,12 +2,13 @@ id: netdata-panel
 
 info:
   name: Netdata Panel - Detect
-  author: TechbrunchFR
+  author: TechbrunchFR,righettod
   severity: info
   description: |
     Netdata panel was detected.
   reference:
     - https://github.com/netdata/netdata
+    - https://www.netdata.cloud/
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cwe-id: CWE-200
@@ -18,6 +19,7 @@ info:
     product: netdata
     shodan-query:
       - http.title:"netdata dashboard"
+      - http.title:"Netdata Console"
       - "server: netdata embedded http server"
     fofa-query: title="netdata dashboard"
     google-query: intitle:"netdata dashboard"
@@ -27,20 +29,34 @@ http:
   - method: GET
     path:
       - "{{BaseURL}}/api/v1/info"
+      - "{{BaseURL}}/sign-in"
 
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "application/json")'
+          - 'contains(to_lower(body), "netdata")'
+        condition: and
 
-      - type: word
-        part: header
-        words:
-          - "application/json"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>netdata console</title>")'
+        condition: and
 
-      - type: word
+    extractors:
+      - type: regex
         part: body
-        words:
-          - "netdata"
-# digest: 490a0046304402200b4d4f82124976303d8753a3f6c93cfb0e7d1a7b5dc56008e84d6641a516603e022065fd12d8fba13ba2e89cc8ae21ec4eca92db43290027527e0a044ef3a85964b5:922c64590222798bb761d5b6d8e72950
+        group: 1
+        regex:
+          - '(?i)version:\s+"([0-9.]+)"'
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)nodeEnv:\s+"([a-z0-9]+)"'
+# digest: 4a0a004730450220263da5943818fcafea164207552c6035354758c51f0c8e845d9c5aa4cf11fc88022100950e4c5549b5264077982ef9659d96bfea05cd4e3c697b5345cb2cb9251b9202:922c64590222798bb761d5b6d8e72950

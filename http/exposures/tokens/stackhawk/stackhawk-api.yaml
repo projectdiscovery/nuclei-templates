@@ -3,23 +3,49 @@ id: stackhawk-api
 info:
   name: StackHawk API Key
   author: DhiyaneshDK
-  severity: info
+  severity: high
   reference:
-    - https://github.com/praetorian-inc/noseyparker/blob/main/data/default/rules/stackhawk.yml
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/stackhawk.yml
+    - https://apidocs.stackhawk.com/reference/login
   metadata:
     verified: true
     max-request: 1
   tags: stackhawk,token,exposure
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
-    extractors:
+    matchers:
       - type: regex
         part: body
+        name: token
         regex:
           - '\b(hawk\.[0-9A-Za-z_-]{20}\.[0-9A-Za-z_-]{20})\b'
+        internal: true
 
-# digest: 4a0a0047304502210088701eb7a19bc39a07e47ec68831b244e7b00e43a20f34e3091272796b4c639602207ed379c867acf2e28d187e8fd9a47a31ac95869f9cd42ff750405a0e08973b3f:922c64590222798bb761d5b6d8e72950
+  - raw:
+      - |
+        @Host: https://api.stackhawk.com:443
+        GET /api/v1/auth/login HTTP/1.1
+        Host: api.stackhawk.com
+        X-ApiKey: {{token}}
+        Accept: application/json
+
+    disable-path-automerge: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "token")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4a0a00473045022100afa8ef1ce30cafe34e4f48f21c08b8c36edcc419b1428fddad3ad0913a5179aa022030edd6062efec8b697aeb972f269b3a38c4375e78b7412e6e2cae0860d294bce:922c64590222798bb761d5b6d8e72950

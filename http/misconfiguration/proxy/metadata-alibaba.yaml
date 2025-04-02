@@ -9,7 +9,7 @@ id: metadata-service-alibaba
 # inside the private network.
 info:
   name: Alibaba Metadata Service Check
-  author: sullo
+  author: sullo,pwnhxl
   severity: critical
   description: The Alibaba host is configured as a proxy which allows access to the metadata service. This could allow significant access to the host/infrastructure.
   remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
@@ -22,24 +22,30 @@ info:
     cvss-score: 9.3
     cwe-id: CWE-441
   metadata:
-    max-request: 2
+    max-request: 4
   tags: exposure,config,alibaba,proxy,misconfig,metadata
 
 http:
   - raw:
       - |+
-        GET http://{{hostval}}/dynamic/instance-identity/document HTTP/1.1
+        GET http://{{hostval}}/{{path}} HTTP/1.1
         Host: {{hostval}}
 
     payloads:
       hostval:
         - alibaba.oast.pro
         - 100.100.100.200
+      path:
+        - latest/dynamic/instance-identity/document
+        - 2016-01-01/dynamic/instance-identity/document
+    attack: clusterbomb
+
     unsafe: true
     matchers:
       - type: word
         part: body
         words:
-          - "zone-id"
-
-# digest: 490a004630440220495fde6b8e524846446e53dead7f589f22c254d0ca7b6e09e07210469773749f0220264d2180b4589c8663f68bab544d951ad739fae7f3b6dccaaacee29718cb4778:922c64590222798bb761d5b6d8e72950
+          - '"serial-number"'
+          - '"zone-id":"'
+        condition: and
+# digest: 4a0a004730450220059523b4ebfe1800cb6762dc0f16934b1fac3c757366d088e484746112021598022100b09951af6a7248bd926653c13175b92ed6c0214769d0ed4bf44e28c3c97e9563:922c64590222798bb761d5b6d8e72950
