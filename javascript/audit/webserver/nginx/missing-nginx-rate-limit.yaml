@@ -1,0 +1,55 @@
+id: missing-nginx-rate-limiting
+
+info:
+  name: Missing Nginx Rate Limiting Configuration
+  author: pussycat0x
+  severity: medium
+  description: |
+    Ensures that rate limiting is properly configured in Nginx to prevent excessive requests from a single client.
+  remediation: |
+    Add 'limit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;' in /etc/nginx/nginx.conf.
+  reference:
+    - https://wiki.devsecopsguides.com/docs/checklists/nginx/
+    - https://nginx.org/en/docs/http/ngx_http_limit_req_module.html
+  metadata:
+    verified: true
+  tags: nginx,audit,ssh,auth,hardening
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const NginxConfig = c.Run(Code)
+      NginxConfig
+      let result = "";
+      if (NginxConfig.includes("http") && NginxConfig.includes("events") && !NginxConfig.includes("limit_req_zone $binary_remote_addr zone=") && !NginxConfig.includes("rate=")) {
+      result += "Missing Nginx Rate Limitting Protection";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/nginx/nginx.conf
+        - /usr/local/etc/nginx/nginx.conf
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response

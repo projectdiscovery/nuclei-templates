@@ -1,0 +1,56 @@
+id: mongodb-http-interface-enabled
+
+info:
+  name: MongoDB HTTP Interface Enabled
+  author: pussycat0x
+  severity: high
+  description: |
+    Checks if the MongoDB HTTP interface is enabled in /etc/mongod.conf.
+  remediation: |
+    Set 'http.enabled: false' in /etc/mongod.conf and restart MongoDB.
+  reference:
+    - https://wiki.devsecopsguides.com/docs/checklists/mongodb/
+    - https://www.mongodb.com/docs/manual/reference/configuration-options/
+  metadata:
+    verified: true
+  tags: mongodb,config,file,audit,ssh,auth,hardening
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const MongoConfig = c.Run(Code)
+      MongoConfig
+      let result = "";
+      if (MongoConfig.includes("storage") && MongoConfig.includes("operationProfiling") && MongoConfig.includes("http:") && MongoConfig.includes("enabled: true")) {
+      result += "MongoDB HTTP Interface Enabled";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/mongod.conf
+        - /usr/local/etc/mongod.conf
+        - /opt/homebrew/etc/mongod.conf
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
