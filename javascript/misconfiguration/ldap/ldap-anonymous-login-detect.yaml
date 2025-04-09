@@ -1,0 +1,35 @@
+id: ldap-anonymous-login-detect
+
+info:
+  name: LDAP Anonymous Login - Detect
+  author: pussycat0x,s0obi
+  severity: medium
+  description: |
+    Detects whether an LDAP server allows anonymous bind (login without credentials).Anonymous access can expose sensitive directory information and should be restricted
+    unless explicitly intended.
+  reference:
+    - https://ldap.com/ldapv3-wire-protocol-reference-bind/#anonymous
+    - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Client#getadgroups
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap,enum
+
+javascript:
+  - code: |
+      let ldap = require('nuclei/ldap');
+      let cfg = ldap.Config();
+      cfg.Upgrade = true;
+      let client = ldap.Client(Host, Port, cfg);
+      let result = client.Authenticate('', '');
+      let metadata = client.CollectMetadata();
+      Export(metadata);
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
