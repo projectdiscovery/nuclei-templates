@@ -1,0 +1,44 @@
+id: dvwa-dom-xss-check
+
+info:
+  name: DVWA DOM-based XSS (Headless)
+  author: van
+  severity: medium
+  description: |
+    Phát hiện DOM-based XSS trong trang xss_d của DVWA bằng trình duyệt headless.
+  tags: dvwa,xss,dom,headless
+
+variables:
+  random_num: "{{rand_int(10000, 99999)}}"
+  payloads:
+    - "'\"><h1>{{random_num}}</h1>"
+    - "javascript:alert({{random_num}})"
+    - "' onerror=alert({{random_num}})"
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}/DVWA/vulnerabilities/xss_d/?default={{payload}}"
+      - action: waitload
+        args:
+          timeout: 10
+
+    headers:
+      Cookie: "PHPSESSID=12g9sj6gdknke4870ld4boosib; security=low"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<h1>{{random_num}}</h1>"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/html"

