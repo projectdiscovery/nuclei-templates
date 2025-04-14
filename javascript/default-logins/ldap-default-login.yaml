@@ -1,0 +1,50 @@
+id: ldap-default-login
+
+info:
+  name: LDAP Default Credential - Bruteforce
+  author: pussycat0x
+  severity: info
+  description: |
+    Attempts to guess username/password combinations over LDAP.
+  metadata:
+    verified: true
+    shodan-query: ldap
+  tags: js,ldap,default-login,network
+
+javascript:
+  - code: |
+      let ldap = require('nuclei/ldap');
+      let cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      let client = ldap.Client(Host, Port, cfg);
+      client.Authenticate(User, Pass);
+      let metadata = client.CollectMetadata();
+      Export((metadata));
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - admin
+      passwords:
+        - admin
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'success == true'
+          - 'len(resp) != 0'
+
+    extractors:
+      - type: dsl
+        internal: true
+        name: resp
+        dsl:
+          - response
+# digest: 4a0a0047304502200cb086580b9542fc80d4f478b9ab28c9d9087240d5927a392d2fa87599e49ba4022100ebb07a6c2a8358a00c778f9409bacc490d3323bd892178d6a2989c0b2dcfdf0f:922c64590222798bb761d5b6d8e72950
