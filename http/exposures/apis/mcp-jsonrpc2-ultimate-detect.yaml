@@ -1,0 +1,66 @@
+id: mcp-jsonrpc2-ultimate-detect
+
+info:
+  name: MCP Server JSON-RPC 2.0 Full Detection (tools/list, etc.)
+  author: ivan_wallarm
+  severity: high
+  description: Detects exposed MCP servers via multiple JSON-RPC 2.0 methods, including tools/list, rpc.discover, resources/list, prompts/list.
+  tags: jsonrpc, mcp, rpc, devtools, exposure, control-panel
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}"
+
+    headers:
+      Content-Type: application/json
+
+    payloads:
+      method:
+        - rpc.discover
+        - rpc.describe
+        - rpc.listTools
+        - tools/list
+        - resources/list
+        - prompts/list
+        - tool.status
+        - tool.help
+        - tool.version
+        - tool.list
+
+    attack: pitchfork
+
+    body: |
+      {
+        "jsonrpc": "2.0",
+        "method": "{{method}}",
+        "params": [],
+        "id": 1
+      }
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "jsonrpc"
+          - "result"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - "\"available_tools\"\\s*:\\s*\\["
+          - "\"name\"\\s*:\\s*\"get_tools\""
+          - "\"server_status\"\\s*:\\s*\\{"
+          - "\"observatories_by_type\""
+          - "\"parameters\"\\s*:\\s*\\{"
+          - "\"tools\"\\s*:\\s*\\[.*?\\]"
+          - "\"resources\"\\s*:\\s*\\[.*?\\]"
+          - "\"prompts\"\\s*:\\s*\\[.*?\\]"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "\"name\"\\s*:\\s*\"([^\"]+)\""
