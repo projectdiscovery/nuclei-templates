@@ -14,25 +14,37 @@ info:
     shodan-query: http.favicon.hash:"-670975485"
   tags: emqx,default-login
 
+variables:
+  username: "admin"
+  password: "public"
+
 http:
   - raw:
       - |
-        POST /api/v4/auth HTTP/1.1
+        POST {{path}} HTTP/1.1
         Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+        Content-Type: application/json
 
-        {"username":"{{user}}","password":"{{pass}}"}
+        {"username":"{{username}}","password":"{{password}}"}
 
-    attack: pitchfork
+    attack: clusterbomb
     payloads:
-      user:
-        - admin
-      pass:
-        - public
+      path:
+        - "/api/v4/auth"
+        - "/api/v5/login"
+
+    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
           - body == "{\"code\":0}"
           - status_code == 200
         condition: and
-# digest: 4a0a00473045022029d5877541ccf9f4f22e9f73a0fe55b83a9039433a728ae151f839bb935cc788022100fa85fc3be55643ee83a5ac2434b625e2142dbf752cf131115ed6378dcff0dd9c:922c64590222798bb761d5b6d8e72950
+
+      - type: dsl
+        dsl:
+          - contains(body, "\"token\":") && contains(body, "\"license\":")
+          - contains(content_type, 'application/json')
+          - status_code == 200
+        condition: and
+# digest: 490a0046304402200ff33809984d5fd3bef9ed1c67d285f303e8e0ca1f3dfefe932dfc848bf9389b02205ede1342037983eec078e752241c177cc71024dfb71070267f346f5f6cf80765:922c64590222798bb761d5b6d8e72950
