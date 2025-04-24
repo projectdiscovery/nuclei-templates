@@ -1,11 +1,11 @@
 id: gradio-lfi
 
 info:
-  name: Gradio 3.47 – 3.50.2 - Local File Inclusion
+  name: Gradio 3.47/3.50.2 - Local File Inclusion
   author: nvn1729
   severity: high
   description: |
-    Local file read by calling arbitrary methods of Components class between Gradio versions 3.47 – 3.50.2
+    Local file read by calling arbitrary methods of Components class between Gradio versions 3.47 / 3.50.2
   reference:
     - https://github.com/gradio-app/gradio/commit/24a583688046867ca8b8b02959c441818bdb34a2
     - https://www.horizon3.ai/attack-research/disclosures/exploiting-file-read-vulnerabilities-in-gradio-to-steal-secrets-from-hugging-face-spaces/
@@ -22,7 +22,26 @@ info:
     vendor: gradio_project
   tags: cve,cve2024,intrusive,unauth,gradio,lfi,lfr
 
+flow: http(1) && http(2)
+
 http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /component_server HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(tolower(body), "content=\"gradio", "gradio_mode", "gradio-app", "https://gradio.app")'
+          - 'contains(tolower(body), "\"method not allowed")'
+        condition: or
+        internal: true
+
   - raw:
       - |
         POST /component_server HTTP/1.1
@@ -64,4 +83,4 @@ http:
       - type: status
         status:
           - 200
-# digest: 4b0a0048304602210084e268bcbb7b9a35b5c1948daf05600fa5db9d90d22f05b7bca02ff5cab01d02022100fefb18defe00a340bee9bc96ef55485a5f5602e395cca980c18f9c3b7807a707:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a004730450221009a000e16a75bee5fabcaf424bc6a4ef85edb5554dec6737c24637259b95fdda902200a2197986cc155b93aeb2031ed6b9b739ca870bc9ea168098e5aa9161dc2eb89:922c64590222798bb761d5b6d8e72950

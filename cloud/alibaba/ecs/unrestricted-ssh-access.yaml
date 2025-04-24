@@ -1,0 +1,62 @@
+id: unrestricted-ssh-access
+
+info:
+  name: Unrestricted - SSH Access
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Unrestricted SSH access allows anyone on the internet to attempt connections to your instance over port 22, posing a risk of brute force attacks, unauthorized access, and exploitation of SSH vulnerabilities. Limiting access to trusted IPs is essential to secure your instance.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ECS/unrestricted-ssh-access.html
+    - https://www.alibabacloud.com/help/en/ecs/use-cases/best-practices-of-the-security-group
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,ecs
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let SecurityGroupId of iterate(template.securitygroup)){
+    set("securitygroup", SecurityGroupId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun ecs DescribeSecurityGroups --RegionId $region
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.SecurityGroups.SecurityGroup[].SecurityGroupId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId "$securitygroup" --Direction ingress --RegionId $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"IpProtocol": "TCP"'
+          - '"PortRange": "22/22"'
+          - '"SourceCidrIp": "0.0.0.0/0"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'securitygroup + " contains Unrestricted SSH Access"'
+# digest: 4a0a00473045022078d2940e35439fb3d9447ac4fe8aa08ec376448ea3458f938bdbf7159089aa8c022100f9751047f3976afb22ed1b7db9d481f2cee00cfe1513dcc4e53818e0df7451c7:922c64590222798bb761d5b6d8e72950

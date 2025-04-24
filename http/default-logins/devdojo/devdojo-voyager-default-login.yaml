@@ -1,0 +1,50 @@
+id: devdojo-voyager-default-login
+
+info:
+  name: DevDojo Voyager - Default login
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: high
+  description: |
+    DevDojo Voyager contains default credentials when run with dummy data. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://voyager-docs.devdojo.com/getting-started/installation
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: title:"Voyager"
+  tags: default-login,voyager,devdojo
+
+variables:
+  username: "admin@admin.com"
+  password: "password"
+
+http:
+  - raw:
+      - |
+        GET /admin/login HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: csrf
+        group: 1
+        regex:
+          - 'name="_token" value="([a-zA-Z0-9]+)"'
+
+  - raw:
+      - |
+        POST /admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _token={{csrf}}&email={{username}}&password={{password}}&
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body,'/admin</title>')"
+          - "status_code == 302"
+        condition: and
+# digest: 4a0a00473045022100a8fd4a00be1eec2f372016bc7e0b452c2a0c937ed108556f220955f8c6d519f1022048a366bd13b2e4f623397196d285ba5dca6b6a687bb91cf8c135ac2a94cdf8d1:922c64590222798bb761d5b6d8e72950

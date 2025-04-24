@@ -1,0 +1,58 @@
+id: improper-bucket-sse
+
+info:
+  name: Improper Bucket Server-Side Encryption
+  author: ritikchaddha
+  severity: medium
+  description: |
+    Determine the Server-Side Encryption (SSE) feature configuration available for the selected OSS bucket. For compliance, the SSEAlgorithm must be set to KMS.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/enable-sse-with-customer-managed-key.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,oss
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let BucketName of iterate(template.bucketname)) {
+    set("bucket", BucketName)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil ls -s --region $region
+
+    extractors:
+      - type: regex
+        name: bucketname
+        internal: true
+        regex:
+          - 'oss://([a-zA-Z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil bucket-encryption --method get $bucket
+
+    matchers:
+      - type: regex
+        regex:
+          - 'SSEAlgorithm:\s?AES256'
+          - 'StatusCode=404'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'bucket + " Bucket SSEAlgorithm is not set to KMS"'
+# digest: 490a0046304402205bdf1095c23f74d8032d8c8ed10841cd2574f186f2d0a7e6a8b484974f0079c30220378a0a9868705810364cd850515e1f5a63b7596aef948a1a65372871462b69a6:922c64590222798bb761d5b6d8e72950
