@@ -1,0 +1,73 @@
+id: gcloud-run-services-user-labels-missing
+
+info:
+  name: Missing User-Defined Labels in Cloud Run Services
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that user-defined labels are being used to tag, collect, and organize Cloud Run services within your Google Cloud Platform (GCP) projects. User-defined labels are a lightweight and efficient way to group together related or associated cloud resources.
+  impact: |
+    Not using user-defined labels for Cloud Run services can lead to difficulties in managing, organizing, and categorizing resources, especially in large-scale environments.
+  remediation: |
+    Add user-defined labels to Cloud Run services to improve resource management. Ensure that the labels are meaningful and adhere to organizational standards for resource grouping.
+  reference:
+    - https://cloud.google.com/run/docs/configuring/labels
+  tags: cloud,devops,gcp,gcloud,google-cloud-run,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let serviceDetail of iterate(template.services)){
+      set("serviceName", serviceDetail.metadata.name)
+      set("serviceLocation", serviceDetail.metadata.labels['cloud.googleapis.com/location'])
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud run services list --project $projectId --format="json(metadata.name, metadata.labels)"
+
+    extractors:
+      - type: json
+        name: services
+        internal: true
+        json:
+          - '.[].metadata'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud run services describe $serviceName --region=$serviceLocation --format="json(metadata.labels)"
+
+    matchers:
+      - type: word
+        words:
+          - 'cloud.googleapis.com'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Service " + serviceName + " in Location " + serviceLocation + " of Project " + projectId + " does not have user-defined labels for resource management."'
+# digest: 4a0a00473045022100a75738e495aaa16fc27a639e4ab16b113266f9accb386bf728f3519008bf77d602200fc03a26ffbae36715854ef59005303007a78aa9ef3335954df476d356757c17:922c64590222798bb761d5b6d8e72950

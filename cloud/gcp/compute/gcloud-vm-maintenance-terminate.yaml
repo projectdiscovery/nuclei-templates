@@ -1,0 +1,75 @@
+id: gcloud-vm-maintenance-terminate
+
+info:
+  name: VM Instance Maintenance Policy Set to Terminate
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Google Cloud Compute Engine performs live migration of your virtual machine instances during periodic infrastructure maintenance. The virtual machine maintenance behavior determines whether the VM instances are live migrated or terminated during a maintenance event. To ensure that your Google Cloud VM instances are migrated to new hardware, set "On Host Maintenance" configuration setting to "Migrate".
+  impact: |
+    When maintenance policy is set to terminate, VM instances will be shut down during maintenance events, leading to service disruptions and potential data loss.
+  remediation: |
+    Configure the maintenance behavior to "MIGRATE" using the gcloud compute instances set-scheduling command or through the Google Cloud Console. This ensures instances are live migrated during maintenance events.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/configure-maintenance-behavior.html
+    - https://cloud.google.com/compute/docs/instances/setting-instance-scheduling-options
+  tags: cloud,devops,gcp,gcloud,compute,reliability,maintenance,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(scheduling.onHostMaintenance)"
+
+    matchers:
+      - type: word
+        words:
+          - '"onHostMaintenance": "TERMINATE"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " is configured to terminate instead of migrate during maintenance events"'
+# digest: 4a0a004730450221009ea4b62c1ebeed71961f7bb990c4e9efa9c16f57faf141eb25a0da1b9c6564e9022064e76b9d4329f8fdb53dee35e4c9cc024aa09b3d9e60d5f4a4e1e49ff25beb32:922c64590222798bb761d5b6d8e72950

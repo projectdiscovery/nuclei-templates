@@ -1,0 +1,72 @@
+id: gcloud-dns-dnssec-unenabled
+
+info:
+  name: DNSSEC Not Enabled for Google Cloud DNS Zones
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that DNSSEC security feature is enabled for all your Google Cloud DNS managed zones in order to protect your domains against spoofing and cache poisoning attacks. By default, DNSSEC is not enabled for Google Cloud public DNS managed zones.
+  impact: |
+    Not enabling DNSSEC for DNS zones can increase the risk of DNS spoofing and cache poisoning, compromising the security of domain resolutions.
+  remediation: |
+    Enable DNSSEC for each Google Cloud DNS managed zone through the Google Cloud Console or using the `gcloud dns managed-zones update` command with the `--dnssec-state=on` flag.
+  reference:
+    - https://cloud.google.com/dns/docs/dnssec
+  tags: cloud,devops,gcp,gcloud,dns,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let managedZone of iterate(template.managedZones)){
+      set("managedZoneName", managedZone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns managed-zones list --project $projectId --format="json(name,visibility)"
+
+    extractors:
+      - type: json
+        name: managedZones
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns managed-zones describe $managedZoneName --project $projectId --format="json(dnssecConfig.state)"
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"DNSSEC not enabled for Managed Zone: " + managedZoneName + " in Project: " + projectId'
+# digest: 4a0a00473045022100a63467b5c1df819e70daa1a522e5d82b1ebf323053c6059515d504ba3b21a7440220585e48a1e6f01417b987f45713c14ed23a02dcd48f34715a0a31287678703e63:922c64590222798bb761d5b6d8e72950

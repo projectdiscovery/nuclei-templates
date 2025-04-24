@@ -1,0 +1,93 @@
+id: gcloud-alb-ssl-google-managed
+
+info:
+  name: Use Google-Managed SSL Certificates for Application Load Balancers
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your external Application Load Balancers (ALBs) are configured to use Google-managed SSL certificates instead of self-signed certificates in order to avoid triggering browser warnings and adding distrust for users visiting your site.
+  impact: |
+    Using self-signed certificates can lead to browser warnings, which can deter users from visiting your site and reduce the trustworthiness of your service.
+  remediation: |
+    Configure your Application Load Balancers to use Google-managed SSL certificates to ensure trust and proper security standards.
+  reference:
+    - https://cloud.google.com/load-balancing/docs/ssl-certificates
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let urlMap of iterate(template.urlMaps)){
+      set("urlMap", urlMap)
+      code(3)
+      let filteredProxies = template.targetProxies.filter(proxy => proxy.urlMap === urlMap)
+      for(let proxy of filteredProxies){
+        proxy = JSON.parse(proxy)
+        set("targetProxy", proxy.name)
+        set("sslCertificate", proxy.sslCertificates[0])
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: urlMaps
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute target-https-proxies list --project $projectId --global --format="json(name,urlMap,sslCertificates)"
+
+    extractors:
+      - type: json
+        name: targetProxies
+        internal: true
+        json:
+          - '.[] | {name, urlMap, sslCertificates}'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud certificate-manager certificates describe $sslCertificate --project $projectId
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "NOT_FOUND"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"ALB with non-managed SSL certificate: " + urlMap + ", Proxy: " + targetProxy + ", Certificate: " + sslCertificate + ", Project: " + projectId'
+# digest: 4a0a00473045022100b000190f81d165b6c0ba309df754bcbb803568f9df4294ef2e5f51d0c937526a02206400863524faadecabf8d69c7506a989fc394faa931dbf3d46111bbb30b6f251:922c64590222798bb761d5b6d8e72950
