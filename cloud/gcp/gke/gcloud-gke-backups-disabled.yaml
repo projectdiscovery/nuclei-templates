@@ -1,0 +1,76 @@
+id: gcloud-gke-backups-disabled
+
+info:
+  name: GKE Clusters Without Backups Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that backups are enabled for your Google Kubernetes Engine (GKE) clusters to protect your workloads and enable disaster recovery capabilities. GKE backups capture both configuration and volume data, allowing selective or comprehensive restoration of workloads, which is valuable for disaster recovery, CI/CD pipelines, workload cloning, and managing upgrades.
+  impact: |
+    Without backups enabled, you risk potential data loss and extended downtime in case of disasters, and lack the ability to efficiently roll back workloads, migrate between clusters, or clone environments for testing and development.
+  remediation: |
+    Enable backups for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --region=REGION --update-addons=BackupRestore=ENABLED
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/backup-restore
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-cluster-backups.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,backup,disaster-recovery,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(addonsConfig.gkeBackupAgentConfig.enabled)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have backups enabled"'
+# digest: 490a0046304402207090814fc020658847b199ab5d4485e1db92675fa3a269d7fa3980acd227b2b00220707cc7dd2c4ed9e6f7e341f85d2b7e11df710fd9749220bd49b7ad7898eb3532:922c64590222798bb761d5b6d8e72950

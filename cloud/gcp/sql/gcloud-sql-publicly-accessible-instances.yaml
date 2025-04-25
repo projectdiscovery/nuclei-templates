@@ -1,0 +1,90 @@
+id: gcloud-sql-publicly-accessible-instances
+
+info:
+  name: Publicly Accessible Cloud SQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud SQL database instances are configured to accept connections only from trusted networks and IP addresses. Publicly accessible instances may expose sensitive data to unauthorized access.
+  impact: |
+    Publicly accessible database instances can lead to unauthorized access, exposing sensitive data and increasing the risk of security breaches.
+  remediation: |
+    Configure your Cloud SQL database instances to accept connections only from trusted IP addresses and networks by limiting access to known authorized networks.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/configure-ip
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,networking,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+      code(4)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq -r '.settings.ipConfiguration.ipv4Enabled // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'true'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The SQL instance " + sqlInstance + " in project " + projectId + " is configured with a public IP address"'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq -r '.settings.ipConfiguration.authorizedNetworks[]?.value // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - '0.0.0.0/0'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The SQL instance " + sqlInstance + " in project " + projectId + " allows access from 0.0.0.0/0, making it publicly accessible"'
+# digest: 4b0a004830460221009fc7d3bbc2bddecbd9964de5ba1974efd38e90efb62540a4df4479b107f438ca022100e25f2584bf8f7446e73274be96b3b2c4f5bdf782134c8f2ea49f0c8d31883ef8:922c64590222798bb761d5b6d8e72950

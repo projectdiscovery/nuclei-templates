@@ -1,0 +1,79 @@
+id: gcloud-filestore-no-vpc-controls
+
+info:
+  name: Filestore Instance Not Protected by VPC Service Controls
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that VPC Service Controls are used to configure a security perimeter around your Google Cloud Filestore instances. VPC Service Controls is a powerful security tool that allows you to restrict access to your cloud resources, including Filestore instances, to specific networks and clients. This helps prevent data exfiltration and enhances the security posture of your cloud environment.
+  impact: |
+    Without VPC Service Controls, Filestore instances may be vulnerable to unauthorized access and data exfiltration, as there is no security perimeter controlling data flow between resources.
+  remediation: |
+    Configure VPC Service Controls perimeter to protect your Filestore instances by including the Cloud Filestore API (file.googleapis.com) in the restricted services list and adding your project to the perimeter's protected resources.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/use-vpc-service-controls.html
+    - https://cloud.google.com/vpc-service-controls/docs/supported-products
+  tags: cloud,devops,gcp,gcloud,filestore,security,networking,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let perimeter of iterate(template.perimeters)){
+      set("perimeterName", perimeter.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud access-context-manager perimeters list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: perimeters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud access-context-manager perimeters describe $perimeterName --format="json(status.restrictedServices)"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "file.googleapis.com"
+        negative: true
+
+      - type: word
+        words:
+          - "restrictedServices"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " does not have VPC Service Controls configured to protect Filestore instances"'
+# digest: 490a00463044022047203b2ac5e8e7a0dd1069752f630b226115d376645bb92272f09926f0840db102201c4ac85f65ae0cfc1003a9a94ece3e630bd6e0bb99bf165707f84b73741b9c04:922c64590222798bb761d5b6d8e72950

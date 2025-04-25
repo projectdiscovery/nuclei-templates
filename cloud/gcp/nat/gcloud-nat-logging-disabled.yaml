@@ -1,0 +1,107 @@
+id: gcloud-nat-logging-disabled
+
+info:
+  name: Logging Disabled for Cloud NAT Gateways
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that logging is enabled for your Google Cloud NAT gateways in order to log NAT connections and errors for audit and troubleshooting purposes. When logging is enabled, a log entry is generated in two scenarios: when a network connection using NAT is successfully created and when a packet is dropped due to the unavailability of NAT ports.
+  impact: |
+    If logging is disabled for Cloud NAT gateways, it can lead to the loss of critical audit and troubleshooting information, hindering effective network monitoring and issue resolution.
+  remediation: |
+    Enable logging for your Google Cloud NAT gateways by setting the `logConfig.enable` parameter to `True`. This ensures that all NAT connection and error activities are logged appropriately.
+  reference:
+    - https://cloud.google.com/nat/docs/logging
+  tags: cloud,devops,gcp,gcloud,google-cloud-nat,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let network of iterate(template.networks)){
+      set("network", network)
+      code(3)
+      for(let router of iterate(template.routers)){
+        set("router", router)
+        code(4)
+        for(let nat of iterate(template.nats)){
+          set("nat", nat)
+          code(5)
+        }
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers list --project=$projectId --filter="network:($network)" --format="json(name,region)"
+
+    extractors:
+      - type: json
+        name: routers
+        internal: true
+        json:
+          - '.[].name'
+          - '.[].region'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats list --region=$region --router=$router --format="json(name)"
+
+    extractors:
+      - type: json
+        name: nats
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats describe $nat --region=$region --router=$router --format="json(logConfig.enable)"
+
+    matchers:
+      - type: word
+        words:
+          - 'False'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Logging is disabled for Cloud NAT Gateway: " + nat + " in Router: " + router + " of Network: " + network + " in Project: " + projectId'
+# digest: 4b0a00483046022100da683e1f5ca62ccdac283d547bbb5c9eaaec1ebdf3f92dd53d6c9cd3e79dfac902210097d39bdc28dc6a74d916035cb4acfa6d2e17d31f99c037dfb2f531708f0784ee:922c64590222798bb761d5b6d8e72950

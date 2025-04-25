@@ -1,0 +1,72 @@
+id: gcloud-sql-remote-access-enabled
+
+info:
+  name: Remote Access Enabled for SQL Server Database Instances
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the "remote access" database flag is turned off for your Google Cloud SQL Server database instances. This prevents the execution of stored procedures from local or remote servers on which your SQL Server instances are running, improving security and compliance.
+  impact: |
+    Enabling the "remote access" flag for SQL Server database instances can lead to security vulnerabilities, as it allows execution of stored procedures from remote servers. This increases the attack surface of the database.
+  remediation: |
+    Disable the "remote access" database flag for all SQL Server database instances in Google Cloud Platform. Update the database configuration settings to ensure the flag is turned off.
+  reference:
+    - https://cloud.google.com/sql/docs/sqlserver/configure-instance-settings
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,sqlserver,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:SQLSERVER*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format=json | jq '.settings.databaseFlags // [] | .[] | select(.name=="remote access") | .value'
+
+    matchers:
+      - type: word
+        words:
+          - 'on'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Remote Access is enabled for SQL instance " + sqlInstance + " in project " + projectId'
+# digest: 4a0a00473045022100caa3988d8fd3a975f90fd1c7ce714d78cdb0cbaaf62a6ce27e4402b18932d2e002202cd3122442109f5ab45c20051160a900dacf9bd7a23cde8e67dcba57d4bf3e96:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: gcloud-org-load-balancer-types
+
+info:
+  name: Load Balancer Creation Not Restricted by Type
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that only compliant load balancer types can be used to create Google Cloud load balancers for the GCP projects and folders within your organization. The list of allowed load balancer types can only include values from the following list: INTERNAL_TCP_UDP, INTERNAL_HTTP_HTTPS, EXTERNAL_NETWORK_TCP_UDP, EXTERNAL_TCP_PROXY, EXTERNAL_SSL_PROXY, EXTERNAL_HTTP_HTTPS.
+  impact: |
+    By default, creation of all types of Google Cloud load balancers is allowed. Without restrictions, users can create any type of load balancer, potentially violating internal compliance requirements.
+  remediation: |
+    Configure the "Restrict Load Balancer Creation Based on Load Balancer Types" policy at the organization level to explicitly specify which load balancer types are allowed. Use the 'in:' prefix followed by INTERNAL or EXTERNAL to include all internal or external types.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-load-balancer-creation-based-on-type.html
+    - https://cloud.google.com/load-balancing/docs/load-balancer-types
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,load-balancer,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.restrictLoadBalancerCreationForTypes --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted load balancer creation by type, allowing all load balancer types to be created"'
+# digest: 4a0a00473045022100c744a781d9477502bcd8d351b530d5b85f5731193189946b08cd93966f819e2102200653db9f3af7d5dc2ae3a2a114c63524e54626e45609aa6902100289cb327c04:922c64590222798bb761d5b6d8e72950
