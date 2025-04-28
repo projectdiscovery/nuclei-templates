@@ -1,0 +1,49 @@
+id: nocobase-default-login
+
+info:
+  name: NocoBase - Default Login
+  author: Fur1na
+  severity: high
+  description: |
+    NocoBase default login was discovered.
+  reference:
+    - https://www.nocobase.com/
+    - https://github.com/nocobase/nocobase
+    - https://docs.nocobase.com/welcome/getting-started/installation/docker-compose
+  metadata:
+    verified: true
+    max-request: 1
+    zoomeye-query: app="NocoBase"
+  tags: default-login,nocobase
+
+variables:
+  username: "admin@nocobase.com"
+  password: "admin123"
+
+http:
+  - raw:
+      - |
+        POST /api/auth:signIn HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"account": "{{username}}", "password": "{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"username":'
+          - '"email":'
+          - 'systemSettings'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
