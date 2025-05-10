@@ -1,0 +1,89 @@
+id: gcloud-dns-logging-not-enabled
+
+info:
+  name: Enable Cloud DNS Logging for VPC Networks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Cloud DNS logging is enabled for all your Virtual Private Cloud (VPC) networks using DNS server policies. Cloud DNS logging records DNS queries resolved by name servers for VPC networks, as well as queries to public DNS zones from external entities.
+  impact: |
+    Without Cloud DNS logging, you lose visibility into DNS queries, making it difficult to monitor, troubleshoot, and detect potential security threats or misconfigurations.
+  remediation: |
+    Enable Cloud DNS logging for your VPC networks to monitor and analyze DNS query activity for better security and compliance.
+  reference:
+    - https://cloud.google.com/dns/docs/policies
+  tags: cloud,devops,gcp,gcloud,google-cloud-dns,logging,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let network of iterate(template.networks)){
+      set("networkName", network)
+      code(3)
+      for(let dnsPolicy of iterate(template.dnsPolicies)){
+        set("dnsPolicy", dnsPolicy.name)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns policies list --project $projectId --format="json(name)" --filter="networks[].networkUrl:$networkName"
+
+    extractors:
+      - type: json
+        name: dnsPolicies
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns policies describe $dnsPolicy --project $projectId --format="json(enableLogging)" | jq -r '.enableLogging // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'False'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Cloud DNS logging is not enabled for the DNS policy " + dnsPolicy + " in network " + networkName + " in project " + projectId'
+# digest: 4b0a00483046022100c3a532bde5c201a4c56719019d3b6a0988fb37e5b7e2409fec6359d37995555c022100c1f5d182ca692caf2a8a60c90ce15687ef9c1bbe07492f7b86db2275da2dd351:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,74 @@
+id: gcloud-dnssec-rsasha1-deprecated
+
+info:
+  name: DNSSEC RSASHA1 Algorithm Deprecated
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Domain Name System Security Extensions (DNSSEC) feature is not using the deprecated RSASHA1 algorithm for the Zone-Signing Key (ZSK) associated with your public DNS managed zone.
+  impact: |
+    Using RSASHA1 as the zone-signing algorithm in DNSSEC can expose DNS data to increased risks of being compromised due to weaker cryptographic strength.
+  remediation: |
+    Update the DNSSEC configuration to use a stronger, more secure signing algorithm like RSASHA256 or ECDSAP256SHA256 for your DNS managed zones.
+  reference:
+    - https://cloud.google.com/dns/docs/dnssec-configuring
+  tags: cloud,devops,gcp,gcloud,dns,dnssec,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let managedZone of iterate(template.managedZones)){
+      set("managedZoneName", managedZone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns managed-zones list --project $projectId --format="json(name,visibility)"
+
+    extractors:
+      - type: json
+        name: managedZones
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns managed-zones describe $managedZoneName --project $projectId --format="json(dnssecConfig)"
+
+    matchers:
+      - type: word
+        words:
+          - 'rsasha1'
+          - 'zoneSigning'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Deprecated RSASHA1 Algorithm used in DNSSEC for Managed Zone: " + managedZoneName + " in Project: " + projectId'
+# digest: 4b0a00483046022100cb8b9fff2868480c6af2ad01eab469aae458e9d9bab3eff9a7e58b2bcf36d7c7022100d6a35be3a70ec1ae8d2e5abf280603f6b3c1a64e1e2fd5ae89bd0d281d4dda56:922c64590222798bb761d5b6d8e72950

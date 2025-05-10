@@ -1,0 +1,55 @@
+id: gcloud-cloud-asset-disabled
+
+info:
+  name: Cloud Asset Inventory Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Cloud Asset Inventory is enabled for all your GCP projects in order to efficiently manage the history and the inventory of your cloud resources. Google Cloud Asset Inventory is a fully managed metadata inventory service that allows you to view, monitor, analyze, and gain insights for your Google Cloud and Anthos assets. Cloud Asset Inventory is disabled by default in each GCP project.
+  impact: |
+    Not having Cloud Asset Inventory enabled can prevent the organization from having a managed and insightful view over its cloud resources, potentially leading to mismanagement and security risks.
+  remediation: |
+    Enable the Google Cloud Asset Inventory by activating the Cloud Asset API in each GCP project through the Google Cloud Console or using the `gcloud services enable cloudasset.googleapis.com --project <project-id>` command.
+  reference:
+    - https://cloud.google.com/asset-inventory/docs
+  tags: cloud,devops,gcp,gcloud,cloud-asset,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud services list --project $projectId --enabled --filter="name:cloudasset.googleapis.com" --format="json"
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"OS Config service is disabled for Project: " + projectId'
+# digest: 4a0a00473045022100c28adedbeb559d545dc0eca6cf3a0004844111370c7d0ede7af66abdff49dcb902204355d8cd6f1790b8802945e4337dff422ab941931047a7e12a390868e7a71b09:922c64590222798bb761d5b6d8e72950

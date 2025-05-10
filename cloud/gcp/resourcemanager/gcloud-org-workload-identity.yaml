@@ -1,0 +1,56 @@
+id: gcloud-org-workload-identity
+
+info:
+  name: Workload Identity Cluster Creation Not Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Disable Workload Identity Cluster Creation" policy is enforced at the GCP organization level in order to require that any new Google Kubernetes Engine (GKE) clusters have the Workload Identity feature disabled at the time of their creation. This constraint policy is useful when you want to tightly control service account access in your organization by disabling Workload Identity in addition to service account creation and service account key creation.
+  impact: |
+    With Workload Identity enabled, GKE service can assert Kubernetes service account identities that can be authorized to access Google Cloud resources. This could lead to unintended access if not properly controlled.
+  remediation: |
+    Enable the "Disable Workload Identity Cluster Creation" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the iam.disableWorkloadIdentityClusterCreation constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/disable-workload-identity-cluster-creation.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,gke,kubernetes,workload-identity,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe iam.disableWorkloadIdentityClusterCreation --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not disabled Workload Identity for GKE cluster creation, potentially allowing uncontrolled service account access"'
+# digest: 4b0a00483046022100cc64687d6ca993e844d332809261bbfb73f475fca6feb0faf42b2967ff507a69022100a5ee79a5f1d494661d8c0e053586b540be2ede157096689956814fbbe4f97296:922c64590222798bb761d5b6d8e72950
