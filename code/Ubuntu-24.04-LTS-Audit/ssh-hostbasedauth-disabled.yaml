@@ -1,0 +1,35 @@
+id: ssh-hostbasedauth-disabled
+info:
+  name: Ensure SSH HostbasedAuthentication is disabled
+  author: Th3l0newolf
+  severity: High
+  description: |
+    Verifies that HostbasedAuthentication is disabled in sshd_config as per CIS Benchmark.
+  tags: cis,ssh,linux,ssh-audit,ubuntu24.04,benchmark  
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        SSHD_CONFIG="/etc/ssh/sshd_config"
+        # Check if the parameter is set to yes (bad)
+        if grep -i '^\s*HostbasedAuthentication\s\+yes' "$SSHD_CONFIG" >/dev/null; then
+          current_value=$(grep -i '^\s*HostbasedAuthentication' "$SSHD_CONFIG" | head -1 | tr -d '\n')
+          echo "[cis-ssh-hostbasedauth-disabled:Policy-Fail] [$current_value] [CIS_FAIL] [medium]"
+        else
+          echo "[cis-ssh-hostbasedauth-disabled:Policy-Pass] [HostbasedAuthentication no or not set] [CIS_PASS] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        words:
+          - "Policy-Pass"
+        name: policy-pass
+      - type: word
+        words:
+          - "Policy-Fail"
+        name: policy-fail
