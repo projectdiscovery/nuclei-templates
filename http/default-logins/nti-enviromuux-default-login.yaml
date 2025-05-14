@@ -1,0 +1,43 @@
+id: nti-enviromuux-default-login
+
+info:
+  name: Network Technologies Inc ENVIROMUX - Default Login
+  author: M.Sarmad Shafiq
+  severity: high
+  description: | 
+    This template attempts to authenticate to Network Technologies Inc ENVIROMUX systems using default credentials (username: root, password: nti). The template targets multiple ENVIROMUX models including ENVIROMUX-2D, ENVIROMUX-5D, and ENVIROMUX-MINI-LXO. A successful authentication indicates that the system is using default credentials, which poses a significant security risk as it allows unauthorized access to environmental monitoring systems that may control critical infrastructure. The template only reports positive matches when the login attempt is successful.
+  reference:
+    - http://www.networktechinc.com/download/d-environment-monitor-16.html
+    - http://www.networktechinc.com/pdf/man154.pdf
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"ENVIROMUX"
+    fofa-query: body="ENVIROMUX"
+  tags: default-login,networktechnologies,enviromux
+
+variables:
+  username: "root"
+  password: "nti"
+
+http:
+  - raw:
+      - |
+        POST /goform/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"success":"true"'
+          - '"cookie":"sessionId='
+        condition: and
+
+      - type: status
+        status:
+          - 200
