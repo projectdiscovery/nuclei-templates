@@ -1,0 +1,57 @@
+id: ssh-gssapiauthentication-disabled
+info:
+  name: Ensure SSH GSSAPIAuthentication is disabled (with sudo)
+  author: Th3l0newolf
+  severity: low
+  description: |
+    This template checks if GSSAPIAuthentication is explicitly disabled in the SSH configuration.
+    GSSAPIAuthentication allows authentication using GSSAPI (Generic Security Services Application Program Interface),
+    which can introduce additional attack vectors if not properly configured. As per CIS Ubuntu Linux 24.04 LTS Benchmark,
+    it is recommended to disable this feature unless specifically required for your environment.
+  remediation: Disable GSSAPIAuthentication by editing /etc/ssh/sshd_config to set GSSAPIAuthentication no and restart SSH with sudo systemctl restart sshd.
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,ssh,linux,ssh-audit,ubuntu24.04,benchmark
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        # Use sudo for elevated access to parse the effective SSH configuration
+        if ! command -v sshd &> /dev/null; then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Error] [SSH daemon not found] [CIS_ERROR] [medium]"
+          exit 1
+        fi
+
+        # Get the effective SSH configuration
+        if ! gssapi_auth=$(sudo sshd -T 2>/dev/null | grep -i gssapiauthentication | awk '{print tolower($2)}' | tr -d ' \t'); then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Error] [Failed to get SSH configuration] [CIS_ERROR] [medium]"
+          exit 1
+        fi
+
+        # Check if the value is explicitly set to 'no'
+        if [[ -n "$gssapi_auth" && "$gssapi_auth" == "no" ]]; then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Pass] [GSSAPIAuthentication $gssapi_auth] [CIS_PASS] [medium]"
+        else
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Fail] [GSSAPIAuthentication ${gssapi_auth:-unset}] [CIS_FAIL] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"
+
+      - type: word
+        name: policy-error
+        words:
+          - "Policy-Error"
