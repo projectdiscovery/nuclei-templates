@@ -2,7 +2,7 @@ id: sysaid-panel
 
 info:
   name: SysAid Login Panel - Detect
-  author: pdteam
+  author: pdteam,darses
   severity: info
   description: SysAid login panel was detected.
   classification:
@@ -10,7 +10,7 @@ info:
     cwe-id: CWE-200
     cpe: cpe:2.3:a:sysaid:sysaid:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 2
+    max-request: 3
     vendor: sysaid
     product: sysaid
     shodan-query: http.favicon.hash:1540720428
@@ -20,8 +20,17 @@ info:
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/favicon.ico"
       - "{{BaseURL}}/Login.jsp"
+      - "{{BaseURL}}/InvalidAccount.jsp"
+      - "{{BaseURL}}/favicon.ico"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - "(ajaxTools\\.js|master\\.css)\\?v([\\d\\.\\w]+)\""
+        group: 2
 
     stop-at-first-match: true
 
@@ -29,13 +38,12 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - "status_code==200"
-          - "('1540720428' == mmh3(base64_py(body)))"
-        condition: and
+          - "status_code==200 && contains(tolower(body), 'sysaid help desk software')"
 
       - type: dsl
         dsl:
-          - "status_code==200"
-          - "contains(tolower(body), 'sysaid help desk software')"
-        condition: and
-# digest: 490a00463044022037e8f736d447543f2ca7479aeec4d4bf0fd76377645bf2cd387684dbfcac2e63022016c676e0d958c77b93d1e9075f20ab48d839ccf6571fccd67d8e7c0835e6fa98:922c64590222798bb761d5b6d8e72950
+          - "status_code==200 && contains(tolower(body), 'info@sysaid.com')"
+
+      - type: dsl
+        dsl:
+          - "status_code==200 && ('1540720428' == mmh3(base64_py(body)))"
