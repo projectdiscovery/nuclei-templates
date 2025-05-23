@@ -1,23 +1,25 @@
-id: sensitive-path-exposure
+id: sensitive-paths-check
 
 info:
-  name: Sensitive Path Exposure
-  author: pdteam
-  severity: critical
-  description: Detects exposure of the most common sensitive files and directories (credentials, API keys, configs, version control metadata).
+  name: Sensitive Files and Configuration Disclosure
+  author: sibi
+  severity: medium
+  description: Detects exposed sensitive files, only reporting HTTP 200 OK responses.
+  tags: exposure,files,credentials,secrets
 
 requests:
   - method: GET
     path:
       # Cloud credentials
       - "{{BaseURL}}/.aws/credentials"
+      - "{{BaseURL}}/.aws/config"
       - "{{BaseURL}}/.npmrc"
       - "{{BaseURL}}/.dockercfg"
       - "{{BaseURL}}/azureauth.json"
       - "{{BaseURL}}/gcp-creds.json"
       - "{{BaseURL}}/.kube/config"
 
-      # Directories or files named “secret(s)” / “keys”
+      # Secrets directories and files
       - "{{BaseURL}}/secrets/"
       - "{{BaseURL}}/secret/"
       - "{{BaseURL}}/keys/"
@@ -31,14 +33,6 @@ requests:
       - "{{BaseURL}}/jwt_secret/"
       - "{{BaseURL}}/auth_tokens/"
       - "{{BaseURL}}/access_tokens/"
-      - "{{BaseURL}}/tokens/"
-      - "{{BaseURL}}/oauth_secrets/"
-      - "{{BaseURL}}/passwords/"
-      - "{{BaseURL}}/admin-creds/"
-      - "{{BaseURL}}/remember_me_tokens/"
-      - "{{BaseURL}}/user_tokens/"
-      - "{{BaseURL}}/forgot_password_tokens/"
-      - "{{BaseURL}}/user_auth_backup/"
       - "{{BaseURL}}/hardcoded_keys/"
       - "{{BaseURL}}/master_key/"
       - "{{BaseURL}}/ssl_keys/"
@@ -47,13 +41,6 @@ requests:
       - "{{BaseURL}}/salts/"
       - "{{BaseURL}}/nonces/"
       - "{{BaseURL}}/hashes/"
-      - "{{BaseURL}}/digests/"
-      - "{{BaseURL}}/signatures/"
-      - "{{BaseURL}}/secure_storage/"
-      - "{{BaseURL}}/recovery_keys/"
-      - "{{BaseURL}}/keychain_dump/"
-      - "{{BaseURL}}/firebase_admin_keys/"
-      - "{{BaseURL}}/vault_config/"
       - "{{BaseURL}}/topsecr3tdonotlook/"
       - "{{BaseURL}}/admin_backdoor.js"
 
@@ -72,8 +59,10 @@ requests:
       - "{{BaseURL}}/.env.default"
       - "{{BaseURL}}/opt/app/.env"
       - "{{BaseURL}}/home/user/.env"
+      - "{{BaseURL}}/.netrc"
+      - "{{BaseURL}}/.git-credentials"
 
-      # JS configuration files
+      # JavaScript config files
       - "{{BaseURL}}/js/config.js"
       - "{{BaseURL}}/js/config.prod.js"
       - "{{BaseURL}}/js/config.dev.js"
@@ -120,18 +109,31 @@ requests:
       - "{{BaseURL}}/.svn/entries"
       - "{{BaseURL}}/.hg/"
       - "{{BaseURL}}/.bzr/"
+      - "{{BaseURL}}/.htaccess/"
 
-      # Database configuration/backups
+      # Database config and backups
       - "{{BaseURL}}/wp-config.php"
       - "{{BaseURL}}/database.sql"
       - "{{BaseURL}}/db-dump.tar.gz"
       - "{{BaseURL}}/pg_dump"
       - "{{BaseURL}}/mysqldump.log"
+      - "{{BaseURL}}/config/database.yml"
+      - "{{BaseURL}}/config/application.properties"
+
+      # SSH keys
+      - "{{BaseURL}}/.ssh/id_rsa"
+      - "{{BaseURL}}/.ssh/id_rsa.pub"
+      - "{{BaseURL}}/.ssh/authorized_keys"
+      - "{{BaseURL}}/.ssh/config"
+
+      # Apache/nginx hidden config file
+      - "{{BaseURL}}/.htaccess"
+
+    unsafe: true       # Bypass SSL verification
+    redirects: true    # Follow redirects
+    max-redirects: 3
 
     matchers:
       - type: status
         status:
-          - 200   # OK (file served)
-          - 401   # Unauthorized (file exists)
-          - 403   # Forbidden (file exists)
-    matchers-condition: or
+          - 200
