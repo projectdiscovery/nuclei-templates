@@ -1,0 +1,53 @@
+id: topdesk-detect
+
+info:
+  name: TOPdesk - Detect
+  author: darses
+  severity: info
+  description: |
+    Detect TOPdesk and extract timestamp from static files. This template does not detect the 404 error page by "TOPDesk ApplicationServer".
+  metadata:
+    verified: true
+    max-requests: 1
+    shodan-query:
+      - http.favicon.hash:-1177777311
+      - http.favicon.hash:589927604
+      - http.favicon.hash:1123106483
+      - http.favicon.hash:1431756848
+    fofa-query:
+      - icon_hash="-1177777311"
+      - icon_hash="589927604"
+      - icon_hash="1123106483"
+      - icon_hash="1431756848"
+    vendor: TOPDesk
+  tags: tech,detect,topdesk
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "href=\"/tas/"
+          - "topdeskidploginforwardurl"
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        regex:
+          - "auth\\.css\\?timestamp=(\\d{10})"
+        group: 1
+        internal: true
+
+      - type: dsl
+        name: extracted_date
+        dsl:
+          - "date_time('%Y-%M-%D', extracted_unix_timestamp)"
