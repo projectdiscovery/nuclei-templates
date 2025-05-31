@@ -1,0 +1,74 @@
+id: gcloud-pubsub-publicly-accessible
+
+info:
+  name: Publicly Accessible Pub/Sub Topics
+  author: princechaddha
+  severity: high
+  description: |
+    Identify any publicly accessible Pub/Sub topics within your Google Cloud account and update their IAM policy to prevent unauthorized access and sensitive data exposure. To achieve this, remove the bindings for "allUsers" and "allAuthenticatedUsers" members from your topic's IAM policy. "allUsers" is a special member identifier representing any user on the internet, including both authenticated and unauthenticated users. Similarly, "allAuthenticatedUsers" represents any user or service account that can sign in to Google Cloud Platform (GCP) with a Google account.
+  impact: |
+    Publicly accessible Pub/Sub topics can lead to unauthorized access and data leaks, compromising sensitive information and increasing security risks.
+  remediation: |
+    Remove "allUsers" and "allAuthenticatedUsers" from the IAM policy bindings of your Pub/Sub topics. This ensures only authorized identities have access to the topics.
+  reference:
+    - https://cloud.google.com/pubsub/docs/access-control
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let topic of iterate(template.pubsubTopics)){
+      set("pubsubTopic", topic)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub topics list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: pubsubTopics
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub topics get-iam-policy $pubsubTopic --format=json | jq '.bindings[].members[]'
+
+    matchers:
+      - type: word
+        words:
+          - 'allUsers'
+          - 'allAuthenticatedUsers'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Publicly Accessible Pub/Sub Topic found: " + pubsubTopic + " in project: " + projectId'
+# digest: 490a0046304402204083a725bc96738a4a1fb931e117c8bbfaaa3424b5337ae5485a822780d674c102204ed357c9b0b732cc5cd11dbc830f3798e7a4f3d6a73aada6c904f7629b0b1fdf:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,61 @@
+id: exposed-pki-cert
+
+info:
+  name: Exposed Internal PKI Infrastructure - Detect
+  author: nullenc0de
+  severity: high
+  description: |
+    Detects exposed internal PKI infrastructure including CRL distribution points and OCSP responders
+  metadata:
+    verified: true
+    max-request: 10
+  tags: pki,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{paths}}"
+
+    payloads:
+      paths:
+        - ""
+        - "certsrv/"
+        - "pki/"
+        - "PKI/"
+        - "crl/"
+        - "CRL/"
+        - ".well-known/pki-validation/"
+        - "ocsp/"
+        - "CertEnroll/"
+        - "CertSrv/"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "Certificate Services", "CRL Distribution Point", "OCSP Responder")'
+          - '!regex("^This is an OCSP responder.$", body)'
+        condition: and
+
+      - type: regex
+        regex:
+          - 'CN=[A-Za-z0-9-]+-CA'
+          - '(?i)<a\s+href="([^"]+\.crl)"[^>]*>[^<]*\.crl<\/a>'
+          - '(?i)<a\s+href="([^"]+\.cer)"[^>]*>[^<]*\.cer<\/a>'
+          - '(?i)<a\s+href="([^"]+\.p7b)"[^>]*>[^<]*\.p7b<\/a>'
+          - '(?i)href="([^"]+\.crl)"'
+          - '(?i)href="([^"]+\.cer)"'
+          - '(?i)href="([^"]+\.p7b)"'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: certificate_details
+        regex:
+          - "CN=[A-Za-z0-9-]+-CA"
+          - "O=[A-Za-z0-9 ]+"
+          - "OU=[A-Za-z0-9 ]+"
+# digest: 490a004630440220275be7e096b281697f76f09c5b0b199aa3e8c66ff5351c343c51fec6e72a06fa02207e610a9715c8c54515e2184c68d6a49d3abbcc8869e9718dfe62c0186a8e5ddf:922c64590222798bb761d5b6d8e72950

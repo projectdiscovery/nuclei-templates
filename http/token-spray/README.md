@@ -8,10 +8,10 @@ token-spray are **self-contained** template and does not requires URLs as input 
 
 ```console
 # Running token-spray templates against a single token to test
-nuclei -t token-spray/ -var token=random-token-to-test
+nuclei -t token-spray/ -var token=random-token-to-test -esc
 
 # Running token-spray templates against a file containing multiple new line delimited tokens
-nuclei -t token-spray/ -var token=file_with_tokens.txt
+nuclei -t token-spray/ -var token=file_with_tokens.txt -esc
 ```
 
 ## Credits

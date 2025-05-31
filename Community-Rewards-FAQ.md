@@ -44,6 +44,7 @@ Rewards are distributed once the template is fully validated. If the issue remai
 
 ## What should I include in my template submission?
 Include the following:
+> Avoid adding code templates for CVEs that can be achieved using HTTP, TCP, or JavaScript. Such templates are blocked by default and won’t produce results, so we prioritize creating templates with other protocols unless exceptions are made.
 - **Complete POC**: A working Proof of Concept.
 - **Matchers**: Multiple matchers to prevent false positives.
 - **Debug Data**: Data to assist the triage team in validation.

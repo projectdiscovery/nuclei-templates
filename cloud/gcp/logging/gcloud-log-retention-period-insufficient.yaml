@@ -1,0 +1,84 @@
+id: gcloud-log-retention-period-insufficient
+
+info:
+  name: Insufficient Log Data Retention Period in Cloud Logging Buckets
+  author: princechaddha
+  severity: high
+  description: |
+    For security, reliability, and compliance purposes, ensure that your Cloud Logging buckets are configured with a data retention period of 365 days or more. A Cloud Logging bucket is a container that stores log data from cloud services such as Compute Engine and App Engine. The retention period represents the number of days to retain log data for a user-defined log bucket and also for the _Default log bucket.
+  impact: |
+    Configuring a log retention period of less than 365 days can lead to potential data loss, hinder forensic investigations, and result in non-compliance with data retention policies.
+  remediation: |
+    Update the retention period for your Cloud Logging buckets to 365 days or more using the Google Cloud CLI or the Console to ensure compliance with best practices.
+  reference:
+    - https://cloud.google.com/logging/docs/export/configure_storage
+  tags: cloud,devops,gcp,gcloud,google-cloud-logging,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let bucket of iterate(template.buckets)){
+      set("bucket", bucket);
+      code(3)
+      set("retentionDays", template.retentionDays);
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging buckets list --project=$projectId --format="json(name.basename())"
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging buckets describe $bucket --project=$projectId --location=global --format="json(retentionDays)"
+
+    extractors:
+      - type: json
+        name: retentionDays
+        internal: true
+        json:
+          - '.retentionDays'
+
+javascript:
+  - code: |
+        let retentionDays = template.retentionDays
+        if (retentionDays < 365) {
+          let result = `Bucket '${template.bucket}' in project '${template.projectId}' has insufficient log retention period (${retentionDays} days).`;
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a0046304402203da4175f98f7d5637754b6d79d5ad69474d6363977173ea9afbf41d644f521130220597f527d2d641ebae8a95f9b5b207a2ecce063599e5e3547468934e3f100635c:922c64590222798bb761d5b6d8e72950

