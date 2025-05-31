@@ -1,0 +1,40 @@
+id: traefik-api-enabled
+
+info:
+  name: Traefik API - enabled
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Traefik API is publicly accessible.It could expose sensitive routing, middleware, and service configuration details.
+  reference:
+    - https://doc.traefik.io/traefik/operations/api/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"Traefik"
+  tags: traefik,exposure,apis
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/rawdata"
+      - "{{BaseURL}}/api/http/routers"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        name: rawdata
+        dsl:
+          - status_code_1 == 200
+          - contains(content_type_1, 'application/json')
+          - contains_all(body_1, '\"routers\":', '\"service\":')
+        condition: and
+
+      - type: dsl
+        name: routes
+        dsl:
+          - status_code_2 == 200
+          - contains(content_type_2, 'application/json')
+          - contains_all(body_2, '\"entryPoints\":', '\"service\":')
+        condition: and
+# digest: 4b0a00483046022100c1580430b70cc8ca485f70b1b79592ad01bcdcdadef77c2ddaf95bbcc662d1a4022100c76585f4a3de897b8c54e43c056bc421acbafa12f1ee876c2db240bb9b07fe12:922c64590222798bb761d5b6d8e72950
