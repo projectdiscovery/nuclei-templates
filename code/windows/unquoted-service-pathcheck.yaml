@@ -1,0 +1,52 @@
+id: unquoted-service-pathcheck
+
+info:
+  name: Unquoted Service PathCheck
+  author: pussycat0x
+  severity: high
+  description: |
+    The Unquoted Service Path vulnerability in Windows occurs when services are installed using paths containing spaces without proper quotation marks. If attackers obtain write permissions in the service's installation directory, they can execute malicious code with elevated privileges.
+  tags: code,windows,privesc,ps
+
+self-contained: true
+code:
+  - engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+      - -File
+
+    pattern: "*.ps1"
+
+    source: |
+      Write-Host "Fetching the list of services, this may take a while...";
+
+      # Get the list of services that meet the criteria
+       $services = Get-WmiObject -Class Win32_Service |
+      Where-Object {
+      $_.PathName -inotmatch "`"" -and # Service path does not contain quotes
+      $_.PathName -inotmatch ":\\Windows\\" -and
+      ($_.StartMode -eq "Auto" -or $_.StartMode -eq "Manual") -and
+      ($_.State -eq "Running" -or $_.State -eq "Stopped")
+      };
+
+      # Check if any services meet the criteria
+      if ($($services | Measure-Object).Count -lt 1) {
+      Write-Host "No unquoted service paths were found.";
+        } else {
+       Write-Host "Unquoted service paths were found:";
+       foreach ($service in $services) {
+        Write-Host "Service Name: $($service.Name)";
+        Write-Host "Display Name: $($service.DisplayName)";
+        Write-Host "Path: $($service.PathName)";
+        Write-Host "----------------------------------";
+         }
+         }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
