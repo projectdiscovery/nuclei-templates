@@ -1,0 +1,58 @@
+id: greatpages-takeover
+
+info:
+  name: GreatPages.com.br - Takeover Detection
+  author: juliosmelo
+  severity: high
+  description: |
+    Detects potential domain takeover vulnerability for domains pointing to greatpages.com.br service.
+    The vulnerability occurs when a DNS record points to cname.greatpages.com.br but returns HTTP 404,
+    indicating the domain is unclaimed and can be taken over.
+  reference:
+    - https://github.com/EdOverflow/can-i-take-over-xyz
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-284
+  metadata:
+    max-request: 2
+  tags: takeover,dns,greatpages
+
+dns:
+  - name: "{{FQDN}}"
+    type: CNAME
+    class: IN
+    recursion: true
+    retries: 3
+    matchers:
+      - type: word
+        words:
+          - "cname.greatpages.com.br"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 404
+      
+      - type: word
+        words:
+          - "404"
+          - "not found"
+          - "page not found"
+          - "não encontrada"
+          - "página não encontrada"
+        condition: or
+        case-insensitive: true
+    
+    extractors:
+      - type: dsl
+        dsl:
+          - 'host'
+          - 'status_code'
+          - 'len(body)'
