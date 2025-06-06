@@ -1,0 +1,75 @@
+id: gcloud-vm-deletion-protection-disabled
+
+info:
+  name: VM Instance Deletion Protection Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your production Google Compute Engine instances have Deletion Protection feature enabled in order to protect them from being accidentally deleted. With Deletion Protection safety feature enabled, you have the guarantee that your VM instances cannot be accidentally deleted and make sure that your production environment remains safe.
+  impact: |
+    Without deletion protection enabled, production and mission-critical VM instances are at risk of accidental deletion, which could lead to service disruptions and data loss.
+  remediation: |
+    Enable deletion protection for your production VM instances. You can enable this feature for an existing instance regardless of its current status - stopping the instance is not required.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-deletion-protection.html
+    - https://cloud.google.com/compute/docs/instances/preventing-accidental-vm-deletion
+  tags: cloud,devops,gcp,gcloud,compute,security,deletion-protection,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(deletionProtection)" | jq '. // "false"'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " does not have deletion protection enabled"'
+# digest: 4b0a00483046022100d3af7f9f8f93b54425c5f333a2314dc0278531b556dbe4ce8bc4b420e81759f6022100826d0a7d7e9501700210e89f90294cafdfc5b4f7ae6ea65f0e29581e4037085b:922c64590222798bb761d5b6d8e72950

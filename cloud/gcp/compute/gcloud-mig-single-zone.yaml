@@ -1,0 +1,73 @@
+id: gcloud-mig-single-zone
+
+info:
+  name: Managed Instance Group Not Configured for Multiple Zones
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that Managed Instance Groups (MIGs) are spread across multiple zones within a Google Cloud region for high availability and fault tolerance. Spreading application load across multiple Google Cloud zones with MIGs is crucial for enhancing the availability, resilience, and performance of your application. When you allocate your MIG instances across multiple zones, you can guarantee the continuous availability and functionality of your application even during failures or outages.
+  impact: |
+    Single-zone MIGs are vulnerable to zone-level failures, which could cause complete application downtime. This reduces availability and resilience of your applications.
+  remediation: |
+    Re-create your Managed Instance Groups with multiple zones configuration. Select "Multiple zones" for location, choose a region and desired zones, and set "Target distribution shape" to "Even" for balanced instance distribution.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/mig-multiple-zones.html
+    - https://cloud.google.com/compute/docs/instance-groups/distributing-instances-with-regional-instance-groups
+  tags: cloud,devops,gcp,gcloud,compute,reliability,mig,zones,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instanceGroup of iterate(template.instanceGroups)){
+      set("instanceGroupName", instanceGroup.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instance-groups list --project $projectId --only-managed --format="json(name)"
+
+    extractors:
+      - type: json
+        name: instanceGroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instance-groups managed describe $instanceGroupName --format="json(distributionPolicy.zones)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Managed Instance Group " + instanceGroupName + " in project " + projectId + " is not configured to run instances across multiple zones"'
+# digest: 4b0a00483046022100f6f5fbd63b6c07b669913549144ae2eb2e9b0680673ccd2da7daf953ddde4fc2022100af56920ce185b9ae06857c9fef77d37a9278cb0b67518f7eb2633b13f0bc80e5:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,72 @@
+id: gcloud-mysql-slowquerylog-disabled
+
+info:
+  name: Slow Query Log Disabled for MySQL Database Servers
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "slow_query_log" database flag is enabled for your Google Cloud MySQL database instances in order to simplify the task of finding inefficient or time-consuming SQL queries for your MySQL databases. By default, the "slow_query_log" database flag is not enabled for Google Cloud MySQL instances.
+  impact: |
+    Disabling the "slow_query_log" flag makes it difficult to identify and optimize slow or inefficient queries, leading to potential database performance degradation and increased costs.
+  remediation: |
+    Enable the "slow_query_log" flag for MySQL database instances in Google Cloud to log and analyze slow SQL queries, improving database performance and query efficiency.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:MYSQL*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
+
+    matchers:
+      - type: word
+        words:
+          - '"off"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The slow_query_log flag is disabled for MySQL instance " + sqlInstance + " in project: " + projectId'
+# digest: 4b0a00483046022100eb78291b41ea2f879e552fa25529ad0f08acb058886f58f7e74d6651ea30adb2022100de422242a42aab853344d17fccff4a7d4d1984f00635654e3bfd01d8923971c3:922c64590222798bb761d5b6d8e72950

