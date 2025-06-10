@@ -1,13 +1,14 @@
 id: adcs-certificate
 
 info:
-  name: AD CS Web Enrollment and HTTP Interfaces - Detection
+  name: Microsoft AD CS Web Enrollment - Detect
   author: pastaga,defte,atomiczsec
   severity: info
   description: |
-    Detects the presence of Active Directory Certificate Services (AD CS) Web Enrollment interfaces, including /certenroll/ and /certsrv, which allow users and computers to request certificates through web pages.
+    Detects Microsoft Active Directory Certificate Services (AD CS) Web Enrollment and certificate download pages.
   metadata:
     verified: true
+    max-request: 3
     shodan-query: html:"/certenroll"
   tags: ad,adcs,exposure,files,web-enrollment
 
@@ -16,26 +17,24 @@ http:
     path:
       - "{{BaseURL}}/certenroll/"
       - "{{BaseURL}}/CertEnroll/"
+      - "{{BaseURL}}/certsrv/"
       - "{{BaseURL}}/certsrv"
     host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
 
-matchers-condition: or
-matchers:
-  - type: dsl
-    name: certenroll
-    dsl:
-      - contains(body, ".crl") || contains(body, ".crt")
-      - contains(body, "CertEnroll") || contains(body, "certenroll")
-      - status_code == 200
-    condition: and
-  - type: dsl
-    name: certsrv
-    dsl:
-      - status_code == 200 && contains(body, "locMSCertSrv")
-  - type: word
-    name: certsrv_phrases
-    words:
-      - "Microsoft Active Directory Certificate Services"
-      - "Web Enrollment"
-    part: body
-    condition: or
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: certenroll
+        dsl:
+          - status_code == 200
+          - contains_any(body, ".crl", ".crt", ".cer", ".p7b")
+          - contains_any(tolower(body), "certenroll", "locmscertsrv", "certificate services")
+        condition: and
+      - type: dsl
+        name: certsrv
+        dsl:
+          - status_code == 200 || status_code == 401 || status_code == 403
+          - contains_any(tolower(body), "locmscertsrv", "certificate services", "web enrollment")
+        condition: and
