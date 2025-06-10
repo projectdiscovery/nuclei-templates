@@ -1,0 +1,56 @@
+id: gcloud-vertexai-external-ip
+
+info:
+  name: External IP Addresses Assigned to Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that external IP addresses are not assigned to your Google Cloud Vertex AI notebook instances, in order to help prevent data exfiltration, maintain network isolation, and meet stringent compliance requirements. Vertex AI notebook instances with an assigned external IP address can communicate with the public internet or resources in other VPC networks, which may violate security policies.
+  impact: |
+    Assigning external IP addresses to notebook instances exposes them directly to the Internet, bypassing certain security controls. This increases the risk of unauthorized access, potential vulnerabilities, and data exfiltration.
+  remediation: |
+    Re-create Vertex AI notebook instances without external IP addresses using the 'gcloud workbench instances create' command with --disable-public-ip flag. Example: gcloud workbench instances create INSTANCE_NAME --disable-public-ip
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/prevent-external-ip-usage.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,security,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.disablePublicIp)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances with external IP addresses enabled"'
+# digest: 4a0a0047304502206b8cab9d698ed9f4177859d3256fe52c1eb954938c92c81e7b4af186c551ec20022100f088f4ac582da61bdfd232ed2e0ce6a428113cd5a1e690284b8783342f6895c3:922c64590222798bb761d5b6d8e72950

