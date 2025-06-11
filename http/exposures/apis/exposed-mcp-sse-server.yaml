@@ -1,0 +1,43 @@
+id: exposed-mcp-sse-server
+
+info:
+  name: MCP SSE API Exposed - Detect
+  author: domwhewell-sage
+  severity: unknown
+  description: |
+    Detects exposed Model Context Protocol (MCP) servers through the SSE API. MCP servers often provide administrative access to AI tools, LLM systems, or other automation infrastructure. Exposed MCP interfaces can lead to unauthorized access, information disclosure, and potential system compromise. This template detects a SSE server event stream and returns the messages endpoint which can be used to POST JSON-RPC 2.0 requests.
+  reference:
+    - https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse
+  metadata:
+    verified: true
+    max-requests: 2
+    shodan-query: "text/event-stream"
+  tags: mcp,devtools,exposure,api,ai,llm
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/sse"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(content_type, 'text/event-stream')"
+          - "status_code == 406 && contains(content_type, 'application/json')"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - "contains(body, 'event: endpoint')"
+          - "contains(body, 'Not Acceptable: Client must accept text/event-stream')"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: message_endpoint
+        regex:
+          - 'data: ([/?_=a-zA-Z0-9-]+)'
+# digest: 4b0a00483046022100c14ef80d514d8da664ee7653359f4dd6c7d4806e82dcb2af060aef4ae66eead302210093e6eaca613d798af47ddb3933dc9c7995eeaccdc4ebff473d03de9793c4034f:922c64590222798bb761d5b6d8e72950
