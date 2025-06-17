@@ -1,0 +1,72 @@
+id: gcloud-sql-skip-show-database-disabled
+
+info:
+  name: Skip Show Database Flag Not Enabled for MySQL Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "skip_show_database" database flag is enabled for your Google Cloud MySQL database instances in order to prevent users from using the SHOW DATABASES statement if they don't have this privilege.
+  impact: |
+    If the "skip_show_database" flag is not enabled, unauthorized users may view a list of all databases, leading to potential data exposure and compliance violations.
+  remediation: |
+    Enable the "skip_show_database" flag for MySQL database instances in Google Cloud. This can be configured in the database settings under the databaseFlags section or through the gcloud CLI.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/configure-database-flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,mysql-database,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:MYSQL*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)"
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Skip Show Database Flag is not enabled for MySQL instance " + sqlInstance + " in project " + projectId'
+# digest: 4a0a0047304502210089fc2fe89b0fccb9e84ecc615cab20a30743920c192aecbbf2e5b081f720bae602206ddec899a96358eb9e143d69babb19763cfa5589e04086a0db1847b06eea4d4b:922c64590222798bb761d5b6d8e72950

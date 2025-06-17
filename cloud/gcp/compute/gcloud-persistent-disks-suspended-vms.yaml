@@ -1,0 +1,93 @@
+id: gcloud-persistent-disks-suspended-vms
+
+info:
+  name: Persistent Disks Attached to Suspended Virtual Machines
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that persistent disks are not attached to suspended virtual machine (VM) instances in your Google Cloud environment. Persistent disks attached to suspended VMs continue to incur charges even when the VM is not running, leading to unnecessary costs.
+  impact: |
+    Keeping persistent disks attached to suspended VMs results in ongoing storage charges without active utilization, increasing cloud infrastructure costs unnecessarily.
+  remediation: |
+    Identify and detach persistent disks from suspended VMs, or delete the disks if they are no longer needed to optimize cloud resource costs.
+  reference:
+    - https://cloud.google.com/compute/docs/disks
+  tags: cloud,devops,gcp,gcloud,compute,storage,cost-optimization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let disk of iterate(template.disks)){
+      disk = JSON.parse(disk)
+      set("diskName", disk.name)
+      set("zone", disk.zone)
+      code(3)
+      for(let instanceUrl of iterate(template.instanceUrls)){
+        set("instanceUrl", instanceUrl)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute disks list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: disks
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute disks describe $diskName --zone $zone --project $projectId --format="json(users[])" | jq -r '.[] // "null"'
+
+    extractors:
+      - type: json
+        name: instanceUrls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceUrl --zone $zone --project $projectId --format="json(status)"
+
+    matchers:
+      - type: word
+        words:
+          - "SUSPENDED"
+          - "SUSPENDING"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Persistent disk " + diskName + " is attached to suspended VM instance in zone " + zone + " of project " + projectId'
+# digest: 4a0a004730450221008bfa43d9704681d117af15a9074e4b129945d39e9bc4097d5b36aff8c306391a022002bf2c21d7a6539cb2fc5ee06736e2254f5f773d2888a6780a08e05925edd06a:922c64590222798bb761d5b6d8e72950

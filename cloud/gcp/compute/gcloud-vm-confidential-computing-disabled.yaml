@@ -1,0 +1,75 @@
+id: gcloud-vm-confidential-computing-disabled
+
+info:
+  name: VM Instance Confidential Computing Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Confidential Computing security feature is enabled for your Google Cloud virtual machine (VM) instances in order to add protection to your sensitive data in use by keeping it encrypted in memory and using encryption keys that Google doesn't have access to. Confidential Computing is a breakthrough technology which encrypts data while it is being processed. This technology keeps data encrypted in memory, outside the CPU.
+  impact: |
+    Without Confidential Computing enabled, sensitive data in memory is not encrypted during processing, potentially exposing it to unauthorized access from the infrastructure provider or malicious insiders.
+  remediation: |
+    Re-create your VM instances with Confidential Computing enabled. Note that enabling this feature requires compatible machine types (N2D series) and may change certain instance parameters if they were set to incompatible values.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/confidential-computing.html
+    - https://cloud.google.com/compute/confidential-vm/docs/about-cvm
+  tags: cloud,devops,gcp,gcloud,compute,security,confidential-computing,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(confidentialInstanceConfig.enableConfidentialCompute)" | jq '. // "false"'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " does not have Confidential Computing enabled"'
+# digest: 490a0046304402204277652a6316b7c1ba855a955b9e21fe2c3dd502964cd78c573b9e99ceba64a802201bc5a857f61491a06437bab550c1b12f9b85c24b714d6f7207652a6c1fce3154:922c64590222798bb761d5b6d8e72950
