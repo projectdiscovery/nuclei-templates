@@ -1,35 +1,18 @@
 id: greatpages-takeover
 
 info:
-  name: GreatPages.com.br - Takeover Detection
+  name: GreatPages - Takeover Detection
   author: juliosmelo
   severity: high
   description: |
-    Detects potential domain takeover vulnerability for domains pointing to greatpages.com.br service.
-    The vulnerability occurs when a DNS record points to cname.greatpages.com.br but returns HTTP 404,
-    indicating the domain is unclaimed and can be taken over.
+    Detects potential subdomain takeover on GreatPages.com.br by identifying the default error message shown on unclaimed pages.
   reference:
-    - https://github.com/EdOverflow/can-i-take-over-xyz
-  classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
-    cvss-score: 7.2
-    cwe-id: CWE-284
+    - https://greatpages.com.br
   metadata:
     verified: true
-    fofa-query: 'cname="cname.greatpages.com.br"'
-    max-request: 2
-  tags: takeover,dns,greatpages
-
-dns:
-  - name: "{{FQDN}}"
-    type: CNAME
-    class: IN
-    recursion: true
-    retries: 3
-    matchers:
-      - type: word
-        words:
-          - "cname.greatpages.com.br"
+    fofa-query: cname="cname.greatpages.com.br"
+    max-request: 1
+  tags: takeover,greatpages
 
 http:
   - method: GET
@@ -38,23 +21,15 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 404
+      - type: dsl
+        dsl:
+          - Host != ip
 
       - type: word
         words:
-          - "404"
-          - "not found"
-          - "page not found"
-          - "não encontrada"
-          - "página não encontrada"
-        condition: or
-        case-insensitive: true
+          - "Página não encontrada (Erro 404)"
 
     extractors:
       - type: dsl
         dsl:
-          - 'host'
-          - 'status_code'
-          - 'len(body)'
+          - cname
