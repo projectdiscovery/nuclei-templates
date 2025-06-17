@@ -4,13 +4,18 @@ info:
   name: OpenShift OAuth Proxy Detection (Default & Port 9001)
   author: r3dg33k
   severity: info
-  description: Detects OpenShift OAuth Proxy login endpoints via _oauth_proxy_csrf cookie and page content. Also checks port 9001.
-  tags: openshift, redhat
+  description: |
+    Detects OpenShift OAuth Proxy login endpoints via `_oauth_proxy_csrf` cookie 
+    and login page content. Checks both the default port and port 9001.
+  tags: openshift, redhat, detect
 
 requests:
   - method: GET
     path:
       - "{{BaseURL}}"
+      - "{{RootURL}}:9001"
+
+    matchers-condition: and
 
     matchers:
       - type: regex
@@ -21,41 +26,8 @@ requests:
 
       - type: word
         part: body
+        condition: or
         words:
           - "OpenShift"
           - "OAuth"
           - "Log in with"
-        condition: or
-
-    extractors:
-      - type: regex
-        part: header
-        name: csrf-cookie
-        regex:
-          - "_oauth_proxy_csrf=([^;]+)"
-
-  - method: GET
-    path:
-      - "{{RootURL}}:9001"
-
-    matchers:
-      - type: regex
-        part: header
-        name: csrf-cookie-header-9001
-        regex:
-          - "(?i)_oauth_proxy_csrf=[^;]+"
-
-      - type: word
-        part: body
-        words:
-          - "OpenShift"
-          - "OAuth"
-          - "Log in with"
-        condition: or
-
-    extractors:
-      - type: regex
-        part: header
-        name: csrf-cookie-9001
-        regex:
-          - "_oauth_proxy_csrf=([^;]+)"
