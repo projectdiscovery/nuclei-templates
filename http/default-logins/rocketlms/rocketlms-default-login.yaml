@@ -1,0 +1,71 @@
+id: rocketlms-default-login
+
+info:
+  name: Rocket LMS - Default Login
+  author: hamad501
+  severity: high
+  description: |
+    Rocket LMS default credentials were discovered.
+  reference:
+    - https://codecanyon.net/item/rocket-lms-learning-management-academy-script/33120735
+    - https://github.com/Yucaerin/RocketLms
+    - https://medium.com/@naxtarrr/rocket-lms-shell-upload-vulnerability-c400665702f3
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: rocketsoft
+    product: rocket-lms
+    shodan-query: html:"Rocket LMS"
+  tags: default-login,lms,rocketlms
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/login
+
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/login
+        Content-Type: application/x-www-form-urlencoded
+
+        _token={{token}}&type=email&email={{username}}&country_code=&mobile=&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin@demo.com
+        - student@demo.com
+        - instructor@demo.com
+      password:
+        - admin
+        - student
+        - instructor
+
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "/panel"
+
+      - type: status
+        status:
+          - 302
+
+    extractors:
+      - type: regex
+        part: body
+        name: token
+        internal: true
+        group: 1
+        regex:
+          - 'name="_token"\s+value="([^"]+)"'
+# digest: 490a0046304402204e8aaf1418d1977c6b54b218b92f86568833cb8907fd691ff9d3f5c12173cadb022072cb9f6dd78ad3ced2b372933fa09faa938b6ac70a495a5857d4ebfade30fc14:922c64590222798bb761d5b6d8e72950
