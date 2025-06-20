@@ -1,0 +1,73 @@
+id: kubernetes-allow-privilege-escalation-no-securitycontext
+
+info:
+  name: Kubernetes Allow Privilege Escalation and/or No Security Context in the Pods & Containers
+  author: dwisiswant0
+  severity: high
+  description: |
+    In Kubernetes, each pod runs in its own isolated environment with its own
+    set of security policies.
+  impact: |
+    Container images may contain `setuid` or `setgid` binaries that could allow
+    an attacker to perform privilege escalation and gain access to sensitive
+    resources.
+  remediation: |
+    It's recommended to add a `securityContext` to the container in the pod,
+    with the parameter `allowPrivilegeEscalation` set to `false`. This will
+    prevent the container from running any privileged processes and limit the
+    impact of any potential attacks. By adding the `allowPrivilegeEscalation`
+    parameter to your the `securityContext`, you can help to ensure that your
+    containerized applications are more secure and less vulnerable to privilege
+    escalation attacks.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    - https://kubernetes.io/docs/concepts/security/pod-security-standards/
+  tags: cloud,devops,kubernetes,k8s,privesc
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    pod = JSON.parse(pod);
+    for (const container of pod.spec.containers) {
+      if (container.hasOwnProperty('securityContext')) {
+        if (container.securityContext.hasOwnProperty('allowPrivilegeEscalation')) {
+          if (container.securityContext.allowPrivilegeEscalation === false) continue
+        }
+      }
+      set('container', JSON.stringify(container));
+      set('pod', pod.metadata.name);
+      set('namespace', pod.metadata.namespace);
+      code(2)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+  - engine:
+      - sh
+      - bash
+    source: echo -e '$container'
+
+    matchers:
+      - type: word
+        words:
+          - "securityContext"
+          - "allowPrivilegeEscalation:false"
+        negative: true
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The " + pod + " pod in " + namespace + " namespace is missing securityContext and/or allowPrivilegeEscalation is set to true"'
