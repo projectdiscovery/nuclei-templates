@@ -1,0 +1,51 @@
+id: crash-on-audit-fail
+
+info:
+  name: Shutdown on Audit Failure Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the "Shutdown on Audit Failure" policy is disabled.
+    The registry value should be set to "4,0" to prevent the system from shutting down if it cannot log security audit events.
+    If set to "4,1", the system will shut down on audit failure, which could result in a denial-of-service condition.
+  impact: |
+    Enabling this policy (value set to "4,1") may cause the system to shut down unexpectedly if audit logs cannot be written, potentially disrupting services and risking data loss.
+  remediation: |
+    Disable the policy by setting the CrashOnAuditFail value to "4,0". This can be done by:
+    - Using the Registry Editor: Navigate to HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System and set CrashOnAuditFail to "4,0".
+    - Through Local Security Policy: Set "Audit: Shut down system immediately if unable to log security audits" to Disabled.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: account-management,code,windows-audit,kisa,policy
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $cfgPath = "C:\cfg.txt"
+      secedit /export /cfg $cfgPath | Out-Null
+      $cfg = Get-Content $cfgPath | Out-String
+      if ($cfg -match "CrashOnAuditFail\s*=\s*(\S+)") {
+          $value = $Matches[1].Trim()
+          if ($value -eq "4,1") {
+              "CRASH_ON_AUDIT_FAIL_ENABLED"
+          } else {
+              "CRASH_ON_AUDIT_FAIL_DISABLED"
+          }
+      } else {
+          "CRASH_ON_AUDIT_FAIL_NOT_FOUND"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "CRASH_ON_AUDIT_FAIL_ENABLED"
