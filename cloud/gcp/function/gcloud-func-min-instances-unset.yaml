@@ -1,0 +1,72 @@
+id: gcloud-func-min-instances-unset
+
+info:
+  name: Unset Minimum Instances for Cloud Functions
+  author: princechaddha
+  severity: medium
+  description: |
+    To minimize cold start latency and enhance performance, ensure that your Google Cloud Functions have a sufficient number of warm instances configured.
+  impact: |
+    Not setting a minimum number of instances for Google Cloud functions can result in potential cold start delays and degraded performance, especially for critical or latency-sensitive functions.
+  remediation: |
+    Configure the serviceConfig.minInstanceCount parameter for your Google Cloud Functions to an appropriate value that suits your workload demands.
+  reference:
+    - https://cloud.google.com/functions/docs/scaling#setting_a_minimum_number_of_instances
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="json(serviceConfig.minInstanceCount)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Minimum Instances not configured for function: " + functionName + " in " + projectId + " project"'
+# digest: 4a0a0047304502207b15e888724a1775d166f4d95b30cc734beb8bb8ba06aa18fd3f1a4103b597ca022100ad28c25adefc1443d4d79d24b113bb3f989f4c470674804b8928c305c5dc5e40:922c64590222798bb761d5b6d8e72950

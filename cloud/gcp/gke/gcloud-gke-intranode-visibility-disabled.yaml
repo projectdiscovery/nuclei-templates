@@ -1,0 +1,76 @@
+id: gcloud-gke-intranode-visibility-disabled
+
+info:
+  name: GKE Clusters Without Intranode Visibility Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that intranode visibility is enabled for your Google Kubernetes Engine (GKE) clusters. This allows you to monitor and troubleshoot network traffic between pods running on the same node, enhancing both visibility and security. When enabled, packets exchanged between Pods are always processed by the VPC network.
+  impact: |
+    Without intranode visibility enabled, you cannot capture flow logs, enforce firewall rules, or use packet mirroring for traffic between pods on the same node, limiting your ability to monitor and secure intra-node communications.
+  remediation: |
+    Enable intranode visibility for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --region=REGION --enable-intra-node-visibility
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/intranode-visibility
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-intranode-visibility.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,networking,visibility,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(networkConfig.enableIntraNodeVisibility)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have intranode visibility enabled"'
+# digest: 4b0a004830460221008899b36800ba2b1293816df2d2f2f4b054b412d5a45f2c8aa6fa0abb79408248022100930a25b265acb2988e89345e9ab7d51d7a9423a094aad1bf3c169d8bb63c6f26:922c64590222798bb761d5b6d8e72950

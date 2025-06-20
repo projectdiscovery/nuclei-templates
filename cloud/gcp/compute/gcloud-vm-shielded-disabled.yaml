@@ -1,0 +1,80 @@
+id: gcloud-vm-shielded-disabled
+
+info:
+  name: Shielded VM Security Features Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Compute Engine instances are configured to use Shielded VM security feature for protection against rootkits and bootkits. Google Compute Engine service can enable 3 advanced security components for Shielded VM instances:
+    - Virtual Trusted Platform Module (vTPM) - validates the guest virtual machine pre-boot and boot integrity, and provides key generation and protection
+    - Integrity Monitoring - lets you monitor and verify the runtime boot integrity using Google Cloud Operations reports
+    - Secure boot - protects your VM instances against boot-level and kernel-level malware and rootkits
+  impact: |
+    Without Shielded VM features enabled, your VM instances are more vulnerable to rootkits, bootkits, and other advanced threats that can compromise the boot integrity and security of your instances.
+  remediation: |
+    Enable Shielded VM security features (vTPM and Integrity Monitoring) for your VM instances. Note that enabling Secure Boot is optional and should only be done if you don't use custom or unsigned drivers, as it may prevent the VM from booting.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-shielded-vm.html
+    - https://cloud.google.com/compute/docs/instances/modifying-shielded-vm
+  tags: cloud,devops,gcp,gcloud,compute,security,shielded-vm,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(shieldedInstanceConfig.enableVtpm,shieldedInstanceConfig.enableIntegrityMonitoring)"
+
+    matchers:
+      - type: word
+        words:
+          - '"enableIntegrityMonitoring": false'
+          - '"enableVtpm": false'
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " does not have Shielded VM features (vTPM and Integrity Monitoring) fully enabled"'
+# digest: 4a0a0047304502205114fef80e8676d8b3c29ebb922cae352a49b98ddf9419fa115c5a7096e1b0f3022100cbf2503043e325b0ef9da5194e0d295a109583a0dbee38ecbdd75e48ae2f3b07:922c64590222798bb761d5b6d8e72950
