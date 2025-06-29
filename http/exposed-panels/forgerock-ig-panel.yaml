@@ -1,0 +1,36 @@
+id: forgerock-ig-panel
+
+info:
+  name: ForgeRock IG Login/Welcome Page - Detect
+  author: r3dg33k
+  severity: info
+  description: |
+    Detects ForgeRock Identity Gateway login or welcome page and extracts version number
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="ForgeRock Identity Platform"
+    shodan-query: html:"ForgeRock Identity Platform"
+  tags: forgerock,ig,login,identity-gateway,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(body), "forgerock")'
+          - 'contains_any(tolower(body), "<title>ig", "identity gateway", "forgerock identity platform", "welcome to identity gateway")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: ig_version
+        part: body
+        regex:
+          - 'Identity Gateway (\d+\.\d+(\.\d+)?)'   # Extracts version like 7.2 or 7.2.0
