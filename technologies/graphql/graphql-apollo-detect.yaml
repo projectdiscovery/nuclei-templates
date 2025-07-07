@@ -9,26 +9,36 @@ info:
 requests:
   - method: POST
     path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/query"
       - "{{BaseURL}}/"
-    body: 'query @skip {__typename}'
-
+    body: '{"query":"query @skip {__typename}"}'
     headers:
       Content-Type: application/json
     redirects: true
 
-  - method: POST
-    path:
-      - "{{BaseURL}}/"
-    body: 'query @deprecated {__typename}'
-
-    headers:
-      Content-Type: application/json
-    redirects: true
-
+    matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 200
+
       - type: word
         words:
           - 'Directive "@skip" argument "if" of type "Boolean!" is required, but it was not provided.'
-          - 'Directive "@deprecated" may not be used on QUERY.'
+        part: body
+
+      - type: word
+        words:
+          - 'Content-Type: text/html'
+        part: header
+        negative: true
+
+      - type: word
+        words:
+          - '<html'
+          - '<body'
         part: body
         condition: or
+        negative: true
