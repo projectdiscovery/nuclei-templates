@@ -1,0 +1,55 @@
+id: mysql-show-variables
+
+info:
+  name: MySQL - Show Variables
+  author: DhiyaneshDk
+  severity: high
+  description: Attempts to show all variables on a MySQL server.
+  reference:
+    - https://nmap.org/nsedoc/scripts/mysql-variables.html
+  metadata:
+    max-request: 16
+    shodan-query: "port:3306"
+  tags: js,mysql,network,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require('nuclei/mysql');
+      let c = m.MySQLClient();
+      let response = c.ExecuteQuery(Host,Port,User,Pass,Query);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "3306"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+      Query: "show variables;"
+
+    payloads:
+      usernames:
+        - root
+        - admin
+        - mysql
+        - test
+      passwords:
+        - root
+        - admin
+        - mysql
+        - test
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: json
+        part: response
+        json:
+          - '.Rows[].Variable_name'
+# digest: 490a004630440220390be1cd82f9a4036e442819d1808839c8c0571229ec7449ae1ff2ad4a4db6b9022060c827eb2bf8b9a5b58620dc5bd6a7b44568d51ca99ad3007203da4bef4545fb:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,182 @@
+id: config-json-exposure-fuzz
+
+info:
+  name: Exposed JSON Configuration Files
+  author: geeknik
+  severity: critical
+  description: |
+    Detects exposed JSON configuration files containing sensitive information including API keys, access tokens, AWS credentials, database configurations, base URLs, file paths, and application settings. These files often contain production configurations and credentials that should not be publicly accessible.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-200
+  metadata:
+    max-request: 50
+    github-query: filename:config.json
+  tags: config,exposure,files
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path}}"
+
+    payloads:
+      path:
+        # Root level configs
+        - /config.json
+        - /configuration.json
+        - /settings.json
+        - /configs.json
+        - /conf.json
+        - /app.config.json
+        - /application.json
+        # Environment specific configs
+        - /config.prod.json
+        - /config.production.json
+        - /config.dev.json
+        - /config.development.json
+        - /config.staging.json
+        - /config.test.json
+        - /config.local.json
+        # Common config paths
+        - /config/config.json
+        - /config/default.json
+        - /config/prod.json
+        - /config/production.json
+        - /config/development.json
+        - /config/app.json
+        # Application specific paths
+        - /app/config.json
+        - /src/config.json
+        - /assets/config.json
+        - /assets/config.production.json
+        - /assets/configs.json
+        - /static/config.json
+        - /public/config.json
+        - /dist/config.json
+        - /js/config.json
+        # API configs
+        - /api/config.json
+        - /api/v1/config.json
+        - /api/v2/config.json
+        - /apiconfig.json
+        # Framework specific
+        - /angular/config.json
+        - /react/config.json
+        - /vue/config.json
+        # Credentials & secrets
+        - /credentials/config.json
+        - /secrets/config.json
+        - /secret/config.json
+        - /keys/config.json
+        - /auth/config.json
+        # AWS related
+        - /aws/config.json
+        - /aws/credentials.json
+        - /cloud/config.json
+        - /s3/config.json
+        # Database configs
+        - /db/config.json
+        - /database/config.json
+        - /mysql/config.json
+        - /postgres/config.json
+        - /mongodb/config.json
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/json"
+          - "text/plain"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+          - "text/php"
+        condition: or
+        negative: true
+
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(\"(api_key|apikey|token|secret|password|passwd|pwd|auth|access_key|secret_key)\":\s*\"[^\"]{8,}\")'
+          - '(?i)(\"(aws|azure|gcp|google|slack|github|twitter|facebook)\":\s*\{)'
+          - '(?i)(\"(host|endpoint|url|uri|connection|server)\":\s*\"[^\"]+\")'
+          - '(?i)(\"(username|user|uid|login)\":\s*\"[^\"]+\")'
+          - '(?i)(\"(db|database|mongo|mysql|postgresql|redis)\":\s*\{)'
+          - '(?i)"production":\s*(true|false)'
+          - '(?i)"baseUrl":\s*"[^"]+"'
+          - '(?i)"(accessCode|recaptchaSiteKey|tokenExpire)":\s*"[^"]+"'
+          - '(?i)"(fileUrl|loginAppUrl|aimBaseUrl)":\s*"[^"]+"'
+        condition: or
+
+    extractors:
+      # Original extractors
+      - type: regex
+        name: api_credentials
+        regex:
+          - '\"(api_key|apikey|token|secret|auth)\":\s*\"([^\"]{8,})\"'
+          - '\"access_token\":\s*\"([^\"]{8,})\"'
+          - '\"authorization\":\s*\"([^\"]{8,})\"'
+
+      - type: regex
+        name: aws_credentials
+        regex:
+          - '\"aws_access_key_id\":\s*\"([^\"]{20,})\"'
+          - '\"aws_secret_access_key\":\s*\"([^\"]{20,})\"'
+          - '\"aws_session_token\":\s*\"([^\"]{20,})\"'
+
+      - type: regex
+        name: database_credentials
+        regex:
+          - '\"(db_password|database_password|mysql_password|postgresql_password|mongo_password)\":\s*\"([^\"]{8,})\"'
+          - '\"(connection_string|connection_url|database_url)\":\s*\"([^\"]+)\"'
+
+      - type: regex
+        name: endpoints
+        regex:
+          - '\"(url|endpoint|uri|host|server)\":\s*\"(https?://[^\"]+)\"'
+          - '\"(webhook|callback)\":\s*\"(https?://[^\"]+)\"'
+
+      # New specific extractors
+      - type: regex
+        name: base_urls
+        regex:
+          - '"baseUrl":\s*"(https?://[^"]+)"'
+          - '"baseURL":\s*"(https?://[^"]+)"'
+          - '"fileUrl":\s*"(https?://[^"]+)"'
+          - '"loginAppUrl":\s*"(https?://[^"]+)"'
+          - '"aimBaseUrl":\s*"(https?://[^"]+)"'
+
+      - type: regex
+        name: access_codes
+        regex:
+          - '"accessCode":\s*"([A-Za-z0-9+/=]{40,})"'
+          - '"recaptchaSiteKey":\s*"([A-Za-z0-9_-]{40,})"'
+
+      - type: regex
+        name: token_config
+        regex:
+          - '"tokenExpire":\s*(\d+)'
+          - '"refreshTokenExpire":\s*(\d+)'
+
+      - type: regex
+        name: environment
+        regex:
+          - '"production":\s*(true|false)'
+
+      - type: regex
+        name: sensitive_endpoints
+        regex:
+          - 'https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/(?:login|api|admin|dashboard|auth)'
+# digest: 490a004630440220208d3107fc122c5509134b4d2a72352bec73bd0d1ec21f4dbae3677aecd784be022013a9c8ec83b20f0719a9d2978bb746e00a458ee1a8e251b0748504cf90153bfd:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: azure-cosmosdb-auto-failover-missing
+info:
+  name: Azure Cosmos DB Automatic Failover Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Microsoft Azure Cosmos DB accounts are using the Automatic Failover feature in order to enable resource replication and fault tolerance at the account level. Automatic failover allows Azure Cosmos DB to failover to the Azure cloud region with the highest failover priority when the source region becomes unavailable, without any additional action from the application or the user. The Cosmos DB account must have two or more regions configured in order to enable the feature.
+  impact: |
+    Not enabling Automatic Failover for Cosmos DB accounts may lead to increased downtime and data availability issues during regional outages.
+  remediation: |
+    Enable the Automatic Failover feature on your Azure Cosmos DB accounts to ensure high availability and fault tolerance across multiple regions.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/cosmos-db/high-availability
+  tags: cloud,devops,azure,microsoft,cosmosdb,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let CosmosDBData of iterate(template.cosmosDBAccounts)) {
+    set("id", CosmosDBData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cosmosdb list --query '[*].id' --output json
+
+    extractors:
+      - type: json
+        name: cosmosDBAccounts
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az cosmosdb show --ids $id --query 'enableAutomaticFailover' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have Automatic Failover enabled"'
+# digest: 4a0a00473045022100e063cdc5b444c7419b7e51a3a4597280b967a79dde875de40474a8cbf9c1c05c022034d80de28225750fca8b8dd8b7b9e6a0a588772ee34f5276bec63979103d9b77:922c64590222798bb761d5b6d8e72950

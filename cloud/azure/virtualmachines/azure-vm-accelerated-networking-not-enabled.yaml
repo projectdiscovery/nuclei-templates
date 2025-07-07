@@ -1,0 +1,54 @@
+id: azure-vm-accelerated-networking-not-enabled
+info:
+  name: Azure VM Accelerated Networking Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Accelerated Networking feature is enabled for your Azure virtual machines (VMs) in order to provide low latency and high throughput for the network interfaces (NICs) attached to the VMs. Accelerated networking enables single root input/output virtualization (SR-IOV) for virtual machines, vastly improving its networking performance. This high-performance pathway bypasses the host from the datapath, reducing latency, jitter, and CPU utilization, so it can be used with the most demanding network workloads that can be installed on the supported VM types.
+  impact: |
+    If Accelerated Networking is not enabled, the VM may experience higher latency and lower throughput, leading to suboptimal performance, especially in demanding network scenarios.
+  remediation: |
+    Enable Accelerated Networking on all Azure VMs that support this feature to ensure optimal networking performance.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/create-vm-accelerated-networking-cli
+  tags: cloud,devops,azure,microsoft,vm,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VM of iterate(template.vmList)) {
+    set("id", VM);
+    code(2);
+    }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nic show --ids "$id" --query 'enableAcceleratedNetworking'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'enabled: "false"'
+# digest: 4b0a004830460221009f2009ee1029a8822c35428af8474ecae7f07df1855d59e95843b1edadbebdbe022100fe098336089b4fdb49306ec04916248d668d5f59a6d1e62a214117f3bc0548c2:922c64590222798bb761d5b6d8e72950

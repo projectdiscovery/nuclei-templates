@@ -1,0 +1,60 @@
+id: rds-log-export-disabled
+
+info:
+  name: RDS Log Exports - Disabled
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Ensure that your Amazon RDS database instances have the Log Exports feature enabled in order to publish database log events directly to CloudWatch Logs.
+  impact: |
+    Critical database logs are not exported, limiting visibility into performance issues, security events, and troubleshooting capabilities.
+  remediation: |
+    Enable RDS log exports in the AWS Management Console or via CLI/API by configuring the desired logs (e.g., slow query, general, error logs) for export to CloudWatch.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/log-exports.html
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DBClusterIdentifier of iterate(template.dbclusters)){
+    set("dbcluster", DBClusterIdentifier)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output table --query 'DBInstances[?Engine==`mysql` || Engine==`aurora-mysql` || Engine==`mariadb`].DBInstanceIdentifier | []' --output json
+
+    extractors:
+      - type: json
+        name: dbclusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws rds describe-db-instances --region $region --db-instance-identifier $dbcluster --query 'DBInstances[*].EnabledCloudwatchLogsExports' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'dbcluster + " RDS Log Exports is Disabled"'
+# digest: 4b0a00483046022100ff5305d98e5706c910b91e026ac4a447d834665d2a673e23444625f09824ea70022100fb2ce3504e802d1d71e587eb957b2da1b6b9449078ddcd21c0f74a33f9ce8823:922c64590222798bb761d5b6d8e72950

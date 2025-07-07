@@ -1,0 +1,55 @@
+id: azure-vm-jit-access-not-enabled
+info:
+  name: Azure VM Just-In-Time Access Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Just-in-Time (JIT) access is enabled for your Azure virtual machines (VMs) in order to allow you to lock down inbound traffic to your VMs and reduce exposure to attacks while providing easy SSH/RDP access when needed.
+  impact: |
+    Not having JIT access enabled on Azure VMs can lead to increased exposure to attacks due to unrestricted inbound traffic.
+  remediation: |
+    Enable Just-in-Time access for your Azure VMs to control inbound traffic and improve security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/security-center/security-center-just-in-time
+  tags: cloud,devops,azure,microsoft,security-center,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("vmId", VMData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az security jit-policy list --query '[*].virtualMachines[*].{"id":id} | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vmId + " does not have Just-in-Time access enabled."'
+# digest: 4a0a00473045022100b0c146bf23aa3c6ab2ddfe4bc128e4599120c98030e8487e9488212ee480b8a3022070afc8fa78e484dbf6fe75ff6d1a6d5c27b32d257f90c8cad3a24ce82e5765f4:922c64590222798bb761d5b6d8e72950

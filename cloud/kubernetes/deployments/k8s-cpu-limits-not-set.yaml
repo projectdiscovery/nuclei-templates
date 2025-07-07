@@ -1,0 +1,49 @@
+id: k8s-cpu-limits-not-set
+
+info:
+  name: CPU limits not set in Deployments
+  author: princechaddha
+  severity: medium
+  description: Checks for missing CPU limits in Kubernetes Deployments, which can lead to excessive CPU usage and affect other applications
+  impact: |
+    Missing CPU limits in Kubernetes Deployments can cause excessive CPU usage that can starve other applications, leading to performance degradation across the cluster.
+  remediation: |
+    Set CPU limits for all containers in Kubernetes Deployments to ensure fair CPU resource distribution and prevent performance issues.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment",deployment)
+    javascript(1);
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        if (!deployment.spec.template.spec.containers.some(container => container.resources && container.resources.limits && container.resources.limits.cpu)) {
+          let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' lacks CPU limits.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502206c3a3c7f0f9f56c3d1f8c4a5f9d406f6e237ead7c173b991826750628f6d6e05022100b7a195ad0a73c0d6c2316bdf9ae2357445a5f1ccc3eafd5895a97aae1f0e855f:922c64590222798bb761d5b6d8e72950

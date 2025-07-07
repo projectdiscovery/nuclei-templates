@@ -1,0 +1,50 @@
+id: wordpress-all-404-redirect-to-homepage
+
+info:
+  name: All 404 Redirect to Homepage Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/all-404-redirect-to-homepage/
+  metadata:
+    max-request: 1
+    plugin_namespace: all-404-redirect-to-homepage
+    wpscan: https://wpscan.com/plugin/all-404-redirect-to-homepage
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/all-404-redirect-to-homepage/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/all-404-redirect-to-homepage.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450221008ae19994e07f1e877f030a8257795f891834f31749473e26e3b3068bfbd88f8f0220728eaa442f87414637a68078a74f6fda1082069988aad84498ddc5f63f62c162:922c64590222798bb761d5b6d8e72950

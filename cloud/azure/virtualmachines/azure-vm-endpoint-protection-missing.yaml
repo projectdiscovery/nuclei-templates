@@ -1,0 +1,68 @@
+id: azure-vm-endpoint-protection-missing
+info:
+  name: Azure VM Endpoint Protection Not Installed
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all your Microsoft Azure virtual machines (VMs) have endpoint protection installed in order to help you identify and remove viruses, spyware, and other malicious software. The Azure Security Center service monitors the status of anti-malware protection for Azure virtual machines (VMs) and highlights if there is insufficient protection, marking the virtual machines without endpoint protection as vulnerable to malware threats.
+  impact: |
+    Virtual machines without endpoint protection are exposed to a higher risk of being compromised by viruses, spyware, and other malicious software.
+  remediation: |
+    Install an approved endpoint protection solution on your Azure VMs to mitigate the risk of malware and maintain compliance with organizational security policies.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/security-center/security-center-intro
+  tags: cloud,devops,azure,microsoft,endpoint-protection,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("name", VMData.name);
+    set("resourceGroup", VMData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm extension list --vm-name "$name" --resource-group "$resourceGroup" --query '[*].name'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '['
+
+      - type: word
+        part: body
+        words:
+          - "EndpointSecurity"
+          - "TrendMicroDSA"
+          - "Antimalware"
+          - "EndpointProtection"
+          - "SCWPAgent"
+          - "PortalProtectExtension"
+          - "FileSecurity"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is missing endpoint protection"'
+# digest: 4a0a00473045022078dd7373e2170083af0c4792f40ff933f0bf92cb8102ce0ab26351c304c9b61a022100e42691044e3cfa4ffb64c3279fbdb8729bd8a2b7a65e4249f0ca21f35dc277aa:922c64590222798bb761d5b6d8e72950

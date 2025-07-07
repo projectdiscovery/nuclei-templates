@@ -1,0 +1,57 @@
+id: azure-blob-lifecycle-not-enabled
+info:
+  name: Azure Blob Storage Lifecycle Management Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure there is a lifecycle management policy configured for your Microsoft Azure Blob Storage data in order to meet compliance requirements when it comes to security and cost optimization. Azure Storage lifecycle management offers a rich, rule-based policy for general purpose and blob storage accounts. Use the lifecycle management policy to transition your Azure cloud data to the appropriate access tiers or expire it at the end of the data's lifecycle.
+  impact: |
+    Not having a lifecycle management policy in place can lead to non-compliance with security and cost management policies, potentially resulting in unnecessary costs and data exposure.
+  remediation: |
+    Configure a lifecycle management policy for your Azure Blob Storage accounts to enable automatic transitioning or expiration of data as appropriate.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/blobs/storage-lifecycle-management-concepts
+  tags: cloud,devops,azure,microsoft,blob-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AccountData of iterate(template.accountList)) {
+    AccountData = JSON.parse(AccountData);
+    set("name", AccountData.name);
+    set("resourceGroup", AccountData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[?kind!=`Storage`].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account management-policy show --account-name "$name" --resource-group "$resourceGroup" --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - "No ManagementPolicy found for account"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has no lifecycle management policy enabled"'
+# digest: 490a0046304402201c4bb86535502cbc6e4a99d662147bf332ae77c8ef152569112bc5fc2d8edce902206c755de6ae8912e41413af155cf9452abb5af6f92745869ae05807f3341ae295:922c64590222798bb761d5b6d8e72950

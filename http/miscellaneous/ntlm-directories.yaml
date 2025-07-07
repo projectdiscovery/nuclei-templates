@@ -1,0 +1,87 @@
+id: ntlm-directories
+
+info:
+  name: Discovering directories w/ NTLM
+  author: puzzlepeaches,incogbyte,missing0x00,incogbyte
+  severity: info
+  reference:
+    - https://medium.com/swlh/internal-information-disclosure-using-hidden-ntlm-authentication-18de17675666
+  metadata:
+    max-request: 48
+  tags: miscellaneous,misc,fuzz,windows
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: NTLM TlRMTVNTUAABAAAAB4IIAAAAAAAAAAAAAAAAAAAAAAA=
+
+    threads: 10
+    payloads:
+      path:
+        - /
+        - /abs/
+        - /ecp/
+        - /etc/
+        - /ews/
+        - /mcx/
+        - /oab/
+        - /owa/
+        - /rgs/
+        - /rpc/
+        - /conf/
+        - /meet/
+        - /ocsp/
+        - /ucwa/
+        - /adfs/
+        - /dialin/
+        - /public/
+        - /certsrv/
+        - /exchweb/
+        - /meeting/
+        - /certprov/
+        - /exchange/
+        - /scheduler/
+        - /webticket/
+        - /autoupdate/
+        - /certenroll/
+        - /powershell/
+        - /rgsclients/
+        - /rpcwithcert/
+        - /autodiscover/
+        - /hybridconfig/
+        - /reach/sip.svc
+        - /aspnet_client/
+        - /groupexpansion/
+        - /persistentchat/
+        - /requesthandler/
+        - /unifiedmessaging/
+        - /mcx/mcxservice.svc
+        - /phoneconferencing/
+        - /requesthandlerext/
+        - /deviceupdatefiles_ext/
+        - /deviceupdatefiles_int/
+        - /microsoft-server-activesync/
+        - /webticket/webticketservice.svc
+        - /webticket/webticketservice.svcabs/
+        - /adfs/services/trust/2005/windowstransport
+        - /internal_windows_authentication/
+        - /RDWeb/FeedLogin/WebFeedLogin.aspx
+        - /adfs/ls/wia
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(tolower(header), 'www-authenticate: ntlm')"
+
+      - type: status
+        status:
+          - 401
+
+    extractors:
+      - type: kval
+        kval:
+          - 'www_authenticate'
+# digest: 4b0a0048304602210081daba7fea69fbcdf16b0d8a9d129eba6969a4d80d352e361e39cd07d9cb35e70221009741def91daa47b39be4c7b8e8b87a6b0342b83c91f7de64559788166d010283:922c64590222798bb761d5b6d8e72950

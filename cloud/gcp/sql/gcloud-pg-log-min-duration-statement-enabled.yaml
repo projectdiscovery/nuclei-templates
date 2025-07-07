@@ -1,0 +1,79 @@
+id: gcloud-pg-log-min-duration-statement-enabled
+
+info:
+  name: Log Min Duration Statement Enabled in PostgreSQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the log_min_duration_statement database flag is set to -1 (i.e., disabled) for all your Google Cloud PostgreSQL database instances. The log_min_duration_statement flag controls the minimum execution time of a statement for it to be logged. Setting it to any value other than -1 can result in excessive logging and potential performance issues.
+  impact: |
+    Enabling the log_min_duration_statement flag with a value other than -1 may cause excessive logging, leading to potential performance degradation and unnecessary storage usage.
+  remediation: |
+    Set the log_min_duration_statement flag to -1 in your PostgreSQL database instance configuration to disable logging based on statement duration.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,postgresql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq '.settings.databaseFlags // [] | .[] | select(.name=="log_min_duration_statement") | .value'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "-1"
+        negative: true
+
+      - type: regex
+        regex:
+          - '^(?:100|[1-9][0-9]?)$'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The log_min_duration_statement flag is set to a non-compliant value for PostgreSQL instance " + sqlInstance + " in project " + projectId'
+# digest: 4a0a00473045022059a0fd7e8446a9906d99f57cc2c0864b2eba2152114b70173da208aef1f97b71022100ab925435b907e15b192767759af247098e01ac2ed5b01cf3c3a1f574b5a698c3:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: azure-vm-standard-ssd-required
+info:
+  name: Azure VM Premium SSD Not Required
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Microsoft Azure virtual machines (VMs) are using Standard SSD disk volumes instead of Premium SSD volumes for cost-effective storage that fits a broad range of workloads from web servers to enterprise applications that need consistent performance at lower IOPS levels. Unless you are running mission-critical applications or performance sensitive workloads that need more than 6000 IOPS or 750 MiB/s of throughput per VM disk volume, Cloud Conformity recommends converting your Premium SSD volumes to Standard SSD in order to lower the cost of your Azure monthly bill.
+  impact: |
+    Using Premium SSD volumes when not required can significantly increase the cost without providing necessary benefits for non-critical workloads, leading to inefficient resource utilization and budget overruns.
+  remediation: |
+    Convert any Premium SSD volumes to Standard SSD unless the workload requires high performance disk specifications. This can be achieved through Azure's portal or via CLI commands.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/disks-types
+  tags: cloud,devops,azure,microsoft,virtual-machine,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("ids", VMData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm show --ids "$ids" --query 'storageProfile.{"osDiskStorageType":osDisk.managedDisk.storageAccountType,"dataDiskStorageType":dataDisks[*].managedDisk.storageAccountType}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'Premium_LRS'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " is using Premium SSD volumes for OS or data disks which is not recommended for its current workload"'
+# digest: 4a0a00473045022100a267e05b108644f86e5809eb87bcbb5e56220c677ea2732e09f0e0c3e78d5f56022071f46b4a1ac194ba49865e371e1f947b3c9d746db29562758f4a3a9167e7822e:922c64590222798bb761d5b6d8e72950

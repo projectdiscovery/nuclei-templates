@@ -1,0 +1,49 @@
+id: x11-unauth-access
+
+info:
+  name: x11 - Unauthenticated Access
+  author: pussycat0x
+  severity: high
+  description: |
+    To check if you can connect to a remote X server, send an X11 initial connection request to TCP port 6000+n (where n is the display number). The response success byte (0x00 or 0x01) indicates if you are allowed; if successful, the script will display "X server access is granted," confirming that an attacker can connect to the X server
+  reference:
+    - https://nmap.org/nsedoc/scripts/x11-access.html
+    - https://book.hacktricks.xyz/network-services-pentesting/6000-pentesting-x11
+    - https://www.hackingarticles.in/penetration-testing-on-x11-server/
+  metadata:
+    shodan-query: "Open X Server:"
+    verified: true
+    max-request: 1
+  tags: x11,network,js,remote,unauth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "l\u0000\u000b\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
+      packet.WriteString(cmd)
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvFull();
+
+      let accessGranted;
+
+      if (result.length >= 8 && result[0] === 1 ) {
+      accessGranted = "x11 Unauth Access - Detected";
+        } else {
+          conn.Close();
+        }
+
+      accessGranted
+
+    args:
+      Host: "{{Host}}"
+      Port: 6000
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100c696807b3b3c112918e59cac69b70d84044d833a81179d80c3ac6049183762ec022100981e17d29d9ad56fc4422211182584c73653648725dd570204a9a3b03e7eb12a:922c64590222798bb761d5b6d8e72950

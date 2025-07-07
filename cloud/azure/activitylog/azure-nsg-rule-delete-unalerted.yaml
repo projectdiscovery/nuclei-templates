@@ -1,0 +1,59 @@
+id: azure-nsg-rule-delete-unalerted
+info:
+  name: Azure NSG Rule Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is used to detect "Delete Network Security Group Rule" events in your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the condition used is 'Whenever the Administrative Activity Log "Delete Security Rule (networkSecurityGroups/securityRules)" has "any" level with "any" status and event is initiated by "any"'.
+  impact: |
+    Without proper alert rules configured for monitoring "Delete Network Security Group Rule" events, unauthorized or unwanted changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Delete Network Security Group Rule" events by setting the alert condition to "Microsoft.Network/networkSecurityGroups/securityRules/delete" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,network-security,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Network/networkSecurityGroups/securityRules/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Network Security Group Rule events"'
+# digest: 4a0a0047304502206a45bd894127c5e10f2a68788b24bbebe08a41a2f26e7381de4eef34e25750cb022100c508145ae068335ed5515a5d1db23b8a0bf49bcc83ec154da59e11d3b0cc5bed:922c64590222798bb761d5b6d8e72950

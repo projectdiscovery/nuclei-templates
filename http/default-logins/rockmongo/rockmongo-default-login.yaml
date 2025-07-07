@@ -1,0 +1,46 @@
+id: rockmongo-default-login
+
+info:
+  name: Rockmongo Default Login
+  author: pikpikcu
+  severity: high
+  description: Rockmongo default admin credentials were discovered.
+  reference:
+    - https://serverfault.com/questions/331315/how-to-change-the-default-admin-username-and-admin-password-in-rockmongo
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+  tags: rockmongo,default-login
+
+http:
+  - raw:
+      - |
+        POST /index.php?action=login.index HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{Hostname}}/index.php?action=login.index
+
+        more=0&host=0&username={{username}}&password={{password}}&db=&lang=en_us&expire=3
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Location: /index.php?action=admin.index&host=0"
+          - "Set-Cookie: ROCK_LANG="
+        part: header
+
+      - type: status
+        status:
+          - 302
+# digest: 490a00463044022028a25f9af5bb24b69ab2850c8b6e78ff9ae02de88ae303ac565d1089964f996402205584557f74f50b8c881b5d9a869a5fbe33f997956e6004d6956af0e2d4897273:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: azure-aks-entra-id-unintegrated
+info:
+  name: Azure AKS Microsoft Entra ID Integration Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Azure Kubernetes Service (AKS) clusters are integrated with Microsoft Entra ID to provide granular access to AKS resources.
+  impact: |
+    Without Microsoft Entra ID integration, AKS clusters might lack granular access control, increasing the risk of unauthorized access and potential security breaches.
+  remediation: |
+    Ensure that each Azure Kubernetes Service (AKS) cluster is configured with Microsoft Entra ID by enabling the integration in the AKS cluster settings.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/managed-aad
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterInfo of iterate(template.clusterList)) {
+    ClusterInfo = JSON.parse(ClusterInfo);
+    set("name", ClusterInfo.name);
+    set("resourceGroup", ClusterInfo.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'aadProfile'
+
+    matchers:
+      - type: word
+        words:
+          - ''
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have Microsoft Entra ID integration configured"'
+# digest: 490a00463044022042c1426fe55d25e2e62d765b52d8945aa30fcff8cce791b44fb3a4ceb6963b39022056604540f9afc661e646c6ea38b68fee0ccaa2b5418624344ecda1008d6ff161:922c64590222798bb761d5b6d8e72950

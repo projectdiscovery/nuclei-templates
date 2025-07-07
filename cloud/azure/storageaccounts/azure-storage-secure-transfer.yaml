@@ -1,0 +1,55 @@
+id: azure-storage-secure-transfer
+info:
+  name: Azure Storage Secure Transfer Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all data transferred between clients and your Azure Storage account is encrypted using the HTTPS protocol. A Microsoft Azure Storage account contains data objects such as files, blobs, queues, tables, and disks. The storage account provides a unique namespace for your Azure Storage data that is accessible from anywhere in the world over HTTP/HTTPS. All data stored within your Azure Storage account is secure, scalable, durable, and highly available.
+  impact: |
+    If HTTPS is not enforced, data in transit between clients and Azure Storage resources (files, blobs, queues, tables, and disks) may be transmitted unencrypted, exposing it to potential interception and tampering.
+  remediation: |
+    Enable "Secure transfer required" in your Azure Storage account settings to enforce HTTPS traffic only, ensuring all data in transit is encrypted.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-require-secure-transfer
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageAccount of iterate(template.storageAccounts)) {
+    StorageAccount = JSON.parse(StorageAccount);
+    set("name", StorageAccount.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageAccounts
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'enableHttpsTrafficOnly'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " storage account does not have secure transfer enabled"'
+# digest: 4b0a00483046022100d22815783488b3c49f0666a2e0feeb557bff60070e17503b394c7ac1c57dd4af022100da609cc091baad1b6419194da7643d798618bf0373f78884bbc521d792a74060:922c64590222798bb761d5b6d8e72950

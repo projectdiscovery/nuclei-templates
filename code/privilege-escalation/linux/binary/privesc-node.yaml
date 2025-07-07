@@ -1,0 +1,56 @@
+id: privesc-node
+
+info:
+  name: Node - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    Node.js is a popular open-source, cross-platform JavaScript runtime environment that executes JavaScript code outside of a web browser. It is commonly used for building scalable network applications and is known for its event-driven, non-blocking I/O model. Node.js is widely used for server-side scripting and has a large ecosystem of libraries and frameworks.
+  reference:
+    - https://gtfobins.github.io/gtfobins/node/
+  metadata:
+    verified: true
+    max-request: 4
+  tags: code,linux,node,privesc,local
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      node -e 'require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo node -e 'require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      node -e 'process.setuid(0); require("child_process").spawn("whoami", {stdio: [0, 1, 2]})'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+          - 'contains(code_4_response, "root")'
+        condition: or
+# digest: 4a0a00473045022100adc765ab51a966ddd477007affad54660156da94b2e4fc8f591f319ca4cec30b022077e9685f71799a5101c64ff96d50f9eaca768baf722b8a2aba38af008ac39fef:922c64590222798bb761d5b6d8e72950

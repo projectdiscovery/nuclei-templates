@@ -1,0 +1,52 @@
+id: github-personal-access
+
+info:
+  name: GitHub Personal Access Token
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/github.yml
+    - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+    - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+    - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+  metadata:
+    verified: true
+    max-request: 1
+  tags: github,token,exposure
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '\b(ghp_[a-zA-Z0-9]{36})\b'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://api.github.com:443
+        GET /user HTTP/1.1
+        Host: api.github.com
+        Authorization: Basic {{base64('user:' + token)}}
+
+    disable-path-automerge: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"login":'
+          - '"avatar_url":'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 490a0046304402206553834d1fca084d0184c38d7936cf6804239ec1f48397a53e0de5c4c143058b02206528a3adaf93efb23a9a712ad8da2c67699c98df55c023935f1f90d0383c8875:922c64590222798bb761d5b6d8e72950

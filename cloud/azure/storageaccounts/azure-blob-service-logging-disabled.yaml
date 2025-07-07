@@ -1,0 +1,58 @@
+id: azure-blob-service-logging-disabled
+info:
+  name: Azure Storage Blob Service Logging Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Azure Storage Blob service logging is enabled for read, write, and delete requests. The Storage Blob service provides scalable, cost-efficient objective storage in the Azure cloud. Storage logging is performed server-side and allows details for both successful and failed requests to be recorded in the associated storage account. These logs contain the following information about the individual requests: timing information such as start time, end-to-end latency, server latency, authentication details, concurrency information, and the size of the request/response.
+  impact: |
+    Not enabling logging for read, write, and delete operations on Azure Storage Blob can prevent tracking of data access and manipulation, thus reducing the ability to diagnose issues or detect breaches.
+  remediation: |
+    Enable logging for the Azure Storage Blob service by setting the 'read', 'write', and 'delete' attributes to true in the storage account settings.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-analytics-logging
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AccountData of iterate(template.accountList)) {
+    AccountData = JSON.parse(AccountData);
+    set("name", AccountData.name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"name":name}'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage logging show --services b --account-name "$name" --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"delete": false'
+          - '"read": false'
+          - '"write": false'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " has logging disabled for read, write, and delete operations."'
+# digest: 4a0a00473045022100c394caed7f78a244e8a3df41a5a285ea8f3157716053bc038449ecc110b14165022044ae0c364a621cbbb58924b1625d20bb2d5e1c95151d4951f77f85955a55063e:922c64590222798bb761d5b6d8e72950

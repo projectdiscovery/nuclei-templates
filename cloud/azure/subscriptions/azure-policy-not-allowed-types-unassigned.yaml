@@ -1,0 +1,57 @@
+id: azure-policy-not-allowed-types-unassigned
+info:
+  name: Azure Policy - Not Allowed Resource Types Policy Assignment Not in Use
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that a "Not Allowed Resource Types" policy is assigned to your Azure subscriptions in order to deny deploying restricted resources within your Azure cloud account for security and compliance purposes. Microsoft Azure Policy service allows you to enforce organizational standards and assess cloud compliance at-scale. The "Not Allowed Resource Types" policy assignment must use the built-in policy definition which enables you to specify the cloud resource types that your organization cannot deploy.
+  impact: |
+    Failure to assign the "Not Allowed Resource Types" policy can result in unauthorized resource deployment, potentially violating compliance and security policies.
+  remediation: |
+    Assign the "Not Allowed Resource Types" policy to your Azure subscriptions to ensure compliance with corporate standards and prevent unauthorized resource deployment.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/governance/policy/concepts/definition-structure
+  tags: cloud,devops,azure,microsoft,azure-policy,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AssignmentData of iterate(template.policyAssignmentList)) {
+    AssignmentData = JSON.parse(AssignmentData);
+    set("name", AssignmentData.name);
+    set("policyDefinitionId", AssignmentData.policyDefinitionId);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az policy assignment list --output json --query '[*].{"name":displayName,"policyDefinitionId":policyDefinitionId}'
+
+    extractors:
+      - type: json
+        name: policyAssignmentList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az policy definition show --name "$name" --query 'displayName' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - 'Audit virtual machines without disaster recovery configured'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Policy " + name + " not enforcing allowed resource types"'
+# digest: 4a0a0047304502203b548ddd498f74f432291fc22dd75a8f8067e721cf7245cfb1c81d48a25f5da5022100c14cf3c3d86160d84e3f27be562fd8852c0a08da6779361682cd2dda1f4cfed0:922c64590222798bb761d5b6d8e72950

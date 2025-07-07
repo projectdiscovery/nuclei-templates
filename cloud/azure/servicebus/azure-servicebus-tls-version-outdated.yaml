@@ -1,0 +1,61 @@
+id: azure-servicebus-tls-version-outdated
+info:
+  name: Azure Service Bus Namespace TLS Version Not Latest
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure Service Bus namespaces are using the latest supported version of the TLS protocol (i.e., TLS 1.2) in order to enhance security by providing stronger encryption, protecting data integrity, and reducing vulnerabilities to cyber attacks.
+  impact: |
+    Using an outdated TLS version can reduce data protection and make the service vulnerable to cyber attacks.
+  remediation: |
+    Update your Azure Service Bus namespaces to use the latest supported TLS version, TLS 1.2, to ensure improved security and data protection.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-tls
+  tags: cloud,devops,azure,microsoft,servicebus,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NamespaceData of iterate(template.namespaceList)) {
+    NamespaceData = JSON.parse(NamespaceData);
+    set("name", NamespaceData.Name);
+    set("resourceGroup", NamespaceData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az servicebus namespace list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: namespaceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az servicebus namespace show --name "$name" --resource-group "$resourceGroup" --query 'minimumTlsVersion'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"1."'
+
+      - type: word
+        words:
+          - '"1.2"'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is not using TLS 1.2"'
+# digest: 4b0a00483046022100c23f11c1e0e15c78cada5a63a3c41eb1a746778ac7451a6ceb9e5e69778af0e8022100a2d0c629372cd2189f5e61b9f22f22891e60ab75e4b5dff5c09b263dcd36bd95:922c64590222798bb761d5b6d8e72950

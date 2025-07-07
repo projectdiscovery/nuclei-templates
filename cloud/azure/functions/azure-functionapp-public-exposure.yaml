@@ -1,0 +1,55 @@
+id: azure-functionapp-public-exposure
+info:
+  name: Exposed Azure Functions
+  author: princechaddha
+  severity: high
+  description: |
+    To follow Azure cloud security best practices and prevent public exposure, ensure that the functions managed with Microsoft Azure Function App are not publicly accessible. An Azure function is considered publicly accessible when it is configured to allow inbound access through the default (public) endpoint.
+  impact: |
+    Allowing public network access to Azure Functions can expose sensitive business logic and data to potential security risks.
+  remediation: |
+    Configure Azure Functions to restrict access from the public network by setting the 'publicNetworkAccess' to 'Disabled'.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-functions/functions-networking-options
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppData of iterate(template.functionApps)) {
+    AppData = JSON.parse(AppData);
+    set("name", AppData.name);
+    set("resourceGroup", AppData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: functionApps
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp show --name $name --resource-group $resourceGroup --query 'publicNetworkAccess' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "Enabled"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " is publicly accessible and should restrict network access"'
+# digest: 4a0a00473045022031031080aeb92e85be7233928cac72599d4bd438e6f71ff75cba383650268d230221009cffe8aaf410c462e3c954a9011753f23d7cb5bce18d4610db5064ae5a404556:922c64590222798bb761d5b6d8e72950

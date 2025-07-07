@@ -1,0 +1,59 @@
+id: db2-discover
+
+info:
+  name: Broadcast DB2 Discover
+  author: pussycat0x
+  severity: info
+  description: |
+    Attempts to discover DB2 servers on the network by sending a broadcast request to port 523/udp.
+  reference:
+    - https://nmap.org/nsedoc/scripts/broadcast-db2-discover.html
+  metadata:
+    shodan-query: port:523
+    verified: true
+    max-request: 1
+  tags: ibm,network,js,udp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "DB2GETADDR\0SQL09010\0"
+      packet.WriteString(cmd)
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvString()
+      const cleanedString = result.replace(/\x00/g, '');
+      let combinedResult;
+
+      if (cleanedString.includes("DB2RETADDRSQL")) {
+
+      const regex = /^DB2RETADDRSQL(\d{2})(\d{2})(\d{1})(.*)$/;
+      const matches = cleanedString.match(regex);
+
+      const formattedNumber = matches ? `${matches[1]}.${matches[2]}.${matches[3]}` : '';
+      const hostname = matches ? matches[4] : '';
+
+      combinedResult = `Db2 Version: ${formattedNumber}, Hostname: ${hostname}`;
+
+      } else {
+      conn.Close();
+      }
+      combinedResult;
+
+    args:
+      Host: "{{Host}}"
+      Port: 523
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100c21ddb09a63ac9fa6adaab1898f5255bda82c3870232db954703ed3df5b3bb32022100ec1db4da730f4314a6b1abc20fc3765c6cf8092093f63fa1bed367bfb03286fe:922c64590222798bb761d5b6d8e72950

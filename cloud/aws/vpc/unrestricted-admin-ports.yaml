@@ -1,0 +1,66 @@
+id: unrestricted-admin-ports
+info:
+  name: Unrestricted Admin Port Access
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for unrestricted ingress on TCP ports 22 (SSH) and 3389 (RDP) in Amazon VPC NACLs, exposing remote server administration to potentially malicious traffic.
+  impact: |
+    Allows unrestricted remote access, increasing the risk of unauthorized access and potential compromise.
+  remediation: |
+    Restrict access to ports 22 and 3389 to trusted IPs or IP ranges to adhere to the Principle of Least Privilege (POLP).
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let NACLIDs of iterate(template.nacls)){
+    set("naclid", NACLIDs)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-network-acls --region $region --query 'NetworkAcls[*].NetworkAclId' --output json
+
+    extractors:
+      - type: json
+        name: nacls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-network-acls --region $region --network-acl-ids $naclid --query 'NetworkAcls[*].Entries[?(RuleAction==`allow`) && (Egress==`false`)] | []' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "0.0.0.0/0"
+          - "CidrBlock"
+        condition: and
+
+      - type: word
+        words:
+          - "22"
+          - "3389"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access to the VPC subnets associated with your NACL " + naclid + " is not restricted."'
+# digest: 490a00463044022014f1d1f13b7858c0c82e35525357ead3e90d95fdb5cdba6b2c5da7d8812c93ae02200c7b6cf3b3c92d03d233728479101c3b98c16251834adbe4eed5f32f2c766c00:922c64590222798bb761d5b6d8e72950

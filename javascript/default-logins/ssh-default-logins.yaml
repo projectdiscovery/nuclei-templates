@@ -1,0 +1,40 @@
+id: ssh-default-logins
+
+info:
+  name: SSH - Default Logins
+  author: tarunKoyalwar
+  severity: critical
+  metadata:
+    max-request: 223
+    shodan-query: port:22
+  tags: js,ssh,default-login,network,fuzz
+
+javascript:
+  - pre-condition: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      var response = c.ConnectSSHInfoMode(Host, Port);
+      // only bruteforce if ssh allows password based authentication
+      response["UserAuth"].includes("password")
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,Username,Password);
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      Username: "{{usernames}}"
+      Password: "{{passwords}}"
+    threads: 10
+    attack: pitchfork
+    payloads:
+      usernames: helpers/wordlists/ssh-users.txt
+      passwords: helpers/wordlists/ssh-passwords.txt
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "response == true"
+          - "success == true"
+        condition: and
+# digest: 4a0a0047304502205c8741a48dfac58a57513fcde58d5cab336dbb2887438d2667b703416abe42840221009071a513c4e39427fc62f59a6db13d461858027b4f273c423237547166064299:922c64590222798bb761d5b6d8e72950

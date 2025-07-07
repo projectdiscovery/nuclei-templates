@@ -1,0 +1,57 @@
+id: cloudtrail-log-integrity
+info:
+  name: CloudTrail Log Integrity Validation not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure CloudTrail log file integrity validation is enabled to detect unauthorized file modifications.
+  impact: |
+    Without log file integrity validation, it's harder to detect if CloudTrail logs have been tampered with, potentially hiding malicious activity.
+  remediation: |
+    Enable log file integrity validation on all CloudTrail trails to ensure the integrity and authenticity of your logs.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].LogFileValidationEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The log file integrity validation is not enabled for CloudTrail trail" + trail'
+# digest: 4a0a00473045022100db42b4c20d12be50805623fbaab88e9c15567c638ebd384bb98458c0c5d3034d02201378e79dbdd61fabf0a1416326e5047af6e1ac64e10aecd8d091285824f89f32:922c64590222798bb761d5b6d8e72950

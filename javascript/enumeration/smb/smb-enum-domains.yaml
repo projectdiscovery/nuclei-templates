@@ -1,0 +1,46 @@
+id: smb-enum-domains
+
+info:
+  name: SMB - Enum Domains
+  author: DhiyaneshDK
+  severity: info
+  description: |
+    SMB enumeration of domains is often part of the reconnaissance phase, where security professionals or attackers attempt to gather information about the target network to identify potential vulnerabilities.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-enum-domains.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:445
+    product: dionaea
+    vendor: dionaea
+  tags: js,network,smb,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = new m.SMBClient();
+      var response = c.ListSMBv2Metadata(Host, Port);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(DNSDomainName) != 0"
+
+    extractors:
+      - type: json
+        internal: true
+        name: DNSDomainName
+        json:
+          - '.DNSDomainName'
+
+      - type: json
+        json:
+          - '"DomainName: "+ .DNSDomainName '
+# digest: 4b0a00483046022100c4000fd947051f5b044c2b3d04c04fff0e40b0e9e0eca683f87dd49866c79c1b022100875d9cbdf032bf8e6a931700de9d95438dbc30ab6a40633d1e4ddb7a5f1f6911:922c64590222798bb761d5b6d8e72950

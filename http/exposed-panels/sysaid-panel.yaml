@@ -1,0 +1,44 @@
+id: sysaid-panel
+
+info:
+  name: SysAid Login Panel - Detect
+  author: pdteam,darses
+  severity: info
+  description: |
+    Detects the presence of a SysAid Help Desk Software login panel by identifying characteristic login pages, favicon hash, and system-specific content.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:sysaid:sysaid:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: sysaid
+    product: sysaid
+    shodan-query: http.favicon.hash:1540720428
+    fofa-query: icon_hash=1540720428
+  tags: panel,sysaid,helpdesk,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/Login.jsp"
+      - "{{BaseURL}}/InvalidAccount.jsp"
+      - "{{BaseURL}}/favicon.ico"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code==200 && contains(tolower(body), 'sysaid help desk software')"
+          - "status_code==200 && contains(tolower(body), 'info@sysaid.com')"
+          - "status_code==200 && ('1540720428' == mmh3(base64_py(body)))"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 2
+        regex:
+          - "(ajaxTools\\.js|master\\.css)\\?v([\\d\\.\\w]+)\""
+# digest: 4a0a00473045022100ce1a2a4fe8eec2a6cbaa5746607dafad03ce154a02617db0d7b0db290e482763022042c8d224c963c288f62c25d7113179b80dd027e51b023a82bc2ea0c6d8207f07:922c64590222798bb761d5b6d8e72950

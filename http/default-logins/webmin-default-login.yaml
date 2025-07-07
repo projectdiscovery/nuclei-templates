@@ -1,0 +1,63 @@
+id: webmin-default-login
+
+info:
+  name: Webmin - Default Login
+  author: pussycat0x
+  severity: high
+  description: |
+    Webmin default login credentials were discovered.
+  reference:
+    - https://webmin.com/
+    - https://doxfer.webmin.com/Webmin/Installing_Webmin
+  classification:
+    cwe-id: CWE-798
+    cpe: cpe:2.3:a:webmin:webmin:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"Webmin"
+    product: webmin
+    vendor: webmin
+  tags: webmin,default-login
+
+http:
+  - raw:
+      - |
+        POST /session_login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: redirect=1; testing=1
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{RootURL}}
+        Accept-Encoding: gzip, deflate
+
+        user={{username}}&pass={{password}}
+      - |
+        GET /sysinfo.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+        Referer: {{RootURL}}
+        Accept-Encoding: gzip, deflate
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    host-redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Webmin"
+          - "Backup Configuration Files"
+          - "Webmin Actions Log"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100b47304cb582e2394cbd5c3ca9689fb273fb134e0ec98fb9efd55e8d573f659fb02204148e78847f2a2906fbf2d5f5ab2140752d075007d47a45d79749cc2c7a44605:922c64590222798bb761d5b6d8e72950

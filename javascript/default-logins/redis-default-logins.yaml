@@ -1,0 +1,55 @@
+id: redis-default-logins
+
+info:
+  name: Redis - Default Logins
+  author: tarunKoyalwar
+  severity: high
+  description: |
+    Redis service was accessed with easily guessed credentials.
+  metadata:
+    max-request: 6
+    shodan-query:
+      - product:"redis"
+      - http.title:"airflow - dags" || http.html:"apache airflow"
+      - http.title:"sign in - airflow"
+    product: airflow
+    vendor: apache
+    fofa-query:
+      - apache airflow
+      - title="airflow - dags" || http.html:"apache airflow"
+      - title="sign in - airflow"
+    google-query:
+      - intitle:"airflow - dags" || http.html:"apache airflow"
+      - intitle:"sign in - airflow"
+  tags: js,redis,default-login,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port)
+    code: |
+      var m = require("nuclei/redis");
+      m.GetServerInfoAuth(Host,Port,Password);
+    args:
+      Host: "{{Host}}"
+      Port: "6379"
+      Password: "{{passwords}}"
+    payloads:
+      passwords:
+        - ""
+        - root
+        - password
+        - admin
+        - iamadmin
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "redis_version"
+
+      - type: word
+        negative: true
+        words:
+          - "redis_mode:sentinel"
+# digest: 4a0a00473045022100be34ee50743bcbff700db6b12e86e56ea289793d1e3c0de720ad7dd1ac6f5e0202206657ce7ce979964b609197a2bca5fbe8c15ed03d6626429f9dd364b415afdee0:922c64590222798bb761d5b6d8e72950

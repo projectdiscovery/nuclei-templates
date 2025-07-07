@@ -1,0 +1,102 @@
+id: directory-listing
+
+info:
+  name: Directory Listing Enabled
+  author: theMiddle
+  severity: low
+  description: Directory Indexing is a web server feature that allows the contents of a directory to be displayed when no index file is present. This can be a security risk as it can expose sensitive files, old backup or unreferenced files.
+  impact: |
+    Sensitive files and directories may be exposed to unauthorized users.
+  remediation: |
+    Disable directory listing in the web server configuration.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information
+    - https://portswigger.net/kb/issues/00600100_directory-listing
+  metadata:
+    max-request: 2
+  tags: misc,generic,misconfig,fuzz,miscellaneous
+flow: |
+  function target_is_in_scope(url) {
+    if (url.startsWith(template.http_1_host) || url.startsWith("/")) {
+      return true;
+    }
+    return false;
+  }
+
+  http(1);
+
+  if(template.links) {
+    var path_checked = [];
+    var paths = [];
+
+    for(i=0; i<template.links.length; i++) {
+      if (target_is_in_scope(template.links[i])) {
+
+        var path = template.links[i].replace(template.http_1_host, "");
+        var path_split = path.split("/");
+        var path_to_check = "";
+
+        for(p in path_split) {
+          if (path_split[p] != "") {
+            path_to_check += "/"+path_split[p];
+
+            if (!path_checked.includes(path_to_check)) {
+              path_checked.push(path_to_check);
+
+              set("path_to_check", path_to_check);
+              http(2);
+            }
+          }
+        }
+
+      }
+    }
+  }
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - contains(header, "text/html")
+          - status_code_1 == 200
+        condition: and
+
+    extractors:
+      - type: xpath
+        name: links
+        part: body
+        internal: true
+        xpath:
+          - "//*/@href|//*/@src"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path_to_check}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>Index of"
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a00463044022019e583a6ca938951082fb74aeaca3e362e7dac1ee8a5e9fdd2c840fb749f617e022009d5feef7bcc77e7c215b7f007d4cfb25dde6f7c54bef0736ecaf81bb5d15216:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,46 @@
+id: node-express-dev-env
+
+info:
+  name: Node.js Express NODE_ENV Development Mode
+  author: FLX
+  severity: medium
+  description: |
+    The Node.js application runs in development mode, which can expose sensitive information, such as source code and secrets, depending on the application.
+  reference:
+    - https://www.invicti.com/web-vulnerability-scanner/vulnerabilities/express-development-mode-is-enabled/
+    - https://www.synopsys.com/blogs/software-security/nodejs-mean-stack-vulnerabilities.html
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: "X-Powered-By: Express"
+  tags: nodejs,express,misconfig,devops,cicd,trace
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - "contains(tolower(all_headers), 'x-powered-by: express')"
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Connection: close
+
+        t
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code==400"
+          - "contains(body, 'SyntaxError: Unexpected token')"
+          - "contains(tolower(all_headers), 'x-powered-by: express')"
+        condition: and
+# digest: 490a0046304402204f3ddf40560941e174d400df07d0bb481cb5ec0e947be65505eed133822dcc760220564b9d7269072b52f89087a303e12a2ba8ba70cbdc33dd5592d0e0cc8d84082b:922c64590222798bb761d5b6d8e72950

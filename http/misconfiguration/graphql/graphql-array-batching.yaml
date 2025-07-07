@@ -1,0 +1,51 @@
+id: graphql-array-batching
+
+info:
+  name: GraphQL Array-based Batching
+  author: Dolev Farhi
+  severity: info
+  description: |
+    Some GraphQL engines support batching of multiple queries into a single request. This allows users to request multiple objects or multiple instances of objects efficiently.
+    However, an attacker can leverage this feature to evade many security measures, including Rate Limit.
+  remediation: |
+    Deactivate or limit Batching in your GraphQL engine.
+  reference:
+    - https://stackoverflow.com/questions/62421352/graphql-difference-between-using-alias-versus-multiple-query-objects-when-doin
+    - https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application
+    - https://graphql.security/
+  metadata:
+    max-request: 2
+  tags: graphql,misconfig
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        [{"query":"query {\n __typename \n }"}, {"query":"mutation { \n __typename \n }"}]
+      - |
+        POST /api/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        [{"query":"query {\n __typename \n }"}, {"query":"mutation { \n __typename \n }"}]
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - ':"Query"'
+          - ':"Mutations"'
+        case-insensitive: true
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+# digest: 4b0a00483046022100ac561f42e43c3fab8276865779d3d0efd3c5a2370695b5a0367f56f1c902315a022100e698e149b3fb10a60f7d3739821c85c80a6ce6cda28a4e4f5c97c1226f88d2c0:922c64590222798bb761d5b6d8e72950

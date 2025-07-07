@@ -1,0 +1,49 @@
+id: flir-default-login
+
+info:
+  name: Flir Default Login
+  author: pikpikcu
+  severity: medium
+  description: Flir default login credentials (admin/admin) were discovered.
+  reference:
+    - https://securitycamcenter.com/flir-default-password/
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    max-request: 1
+  tags: default-login,flir,camera,iot
+
+http:
+  - raw:
+      - |
+        POST /login/dologin HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        user_name={{username}}&user_password={{password}}
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"success"'
+
+      - type: dsl
+        dsl:
+          - contains(tolower(header), 'text/html')
+          - contains(tolower(header), 'phpsessid')
+          - contains(tolower(header), 'showcameraid')
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008a7915729462edeaf70f610b094851c181f56110b5b78707ebf3fb7dd9d7f5e4022100afe05ff5aefb5f09612dc3216fe88b3999cce82eab103250859d88394c7f8117:922c64590222798bb761d5b6d8e72950

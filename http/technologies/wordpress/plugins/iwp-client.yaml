@@ -1,0 +1,49 @@
+id: wordpress-iwp-client
+
+info:
+  name: InfiniteWP Client Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/iwp-client/
+  metadata:
+    plugin_namespace: iwp-client
+    wpscan: https://wpscan.com/plugin/iwp-client
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/iwp-client/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/iwp-client.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a004630440220286e48eafc8254b8024c4b673989a604ff884ca950cf0914cb70d0fc9da378260220129fbf18b48cee147ab538436d92adf882bf77be8a69853d4268fa237a6ca74b:922c64590222798bb761d5b6d8e72950

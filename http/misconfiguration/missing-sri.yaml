@@ -1,0 +1,48 @@
+id: missing-sri
+
+info:
+  name: Missing Subresource Integrity
+  author: lucky0x0d,PulseSecurity.co.nz,sullo amarsct
+  severity: info
+  description: |
+    Checks if external script and stylesheet tags in the HTML response are missing the Subresource Integrity (SRI) attribute.
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html#subresource-integrity
+    - https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+  metadata:
+    max-request: 1
+  tags: compliance,js,css,sri,misconfig
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 5
+
+    matchers:
+      - type: xpath
+        part: body
+        xpath:
+          - "//script[contains(@src,'//') and not(matches(translate(@integrity,'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=','abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-'))]"
+          - "//script[contains(@src, '//') and (not(@integrity) or not(matches(translate(@integrity, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=', 'abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-')))]"
+          - "//link[@rel='stylesheet' and contains(@href, '//') and (not(@integrity) or not(matches(translate(@integrity, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=', 'abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-')))]"
+
+    extractors:
+      - type: xpath
+        attribute: src
+        xpath:
+          - "//script[contains(@src,'//') and not(matches(translate(@integrity,'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=','abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-'))]"
+
+      - type: xpath
+        attribute: src
+        xpath:
+          - "//script[contains(@src, '//') and (not(@integrity) or not(matches(translate(@integrity, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=', 'abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-')))]"
+
+      - type: xpath
+        attribute: href
+        xpath:
+          - "//link[@rel='stylesheet' and contains(@href, '//') and (not(@integrity) or not(matches(translate(@integrity, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ+/-=', 'abcdefghijklmnopqrstuvwxyz+/-='), '^sha(256|384|512)-')))]"
+# digest: 490a00463044022031f313335362cb36c4ab1933c436612399398a22ef3f7429d2cb48c5137f610602204bbfc1ef856a4de2d36455d9967d7d95076f3f6a0e22e7e1b02612f2a687afdb:922c64590222798bb761d5b6d8e72950

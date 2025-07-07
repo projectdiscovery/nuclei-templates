@@ -1,0 +1,48 @@
+id: internal-ip-disclosure
+
+info:
+  name: Internal IP Disclosure
+  author: WillD96
+  severity: info
+  reference:
+    - https://support.kemptechnologies.com/hc/en-us/articles/203522429-How-to-Mitigate-Against-Internal-IP-Address-Domain-Name-Disclosure-In-Real-Server-Redirect
+  metadata:
+    max-request: 2
+  tags: misconfig,disclosure
+
+http:
+  - raw:
+      - |+
+        GET / HTTP/1.0
+        Accept: */*
+
+      - |+
+        GET / HTTP/1.0
+        Host:
+        Accept: */*
+
+    stop-at-first-match: true
+    unsafe: true # Use Unsafe HTTP library for malformed HTTP requests.
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: location
+        regex:
+          - '(10(.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172.(1[6-9]|2[0-9]|3[01]))|192.168)(.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})'
+
+      - type: dsl
+        dsl:
+          - ip != location
+
+      - type: status
+        status:
+          - 301
+          - 302
+
+    extractors:
+      - type: regex
+        part: location
+        regex:
+          - '(10(.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172.(1[6-9]|2[0-9]|3[01]))|192.168)(.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})'
+# digest: 4a0a00473045022100ac2940d28d12d3f296447a8ce4023346a226b7fa1f58f7160c604cf0e2e3f2dd022067fba9bc5103dd886545e400db5388c913a53bc884133ef1c58ac9cf101aec17:922c64590222798bb761d5b6d8e72950

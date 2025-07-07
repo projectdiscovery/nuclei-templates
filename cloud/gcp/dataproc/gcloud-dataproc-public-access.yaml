@@ -1,0 +1,75 @@
+id: gcloud-dataproc-public-access
+
+info:
+  name: Dataproc Cluster Publicly Accessible
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Dataproc clusters are not configured with external IP addresses to minimize exposure to the Internet. When external IP addresses are assigned to Dataproc clusters, the cluster instances are exposed directly to the Internet. This increases the attack surface and risks accidental data exposure if firewall rules are misconfigured.
+  impact: |
+    Publicly accessible Dataproc clusters increase the attack surface and risk of data exposure, as cluster instances can be directly accessed from the internet.
+  remediation: |
+    Re-create your Dataproc clusters with internal IP addresses only by using the '--no-address' flag or enabling 'Internal IP only' in the console. This ensures cluster instances use private IP addresses and communicate over internal networks only.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Dataproc/publicly-accessible-dataproc-clusters.html
+    - https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/network
+  tags: cloud,devops,gcp,gcloud,dataproc,security,networking,public-access,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.clusterName)
+      set("region", cluster.region)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dataproc clusters list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dataproc clusters describe $clusterName --region $region --project $projectId --format=json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Dataproc cluster " + clusterName + " in region " + region + " of project " + projectId + " is configured with external IP addresses and is publicly accessible"'
+# digest: 4a0a0047304502207ce3d64926d4554201d0410b7dbf479087627c27507152255ff64ad60efe92f70221008746467395042dffd6adf74451c93122a948fbe6805d97c1c05c0ea8951bacc5:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,52 @@
+id: stackhawk-api
+
+info:
+  name: StackHawk API Key
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/stackhawk.yml
+    - https://apidocs.stackhawk.com/reference/login
+    - https://docs.stackhawk.com/web-app/
+  metadata:
+    verified: true
+    max-request: 1
+  tags: stackhawk,token,exposure
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '\b(hawk\.[0-9A-Za-z_-]{20}\.[0-9A-Za-z_-]{20})\b'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://api.stackhawk.com:443
+        GET /api/v1/auth/login HTTP/1.1
+        Host: api.stackhawk.com
+        X-ApiKey: {{token}}
+        Accept: application/json
+
+    disable-path-automerge: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "token")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4b0a00483046022100b6a4dc6c3fcb4f8d78930f90684d634a1500b6fbd427fca9dc2e228874548e3102210092dc7e15555f89ae611c9dc628ba9ce4f5c9db1468fa306b4b1439f2dec2416b:922c64590222798bb761d5b6d8e72950

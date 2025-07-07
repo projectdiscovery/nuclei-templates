@@ -1,0 +1,77 @@
+id: jolokia-info-disclosure
+
+info:
+  name: Jolokia - Information disclosure
+  author: pussycat0x
+  severity: medium
+  description: Jolokia - Information is exposed.
+  reference:
+    - https://thinkloveshare.com/hacking/ssrf_to_rce_with_jolokia_and_mbeans/
+    - https://github.com/laluka/jolokia-exploitation-toolkit
+  metadata:
+    max-request: 16
+  tags: jolokia,springboot,mbean,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{jolokia_paths}}{{mbean_paths}}"
+
+    attack: clusterbomb
+    payloads:
+      jolokia_paths:
+        - "/jolokia"
+        - "/actuator/jolokia"
+
+      mbean_paths:
+        - "/read/JMImplementation:type=MBeanServerDelegate/ImplementationName"
+        - "/read/JMImplementation:type=MBeanServerDelegate/ImplementationVendor"
+        - "/read/JMImplementation:type=MBeanServerDelegate/ImplementationVersion"
+        - "/read/JMImplementation:type=MBeanServerDelegate/MBeanServerId"
+        - "/read/JMImplementation:type=MBeanServerDelegate/SpecificationName"
+        - "/read/JMImplementation:type=MBeanServerDelegate/SpecificationVendor"
+        - "/read/JMImplementation:type=MBeanServerDelegate/SpecificationVersion"
+        - "/read/java.lang:type=Memory"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: memory
+        words:
+          - '"mbean":"java.lang:type=Memory"'
+
+      - type: word
+        name: implementation-vendor
+        words:
+          - '"attribute":"ImplementationVendor"'
+
+      - type: word
+        name: implementation-version
+        words:
+          - '"attribute":"ImplementationVersion"'
+
+      - type: word
+        name: implementation-name
+        words:
+          - '"attribute":"ImplementationName"'
+
+      - type: word
+        name: specification-vendor
+        words:
+          - '"attribute":"SpecificationVendor"'
+
+      - type: word
+        name: mbean-serverid
+        words:
+          - '"attribute":"MBeanServerId"'
+
+      - type: word
+        name: specification-name
+        words:
+          - '"attribute":"SpecificationName"'
+
+      - type: word
+        name: specification-version
+        words:
+          - '"attribute":"SpecificationVersion'
+# digest: 4b0a00483046022100b5cd76bd0d6448b91927d646bb61df613ed1271626fb025b1ec9bf942a815379022100e81d6ced8befd9c88f6f0a93019ac0bce6f3d9df2d6920dafa9a9013ea82b319:922c64590222798bb761d5b6d8e72950

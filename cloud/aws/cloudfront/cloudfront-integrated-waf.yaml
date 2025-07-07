@@ -1,0 +1,67 @@
+id: cloudfront-integrated-waf
+
+info:
+  name: CloudFront Integrated With WAF
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that all your Amazon CloudFront distributions are integrated with the Amazon Web Application Firewall (WAF) service to protect against application-layer attacks that can compromise the security of your websites/web applications or place unnecessary load on them
+  impact: |
+    Lack of integration between CloudFront and a Web Application Firewall (WAF) increases vulnerability to web-based attacks, including DDoS, SQL injection, and cross-site scripting (XSS).
+  remediation: |
+    Integrate CloudFront with an appropriate Web Application Firewall (WAF) to filter and monitor HTTP requests, providing enhanced protection against common web threats.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/cloudfront-integrated-with-waf.html
+    - http://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution --id $distribution --query 'Distribution.DistributionConfig.WebACLId' --region $region --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '""'
+
+      - type: word
+        words:
+          - 'arn:'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFront Integrated With WAF " + distribution + " is Disabled"'
+# digest: 4a0a0047304502202d620642cc74990fe24716a6835537c17f0665b4f33110c47f495fa92f709ea1022100d5da002654b1eb9447b384320856fdac406517a81f3fea768bb8c0caacddd897:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,54 @@
+id: azure-app-tier-vm-disk-unencrypted
+info:
+  name: Azure App-Tier VM Disk Encryption Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all the disk volumes attached to the Microsoft Azure virtual machines (VMs) provisioned within the application tier are encrypted to meet security and compliance requirements. The Azure cloud resources in the app tier should be tagged with `<app_tier_tag>:<app_tier_tag_value>`.
+  impact: |
+    Unencrypted disk volumes can expose sensitive data and potentially lead to data breaches and non-compliance with regulatory requirements.
+  remediation: |
+    Enable disk encryption on all Azure virtual machine disk volumes within the application tier by using Azure Disk Encryption.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/security/fundamentals/encryption-atrest
+  tags: cloud,devops,azure,microsoft,vm-disk,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let vmData of iterate(template.vmList)) {
+    set("ids", vmData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[?(tags==`{"app_tier_tag":"app_tier_tag_value"}`)].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm encryption show --ids "$ids" --query 'disks'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'Disk is not encrypted'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " disk volume is not encrypted"'
+# digest: 4b0a00483046022100e5b8dab05ac49fb242f0c9262ec4e1db236f8674463b0821380a4909beddb6940221008398c2c0ccf2321002ed6233c10670032eadcd8c86693e954c7f328bb6fab19c:922c64590222798bb761d5b6d8e72950

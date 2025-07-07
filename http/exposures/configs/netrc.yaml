@@ -1,0 +1,47 @@
+id: netrc
+
+info:
+  name: Netrc - Config File Discovery
+  author: geeknik
+  severity: high
+  description: Netrc configuration file was discovered.
+  reference:
+    - https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html
+  metadata:
+    max-request: 2
+  tags: netrc,config,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.netrc"
+      - "{{BaseURL}}/_netrc"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        regex:
+          - "machine [0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\\.?"
+
+      - type: word
+        words:
+          - "login "
+          - "password "
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "machine [0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?(?:\\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|-){0,61}[0-9A-Za-z])?)*\\.?"
+# digest: 490a0046304402204c6767cd3a6b248429532b4cc8fd3546cd228fb9e58f8c8cea7fb85ff532f01e022023e508a4dcb390ee61aa6ab185566fec4027713bfb6ca56f4e6cfd76fcdb1823:922c64590222798bb761d5b6d8e72950

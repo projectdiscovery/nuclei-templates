@@ -1,0 +1,85 @@
+id: ldap-metadata
+
+info:
+  name: LDAP Metadata - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    LDAP metadata refers to the data that describes the structure, schema, and attributes of the LDAP directory
+  reference:
+    - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Metadata
+  metadata:
+    max-request: 1
+    shodan-query: ldap
+  tags: js,network,ldap
+
+javascript:
+  - code: |
+      const ldap = require('nuclei/ldap');
+      const cfg = new ldap.Config();
+      cfg.Upgrade = true;
+      const client = new ldap.Client(Host, Port);
+      const metadata = client.CollectMetadata();
+      Export((metadata))
+
+    args:
+      Host: "ldap://{{Host}}"
+      Port: 389
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(BaseDn) != 0"
+          - "len(DnsHostName) != 0"
+          - "len(DefaultNamingContext) != 0"
+          - "len(DomainFunctionality) != 0"
+          - "len(ForestFunctionality) != 0"
+          - "len(DomainControllerFunctionality) != 0"
+          - "success == true"
+
+    extractors:
+      - type: json
+        internal: true
+        name: BaseDn
+        json:
+          - '.BaseDN'
+
+      - type: json
+        internal: true
+        name: DnsHostName
+        json:
+          - '.DnsHostName'
+
+      - type: json
+        internal: true
+        name: DefaultNamingContext
+        json:
+          - '.DefaultNamingContext'
+
+      - type: json
+        internal: true
+        name: DomainFunctionality
+        json:
+          - '.DomainFunctionality'
+
+      - type: json
+        internal: true
+        name: ForestFunctionality
+        json:
+          - '.ForestFunctionality'
+
+      - type: json
+        internal: true
+        name: DomainControllerFunctionality
+        json:
+          - '.DomainControllerFunctionality'
+
+      - type: json
+        json:
+          - '"BaseDN: " + .BaseDN'
+          - '"DnsHostName: " + .DnsHostName'
+          - '"DefaultNamingContext: "+ .DefaultNamingContext'
+          - '"DomainFunctionality: "+ .DomainFunctionality'
+          - '"ForestFunctionality: " + .ForestFunctionality'
+          - '"DomainControllerFunctionality: "+ .DomainControllerFunctionality'
+# digest: 4b0a00483046022100cbfe0c1d3dfae0a65e393d39f5e3f59d0b9f66f477cb66b57872f6a77d50e4f8022100ffb9acd602b1a8397a7151648316ef51216d7e94f3941a708d4b05b97bad575e:922c64590222798bb761d5b6d8e72950

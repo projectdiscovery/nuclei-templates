@@ -1,0 +1,43 @@
+id: k8s-tls-config-set
+
+info:
+  name: Ensure TLS config appropriately set
+  author: princechaddha
+  severity: medium
+  description: Checks if the tls-cert-file and tls-private-key-file arguments are properly set in the API server configuration, which is essential for secure communication.
+  impact: |
+    The absence of tls-cert-file and tls-private-key-file arguments means that the API server may not use TLS for secure communications, leading to potential security risks.
+  remediation: |
+    Configure the API server to use tls-cert-file and tls-private-key-file that point to a valid certificate and key file respectively. This setting should be part of the API server startup arguments or in its configuration file.
+  reference:
+    - https://kubernetes.io/docs/admin/kube-apiserver/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "tls-cert-file or tls-private-key-file"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+
+      - type: word
+        words:
+          - "tls-cert-file"
+          - "tls-private-key-file"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"API server configuration is missing the " + argument + " argument."'
+# digest: 4b0a00483046022100eeadc58483658f17e52458fd0c95b7e098f822f5cc807b3a05d93f52ba386d0a022100dc8ad28fad0b70db919a9c2eb3aed0f52797399558aecc52fc4ee26c50ee1476:922c64590222798bb761d5b6d8e72950

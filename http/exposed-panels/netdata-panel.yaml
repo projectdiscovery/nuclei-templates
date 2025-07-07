@@ -1,0 +1,62 @@
+id: netdata-panel
+
+info:
+  name: Netdata Panel - Detect
+  author: TechbrunchFR,righettod
+  severity: info
+  description: |
+    Netdata panel was detected.
+  reference:
+    - https://github.com/netdata/netdata
+    - https://www.netdata.cloud/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:netdata:netdata:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    vendor: netdata
+    product: netdata
+    shodan-query:
+      - http.title:"netdata dashboard"
+      - http.title:"Netdata Console"
+      - "server: netdata embedded http server"
+    fofa-query: title="netdata dashboard"
+    google-query: intitle:"netdata dashboard"
+  tags: panel,netdata
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/info"
+      - "{{BaseURL}}/sign-in"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "application/json")'
+          - 'contains(to_lower(body), "netdata")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>netdata console</title>")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)version:\s+"([0-9.]+)"'
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)nodeEnv:\s+"([a-z0-9]+)"'
+# digest: 4a0a004730450220263da5943818fcafea164207552c6035354758c51f0c8e845d9c5aa4cf11fc88022100950e4c5549b5264077982ef9659d96bfea05cd4e3c697b5345cb2cb9251b9202:922c64590222798bb761d5b6d8e72950

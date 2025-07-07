@@ -1,0 +1,55 @@
+id: azure-storage-network-unrestricted
+info:
+  name: Azure Storage Default Network Access Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure Storage account is configured to deny access to traffic from all networks (including Internet traffic). By restricting access to your storage account default network, you add a new layer of security, since the default action is to accept connections from clients on any network. To limit access to selected networks or IP addresses, you must first change the default action from "Allow" to "Deny".
+  impact: |
+    If the default network access is set to "Allow", all networks, including the Internet, can access the selected Azure Storage account, potentially exposing sensitive data or resources.
+  remediation: |
+    Configure the network access rule for Azure Storage accounts to "Deny" to restrict access to selected networks only, enhancing security by preventing unwanted or unauthorized access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let StorageData of iterate(template.storageList)) {
+    StorageData = JSON.parse(StorageData);
+    set("name", StorageData.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: storageList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'networkRuleSet.defaultAction'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Allow"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " storage account network access is not restricted (default action is Allow)"'
+# digest: 4b0a00483046022100b134f23d6bca83db24238938a52cf18e2eb04755dfeb074a0182bee3302865db022100d0ee226dccb49f7d57133c1867ff243e2395f2b0a12281330b3d0591184363ab:922c64590222798bb761d5b6d8e72950

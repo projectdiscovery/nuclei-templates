@@ -1,0 +1,86 @@
+id: smb-enum
+
+info:
+  name: SMB - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    SMS Information Extraction is a sophisticated and efficient system designed to retrieve critical information from a remote computer or device through short text messages. This technology enables users to remotely access essential details about a computer, such as its operating system (OS) version, computer name, and hostname,
+    all via SMS communication.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-security-mode.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:445
+    product: dionaea
+    vendor: dionaea
+  tags: js,network,smb,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ListSMBv2Metadata(Host, Port);
+      Export(response);
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(OSVersion) != 0"
+          - "len(NetBIOSComputerName) != 0"
+          - "len(NetBIOSDomainName) != 0"
+          - "len(DNSComputerName) != 0"
+          - "len(DNSDomainName) != 0"
+          - "len(ForestName) != 0"
+
+    extractors:
+      - type: json
+        internal: true
+        name: OSVersion
+        json:
+          - '.OSVersion'
+
+      - type: json
+        internal: true
+        name: NetBIOSComputerName
+        json:
+          - '.NetBIOSComputerName'
+
+      - type: json
+        internal: true
+        name: NetBIOSDomainName
+        json:
+          - '.NetBIOSDomainName'
+
+      - type: json
+        internal: true
+        name: DNSComputerName
+        json:
+          - '.DNSComputerName'
+
+      - type: json
+        internal: true
+        name: DNSDomainName
+        json:
+          - '.DNSDomainName'
+
+      - type: json
+        internal: true
+        name: ForestName
+        json:
+          - '.ForestName'
+
+      - type: json
+        json:
+          - '"OSVersion: "+ .OSVersion '
+          - '"NetBIOSComputerName: "+ .NetBIOSComputerName '
+          - '"NetBIOSDomainName: "+ .NetBIOSDomainName '
+          - '"DNSComputerNamen: "+ .DNSComputerName '
+          - '"DNSComputerName: "+ .DNSComputerName '
+          - '"ForestName: "+ .ForestName'
+# digest: 4a0a004730450220497d1156b3f1615d16abc1e250222ece3d830de51be92a4adc44ca9ee4973bf20221008ce4102cff654bad15e6499cb0a00f341b2891bf5075390943797e6820bd7a16:922c64590222798bb761d5b6d8e72950

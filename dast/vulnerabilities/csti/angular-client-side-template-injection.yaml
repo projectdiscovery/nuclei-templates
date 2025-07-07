@@ -1,0 +1,47 @@
+id: angular-client-side-template-injection
+
+info:
+  name: Angular Client-side-template-injection
+  author: theamanrawat
+  severity: high
+  description: |
+    Detects Angular client-side template injection vulnerability.
+  impact: |
+    May lead to remote code execution or sensitive data exposure.
+  remediation: |
+    Sanitize user inputs and avoid using user-controlled data in template rendering.
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/angularjs-client-side-template-injection/
+    - https://portswigger.net/research/xss-without-html-client-side-template-injection-with-angularjs
+  tags: angular,csti,dast,headless,xss
+
+variables:
+  first: "{{rand_int(1000, 9999)}}"
+  second: "{{rand_int(1000, 9999)}}"
+  result: "{{to_number(first)*to_number(second)}}"
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitload
+
+    payloads:
+      payload:
+        - '{{concat("{{", "{{first}}*{{second}}", "}}")}}'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{payload}}"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{result}}"
+# digest: 4a0a00473045022020e22f3aa1d49de743347240f3cfc2d4aaa31d402183612be52fd033f51e0792022100a2ed81987f5a5c068275bcf09d505c3582738155068ebb6511cea83023af40c1:922c64590222798bb761d5b6d8e72950

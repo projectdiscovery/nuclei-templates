@@ -1,0 +1,56 @@
+id: azure-vm-boot-disk-unencrypted
+info:
+  name: Azure VM Boot Disk Not Encrypted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure virtual machine (VM) boot volumes are encrypted using Azure Disk Encryption in order to meet security and compliance requirements. ADE encrypts the OS and data disks of Azure virtual machines (VMs) using the CPU via the DM-Crypt feature for Linux or the BitLocker feature for Windows. ADE is integrated with Azure Key Vault to help you control and manage the disk encryption keys and secrets. The boot (OS) volumes encryption and decryption is handled transparently and does not require any additional action from you, your Azure virtual machine, or your cloud application.
+  impact: |
+    Unencrypted VM boot volumes may expose sensitive data to unauthorized access, violating security and compliance mandates.
+  remediation: |
+    Enable Azure Disk Encryption for VM boot volumes using Azure Key Vault to manage encryption keys and ensure data security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/linux/encrypt-disks
+  tags: cloud,devops,azure,microsoft,vm-disk-encryption,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VMData of iterate(template.vmList)) {
+    VMData = JSON.parse(VMData);
+    set("ids", VMData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm encryption show --ids "$ids" --query 'osDisk'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - 'Azure Disk Encryption is not enabled'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " VM Boot Disk is not encrypted"'
+# digest: 4a0a0047304502206cc48425dedcdf3c07d8d4be6c3c97d6c825b177497fe5b80940416e1a010233022100d3931cb6f80582dc0f49d17134d2f603c96492f656b747d2f2e1b4d29e2ead44:922c64590222798bb761d5b6d8e72950

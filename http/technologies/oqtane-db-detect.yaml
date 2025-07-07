@@ -1,0 +1,54 @@
+id: oqtane-cms-db
+
+info:
+  name: Oqtane CMS Database - Detect
+  author: Masoud Abdaal
+  severity: info
+  description: Detect which database distribution the target oqtane cms use.
+  reference:
+    - https://github.com/oqtane/oqtane.framework?tab=readme-ov-file#oqtane-framework
+    - https://github.com/oqtane/oqtane.framework/blob/62879c3e522772830fb19c7c9af569bd6a7c2f78/Oqtane.Server/Controllers/DatabaseController.cs#L23
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    product: oqtane
+    vendor: oqtane
+    shodan-query: http.title:'Home - Default Site'
+    fofa-query: title="Home - Default Site"
+  tags: detect,tech,api,cms
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/database"
+
+    redirects: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'controlType"'
+          - 'Oqtane'
+          - 'dbType"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: default_database
+        part: body
+        json:
+          - '.[] | select(.isDefault == true) | .name'
+# digest: 490a0046304402202013b72f5173f547317332e91929b12cfe2852f229bd851752e04d208779663702206f7e9628642b5c634d1a5192297d08a9f7a3e3c14d11f9326a41197b57df605a:922c64590222798bb761d5b6d8e72950

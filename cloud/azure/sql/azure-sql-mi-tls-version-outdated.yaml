@@ -1,0 +1,60 @@
+id: azure-sql-mi-tls-version-outdated
+info:
+  name: Azure SQL Managed Instance TLS Version Not Latest
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure SQL managed instances are using the latest supported version of the TLS protocol (i.e. TLS 1.2) for inbound connections in order to enhance security by providing stronger encryption, protecting data integrity, reducing vulnerabilities to cyber attacks, and maintaining compatibility with modern browsers.
+  impact: |
+    Not using the latest supported version of TLS may lead to reduced security levels, making the SQL managed instances vulnerable to newer types of cyber attacks.
+  remediation: |
+    Update the TLS configuration of your Azure SQL managed instances to use TLS 1.2, ensuring enhanced security and compliance with industry best practices.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tls-configuration
+  tags: cloud,devops,azure,microsoft,azure-sql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let InstanceData of iterate(template.instanceList)) {
+    set("ids", InstanceData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql mi list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: instanceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql mi show --ids "$ids" --query 'minimalTlsVersion'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "1."
+
+      - type: word
+        words:
+          - '"1.2"'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " does not use TLS 1.2"'
+# digest: 4a0a004730450220469f6a806bfbfc7e5bac04f55dc65a7c0be5d5bb523ac09115e85f353e567364022100af40ec3853c17b226c7346a163b22ddcde1c03e9a5960ea58ad68c81b35a103f:922c64590222798bb761d5b6d8e72950

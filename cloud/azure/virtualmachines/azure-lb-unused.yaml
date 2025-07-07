@@ -1,0 +1,56 @@
+id: azure-lb-unused
+info:
+  name: Azure Unused Load Balancer Check
+  author: princechaddha
+  severity: low
+  description: |
+    Identify any unused load balancers available within your Azure cloud account and delete them in order to eliminate unnecessary costs and meet compliance requirements when it comes to cloud resource management. A Microsoft Azure load balancer is considered unused when it doesn't have any associated backend pool instances. The backend pool instances can be individual virtual machines or instances running within a virtual machine scale set.
+  impact: |
+    Unused load balancers incur unnecessary costs and complicate compliance and resource management.
+  remediation: |
+    Review and remove unused load balancers that do not have any backend pool instances.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview
+  tags: cloud,devops,azure,microsoft,load-balancer,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let BalancerData of iterate(template.balancerList)) {
+    BalancerData = JSON.parse(BalancerData);
+    set("name", BalancerData.Name);
+    set("resourceGroup", BalancerData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network lb list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: balancerList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network lb show --name "$name" --resource-group "$resourceGroup" --query 'backendAddressPools[*].backendIpConfigurations[*].id | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is unused with no backend instances"'
+# digest: 4b0a00483046022100b084bc3aa0d79ddd8a9228798e3b239f1a4145b6b60c1bb746c6821e54cee33e022100a1b4903c7713b06588433dce86368992642e21b41e7a5c9e6335970523fb03f6:922c64590222798bb761d5b6d8e72950

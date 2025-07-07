@@ -1,0 +1,35 @@
+name: 🥳 New Template List
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.yaml'
+  workflow_dispatch:
+  release:
+    types: [published]  
+
+env:
+  NEW_ADDITION_FILE: '.new-additions'
+
+jobs:
+  new-addition:
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate new addition list
+        run: |
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          git diff --name-only --diff-filter=A $LATEST_TAG @ . | grep -v "^\.github/" | grep "\.yaml$" | tee $NEW_ADDITION_FILE
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '${{ env.NEW_ADDITION_FILE }}'
+          message: 'chore: generate new addition list 🤖'
+      - run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

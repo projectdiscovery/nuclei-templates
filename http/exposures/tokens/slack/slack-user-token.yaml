@@ -1,0 +1,64 @@
+id: slack-user-token
+
+info:
+  name: Slack User token disclosure
+  author: Ice3man,DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/slack.yml
+    - https://api.slack.com/methods/users.list/test
+    - https://api.slack.com/authentication
+    - https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-user-token.yaml
+    - https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-user-token.txt
+  metadata:
+    max-request: 1
+    verified: true
+  tags: exposure,token,slack
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - 'xoxp-[0-9A-Za-z\\-]{74}'
+          - '(xox[pe](?:-[0-9]{10,13}){3}-[a-zA-Z0-9-]{28,34})'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://slack.com:443
+        POST /api/users.list?pretty=1 HTTP/1.1
+        Host: slack.com
+        Origin: https://api.slack.com
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDL3VHEC7cFaxeAhK
+
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="content"
+
+        null
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK
+        Content-Disposition: form-data; name="token"
+
+        {{token}}
+        ------WebKitFormBoundaryDL3VHEC7cFaxeAhK--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "is_admin", "is_app_user", "is_email_confirmed")
+          - contains(content_type, "application/json")
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 490a0046304402205a5f4f6e3c673c0be58e49085e8caf65076d238da987f7b8199bcc006095157002207caac9c619c6a208d768ae7ad777385d70259b820c070dc0e628059123e992c8:922c64590222798bb761d5b6d8e72950

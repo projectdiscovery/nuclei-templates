@@ -1,0 +1,76 @@
+id: azure-keyvault-certificate-insufficient-autorenew
+info:
+  name: Check for Sufficient Certificate Auto-Renewal Period
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure Key Vault SSL certificates have a sufficient auto-renewal period configured for security and compliance purposes. This period indicates the amount of time (number of days) before SSL certificate expiration, when the renewal process is automatically triggered.
+  impact: |
+    If the auto-renewal period is too short, there might not be enough time to address issues if the renewal process fails, leading to potential service disruption or security vulnerabilities.
+  remediation: |
+    Configure SSL certificates within Azure Key Vaults to have an auto-renewal period that aligns with your organization's security and compliance requirements to ensure timely and effective renewal.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/certificates/about-certificates
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultData of iterate(template.vaultNames)) {
+    set("vaultName", VaultData);
+    code(2);
+    for (let CertificateData of iterate(template.certificateIDs)) {
+      set("certificateID", CertificateData);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].id' --output json
+
+    extractors:
+      - type: json
+        name: certificateIDs
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate show --id $certificateID --query 'policy.lifetimeActions[*].trigger.daysBeforeExpiry' --output json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - compare_versions(certificateIDnum, concat("< ", 30))
+
+    extractors:
+      - type: json
+        name: certificateIDnum
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'vaultName + " certificate ID " + certificateID + " has insufficient auto-renewal period"'
+# digest: 4a0a0047304502203f537822526740486977bddcb78f795fa0e45b5285719b0778a8891e76b4ed8f022100904de83bf05f242cf431f24b545d31a1368530b91fd31c323b674ee778e5440e:922c64590222798bb761d5b6d8e72950

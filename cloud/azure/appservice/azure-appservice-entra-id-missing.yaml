@@ -1,0 +1,55 @@
+id: azure-appservice-entra-id-missing
+info:
+  name: Azure App Service Microsoft Entra ID Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that registration with Microsoft Entra ID is enabled for Microsoft Azure App Service web applications so that your applications can connect to other Azure cloud services securely without the need of access credentials such as user names and passwords.
+  impact: |
+    If the Microsoft Entra ID is not configured, it could prevent secure and simplified access to cloud services, potentially leading to manual management of credentials and increased security risks.
+  remediation: |
+    Enable the Microsoft Entra ID for Azure App Services to ensure secure connectivity to other Azure services without manual credential handling.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppServiceData of iterate(template.appServiceList)) {
+    AppServiceData = JSON.parse(AppServiceData);
+    set("id", AppServiceData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{id:id}'
+
+    extractors:
+      - type: json
+        name: appServiceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp identity show --ids "$ids" --query 'principalId' --output json
+
+    matchers:
+      - type: word
+        part: all
+        words:
+          - ""
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have Microsoft Entra ID configured"'
+# digest: 490a0046304402200112f597f39d25460baec619aa0db72093af54e793f9e34ab68b0db1fe300ffe0220100bb2e6b64c9b73403942616a24587eb0a3205702f23c0dd0bac92247372ae5:922c64590222798bb761d5b6d8e72950

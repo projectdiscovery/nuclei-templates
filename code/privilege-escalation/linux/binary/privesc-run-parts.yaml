@@ -1,0 +1,48 @@
+id: privesc-run-parts
+
+info:
+  name: run-parts - Privilege Escalation
+  author: daffainfo
+  severity: high
+  description: |
+    The run-parts command in Linux is used to run all the executable files in a directory. It is commonly used for running scripts or commands located in a specific directory, such as system maintenance scripts in /etc/cron.daily. The run-parts command provides a convenient way to execute multiple scripts or commands in a batch manner.
+  reference: https://gtfobins.github.io/gtfobins/run-parts/
+  metadata:
+    verified: true
+    max-request: 3
+  tags: code,linux,run-parts,privesc,local
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      whoami
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      run-parts --new-session --regex 'whoami' /bin
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      sudo run-parts --new-session --regex 'whoami' /bin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "root"
+        negative: true
+
+      - type: dsl
+        dsl:
+          - 'contains(code_2_response, "root")'
+          - 'contains(code_3_response, "root")'
+        condition: or
+# digest: 4a0a0047304502203c27143ba06ddc09168f9b472e4bb6ebda812ba9bef6bfe56aa200aa59f8b96a022100a9c9bac8a191a714b64848b444f9100ccb89420961c5d53377e1278b3942e51a:922c64590222798bb761d5b6d8e72950

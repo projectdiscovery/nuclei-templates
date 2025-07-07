@@ -1,0 +1,57 @@
+id: azure-apim-tls-config-weak
+info:
+  name: Azure API Management Weak TLS Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure API Management API gateways are not configured to use weak and deprecated TLS protocols such as TLS 1.0 and TLS 1.1. Using outdated TLS versions can expose your APIs to exploits targeting flaws in these older protocols. Ensure API gateways use the latest supported TLS version.
+  impact: |
+    Using weak or deprecated TLS protocols can lead to security breaches, as these versions contain known vulnerabilities that are targets for exploits.
+  remediation: |
+    Update the Azure API Management gateway configurations to disable TLS 1.0 and TLS 1.1, ensuring only the latest TLS protocols are used. Refer to the Azure documentation on updating API gateway configurations.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-configure-protocols
+  tags: cloud,devops,azure,microsoft,api-management,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let GatewayData of iterate(template.gatewayList)) {
+    GatewayData = JSON.parse(GatewayData);
+    set("name", GatewayData.name);
+    set("resourceGroup", GatewayData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: gatewayList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim show --name "$name" --resource-group "$resourceGroup" --output json --query 'customProperties'
+
+    matchers:
+      - type: word
+        words:
+          - 'Ssl30": "True"'
+          - 'Tls10": "True"'
+          - 'Tls11": "True"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in resource group " + resourceGroup + " is configured with weak TLS protocols"'
+# digest: 4b0a0048304602210085676352b00c312712fa20f2e71e9f7cdb02a4de839a5d9edd48ba0b509fbffa0221008caa0d00af7c2cad3f4b9ab8ddfd7d7367fd89a7d060b397ecfb143ff8a0aee0:922c64590222798bb761d5b6d8e72950

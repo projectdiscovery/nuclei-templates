@@ -1,0 +1,51 @@
+id: s3-server-side-encryption
+info:
+  name: Server-Side Encryption on Amazon S3 Buckets
+  author: princechaddha
+  severity: high
+  description: |
+    This template verifies if Amazon S3 buckets have server-side encryption enabled for protecting sensitive content at rest, using either AWS S3-managed keys (SSE-S3) or AWS KMS-managed keys (SSE-KMS).
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/s3api/get-bucket-encryption.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,s3,aws-cloud-config
+
+flow: |
+  code(1)
+  for(let bucketName of iterate(template.buckets)){
+    set("bucket", bucketName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api list-buckets --query 'Buckets[*].Name'
+
+    extractors:
+      - type: json # type of the extractor
+        internal: true
+        name: buckets
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws s3api get-bucket-encryption --bucket $bucket
+
+    matchers:
+      - type: word
+        words:
+          - "ServerSideEncryptionConfigurationNotFoundError"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The S3 bucket " + bucket +" is not encrypted at rest"'
+# digest: 4b0a004830460221008d54485138a57d80518489a9e5691f926a8765f6f0dc9f30a52b2c49c9267029022100d1a778b27521d4b0d555051125edbafb190fb416d292d93afee189f7c6d25f1b:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,58 @@
+id: grafana-login-check
+
+info:
+  name: Grafana Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid login on self hosted Grafana instance.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  classification:
+    cpe: cpe:2.3:a:grafana:grafana:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"Grafana"
+    fofa-query: title="Grafana"
+    product: grafana
+    vendor: grafana
+  tags: self-hosted,creds-stuffing,login-check,grafana
+variables:
+  username: "{{username}}"
+  password: "{{password}}"
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        accept: application/json, text/plain, */*
+        DNT: 1
+        content-type: application/json
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/login
+        Cookie: redirect_to=%2F
+
+        {"user":"{{username}}","password":"{{password}}"}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Logged in'
+
+      - type: word
+        part: header
+        words:
+          - 'grafana_session'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022021f76d6564ec5720b0dc50faf41fe85e704f213c9ef3e6d9af0c5951bffeed60022100de2fc6968bb52effbd9c799c9fc06a98b351518f62050db0b4b27ec45927b9e3:922c64590222798bb761d5b6d8e72950

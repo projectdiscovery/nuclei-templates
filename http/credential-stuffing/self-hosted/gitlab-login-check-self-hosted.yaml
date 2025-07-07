@@ -1,0 +1,57 @@
+id: gitlab-login-check-self-hosted
+
+info:
+  name: Gitlab Login Check Self Hosted
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid login on self hosted GitLab instance.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 2
+    shodan-query: product:"GitLab Self-Managed"
+    fofa-query: product="GitLab"
+  tags: creds-stuffing,login-check,self-hosted,gitlab
+variables:
+  username: "{{username}}"
+  password: "{{password}}"
+
+http:
+  - raw:
+      - |
+        GET /users/sign_in HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /users/sign_in HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Origin: {{BaseURL}}
+        DNT: 1
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/users/sign_in
+        Accept-Language: en-US,en;q=0.9,de;q=0.8
+
+        authenticity_token={{url_encode(authenticity_token)}}&user%5Blogin%5D={{username}}&user%5Bpassword%5D={{password}}&user%5Bremember_me%5D=0
+
+    attack: pitchfork
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: authenticity_token
+        group: 1
+        regex:
+          - '"/users/sign_in".*?authenticity_token"\s+value="([^"]+)"'
+
+      - type: dsl
+        dsl:
+          - username
+          - password
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code_2 == 302
+          - '!contains(to_lower(body_2), "invalid login")'
+        condition: and
+# digest: 490a0046304402207cb3e8ce5b44ad4e1650be8abcfeca33b2c6b6b1a05006723f83c6dd68169027022026521d953b51580500b73a7e38244879e4f3ed02ec84eb50186537955a5e6aec:922c64590222798bb761d5b6d8e72950

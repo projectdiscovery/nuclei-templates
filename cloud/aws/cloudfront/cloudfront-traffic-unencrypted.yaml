@@ -1,0 +1,61 @@
+id: cloudfront-traffic-unencrypted
+
+info:
+  name: CloudFront Traffic To Origin Unencrypted
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that the communication between your Amazon CloudFront distributions and their custom origins is encrypted using HTTPS in order to secure the delivery of your web content and fulfill compliance requirements for encryption in transit.
+  impact: |
+    Unencrypted traffic between CloudFront and custom origins can expose sensitive data during transmission, leading to potential data breaches and non-compliance with encryption standards.
+  remediation: |
+    Ensure that all communications between your Amazon CloudFront distributions and custom origins are encrypted by configuring them to use HTTPS, thereby securing the delivery of web content and meeting compliance requirements for encryption in transit.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/cloudfront-traffic-to-origin-unencrypted.html
+    - http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/SecureConnections.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution --id $distribution --query 'Distribution.DistributionConfig.Origins.Items[*].CustomOriginConfig.OriginProtocolPolicy' --region $region --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"http-only"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFront " + distribution + " uses HTTP Only"'
+# digest: 4a0a00473045022100bfff3b1784cc0acf0fef51f467228b62784fcb9d9b3cd974296304ecbc5c95c70220728e3fd804a5f14282e58482febe903e75391471a5f25b9534ca99676f8965fc:922c64590222798bb761d5b6d8e72950

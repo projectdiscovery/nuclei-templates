@@ -1,0 +1,45 @@
+id: obsolete-ssh-version
+
+info:
+  name: Obsolete and less secure SSH Version
+  author: pussycat0x
+  severity: info
+  reference:
+    - https://nmap.org/nsedoc/scripts/sshv1.html
+  metadata:
+    max-request: 2
+    shodan-query: port:22
+  tags: enum,js,ssh,network
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port)
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      var response = c.ConnectSSHInfoMode(Host, Port);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "version == '1.0'"
+        condition: and
+
+    extractors:
+      - type: json
+        name: SSH Protocol Version
+        json:
+          - '.ServerID.ProtoVersion'
+
+      - type: json
+        internal: true
+        name: version
+        json:
+          - '.ServerID.ProtoVersion'
+# digest: 490a004630440220049b8408a8d07eb17911b00482d80515f940566d9e2313f31d7f1eeb59f5326702205674e5ed6dac032b741108d1becd305d1889dcb6c75f71246187768ef4a165eb:922c64590222798bb761d5b6d8e72950

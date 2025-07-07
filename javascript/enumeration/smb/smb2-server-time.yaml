@@ -1,0 +1,44 @@
+id: smb2-server-time
+
+info:
+  name: SMB2 Server Time - Detection
+  author: DhiyaneshDK
+  severity: info
+  description: |
+    Trying to retrieve the present date of the system along with the initiation date of an SMB2 server.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb2-time.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:445"
+    product: dionaea
+    vendor: dionaea
+  tags: js,network,smb,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ConnectSMBInfoMode(Host,Port);
+      var systemTime = new Date(response.NegotiationLog.SystemTime * 1000).toISOString();
+      var serverstartTime = new Date(response.NegotiationLog.ServerStartTime * 1000).toISOString();
+      var result = "SystemTime: " + systemTime + " ServerStartTime: " + serverstartTime;
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - success
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a00463044022066f6c210d58e0baa47b479cc34048fccd76369dd35b74f95150eb2902e457633022008ed12cf67e1e6f6ed4288138418e2294efe2c0412597181a233420408624383:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,41 @@
+id: checkpoint-firewall-enum
+
+info:
+  name: Check Point Firewall - Detect
+  author: pussycat0x
+  severity: info
+  reference:
+    - https://github.com/rapid7/metasploit-framework/blob/master/modules/auxiliary/gather/checkpoint_hostname.rb
+  metadata:
+    verfied: true
+    shodan-query: "product:\"Check Point Firewall\""
+    max-request: 1
+  tags: js,network,firewall,checkpoint,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      let prob = "\x51\x00\x00\x00\x00\x00\x00\x21\x00\x00\x00\x0bsecuremote\x00"
+      data = packet.Write(prob)
+      const c = require("nuclei/net");
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.Send(data);
+      let resp = conn.RecvFullString();
+      let regex = /CN=(.+),O=(.+?)\./i;
+      let match = resp.match(regex);
+      let fw_hostname = match[1];
+      let sc_hostname = match[2];
+      let result = (`Firewall Host: ${fw_hostname}, SmartCenter Host: ${sc_hostname}`);
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: 264
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100bb586562774751e434f75da697f2a70b2df08220b9ac8f9a01d7bf8448c12558022100dac3eb0cce646f3e4c2f5da4e000dc583b15c9d248a0f94ee944eea3fcc17f76:922c64590222798bb761d5b6d8e72950

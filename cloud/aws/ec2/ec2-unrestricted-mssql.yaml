@@ -1,0 +1,37 @@
+id: ec2-unrestricted-mssql
+info:
+  name: Unrestricted Access to SQL on EC2
+  author: princechaddha
+  severity: high
+  description: |
+    Identifies open inbound access to Microsoft SQL Server on Amazon EC2 instances. Checks for security groups allowing unrestricted access (0.0.0.0/0 or ::/0) on TCP port 1433, increasing risks to SQL databases.
+  impact: |
+    Unrestricted access on port 1433 exposes Microsoft SQL Server instances to potential unauthorized access, data breaches, and other security vulnerabilities.
+  remediation: |
+    Restrict inbound traffic on TCP port 1433 to known, secure IP addresses. Regularly review and update security group rules to maintain minimal access requirements.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=1433 Name=ip-permission.to-port,Values=1433 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 1433"'
+# digest: 4a0a0047304502207ded666fc36983291e9e29c80b8e8297ec07c665ddd8005bc147950394d3d4a40221008d507174957d0e8330d4754995635fca0436c15cedf6e81c91e00b40acd7050c:922c64590222798bb761d5b6d8e72950

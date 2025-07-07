@@ -1,0 +1,48 @@
+id: security-txt
+
+info:
+  name: security.txt File
+  author: bad5ect0r,noraj
+  severity: info
+  description: |
+    File similar to robots.txt but intended to be read by humans wishing to contact a website’s owner about security issues. Often defines a security policy and contact details.
+  reference:
+    - https://securitytxt.org/
+    - https://community.turgensec.com/security-txt-progress-in-ethical-security-research/
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.securitytxt:contact http.status:200
+  tags: miscellaneous,misc,generic
+
+http:
+  - method: GET
+    path:
+      - "{{RootURL}}/.well-known/security.txt"
+      - "{{RootURL}}/security.txt"
+
+    stop-at-first-match: true
+    redirects: true
+    max-redirects: 2
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Contact:"
+          - "Expires:"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - "len(body) <= 4096 && len(body) > 0"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '(?mi)Contact:(.*)'
+# digest: 490a0046304402207395e131b593b537bb508c8f7e2a964a42675dd258df15a5d44748419f7331500220765c15e50c8c61dfe39f4aaf9a1cdbb229840d0d60d2bfe9f9de32c49e55a7f9:922c64590222798bb761d5b6d8e72950

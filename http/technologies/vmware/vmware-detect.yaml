@@ -1,0 +1,62 @@
+id: vmware-detect
+
+info:
+  name: VMware Detection
+  author: elouhi
+  severity: info
+  description: Sends a POST request containing a SOAP payload to a vCenter server to obtain version information
+  reference:
+    - https://www.pwndefend.com/2021/09/23/exposed-vmware-vcenter-servers-around-the-world-cve-2021-22005/
+    - https://svn.nmap.org/nmap/scripts/vmware-version.nse
+  metadata:
+    max-request: 1
+  tags: tech,vcenter,vmware
+
+http:
+  - raw:
+      - |
+        POST /sdk/ HTTP/1.1
+        Host: {{Hostname}}
+
+        <?xml version="1.0" encoding="UTF-8"?>
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+           <soap:Header>
+              <operationID>00000001-00000001</operationID>
+           </soap:Header>
+           <soap:Body>
+              <RetrieveServiceContent xmlns="urn:internalvim25">
+                 <_this xsi:type="ManagedObjectReference" type="ServiceInstance">ServiceInstance</_this>
+              </RetrieveServiceContent>
+           </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - 'ha-folder-root'
+          - 'RetrieveServiceContentResponse'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "<name>(.*?)</name>"
+          - "<version>(.*?)</version>"
+          - "<build>(.*?)</build>"
+          - "<osType>(.*?)</osType>"
+          - "<productLineId>(.*?)</productLineId>"
+          - "<apiType>(.*?)</apiType>"
+# digest: 4a0a00473045022100a531d39f8c3f6d3c73ede07ee87640406e7414ecd75cfd8e58d884ea81008fb8022035d58495dc3621aa71ebe3bb8d798edd82eb7deef4f9970797a098fa1b97732a:922c64590222798bb761d5b6d8e72950

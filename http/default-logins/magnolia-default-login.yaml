@@ -1,0 +1,81 @@
+id: magnolia-default-login
+
+info:
+  name: Magnolia CMS Default Login - Detect
+  author: pussycat0x
+  severity: high
+  description: Magnolia CMS default login credentials were detected.
+  reference:
+    - https://www.magnolia-cms.com/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:magnolia-cms:magnolia_cms:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: html:"Magnolia is a registered trademark"
+    product: magnolia_cms
+    vendor: magnolia-cms
+  tags: magnolia,default-login
+
+http:
+  - raw:
+      - |
+        GET /.magnolia/admincentral HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /.magnolia/admincentral HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: csrf={{csrf}};JSESSIONID={{session}}
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}/.magnolia/admincentral
+
+        mgnlUserId={{username}}&mgnlUserPSWD={{password}}&csrf={{csrf}}
+      - |
+        GET /.magnolia/admincentral/PUSH?v-uiId=1 HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: csrf={{csrf}}; JSESSIONID={{session}}
+
+    payloads:
+      username:
+        - superuser
+      password:
+        - superuser
+    attack: pitchfork
+
+    extractors:
+      - type: kval
+        name: csrf
+        part: header
+        internal: true
+        kval:
+          - csrf
+
+      - type: kval
+        name: session
+        internal: true
+        part: header
+        kval:
+          - JSESSIONID
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - '"changes":'
+          - '"resources":'
+        condition: and
+
+      - type: word
+        part: header_3
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100c1fdcc9daad7b7262d8ec5ec2572a6d997487545e7e763118144859c5fbd7a3d0220725a5d7264180c7e57a23d94305da6a4db855271771fa8ad128b951c995188f2:922c64590222798bb761d5b6d8e72950

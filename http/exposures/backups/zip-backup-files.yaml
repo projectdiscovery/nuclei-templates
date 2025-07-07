@@ -1,0 +1,130 @@
+id: zip-backup-files
+
+info:
+  name: Compressed Backup File - Detect
+  author: toufik-airane,dwisiswant0,ffffffff0x,pwnhxl,mastercho
+  severity: medium
+  description: Multiple compressed backup files were detected.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1305
+  tags: exposure,backup
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{FILENAME}}.{{EXT}}"
+
+    attack: clusterbomb
+    payloads:
+      FILENAME:
+        - "{{FQDN}}" # www.example.com
+        - "{{RDN}}" #
+        - "{{DN}}" # example
+        - "{{SD}}" # www
+        - "{{date_time('%Y')}}" # 2023
+        - "ROOT" # tomcat
+        - "wwwroot"
+        - "htdocs"
+        - "www"
+        - "html"
+        - "web"
+        - "webapps"
+        - "public"
+        - "public_html"
+        - "uploads"
+        - "website"
+        - "api"
+        - "test"
+        - "app"
+        - "backup"
+        - "backup_1"
+        - "backup_2"
+        - "backup_3"
+        - "backup_4"
+        - "backups"
+        - "bin"
+        - "temp"
+        - "bak"
+        - "db"
+        - "sql"
+        - "dump"
+        - "database"
+        - "Release"
+        - "inetpub"
+        - "package"
+        - "tmp"
+        - "db"
+        - "data"
+        - "ftp"
+        - "output"
+        - "admin"
+        - "upload"
+        - "src"
+        - "conf/conf"
+        - "old"
+
+      EXT:
+        - "tar"
+        - "7z"
+        - "bz2"
+        - "gz"
+        - "lz"
+        - "rar"
+        - "tar.gz"
+        - "tar.bz2"
+        - "xz"
+        - "zip"
+        - "z"
+        - "Z"
+        - "tar.z"
+        - "tgz"
+        - "db"
+        - "jar"
+        - "sqlite"
+        - "sqlitedb"
+        - "sql.7z"
+        - "sql.bz2"
+        - "sql.gz"
+        - "sql.lz"
+        - "sql.rar"
+        - "sql.tar.gz"
+        - "sql.xz"
+        - "sql.zip"
+        - "sql.z"
+        - "sql.tar.z"
+        - "war"
+    max-size: 500 # Size in bytes - Max Size to read from server response
+
+    matchers-condition: and
+    matchers:
+      - type: binary
+        binary:
+          - "7573746172202000" # tar
+          - "7573746172003030" # tar
+          - "377ABCAF271C" # 7z
+          - "314159265359" # bz2
+          - "53514c69746520666f726d6174203300" # SQLite format 3.
+          - "1f8b" # gz tar.gz
+          - "526172211A0700" # rar RAR archive version 1.50
+          - "526172211A070100" # rar RAR archive version 5.0
+          - "FD377A585A0000" # xz tar.xz
+          - "1F9D" # z tar.z
+          - "1FA0" # z tar.z
+          - "4C5A4950" # lz
+          - "504B0304" # zip
+        condition: or
+        part: body
+
+      - type: regex
+        regex:
+          - "application/[-\\w.]+"
+        part: header
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008dff6ba959855da5423f8e72fa2def28b599f5a60f18c9965dfd267dba796acb022100a16ecc27c48a4768543d81c790157df741a714d8934ce71ccce47b5aa465f6ab:922c64590222798bb761d5b6d8e72950

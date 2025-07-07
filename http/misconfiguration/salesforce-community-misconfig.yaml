@@ -1,0 +1,55 @@
+id: salesforce-community-misconfig
+
+info:
+  name: Salesforce Community Misconfiguration
+  author: domwhewell-sage
+  severity: medium
+  description: |
+    A misconfigured Salesforce Community may lead to sensitive Salesforce data being exposed to anyone on the internet. Anonymous users can query objects that contain sensitive information such as customer lists, support cases, and employee email addresses.
+  reference:
+    - https://www.varonis.com/blog/abusing-salesforce-communities
+    - https://www.enumerated.de/index/salesforce
+  metadata:
+    verified: true
+    publicwww-query: sfsites
+  tags: aura,unauth,salesforce,exposure,misconfig
+
+variables:
+  actions: '{"actions":[{"id":"{{randstr}}","descriptor":"serviceComponent://ui.force.components.controllers.lists.selectableListDataProvider.SelectableListDataProviderController/ACTION$getItems","callingDescriptor":"UNKNOWN","params":{"entityNameOrId":"ContentDocument","layoutType":"FULL","pageSize":20,"currentPage":0,"useTimeout":false,"getCount":true,"enableRowActions":false}}]}'
+
+http:
+  - method: GET
+    path:
+      - "{{RootURL}}/s/"
+    redirects: true
+    max-redirects: 1
+
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
+
+    extractors:
+      - type: regex
+        name: aura_context
+        part: body
+        group: 1
+        regex:
+          - '\/s\/sfsites\/l\/([a-zA-Z0-9\-_~.%]+)\/[^\/]+\.js'
+        internal: true
+
+  - method: POST
+    path:
+      - "{{RootURL}}/s/sfsites/aura"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: |
+      message={{url_encode(actions)}}&aura.context={{aura_context}}&aura.token=null
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "recordTypeInfo"
+# digest: 490a00463044022033c245833c4c5e5957fc02934bbd369c0364744ce5b60059dc9edd18b95ca98302205be611f40a3ac6bd25166bb97dc83f09bb7b5f5a085311b4ce0154a0d639151f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,42 @@
+id: k8s-svc-acct-lookup-set
+
+info:
+  name: Ensure service-account-lookup set
+  author: princechaddha
+  severity: medium
+  description: Checks if the service-account-lookup argument is set to true in the API server configuration, which is essential for verifying service accounts against the stored secrets.
+  impact: |
+    Without the service-account-lookup argument set to true, the API server may not verify service accounts against stored secrets, potentially allowing unauthorized access.
+  remediation: |
+    Set the service-account-lookup argument to true in the API server's startup arguments or configuration file to ensure proper verification of service accounts.
+  reference:
+    - https://kubernetes.io/docs/admin/kube-apiserver/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "service-account-lookup=true"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+
+      - type: word
+        words:
+          - "service-account-lookup=true"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"API server configuration is missing the \"" + argument + "\" argument."'
+# digest: 4a0a00473045022100880d4b0ddc34b06c0b560b2e2d92022db55d209936cbe76a99bdc4ee3da823a90220288c9316fc2ee7ed8ca406b7f9946b39a9d533c2af4d78a763128fc581d16d2f:922c64590222798bb761d5b6d8e72950

