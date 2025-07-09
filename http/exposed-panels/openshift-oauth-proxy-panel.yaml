@@ -1,0 +1,42 @@
+id: openshift-oauth-proxy-panel
+
+info:
+  name: OpenShift OAuth Proxy - Panel Detect
+  author: r3dg33k
+  severity: info
+  description: |
+    Detects OpenShift OAuth Proxy login endpoints via `_oauth_proxy_csrf` or `_oauth_proxy` cookie and login page content. Checks both the default port and port 9001.
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: body="Openshift" && port="9001"
+  tags: openshift,redhat,detect,oauth,proxy,login
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{RootURL}}:9001"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "OpenShift"
+          - "Log in with"
+        condition: and
+
+      - type: regex
+        part: header
+        name: csrf-cookie-header
+        regex:
+          - "(?i)_oauth_proxy_csrf=[^;]+"
+          - "(?i)_oauth_proxy=[^;]*"
+
+      - type: status
+        status:
+          - 403
+# digest: 490a00463044022019247523d549ef2c699c3c1e1d41f9ec0fb092458aafed064c186d5aac6d00b8022077c70775706225121b20a6901b9ef7387a6bb3db799f1d6f8d27d902486f844f:922c64590222798bb761d5b6d8e72950
