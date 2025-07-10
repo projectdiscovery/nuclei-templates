@@ -1,0 +1,42 @@
+id: admin-account-rename
+
+info:
+  name: Administrator Account Rename Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the default Administrator account has been renamed to help prevent targeted brute-force attacks.
+  impact: |
+    Retaining the default Administrator account name gives attackers a predictable target for password guessing attempts on a privileged account.
+  remediation: |
+    Rename the Administrator account using Local Security Policy or the following command-line instruction:
+    > wmic UserAccount where Name="administrator" call Rename Name="NEW_NAME"
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: account-management,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      # Check SID ending with -500 (built-in Administrator)
+      $adminAccount = Get-LocalUser | Where-Object { $_.SID -like '*-500' }
+      if ($adminAccount.Name -eq 'Administrator') {
+          "ADMINISTRATOR_ACCOUNT_NOT_RENAMED"
+      } else {
+          "ADMINISTRATOR_ACCOUNT_RENAMED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "ADMINISTRATOR_ACCOUNT_NOT_RENAMED"
