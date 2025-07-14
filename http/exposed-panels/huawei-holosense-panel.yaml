@@ -1,0 +1,91 @@
+id: huawei-holosense-panel
+
+info:
+  name: Huawei HoloSens SDC - Panel
+  severity: info
+  author: darses
+  description: |
+    Detects login panel of Huawei HoloSens SDC, a software-based Internet of Things camera with a modern and high-quality appearance.
+  metadata:
+    max-requests: 3
+    vendor: huawei
+    product: holosense_sdc
+    shodan-query:
+      - "Server: SDC Server"
+    fofa-query:
+      - '"Server: SDC Server" && protocol="https"'
+  tags: detect,huawei,holosens
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "Server: SDC Server"
+          - "Server: WebServer/1.0.0"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "cmcc-login"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/cgi-bin/main.cgi"
+
+    body: |
+      action=LoginState&glToken=null&stChannelId=101&channelId=101&para=
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        internal: true
+        status:
+          - 200
+
+      - type: word
+        part: body
+        internal: true
+        words:
+          - "LOGIN_NORMAL"
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/cgi-bin/main.cgi"
+
+    body: |
+      action=WebTransterToRestLogout&url=GET+%2FSDCAPI%2FV1.0%2FCustomization%2FElement%0D%0A%0D%0A
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '"brand": "HoloSens SDC"'
+
+    extractors:
+      - type: json
+        name: version
+        json:
+          - .brandInfoObject.version
+
+      - type: json
+        name: model
+        json:
+          - .brandInfoObject.model
