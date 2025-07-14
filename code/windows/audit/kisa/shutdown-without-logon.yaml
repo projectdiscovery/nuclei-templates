@@ -1,0 +1,44 @@
+id: shutdown-without-logon
+
+info:
+  name: Shutdown Without Logon Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the "Shutdown Without Logon" policy is disabled by confirming that the ShutdownWithoutLogon registry value is set to 0. If enabled, the system permits shutdown from the logon screen, increasing the risk of unauthorized shutdowns.
+  impact: |
+    When enabled, this setting permits unauthorized users to shut down the system without logging in, which can lead to service interruptions.
+  remediation: |
+    Disable this policy by setting the ShutdownWithoutLogon registry value to 0 at:
+    - HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System
+    - Alternatively, configure the setting through the Local Security Policy.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: code,windows-audit,kisa,registry
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $regPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\policies\system"
+      $shutdownValue = (Get-ItemProperty -Path $regPath -Name ShutdownWithoutLogon -ErrorAction SilentlyContinue).ShutdownWithoutLogon
+      if ($shutdownValue -eq 0) {
+          "SHUTDOWN_WITHOUT_LOGON_DISABLED"
+      } else {
+          "SHUTDOWN_WITHOUT_LOGON_ENABLED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "SHUTDOWN_WITHOUT_LOGON_ENABLED"
+# digest: 4a0a00473045022018857656947f47ed923eb8d6a88640c2ac9b97657ddfe5469fa3bba48425626f022100e6f589dadc2638398601e3c32538720e816c66f368ae54cbfc6f52dccd2a0de6:922c64590222798bb761d5b6d8e72950
