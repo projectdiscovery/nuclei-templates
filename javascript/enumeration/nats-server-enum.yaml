@@ -1,0 +1,61 @@
+id: nats-server-enum
+
+info:
+  name: NATS Server - Enumeration
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects and extracts detailed information from NATS (Neural Autonomic Transport System) servers.
+    This template connects to NATS servers and retrieves server configuration details including
+    server ID, version, cluster information, authentication settings, and other server properties.
+    Useful for network enumeration and security assessment of NATS messaging infrastructure.
+  metadata:
+    verfied: true
+    shodan-query: product:"NATS Server"
+    max-request: 1
+  tags: js,network,nats,tcp,enum
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      let prob = "\n"
+      data = packet.Write(prob)
+      const c = require("nuclei/net");
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.Send(data);
+      let resp = conn.RecvFullString();
+
+      // Extract JSON from the response (between INFO and the error message)
+      let jsonStart = resp.indexOf('{');
+      let jsonEnd = resp.lastIndexOf('}') + 1;
+      let jsonStr = resp.substring(jsonStart, jsonEnd);
+
+      try {
+        let natsInfo = JSON.parse(jsonStr);
+        let formatted = `NATS Server: Server ID: ${natsInfo.server_id} Server Name: ${natsInfo.server_name} Version: ${natsInfo.version} Proto: ${natsInfo.proto} Git Commit: ${natsInfo.git_commit} Go: ${natsInfo.go} Host: ${natsInfo.host} Port: ${natsInfo.port} Headers: ${natsInfo.headers} Auth Required: ${natsInfo.auth_required} Max Payload: ${natsInfo.max_payload} Jetstream: ${natsInfo.jetstream} Client ID: ${natsInfo.client_id} Client IP: ${natsInfo.ip} Cluster: ${natsInfo.cluster} Domain: ${natsInfo.domain}`;
+
+        if (natsInfo.compression) {
+          formatted += ` Compression: ${natsInfo.compression}`;
+        }
+        if (natsInfo.info_on_connect) {
+          formatted += ` Info On Connect: ${natsInfo.info_on_connect}`;
+        }
+        if (natsInfo.leafnode_urls && natsInfo.leafnode_urls.length > 0) {
+          formatted += ` Leafnode URLs: ${natsInfo.leafnode_urls.join(', ')}`;
+        }
+
+        formatted;
+      } catch (e) {
+        resp; // Return original response if JSON parsing fails
+      }
+
+    args:
+      Host: "{{Host}}"
+      Port: 80
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
