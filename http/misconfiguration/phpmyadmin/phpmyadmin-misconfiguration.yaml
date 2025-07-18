@@ -25,24 +25,61 @@ info:
       - title="phpmyadmin"
   tags: phpmyadmin,misconfig,edb
 
+flow: http(1) || http(2)
+
 http:
   - method: GET
     path:
       - "{{BaseURL}}/phpmyadmin/index.php?db=information_schema"
-      - "{{BaseURL}}/phpMyAdmin/index.php?db=information_schema"
 
-    stop-at-first-match: true
-    matchers-condition: or
+    matchers-condition: and
     matchers:
+      - type: status
+        internal: true
+        status:
+          - 200
+
       - type: word
+        internal: true
+        part: body
         words:
           - "var db    = 'information_schema';"
           - "var opendb_url = 'db_structure.php';"
         condition: and
 
       - type: word
+        internal: true  
+        part: body
+        words:
+          - 'name="login_form"'
+          - 'id="input_username"'
+        negative: true
+        condition: or
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/phpMyAdmin/index.php?db=information_schema"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        internal: true
+        status:
+          - 200
+
+      - type: word
+        part: body
+        internal: true
+        condition: and
         words:
           - "db:\"information_schema\""
           - "opendb_url:\"db_structure.php\""
-        condition: and
-# digest: 4a0a004730450221009c0e482e65a7c3c2ba3771988b75961e43ba1cf9832c39b3aac3eea88d9ab279022018def7a3eda69f26b9417adfb24ef5c5e9fac5f607ac71495bea58d431691029:922c64590222798bb761d5b6d8e72950
+
+      - type: word
+        internal: true
+        part: body
+        words:
+          - 'name="login_form"'
+          - 'id="input_username"'
+        negative: true
+        condition: or
