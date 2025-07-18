@@ -1,0 +1,64 @@
+id: aws-ec2-cname-takeover
+
+info:
+  name: AWS EC2 CNAME Subdomain Takeover Detection
+  author: DDFRANKLIN
+  severity: medium
+  description: |
+    Detects subdomains that explicitly CNAME to AWS EC2 public DNS hostnames
+    (e.g., ec2-xx-xx-xx-xx.compute.amazonaws.com), and where the target appears
+    unclaimed or inactive — a potential subdomain takeover scenario.
+  reference:
+    - https://docs.projectdiscovery.io
+    - https://github.com/EdOverflow/can-i-take-over-xyz
+  tags: takeover,aws,ec2,cname,subdomain
+
+dns:
+  - name: "{{FQDN}}"
+    type: CNAME
+    class: inet
+    retries: 3
+    matchers:
+      - type: regex
+        part: answer
+        regex:
+          - "ec2-[0-9a-z-]+\\.compute(-[0-9a-z-]+)?\\.amazonaws\\.com"
+
+    extractors:
+      - type: regex
+        part: answer
+        regex:
+          - "(ec2-[0-9a-z-]+\\.compute(-[0-9a-z-]+)?\\.amazonaws\\.com)"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: or
+    matchers:
+      - type: word
+        words:
+          - "Sorry, we couldn't find that page"
+          - "404 Not Found"
+          - "No such host is known"
+          - "This request could not be fulfilled"
+        condition: or
+
+      - type: status
+        status:
+          - 404
+          - 400
+
+      - type: regex
+        regex:
+          - "The server at .* is taking too long to respond"
+          - "Name or service not known"
+          - "Connection refused"
+
+    extractors:
+      - type: regex
+        regex:
+          - "ec2-[0-9a-z-]+\\.compute(-[0-9a-z-]+)?\\.amazonaws\\.com"
