@@ -1,0 +1,39 @@
+id: graphql-directive-overloading
+
+info:
+  name: GraphQL Directive Overloading Detection
+  author: shamo0
+  severity: info
+  description: |
+    This template detects directive overloading in GraphQL queries, which can lead to denial of service by allowing multiple duplicated directives in a single query.
+  tags: graphql,denial-of-service
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "query": "query { __typename @aa @aa @aa @aa @aa @aa @aa @aa @aa @aa }"
+        }
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "\\\"errors\\\":\\s*\\[.*?\\]"
+      - type: regex
+        part: body
+        regex:
+          - "\\\"message\\\":\\s*\\\".*?@aa.*?\\\""
+
+    extractors:
+      - type: regex
+        name: directive_errors
+        part: body
+        regex:
+          - "\\\"errors\\\":\\s*\\[.*?\\]"
