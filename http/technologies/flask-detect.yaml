@@ -1,0 +1,59 @@
+id: flask-detect
+
+info:
+  name: Flask Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Flask is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    max-request: 8
+    shodan-query: http.component:"Flask"
+  tags: flask,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/index.php"
+      - "{{BaseURL}}/static/"
+      - "{{BaseURL}}/flask/"
+      - "{{BaseURL}}/health/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Flask"
+          - "Powered by Flask"
+          - "flask.palletsprojects.com"
+          - "X-Powered-By-Flask"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 403
+          - 404
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Flask ([0-9.]+)'
+          - 'Powered by Flask ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: flask_id
+        regex:
+          - 'flask-site-id=([a-z0-9]+)'
+          - 'flask\.palletsprojects\.com/([^/]+)'
