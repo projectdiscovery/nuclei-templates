@@ -1,0 +1,79 @@
+id: rds-removal-check
+
+info:
+  name: RDS Removal Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure that Remote Data Services (RDS) are either removed or not configured to reduce the risk of denial-of-service attacks or remote execution of administrative commands.
+    Compliance is met if any of the following conditions are true:
+    - IIS is not installed or in use,
+    - The default website does not include the /msadc virtual directory, or
+    - The relevant ADCLaunch registry keys associated with RDS are not present.
+  impact: |
+    Improperly configured RDS can be exploited by attackers to execute remote code or launch denial-of-service attacks.
+  remediation: |
+    To mitigate RDS-related risks, take the following actions:
+      - Remove the /msadc virtual directory from the default website.
+      - Delete these registry keys:
+        - HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters\ADCLaunch\RDSServer.DataFactory
+        - HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters\ADCLaunch\AdvancedDataFactory
+        - HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters\ADCLaunch\VbBusObj.VbBusObjCls
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: rds,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+
+    engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+
+    pattern: "*.ps1"
+
+    source: |
+      # Check if IIS (W3SVC) service is present; if not, IIS is not used and RDS is implicitly compliant.
+      $iisService = Get-Service -Name W3SVC -ErrorAction SilentlyContinue
+      if (-not $iisService) {
+          Write-Output "RDS_COMPLIANT"
+          exit
+      }
+      # Check for the existence of the /msadc virtual directory in the Default Web Site.
+      $msadcExists = $false
+      try {
+          Import-Module WebAdministration -ErrorAction SilentlyContinue
+          $vdirs = Get-WebVirtualDirectory -Site "Default Web Site" -ErrorAction SilentlyContinue
+          if ($vdirs) {
+              foreach ($vdir in $vdirs) {
+                  if ($vdir.Path -eq "/msadc") {
+                      $msadcExists = $true
+                      break
+                  }
+              }
+          }
+      } catch {}
+      # Check for ADCLaunch registry keys related to RDS.
+      $adcLaunchPath = "HKLM:\SYSTEM\CurrentControlSet\Services\W3SVC\Parameters\ADCLaunch"
+      $rdServerExists = Test-Path "$adcLaunchPath\RDSServer.DataFactory"
+      $advDataExists = Test-Path "$adcLaunchPath\AdvancedDataFactory"
+      $vbBusObjExists = Test-Path "$adcLaunchPath\VbBusObj.VbBusObjCls"
+      # Compliance is achieved if the /msadc virtual directory does not exist OR none of the registry keys exist.
+      if ((-not $msadcExists) -or (-not ($rdServerExists -or $advDataExists -or $vbBusObjExists))) {
+          Write-Output "RDS_COMPLIANT"
+      } else {
+          Write-Output "RDS_VULNERABLE"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "RDS_VULNERABLE"
+# digest: 490a00463044022040fa4e2daa7a86c4a99e9e8b693567504a71bc593b6b90852043b263b37c438a0220309aa44e82609268e6f6d529ef3354fde78cfc0580b52f24eb03f9ef1539770e:922c64590222798bb761d5b6d8e72950
