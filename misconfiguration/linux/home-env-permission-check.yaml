@@ -1,0 +1,40 @@
+id: home-env-permission-check
+
+info:
+  name: User Home Directory and Shell Environment File Ownership & Permission Check
+  author: songyaeji
+  severity: medium
+  description: >
+    If shell startup and environment files (e.g. .bashrc, .bash_profile, .bash_logout) are not owned by the user or root,
+    or have insecure write permissions, malicious users can manipulate environment variables or inject malicious commands.
+  tags: linux,local,permissions,home,shell,compliance
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  metadata:
+    os: linux
+    verified: true
+    max-request: 1
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      for user in $(awk -F: '$6 ~ /^\/home/ {print $1}' /etc/passwd); do
+        HOME_DIR=$(eval echo ~$user)
+        find "$HOME_DIR" -maxdepth 1 -type f \( -name ".bashrc" -o -name ".bash_profile" -o -name ".bash_logout" \) -exec ls -l {} \;
+      done
+    matchers:
+      - type: regex
+        name: insecure-perms
+        part: code_1_response
+        regex:
+          - "^-..w..w..w"
+          - "^-.{2}w.{2}w.{2}w"
+      - type: negative-word
+        name: not-owned-by-user
+        words:
+          - "root"
+        part: code_1_response
