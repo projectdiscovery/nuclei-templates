@@ -1,0 +1,32 @@
+id: suid-sgid-stickybit-check
+
+info:
+  name: SUID/SGID/Sticky Bit Permission Check on Root-Owned Files
+  author: songyaeji
+  severity: high
+  description: >
+    Files with SUID or SGID bits owned by root may lead to privilege escalation if improperly set.
+    This template detects files with suspicious SUID/SGID permissions and flags them for review.
+  tags: linux,permission,misconfiguration,compliance,filesystem,local
+  reference:
+    - https://isms.kisa.or.kr
+    - CIS Benchmark - Linux File Permissions
+  metadata:
+    os: linux
+    verified: true
+    max-request: 1
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      find / -user root -type f \( -perm -4000 -o -perm -2000 \) -exec ls -lg {} \; 2>/dev/null | head -n 10
+    matchers:
+      - type: word
+        words:
+          - "r-s"
+          - "rws"
+        part: code_1_response
+        condition: or
