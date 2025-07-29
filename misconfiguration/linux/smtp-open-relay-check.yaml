@@ -1,0 +1,62 @@
+id: smtp-open-relay-check
+
+info:
+  name: Linux SMTP Open Relay Configuration Check (Sendmail/Postfix)
+  author: songyaeji
+  severity: high
+  description: >
+    If the SMTP server does not restrict mail relaying, attackers may exploit it to use the mail server for spam or denial-of-service (DoS) attacks.
+    This template checks whether sendmail and postfix are configured to deny unauthorized relay attempts.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,smtp,sendmail,postfix,misconfiguration,relay
+  metadata:
+    verified: true
+    os: linux
+    max-request: 2
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-305
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      if ps -ef | grep -v grep | grep -q sendmail; then
+        if grep -q 'R\$.\* \$#error \$@ 5.7.1 \$: "550 Relaying denied"' /etc/mail/sendmail.cf 2>/dev/null; then
+          echo "[SAFE] Sendmail relay restriction is configured."
+        else
+          echo "[VULNERABLE] Sendmail relay restriction is missing."
+        fi
+      else
+        echo "[INFO] Sendmail is not active."
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[VULNERABLE] Sendmail relay restriction is missing."
+
+  - engine:
+      - bash
+    source: |
+      if systemctl is-active postfix | grep -q running; then
+        mynetworks=$(grep -E '^\s*mynetworks\s*=' /etc/postfix/main.cf 2>/dev/null)
+        relay_restrict=$(grep -E '^\s*smtpd_relay_restrictions\s*=.*permit_mynetworks' /etc/postfix/main.cf 2>/dev/null)
+        if [[ -z "$mynetworks" || -z "$relay_restrict" ]]; then
+          echo "[VULNERABLE] Postfix relay restrictions are missing or misconfigured."
+        else
+          echo "[SAFE] Postfix relay restrictions are properly configured."
+        fi
+      else
+        echo "[INFO] Postfix is not active."
+      fi
+    matchers:
+      - type: word
+        part: code_2_response
+        words:
+          - "[VULNERABLE] Postfix relay restrictions are missing or misconfigured."

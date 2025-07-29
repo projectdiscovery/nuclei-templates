@@ -1,0 +1,51 @@
+id: linux-r-command-services-disabled
+
+info:
+  name: r-command Services Disabled (rlogin, rsh, rexec)
+  author: songyaeji
+  severity: high
+  description: >
+    If r-command services (rlogin, rsh, rexec) are enabled, unauthorized users may access or extract sensitive information,
+    or disrupt the system through open ports. These legacy services should be disabled unless explicitly required.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,misconfiguration,rlogin,rsh,rexec,xinetd
+  metadata:
+    verified: true
+    os: linux
+    category: configuration
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-284
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      rlogin_check=$(grep -i 'disable[[:space:]]*=[[:space:]]*no' /etc/xinetd.d/rlogin 2>/dev/null)
+      rsh_check=$(grep -i 'disable[[:space:]]*=[[:space:]]*no' /etc/xinetd.d/rsh 2>/dev/null)
+      rexec_check=$(grep -i 'disable[[:space:]]*=[[:space:]]*no' /etc/xinetd.d/rexec 2>/dev/null)
+
+      if [ -n "$rlogin_check" ]; then
+        echo "[VULNERABLE] rlogin service is enabled"
+      fi
+      if [ -n "$rsh_check" ]; then
+        echo "[VULNERABLE] rsh service is enabled"
+      fi
+      if [ -n "$rexec_check" ]; then
+        echo "[VULNERABLE] rexec service is enabled"
+      fi
+
+      if [ -z "$rlogin_check" ] && [ -z "$rsh_check" ] && [ -z "$rexec_check" ]; then
+        echo "[SAFE] All r-command services are properly disabled"
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"

@@ -1,0 +1,45 @@
+id: dns-bind-version-patch
+
+info:
+  name: BIND DNS Version - Security Patch Check
+  author: songyaeji
+  severity: high
+  description: >
+    Older versions of the BIND DNS server may contain vulnerabilities such as Service Denial Attacks,
+    Buffer Overflows, and remote code execution risks. This template checks if the BIND service (named) is running
+    and retrieves its version to determine whether security patches have been applied.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,dns,bind,patch,misconfiguration,local
+  metadata:
+    verified: true
+    os: linux
+    max-request: 2
+  classification:
+    cvss-metrics: CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-1104
+
+self-contained: true
+code:
+  - engine:
+      - bash
+    source: |
+      ps -ef | grep named | grep -v grep || echo "named-not-running"
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "named"
+        condition: contains
+
+  - engine:
+      - bash
+    source: |
+      named -v 2>/dev/null || echo "version-not-found"
+    matchers:
+      - type: regex
+        part: code_2_response
+        regex:
+          - "BIND\\s+([0-9]+\\.[0-9]+\\.[0-9]+)"

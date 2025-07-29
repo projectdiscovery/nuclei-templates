@@ -1,0 +1,44 @@
+id: linux-xinetd-finger-disabled
+
+info:
+  name: Linux Finger Service Disabled - xinetd Misconfiguration
+  author: songyaeji
+  severity: high
+  description: >
+    If the Finger service is enabled, it may expose user information to unauthorized users,
+    leading to potential password-based attacks. This template checks whether the Finger
+    service is properly disabled by inspecting the 'disable' directive in /etc/xinetd.d/finger.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,finger,xinetd,misconfiguration,local
+  metadata:
+    os: linux
+    category: configuration
+    verified: true
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.5
+    cwe-id: CWE-200
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      if [ -f /etc/xinetd.d/finger ]; then
+        disable_status=$(grep -i 'disable' /etc/xinetd.d/finger | grep -v '^#' | awk -F '=' '{print $2}' | xargs)
+        if [ "$disable_status" = "no" ]; then
+          echo "[VULNERABLE] Finger service is enabled (disable = no)"
+        else
+          echo "[SAFE] Finger service is disabled"
+        fi
+      else
+        echo "[SAFE] /etc/xinetd.d/finger does not exist"
+      fi
+
+    matchers:
+      - type: word
+        words:
+          - "[VULNERABLE] Finger service is enabled"
