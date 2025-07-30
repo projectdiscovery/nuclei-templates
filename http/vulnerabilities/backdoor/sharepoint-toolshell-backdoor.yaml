@@ -1,0 +1,39 @@
+id: sharepoint-toolshell-backdoor
+
+info:
+  name: SharePoint Webshell - ToolShell
+  author: johnk3r
+  severity: critical
+  description: |
+    Detects a persistent webshell named 'spinstall0.aspx' deployed on Microsoft SharePoint servers.
+    This file exposes sensitive cryptographic machineKey values from the SharePoint configuration,
+    indicating the presence of a ToolShell backdoor implant. This implant is linked to targeted
+    post-auth RCE campaigns exploiting CVE-2025-53770.
+  reference:
+    - https://research.eye.security/sharepoint-under-siege/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.component:"Sharepoint"
+  tags: sharepoint,webshell,implant,aspx,backdoor
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_layouts/15/spinstall0.aspx"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(body) <= 160'
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "microsoftsharepointteamservices")'
+          - 'contains_all(to_lower(body), "hmacsha256", "framework20sp1", "auto")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: machinekey
+        regex:
+          - '^[A-Z0-9]{64}\|HMACSHA256\|[A-Z0-9]{64}\|Auto\|Framework20SP1$'
+# digest: 4b0a00483046022100fcbeecc1610ccf8ed35f6e1eb8133382709b829f88db2bc4ee642d0f00fee868022100e38b9517ea2991aacdd261a328ddb4f82cd091c1265600e06842d80e64bc7b3a:922c64590222798bb761d5b6d8e72950
