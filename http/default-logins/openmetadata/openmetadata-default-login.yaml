@@ -1,0 +1,52 @@
+id: openmetadata-default-login
+
+info:
+  name: OpenMetadata - Default Login
+  author: icarot
+  severity: high
+  description: |
+    OpenMetadata server enables default admin credentials. An attacker can execute unauthorized operations.
+  reference:
+    - https://github.com/open-metadata/OpenMetadata
+  classification:
+    cpe: cpe:2.3:a:open-metadata:openmetadata:1.7.0:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    vendor: open-metadata
+    product: openmetadata
+    fofa-query: title="OpenMetadata"
+    shodan-query: title:"OpenMetadata"
+  tags: openmetadata,default-login,misconfig
+
+variables:
+  username: admin@open-metadata.org
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /api/v1/users/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"email":"{{username}}","password": "{{base64("{{password}}")}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"accessToken":'
+          - '"refreshToken":'
+          - '"expiryDuration":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 490a00463044022006f0eae19ec69d68b00b0c786957045c7461ac7ba6a910651f3f4647c1c9bed8022056ff00dfad16f9afeafe66119e7415e1ba2b4d31e63e8507c1e5e770550fca69:922c64590222798bb761d5b6d8e72950
