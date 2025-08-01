@@ -1,0 +1,40 @@
+id: account-lockout-threshold-not-configured
+
+info:
+  name: Linux Account Lockout Threshold Not Configured
+  author: songyaeji
+  severity: high
+  description: >
+    The system does not enforce an account lockout threshold. Without this control,
+    repeated login attempts are not restricted, leaving the system vulnerable to brute-force attacks.
+    This template checks whether account lockout settings are configured in PAM modules.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,local,pam,auth,misconfiguration,compliance
+  metadata:
+    verified: true
+    os: linux
+    max-request: 3
+  classification:
+    cwe-id: CWE-307
+    cvss-metrics: CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 5.5
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      grep -E 'pam_tally2.so|pam_faillock.so' /etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/common-auth 2>/dev/null || echo "no-lockout-config"
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "no-lockout-config"
+      - type: regex
+        part: code_1_response
+        regex:
+          - 'pam_tally2.so(?!.*deny=)'
+          - 'pam_faillock.so(?!.*deny=)'

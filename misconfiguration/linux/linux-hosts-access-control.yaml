@@ -1,0 +1,43 @@
+id: linux-hosts-access-control
+
+info:
+  name: Check TCP Wrapper IP-based access control configuration
+  author: songyaeji
+  severity: high
+  description: >
+    Detects if IP and port restrictions are properly applied using TCP Wrapper (/etc/hosts.allow and /etc/hosts.deny).
+    If unrestricted, systems are vulnerable to unauthorized remote access (e.g. Telnet, RSH, SSH).
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,local,misconfig,access-control,tcpwrapper,ssh
+  metadata:
+    verified: true
+    os: linux
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-284
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      echo "[*] Checking /etc/hosts.deny"
+      if grep -q "^ALL:ALL" /etc/hosts.deny; then
+        echo "[OK] /etc/hosts.deny has ALL:ALL policy"
+      else
+        echo "[WARN] /etc/hosts.deny is missing ALL:ALL (default deny)"
+      fi
+
+      echo "[*] Checking sshd allow policy in /etc/hosts.allow"
+      grep -Ei "sshd" /etc/hosts.allow || echo "[WARN] No sshd-specific allow policy found"
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "/etc/hosts.deny"
+          - "/etc/hosts.allow"

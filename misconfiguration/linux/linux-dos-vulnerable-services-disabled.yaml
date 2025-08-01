@@ -1,0 +1,45 @@
+id: linux-dos-vulnerable-services-disabled
+
+info:
+  name: DoS Vulnerable Services Disabled (echo, discard, daytime, chargen)
+  author: songyaeji
+  severity: high
+  description: >
+    If services such as echo, discard, daytime, and chargen are enabled on the system, 
+    attackers may exploit them to extract system information or launch denial-of-service (DoS) attacks. 
+    These legacy services should be disabled if not explicitly required.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,misconfiguration,xinetd,DoS,legacy
+  metadata:
+    verified: true
+    os: linux
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H
+    cvss-score: 5.5
+    cwe-id: CWE-284
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      vulnerable=""
+      for svc in echo discard daytime chargen; do
+        if grep -iq 'disable[[:space:]]*=[[:space:]]*no' "/etc/xinetd.d/$svc" 2>/dev/null; then
+          echo "[VULNERABLE] $svc service is enabled in /etc/xinetd.d/$svc"
+          vulnerable="yes"
+        fi
+      done
+
+      if [ -z "$vulnerable" ]; then
+        echo "[SAFE] All DoS-related services are properly disabled"
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"

@@ -1,0 +1,50 @@
+id: linux-rhosts-hostsequiv-check
+
+info:
+  name: Detect presence or misconfiguration of .rhosts and hosts.equiv
+  author: songyaeji
+  severity: high
+  description: >
+    Presence or misconfiguration of .rhosts or /etc/hosts.equiv files can allow unauthorized remote command execution (rlogin, rsh).
+    This template detects existence and improper permissions or unsafe "+" usage in these files.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+    - https://linux.die.net/man/5/hosts.equiv
+  tags: linux,local,misconfig,rhosts,compliance
+  metadata:
+    verified: true
+    os: linux
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-732
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      # Check if /etc/hosts.equiv exists
+      if [ -f /etc/hosts.equiv ]; then
+        echo "[FOUND] /etc/hosts.equiv exists"
+        ls -l /etc/hosts.equiv
+        echo "[CONTENT]"
+        cat /etc/hosts.equiv
+      fi
+
+      # Check if any .rhosts files exist under home directories
+      find /home -maxdepth 2 -name ".rhosts" 2>/dev/null | while read rhost; do
+        echo "[FOUND] $rhost"
+        ls -l "$rhost"
+        echo "[CONTENT]"
+        cat "$rhost"
+      done
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "/etc/hosts.equiv"
+          - ".rhosts"

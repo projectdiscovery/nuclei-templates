@@ -1,0 +1,57 @@
+id: linux-cron-file-permissions
+
+info:
+  name: Cron File Ownership and Permissions Check
+  author: songyaeji
+  severity: high
+  description: >
+    Checks whether /etc/cron.allow and /etc/cron.deny files have proper ownership (root)
+    and permission (640). Misconfigured cron access files may allow unauthorized users
+    to schedule cron jobs, which could result in system compromise or denial of service.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,cron,permissions,misconfiguration,local
+  metadata:
+    verified: true
+    os: linux
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-732
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      result=""
+      if [ -f /etc/cron.allow ]; then
+        owner=$(stat -c "%U" /etc/cron.allow)
+        perm=$(stat -c "%a" /etc/cron.allow)
+        if [ "$owner" != "root" ] || [ "$perm" -gt 640 ]; then
+          result+="[WARN] /etc/cron.allow misconfigured\n"
+        fi
+      fi
+
+      if [ -f /etc/cron.deny ]; then
+        owner=$(stat -c "%U" /etc/cron.deny)
+        perm=$(stat -c "%a" /etc/cron.deny)
+        if [ "$owner" != "root" ] || [ "$perm" -gt 640 ]; then
+          result+="[WARN] /etc/cron.deny misconfigured\n"
+        fi
+      fi
+
+      if [ -n "$result" ]; then
+        echo -e "$result"
+      else
+        echo "[OK] cron files properly configured"
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[WARN] /etc/cron.allow misconfigured"
+          - "[WARN] /etc/cron.deny misconfigured"
