@@ -48,18 +48,18 @@ Nuclei 模板
 
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2877 | dhiyaneshdk   |  1477 | http       |  8219 | info     |  3948 | file |   404 |
-| panel     |  1246 | daffainfo     |   866 | file       |   404 | high     |  2135 | dns  |    25 |
-| wordpress |  1072 | dwisiswant0   |   803 | cloud      |   370 | medium   |  1840 |      |       |
-| exposure  |  1006 | princechaddha |   570 | workflows  |   192 | critical |  1197 |      |       |
-| xss       |   987 | ritikchaddha  |   496 | code       |   157 | low      |   287 |      |       |
-| wp-plugin |   936 | pussycat0x    |   453 | network    |   138 | unknown  |    43 |      |       |
-| osint     |   807 | pikpikcu      |   353 | javascript |    65 |          |       |      |       |
-| tech      |   745 | pdteam        |   302 | ssl        |    30 |          |       |      |       |
-| lfi       |   727 | ricardomaia   |   245 | dast       |    26 |          |       |      |       |
-| misconfig |   720 | geeknik       |   231 | dns        |    22 |          |       |      |       |
+| cve       |  3275 | dhiyaneshdk   |  1877 | http       |  8913 | info     |  4154 | file |   435 |
+| panel     |  1338 | daffainfo     |   868 | cloud      |   657 | high     |  2439 | dns  |    26 |
+| xss       |  1255 | princechaddha |   826 | file       |   435 | medium   |  2374 |      |       |
+| wordpress |  1180 | dwisiswant0   |   806 | dast       |   255 | critical |  1418 |      |       |
+| exposure  |  1105 | ritikchaddha  |   648 | workflows  |   202 | low      |   318 |      |       |
+| wp-plugin |  1031 | pussycat0x    |   529 | code       |   198 | unknown  |    56 |      |       |
+| osint     |   813 | pikpikcu      |   352 | network    |   145 |          |       |      |       |
+| tech      |   800 | pdteam        |   310 | javascript |    71 |          |       |      |       |
+| rce       |   783 | pdresearch    |   267 | ssl        |    38 |          |       |      |       |
+| lfi       |   775 | iamnoooob     |   256 | dns        |    23 |          |       |      |       |
 
-**743 directories, 9960 files**.
+**847 directories, 11287 files**.
 
 </td>
 </tr>
