@@ -18,6 +18,15 @@ if __name__ == "__main__":
 	template = eval(open(".github/scripts/README.tmpl", "r").read())
 
 	print(template)
+	
+	# Update main README.md
 	f = open("README.md", "w")
 	f.write(template)
 	f.close()
+	
+	# Update localized README files
+	readme_files = glob.glob("README_*.md")
+	for readme_file in readme_files:
+		f = open(readme_file, "w")
+		f.write(template)
+		f.close()
