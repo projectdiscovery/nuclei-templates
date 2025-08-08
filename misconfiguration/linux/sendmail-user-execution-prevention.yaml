@@ -15,7 +15,7 @@ info:
   metadata:
     verified: true
     os: linux
-    max-request: 3
+    max-request: 1
   classification:
     cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
     cvss-score: 5.5
@@ -27,30 +27,34 @@ code:
   - engine:
       - bash
     source: |
-      grep -i restrictqrun /etc/mail/sendmail.cf 2>/dev/null || echo "[MISSING] restrictqrun not found in sendmail.cf"
+      VULN=0
+
+      if ! grep -qi 'restrictqrun' /etc/mail/sendmail.cf 2>/dev/null; then
+        echo "[VULNERABLE] sendmail.cf missing 'restrictqrun'"
+        VULN=1
+      fi
+
+      if [ -x /usr/sbin/postfix ]; then
+        PERM="$(stat -c '%A' /usr/sbin/postfix 2>/dev/null || echo '')"
+        if [ "$PERM" != "-rwxr-x---" ]; then
+          echo "[VULNERABLE] /usr/sbin/postfix permission is '$PERM' (expected -rwxr-x---)"
+          VULN=1
+        fi
+      else
+        :
+      fi
+
+      if getent group postfix >/dev/null 2>&1; then
+        MEMBERS="$(getent group postfix | awk -F ':' '{print $4}')"
+        echo "$MEMBERS" | grep -qw root || { echo "[VULNERABLE] 'root' not in 'postfix' group"; VULN=1; }
+      else
+        :
+      fi
+
+      if [ "$VULN" -eq 0 ]; then
+        echo "[SAFE] sendmail/postfix execution restrictions look OK"
+      fi
     matchers:
       - type: word
-        part: code_1_response
         words:
-          - "restrictqrun"
-        condition: contains
-
-  - engine:
-      - bash
-    source: |
-      stat -c "%A" /usr/sbin/postfix 2>/dev/null
-    matchers:
-      - type: regex
-        part: code_2_response
-        regex:
-          - "^-rwxr-x---"
-
-  - engine:
-      - bash
-    source: |
-      getent group postfix | awk -F ':' '{print $4}' | grep -qw root || echo "[MISSING] root not in postfix group"
-    matchers:
-      - type: word
-        part: code_3_response
-        words:
-          - "root"
+          - "[VULNERABLE]"

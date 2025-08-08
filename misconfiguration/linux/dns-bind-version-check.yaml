@@ -22,17 +22,21 @@ info:
     cwe-id: CWE-1104
 
 self-contained: true
+
 code:
   - engine:
       - bash
     source: |
-      ps -ef | grep named | grep -v grep || echo "named-not-running"
+      if pgrep -x named >/dev/null 2>&1; then
+        echo "named-running"
+      else
+        echo "named-not-running"
+      fi
     matchers:
       - type: word
         part: code_1_response
         words:
-          - "named"
-        condition: contains
+          - "named-running"
 
   - engine:
       - bash
@@ -42,4 +46,10 @@ code:
       - type: regex
         part: code_2_response
         regex:
-          - "BIND\\s+([0-9]+\\.[0-9]+\\.[0-9]+)"
+          - 'BIND\s+[0-9]+\.[0-9]+\.[0-9]+'
+    extractors:
+      - type: regex
+        part: code_2_response
+        name: bind_version
+        regex:
+          - 'BIND\s+([0-9]+\.[0-9]+\.[0-9]+)'
