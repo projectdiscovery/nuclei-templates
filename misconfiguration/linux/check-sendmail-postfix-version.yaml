@@ -1,0 +1,79 @@
+id: check-sendmail-postfix-version
+
+info:
+  name: Sendmail and Postfix Version Vulnerability Check
+  author: songyaeji
+  severity: medium
+  description: >
+    This template checks if the versions of Sendmail and Postfix are being used and whether they are likely outdated.
+    Unpatched versions may contain critical vulnerabilities such as buffer overflows, privilege escalation, or information disclosure.
+    It checks process presence and version indicators to help determine patch status.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,sendmail,postfix,version,local
+  metadata:
+    verified: true
+    os: linux
+    max-request: 3
+  classification:
+    cvss-metrics: CVSS:3.0/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-937
+
+self-contained: true
+code:
+  - engine:
+      - bash
+    source: |
+      ps -ef | grep sendmail | grep -v grep || echo "sendmail-not-running"
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "sendmail"
+        condition: contains
+
+  - engine:
+      - bash
+    source: |
+      cat /etc/mail/sendmail.cf 2>/dev/null | grep "^DZ" || echo "no-dz-entry"
+    matchers:
+      - type: word
+        part: code_2_response
+        words:
+          - "DZ"
+        condition: contains
+
+  - engine:
+      - bash
+    source: |
+      systemctl status postfix 2>/dev/null | grep "postfix" || echo "postfix-not-running"
+    matchers:
+      - type: word
+        part: code_3_response
+        words:
+          - "postfix"
+        condition: contains
+
+  - engine:
+      - bash
+    source: |
+      postfix status 2>/dev/null | grep "postfix-script" || echo "no-script"
+    matchers:
+      - type: word
+        part: code_4_response
+        words:
+          - "postfix-script"
+        condition: contains
+
+  - engine:
+      - bash
+    source: |
+      postconf -d 2>/dev/null | grep mail_version || echo "no-mail-version"
+    matchers:
+      - type: word
+        part: code_5_response
+        words:
+          - "mail_version"
+        condition: contains
