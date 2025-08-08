@@ -5,11 +5,11 @@ info:
   severity: info
   author: darses
   description: |
-    Detects login panel of Huawei HoloSens SDC, a software-based Internet of Things camera with a modern and high-quality appearance.
+    Huawei HoloSens SDC Panel was discovered.
   reference: |
     - https://www.huawei.com/en/products/intelligent-devices/holosens-sdc
   metadata:
-    max-requests: 3
+    max-requests: 1
     vendor: huawei
     product: holosense_sdc
     shodan-query:
@@ -27,23 +27,14 @@ http:
     path:
       - "{{BaseURL}}"
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: header
-        words:
-          - "Server: SDC Server"
-          - "Server: WebServer/1.0.0"
-        condition: or
-
-      - type: word
-        part: body
-        words:
-          - "cmcc-login"
+      - type: dsl
+        dsl:
+          - contains_any(server, "SDC Server", "WebServer/1.0.0")
+          - contains(body, "cmcc-login")
+          - status_code == 200
+        condition: and
+        internal: true
 
   - method: POST
     path:
@@ -52,18 +43,13 @@ http:
     body: |
       action=LoginState&glToken=null&stChannelId=101&channelId=101&para=
 
-    matchers-condition: and
     matchers:
-      - type: status
+      - type: dsl
+        dsl:
+          - contains(body, "LOGIN_NORMAL")
+          - status_code == 200
+        condition: and
         internal: true
-        status:
-          - 200
-
-      - type: word
-        part: body
-        internal: true
-        words:
-          - "LOGIN_NORMAL"
 
   - method: POST
     path:
@@ -74,22 +60,19 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - '"brand": "HoloSens SDC"'
+      - type: dsl
+        dsl:
+          - "contains_all(body, 'brand', 'HoloSens SDC')"
+          - "status_code == 200"
+        condition: and
 
     extractors:
-      - type: json
-        name: version
-        json:
-          - .brandInfoObject.version
+      - type: regex
+        group: 1
+        regex:
+          - '"model"\s*:\s*"([^"]+)"'
 
-      - type: json
-        name: model
-        json:
-          - .brandInfoObject.model
+      - type: regex
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
