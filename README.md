@@ -42,18 +42,18 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  3275 | dhiyaneshdk   |  1877 | http       |  8913 | info     |  4154 | file |   435 |
-| panel     |  1338 | daffainfo     |   868 | cloud      |   657 | high     |  2439 | dns  |    26 |
-| xss       |  1255 | princechaddha |   826 | file       |   435 | medium   |  2374 |      |       |
-| wordpress |  1180 | dwisiswant0   |   806 | dast       |   255 | critical |  1418 |      |       |
-| exposure  |  1105 | ritikchaddha  |   648 | workflows  |   202 | low      |   318 |      |       |
-| wp-plugin |  1031 | pussycat0x    |   529 | code       |   198 | unknown  |    56 |      |       |
-| osint     |   813 | pikpikcu      |   352 | network    |   145 |          |       |      |       |
-| tech      |   800 | pdteam        |   310 | javascript |    71 |          |       |      |       |
-| rce       |   783 | pdresearch    |   267 | ssl        |    38 |          |       |      |       |
-| lfi       |   775 | iamnoooob     |   256 | dns        |    23 |          |       |      |       |
+| cve       |  3288 | dhiyaneshdk   |  1882 | http       |  8967 | info     |  4190 | file |   435 |
+| panel     |  1342 | daffainfo     |   868 | cloud      |   657 | high     |  2446 | dns  |    26 |
+| xss       |  1257 | princechaddha |   854 | file       |   435 | medium   |  2379 |      |       |
+| wordpress |  1181 | dwisiswant0   |   806 | dast       |   255 | critical |  1425 |      |       |
+| exposure  |  1107 | ritikchaddha  |   649 | workflows  |   202 | low      |   318 |      |       |
+| wp-plugin |  1032 | pussycat0x    |   532 | code       |   198 | unknown  |    56 |      |       |
+| osint     |   841 | pikpikcu      |   352 | network    |   145 |          |       |      |       |
+| tech      |   803 | pdteam        |   310 | javascript |    71 |          |       |      |       |
+| rce       |   786 | pdresearch    |   269 | ssl        |    38 |          |       |      |       |
+| lfi       |   777 | iamnoooob     |   257 | dns        |    23 |          |       |      |       |
 
-**847 directories, 11287 files**.
+**848 directories, 11344 files**.
 
 </td>
 </tr>
