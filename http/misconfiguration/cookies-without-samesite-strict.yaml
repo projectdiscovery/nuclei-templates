@@ -1,0 +1,46 @@
+id: Cookie-without-SameSite-Strict
+
+info:
+  name: Cookie Without SameSite set to Strict
+  author: lucky0x0d,PulseSecurity.co.nz
+  severity: info
+  description: |
+    Detects cookies that do not have the SameSite atribute set to 'Strict'
+  reference: https://pulsesecurity.co.nz/articles/samesite-lax-csrf
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-693
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misconfiguration,samesite, cookies
+
+flow: |
+    http()
+    javascript()
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    host-redirects: true
+    max-redirects: 2
+
+javascript:
+  - code: |
+      content = template.http_all_headers
+      const setCookieLines = content
+        .split(/\r\n/)
+        .filter(line => line.trim().toLowerCase().startsWith('set-cookie:'));
+      const SameSiteCookies = setCookieLines.filter(line => !line.toLowerCase().includes('samesite=strict'));
+      const SameSitecookieNames = SameSiteCookies.map(line => {
+        const match = line.match(/^set-cookie:.*?([^=\s]+)=/i);
+        return match ? match[1] : null;
+      }).filter(Boolean);
+      SameSitecookieNames
+
+    extractors:
+      - type: regex
+        regex:
+          - '[a-zA-Z0-9_-]+'
