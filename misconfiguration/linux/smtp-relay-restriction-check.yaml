@@ -1,0 +1,64 @@
+id: smtp-relay-restriction-check
+
+info:
+  name: SMTP Relay Restriction Check (Sendmail/Postfix)
+  author: songyaeji
+  severity: medium
+  description: >
+    Checks whether SMTP relay restrictions are properly configured for sendmail and postfix.
+    Unrestricted SMTP relay may be exploited by attackers to distribute spam or perform denial-of-service (DoS) attacks.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,smtp,sendmail,postfix,relay,misconfiguration,local
+  metadata:
+    verified: true
+    os: linux
+    max-request: 4
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N
+    cvss-score: 5.5
+    cwe-id: CWE-305
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      ps -ef | grep sendmail | grep -v grep || echo "[INFO] sendmail process not found"
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "sendmail"
+
+  - engine:
+      - bash
+    source: |
+      grep 'R$ *' /etc/mail/sendmail.cf 2>/dev/null | grep 'Relaying denied' || echo "[MISSING] Relay restriction not found in sendmail.cf"
+    matchers:
+      - type: word
+        part: code_2_response
+        words:
+          - "Relaying denied"
+
+  - engine:
+      - bash
+    source: |
+      grep 'mynetworks' /etc/postfix/main.cf 2>/dev/null || echo "[MISSING] mynetworks setting not found"
+    matchers:
+      - type: word
+        part: code_3_response
+        words:
+          - "mynetworks"
+
+  - engine:
+      - bash
+    source: |
+      grep 'permit_mynetworks' /etc/postfix/main.cf 2>/dev/null || echo "[MISSING] permit_mynetworks setting not found"
+    matchers:
+      - type: word
+        part: code_4_response
+        words:
+          - "permit_mynetworks"
