@@ -1,0 +1,45 @@
+id: linux-xinetd-tftp-talk-disabled
+
+info:
+  name: Linux tftp, talk, ntalk Services Should Be Disabled
+  author: songyaeji
+  severity: high
+  description: >
+    Unused services like tftp, talk, or ntalk may have known vulnerabilities.
+    If these are enabled, they could be targeted by attackers.
+    This template checks if they are properly disabled in the xinetd configuration.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,tftp,talk,ntalk,xinetd,service,misconfiguration
+  metadata:
+    os: linux
+    category: system
+    verified: true
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.2
+    cwe-id: CWE-732
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      for svc in tftp talk ntalk; do
+        file="/etc/xinetd.d/$svc"
+        if [ -f "$file" ]; then
+          if grep -q "disable[[:space:]]*=[[:space:]]*yes" "$file"; then
+            echo "[SAFE] $svc is disabled."
+          else
+            echo "[VULNERABLE] $svc is not disabled in $file."
+          fi
+        else
+          echo "[SAFE] $svc service config file not found. Assuming not installed."
+        fi
+      done
+    matchers:
+      - type: word
+        words:
+          - "[VULNERABLE] $svc is not disabled in"
