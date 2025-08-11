@@ -1,0 +1,53 @@
+id: ftp-anonymous-check
+
+info:
+  name: Anonymous FTP Disabled Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure that anonymous FTP authentication is disabled on all FTP sites. Allowing anonymous access permits unauthenticated users to connect, which can lead to serious security vulnerabilities.
+  impact: |
+    If anonymous FTP is enabled, attackers can bypass authentication and potentially gain unauthorized access to FTP resources, posing a significant security risk.
+  remediation: |
+    Disable anonymous FTP authentication using IIS Manager:
+    - Open IIS Manager.
+    - Navigate to the FTP site → FTP Authentication.
+    - Set "Anonymous Authentication" to Disabled.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: ftp,iis,security,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      Import-Module WebAdministration -ErrorAction SilentlyContinue
+      $ftpSites = Get-ChildItem IIS:\Sites | Where-Object { $_.Bindings.Collection.Protocol -eq "ftp" }
+      $vulnerable = $false
+      foreach ($site in $ftpSites) {
+          $anonAuth = Get-WebConfigurationProperty -pspath "MACHINE/WEBROOT/APPHOST/$($site.Name)" -filter "system.ftpServer/security/authentication/anonymousAuthentication" -name "enabled" -ErrorAction SilentlyContinue
+          if ($anonAuth -eq $true) {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "ANONYMOUS_FTP_ENABLED"
+      } else {
+          "ANONYMOUS_FTP_DISABLED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "ANONYMOUS_FTP_ENABLED"
+# digest: 4a0a00473045022100a7c487be6ab61661f88bb5bc891f8f13a6c552b7ccd2a368b5c39189358fe452022018c475e6e9d30bb1f170fb3eeac3fc47d562758aec1e44e887f744dfcd7140b0:922c64590222798bb761d5b6d8e72950

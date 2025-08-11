@@ -1,0 +1,52 @@
+id: remote-system-shutdown
+
+info:
+  name: Remote System Forced Shutdown Privilege Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the "Force shutdown from a remote system" policy (SeRemoteShutdownPrivilege) is assigned only to the Administrators group (SID: S-1-5-32-544). Granting this privilege to unauthorized accounts can allow attackers to remotely shut down the system, posing a significant risk.
+  impact: |
+    Granting this privilege to accounts or groups other than Administrators can be exploited to carry out unauthorized remote shutdowns, resulting in service disruptions or denial-of-service conditions.
+  remediation: |
+    Configure the policy to grant the SeRemoteShutdownPrivilege exclusively to the Administrators group by setting its value to S-1-5-32-544 only.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: policy,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      # Export the current security settings to a configuration file.
+      $cfgPath = "C:\cfg.txt"
+      secedit /export /cfg $cfgPath | Out-Null
+      # Read the exported configuration file.
+      $cfg = Get-Content $cfgPath | Out-String
+      # Extract the SeRemoteShutdownPrivilege value.
+      if ($cfg -match "SeRemoteShutdownPrivilege\s*=\s*(.*)") {
+          $privs = $Matches[1].Trim()
+          # Check if only the Administrators SID (S-1-5-32-544) is present.
+          if ($privs -eq "S-1-5-32-544") {
+              "REMOTE_SHUTDOWN_PRIVILEGE_COMPLIANT"
+          } else {
+              "REMOTE_SHUTDOWN_PRIVILEGE_VULNERABLE"
+          }
+      } else {
+          "REMOTE_SHUTDOWN_PRIVILEGE_NOT_FOUND"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "REMOTE_SHUTDOWN_PRIVILEGE_VULNERABLE"
+# digest: 490a004630440220036867acb4067c5a103c2ebd6f8b8c3afc113f9c35cffdf696aa7951ab6eca3d022073e3c70aef90e0785eada52c27726cabdfe0020fd19de73994062f43744f8601:922c64590222798bb761d5b6d8e72950
