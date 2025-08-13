@@ -1,0 +1,50 @@
+id: linux-anonymous-ftp-disabled
+
+info:
+  name: Linux Anonymous FTP Access Enabled - Security Misconfiguration
+  author: songyaeji
+  severity: high
+  description: >
+    If the anonymous FTP account is enabled, malicious users may exploit it to log in anonymously
+    and write to directories, potentially gaining unauthorized access or executing local exploits
+    against the system. This template checks for signs that anonymous FTP is enabled
+    via /etc/passwd, vsFTPD, or ProFTPD configuration files.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux,ftp,anonymous,vsftpd,proftpd,misconfiguration,local
+  metadata:
+    verified: true
+    os: linux
+    max-request: 1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:H
+    cvss-score: 8.6
+    cwe-id: CWE-200
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      ftp_user=$(grep -E '^ftp:' /etc/passwd)
+      vsftp_enabled=$(grep -i 'anonymous_enable' /etc/vsftpd/vsftpd.conf 2>/dev/null | grep -i yes)
+      proftp_alias=$(grep -i 'UserAlias[[:space:]]\+anonymous' /etc/proftpd/proftpd.conf 2>/dev/null)
+      if [ -n "$ftp_user" ]; then
+        echo "[VULNERABLE] FTP user exists in /etc/passwd"
+      fi
+      if [ -n "$vsftp_enabled" ]; then
+        echo "[VULNERABLE] anonymous_enable=YES is set in vsftpd.conf"
+      fi
+      if [ -n "$proftp_alias" ]; then
+        echo "[VULNERABLE] 'UserAlias anonymous ftp' found in proftpd.conf"
+      fi
+      if [ -z "$ftp_user" ] && [ -z "$vsftp_enabled" ] && [ -z "$proftp_alias" ]; then
+        echo "[SAFE] Anonymous FTP is properly disabled"
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"
