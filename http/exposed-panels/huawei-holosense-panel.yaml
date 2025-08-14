@@ -1,0 +1,79 @@
+id: huawei-holosense-panel
+
+info:
+  name: Huawei HoloSens SDC - Panel
+  severity: info
+  author: darses
+  description: |
+    Huawei HoloSens SDC Panel was discovered.
+  reference: |
+    - https://www.huawei.com/en/products/intelligent-devices/holosens-sdc
+  metadata:
+    max-requests: 1
+    vendor: huawei
+    product: holosense_sdc
+    shodan-query:
+      - "Server: SDC Server"
+      - http.html_hash:-968212412
+    fofa-query:
+      - '"Server: SDC Server" && protocol="https"'
+      - '"Server: WebServer/1.0.0" && port="1443"'
+  tags: panel,detect,huawei,holosens,iot
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_any(server, "SDC Server", "WebServer/1.0.0")
+          - contains(body, "cmcc-login")
+          - status_code == 200
+        condition: and
+        internal: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/cgi-bin/main.cgi"
+
+    body: |
+      action=LoginState&glToken=null&stChannelId=101&channelId=101&para=
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "LOGIN_NORMAL")
+          - status_code == 200
+        condition: and
+        internal: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/cgi-bin/main.cgi"
+
+    body: |
+      action=WebTransterToRestLogout&url=GET+%2FSDCAPI%2FV1.0%2FCustomization%2FElement%0D%0A%0D%0A
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains_all(body, 'brand', 'HoloSens SDC')"
+          - "status_code == 200"
+        condition: and
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '"model"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 4a0a00473045022002d23b7a4b3ccbd950bf46b67523ac4fde234f0c6b750e15205357a40667c1740221008340ce41eedaaf188f0bcacf661b40d3ea2cf517cb2cf1a49cb029a74c70dde4:922c64590222798bb761d5b6d8e72950
