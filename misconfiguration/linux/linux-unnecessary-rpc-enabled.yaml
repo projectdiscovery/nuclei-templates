@@ -1,0 +1,42 @@
+id: linux-unnecessary-rpc-enabled
+
+info:
+  name: Unnecessary RPC Service (rstatd) Enabled
+  author: songyaeji
+  severity: high
+  description: >
+    If unnecessary RPC services like rstatd are enabled, attackers may exploit buffer overflow, DoS, or remote execution vulnerabilities to gain root privileges and compromise the system.
+    These services should be disabled unless explicitly required.
+  reference:
+    - https://isms.kisa.or.kr
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: linux, misconfiguration, rpc, xinetd, rstatd, privilege-escalation
+  metadata:
+    verified: true
+    os: linux
+    category: rpc
+  classification:
+    cvss-metrics: CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.8
+    cwe-id: CWE-284
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      if [ -f /etc/xinetd.d/rstatd ]; then
+        if grep -qE 'disable\s*=\s*no' /etc/xinetd.d/rstatd; then
+          echo "[VULNERABLE] rstatd RPC service is enabled in xinetd"
+        else
+          echo "[SAFE] rstatd RPC service is disabled"
+        fi
+      else
+        echo "[SAFE] rstatd service not found"
+      fi
+    matchers:
+      - type: word
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"
