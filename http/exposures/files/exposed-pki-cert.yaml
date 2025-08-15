@@ -1,7 +1,7 @@
 id: exposed-pki-cert
 
 info:
-  name: Exposed Internal PKI Infrastructure – Detect
+  name: Exposed Internal PKI Infrastructure - Detect
   author: nullenc0de
   severity: high
   description: |
@@ -9,17 +9,16 @@ info:
   metadata:
     verified: true
     max-request: 10
-  tags:
-    - pki
-    - exposure
-    - misconfig
+  tags: pki,exposure,misconfig
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/{{paths}}"
+      - "{{BaseURL}}{{paths}}"
+
     payloads:
       paths:
+        - ""
         - "/certsrv/"
         - "/pki/"
         - "/PKI/"
@@ -29,24 +28,23 @@ http:
         - "/ocsp/"
         - "/CertEnroll/"
         - "/CertSrv/"
+
     stop-at-first-match: true
     host-redirects: true
     max-redirects: 2
 
-    # Require both a keyword match and a PKI-specific indicator
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      # DSL matcher: must mention PKI services but not be the default OCSP stub
       - type: dsl
         dsl:
           - 'contains_any(body, "Certificate Services", "CRL Distribution Point", "OCSP Responder")'
           - '!regex("(?i)^\\s*This is an OCSP responder\\.?\\s*$", body)'
+        condition: and
 
-      # Regex matcher: look for CA Common Name or direct links to cert/crl bundles
       - type: regex
         regex:
           - '\\bCN=[A-Za-z0-9-]+-CA\\b'
-          - '(?i)href="[^"]+\\.(?:crl|cer|p7b)"'
+          - '(?i)href\s*=\s*"[^"]+\.(?:crl|cer|p7b)"'
 
     extractors:
       - type: regex
