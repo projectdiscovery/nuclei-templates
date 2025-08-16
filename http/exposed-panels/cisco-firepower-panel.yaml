@@ -1,42 +1,71 @@
 id: cisco-firepower-panel
 
 info:
-  name: Cisco Firepower Management Center login - Detect
-  author: Charles D
+  name: Cisco Secure Firewall Management Center - Panel
+  author: Charles D.,darses
   severity: info
   description: |
-    Cisco Firepower Management Centerlogin panel was detected
+    Cisco Secure Firewall Management Center login panel was detected. Secure Firewall Management Center was formerly known as Firepower Management Center.
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cwe-id: CWE-200
   metadata:
     verified: true
     max-request: 1
-    shodan-query: html:"cisco firepower management"
+    vendor: cisco
+    product: secure_firewall_management_center
+    shodan-query:
+      - http.html:"Cisco Firepower Management Center"
+      - http.html:"Secure Firewall Management Center"
+      - http.html:"UA-110054821-1"
+    fofa-query:
+      - body="Cisco Firepower Management Center"
+      - body="Secure Firewall Management Center"
+      - body="UA-110054821-1"
   tags: login,cisco,panel,console
 
 http:
   - method: GET
     path:
-      - '{{BaseURL}}/ui/login'
+      - "{{BaseURL}}/ui/login"
 
     matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "Cisco Firepower Management Center"
-          - "Login"
-        condition: and
-
       - type: status
         status:
           - 200
 
+      - type: word
+        part: body
+        words:
+          - "Login"
+          - "/img/cisco-icon.svg"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "Cisco Firepower Management Center"
+          - "Secure Firewall Management Center"
+        condition: or
+
     extractors:
       - type: regex
         part: body
+        name: version
+        internal: true
         group: 1
         regex:
-          - "'version':\\s*'(\\d+\\.\\d+\\.\\d+)'"
-# digest: 4a0a00473045022052e0d7ab55001601a82ae8b37b9bf2a24ea2ccaf32da5b6f61cc9351faeb7a86022100e8989f9c5a192bb99d7fed0a51e2d88be96126ce1d93934a2599b6b1c88a5062:922c64590222798bb761d5b6d8e72950
+          - "'version':\\s*'([^\\']+)'"
+
+      - type: regex
+        part: body
+        name: build
+        internal: true
+        group: 1
+        regex:
+          - "'build':\\s*'([^\\']+)'"
+
+      - type: dsl
+        dsl:
+          - "version+'-'+build"
