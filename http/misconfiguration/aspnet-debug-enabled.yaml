@@ -1,0 +1,52 @@
+id: aspnet-debug-enabled
+
+info:
+  name: ASP.NET Debug Mode Enabled
+  author: kali_optimization
+  severity: medium
+  description: ASP.NET application has debug mode enabled which can lead to information disclosure
+  reference:
+    - https://docs.microsoft.com/en-us/aspnet/web-forms/overview/older-versions-getting-started/deploying-web-site-projects/configuring-the-production-web-application-to-use-the-production-database-cs
+    - https://owasp.org/www-project-top-ten/2017/A6_2017-Security_Misconfiguration
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-489
+  tags: aspnet,debug,config,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/default.aspx"
+      - "{{BaseURL}}/login.aspx"
+      - "{{BaseURL}}/admin/"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Server: Microsoft-IIS"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "compilation\\s+debug\\s*=\\s*[\"']true[\"']"
+          - "customErrors\\s+mode\\s*=\\s*[\"']Off[\"']"
+          - "trace\\s+enabled\\s*=\\s*[\"']true[\"']"
+          - "Server Error in '/' Application"
+          - "Detailed Error Information"
+          - "Source Error:"
+          - "Stack Trace:"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "Exception Details: (.+)"
+          - "Source File: (.+)"
+          - "Line: ([0-9]+)"

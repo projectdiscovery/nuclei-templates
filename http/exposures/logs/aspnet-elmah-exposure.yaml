@@ -1,0 +1,55 @@
+id: aspnet-elmah-exposure
+
+info:
+  name: ASP.NET ELMAH Error Log Exposure
+  author: kali_optimization
+  severity: medium
+  description: ASP.NET ELMAH error logging interface is publicly accessible
+  reference:
+    - https://elmah.github.io/
+    - https://owasp.org/www-community/vulnerabilities/Information_Exposure_Through_Error_Messages
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: aspnet,elmah,error,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/elmah.axd"
+      - "{{BaseURL}}/Elmah.axd"
+      - "{{BaseURL}}/ELMAH.AXD"
+      - "{{BaseURL}}/admin/elmah.axd"
+      - "{{BaseURL}}/errors/elmah.axd"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "Error Log for"
+          - "elmah"
+          - "Error Log"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "<table"
+          - "Time"
+          - "Type"
+          - "Error"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'Error Log for\\s+([^<]+)'
+          - 'Application:\\s+([^<]+)'

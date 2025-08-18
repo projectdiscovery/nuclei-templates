@@ -1,0 +1,59 @@
+id: aspnet-webconfig-exposure
+
+info:
+  name: ASP.NET Web.config Exposure
+  author: kali_optimization
+  severity: high
+  description: ASP.NET Web.config file is accessible and may contain sensitive information
+  reference:
+    - https://docs.microsoft.com/en-us/aspnet/web-forms/overview/older-versions-getting-started/deploying-web-site-projects/common-configuration-differences-between-development-and-production-vb
+    - https://owasp.org/www-community/vulnerabilities/Configuration_File_Exposure
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  tags: aspnet,config,exposure,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/web.config"
+      - "{{BaseURL}}/Web.config"
+      - "{{BaseURL}}/WEB.CONFIG"
+      - "{{BaseURL}}/app.config"
+      - "{{BaseURL}}/App.config"
+      - "{{BaseURL}}/bin/web.config"
+      - "{{BaseURL}}/Bin/web.config"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "<?xml"
+          - "<configuration>"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "<appSettings>"
+          - "<connectionStrings>"
+          - "<system.web>"
+          - "<assemblies>"
+          - "machineKey"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'connectionString="([^"]+)"'
+          - 'validationKey="([^"]+)"'
+          - 'decryptionKey="([^"]+)"'
+          - 'value="([^"]*(?:password|secret|key|token)[^"]*)"'

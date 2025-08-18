@@ -1,0 +1,53 @@
+id: aspnet-trace-enabled
+
+info:
+  name: ASP.NET Trace.axd Enabled
+  author: kali_optimization
+  severity: medium
+  description: ASP.NET application has trace enabled which can leak sensitive information
+  reference:
+    - https://docs.microsoft.com/en-us/previous-versions/wwh16c6c(v=vs.140)
+    - https://owasp.org/www-community/vulnerabilities/Information_Exposure_Through_Query_Strings_in_Logs
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  tags: aspnet,trace,disclosure,information
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/trace.axd"
+      - "{{BaseURL}}/Trace.axd"
+      - "{{BaseURL}}/TRACE.AXD"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "Application Trace"
+          - "Requests to this Application"
+          - "Most Recent URL"
+          - "trace.axd"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "<table"
+          - "Request Details"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'Time of Request[^>]*>\\s*([^<]+)'
+          - 'Url[^>]*>\\s*([^<]+)'
+          - 'HTTP Method[^>]*>\\s*([^<]+)'
