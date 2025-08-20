@@ -1,0 +1,53 @@
+id: snmpv1-public-discovery
+
+info:
+  name: SNMPv1 Public Discovery
+  author: matejsmycka
+  severity: medium
+  description: |
+    The remote host is running an SNMPv1 server with a default community string. 
+    SNMPv1 is an insecure protocol that can be exploited to gather sensitive information.
+    Use other tools like snmpwalk to gather more information.
+  reference:
+    - https://hackers-arise.com/exploiting-snmpv1-for-reconnaissance/
+    - https://hacktricks.boitatech.com.br/pentesting/pentesting-snmp
+    - https://www.tenable.com/plugins/nnm/1344
+    - https://linux.die.net/man/1/snmpwalk
+  tags: js,udp,network
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      const c = require("nuclei/net");
+      const conn = c.Open('udp', `${Host}:${Port}`, `${Timeout}`);
+      let community_string =  bytes.NewBuffer();
+      community_string.WriteString(Community);
+      let payload = "30290201010406";
+      payload += community_string.Hex(); 
+      payload += "a01c02040eb376f4020100020100" 
+      payload += "300e300c06082b060102010105000500" // VarBind list for sysName.0
+      conn.SendHex(payload);
+      let resp = conn.RecvFull(64);
+      resp; 
+    args:
+      Host: "{{Host}}"
+      Port: 161
+      Timeout: 2
+      Community: "{{community_string}}"
+
+    attack: clusterbomb
+    payloads:
+      community_string:
+        - public
+
+    matchers:
+      - type: binary
+        binary:
+          - "0201010406"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+            - "public.*\x00\x04.(.*)"
