@@ -1,20 +1,26 @@
 id: fortisiem-panel
 
 info:
-  name: FortiSIEM Login Panel - Detect
-  author: pussycat0x
+  name: Fortinet FortiSIEM - Panel
+  author: pussycat0x,darses
   severity: info
-  description: FortiSIEM login panel was detected.
+  description: |
+    FortiSIEM login panel was discovered.
   classification:
     cpe: cpe:2.3:a:fortinet:fortisiem:*:*:*:*:*:*:*:*
   metadata:
     verified: true
-    max-request: 2
-    shodan-query: "http.favicon.hash:-1341442175"
-    product: fortisiem
+    max-request: 1
     vendor: fortinet
-  tags: panel,fortisiem
-flow: http(1) && http(2)
+    product: fortisiem
+    shodan-query:
+      - http.favicon.hash:-1341442175
+      - http.html:"var hst = location.hostname"
+    fofa-query:
+      - icon_hash="-1341442175"
+      - body="var hst = location.hostname"
+  tags: panel,fortinet,login
+
 http:
   - method: GET
     path:
@@ -22,18 +28,20 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - "status_code == 200"
-          - "(\"426d365a42bbc67c092b9c2e49b336420f0559d1\" == sha1(body))"
+      - type: word
+        part: body
+        words:
+          - "<title>Login</title>"
+          - "loginToFlexDiv"
         condition: and
 
-  - method: GET
-    path:
-      - "{{BaseURL}}/phoenix/js/login.min.js"
+      - type: status
+        status:
+          - 200
 
-    matchers:
-      - type: word
-        words:
-          - "fortiSIEM_current_login_salt"
-# digest: 490a0046304402203d644778258aac373cae19503ef869c01107957203ea85904fe4b929e8b0377902207ff03722daa69de262bd68e3886773f7dfaabf6bb1683903dd87c2862fdc85f9:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - last_modified
+# digest: 4a0a00473045022067146bba1fae278d1fde366615d5479c63e237a8329011c563ba4da11301af90022100a00b556fc9579a4711cea347e929b4a16b7388803b66c8d8f2928797ed94d172:922c64590222798bb761d5b6d8e72950
