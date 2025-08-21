@@ -1,0 +1,47 @@
+id: bugzilla-config
+
+info:
+  name: Bugzilla - Config Exposed
+  author: icarot
+  severity: low
+  description: |
+    Because the config.cgi is publicly exposed, it is possible to enumerate main domain and possible users registered on Bugzilla server.
+  reference:
+    - https://github.com/bugzilla/bugzilla/
+  classification:
+    cpe: cpe:2.3:a:mozilla:bugzilla:-:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    vendor: mozilla
+    product: bugzilla
+    shodan-query: title:"Bugzilla"
+  tags: bugzilla,mozilla,config,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/config.cgi"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "base_url", "maintainer")'
+          - 'contains(content_type, "application/x-javascript")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: base_url
+        group: 1
+        part: body
+        regex:
+          - ".+base_url.+:.(?<base_url>\\'.+\\')"
+
+      - type: regex
+        name: maintainer
+        group: 1
+        part: body
+        regex:
+          - ".+maintainer.+:.(?<maintainer>\\'.+\\')"
+# digest: 4b0a004830460221009d5f38fdc6c841874e1299d4a48906a7aaa88b27ae25c5373ad36bd91ef40c260221009e029d3c261dded511ad7708211b59b2ec837e79e1bba93a08ff1614bf162757:922c64590222798bb761d5b6d8e72950
