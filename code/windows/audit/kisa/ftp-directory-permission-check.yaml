@@ -1,0 +1,57 @@
+id: ftp-directory-permission-check
+
+info:
+  name: FTP Directory Access Permission Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure that the FTP home directory does not include the "Everyone" group in its access permissions. Granting access to this group may allow unauthorized users to view, modify, or tamper with FTP files.
+  impact: |
+    Assigning access to the "Everyone" group for the FTP home directory can result in information exposure, file tampering, or unauthorized changes.
+  remediation: |
+    Remove the "Everyone" group from FTP home directory permissions using the following methods:
+    - IIS Manager: Review and adjust the FTP site's home directory settings.
+    - File Explorer: Right-click the directory, select "Properties" → go to the "Security" tab, and remove the "Everyone" group.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: ftp,iis,security,windows,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      # Define the FTP home directory path (adjust if necessary)
+      $ftpHome = "C:\inetpub\ftproot"
+      if (!(Test-Path $ftpHome)) {
+          "FTP_HOME_DIRECTORY_NOT_FOUND"
+          exit
+      }
+      # Retrieve the ACL for the FTP home directory
+      $acl = Get-Acl $ftpHome
+      $vulnerable = $false
+      foreach ($ace in $acl.Access) {
+          if ($ace.IdentityReference.ToString() -like "*Everyone*") {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "FTP_HOME_DIRECTORY_EVERYONE_FOUND"
+      } else {
+          "FTP_HOME_DIRECTORY_NO_EVERYONE"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "FTP_HOME_DIRECTORY_EVERYONE_FOUND"
+# digest: 4b0a00483046022100d2fa5c4c6cbaa3343621441e4498d6bdf29509bfa9107ff0e9795621ba221137022100a9325c7ef8d03bfacfd7ca0a310e27544f6fb4fc5cb71566340282c780ca3717:922c64590222798bb761d5b6d8e72950

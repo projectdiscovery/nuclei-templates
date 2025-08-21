@@ -1,0 +1,60 @@
+id: beyondtrust-remotesupport-version
+
+info:
+  name: BeyondTrust Remote Support Version - Detect
+  author: missing0x00
+  severity: info
+  description: |
+    Detects and extracts version information from BeyondTrust Remote Support installations by querying the /get_rdf endpoint.
+  classification:
+    cpe: cpe:2.3:a:beyondtrust:remote_support:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: beyondtrust
+    product: remote_support
+    shodan-query:
+      - title:"Remote Support Portal"
+      - http.favicon.hash:-694003434
+      - http.html:"BeyondTrust Remote Support"
+  tags: tech,beyondtrust,version,detect
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/get_rdf?comp=sdcust&locale_code=en-us'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: response
+        words:
+          - 'BeyondTrust'
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        group: 1
+        regex:
+          - 'en-us\n(.*)\n'
+        internal: true
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '\x07.([\.\d]+)\x00'
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"Version: " + version'
+          - '"Timestamp: " + extracted_unix_timestamp'
+          - '"Release Date: " + date_time("%Y-%M-%D", extracted_unix_timestamp)'
+# digest: 490a0046304402203c9fc910d8bf266798b18663e64ee06af1dc6aef98f115609a5fafd4095b8f0802200f0e6d361afb74ad99ec139d66f6c9147162d6ff3bde9aa5cfac21123092d27b:922c64590222798bb761d5b6d8e72950
