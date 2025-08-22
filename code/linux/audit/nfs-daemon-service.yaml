@@ -1,0 +1,38 @@
+id: nfs-daemon-service
+
+info:
+  name: NFS Service Daemon Should Be Disabled
+  author: songyaeji
+  severity: high
+  description: |
+     Assessed the status of the NFS service daemon. A running NFS service may expose the system to unauthorized access, modification, or deletion of files; it is recommended to disable the daemon when not explicitly required.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      if command -v systemctl >/dev/null 2>&1; then
+        if systemctl is-active --quiet nfs-server; then
+          echo "[VULNERABLE] NFS service is active (systemd nfs-server is running)"
+        else
+          echo "[SAFE] NFS service is not running"
+        fi
+      else
+        if ps -ef | grep -v grep | grep -q nfsd; then
+          echo "[VULNERABLE] NFS service is active (nfsd is running)"
+        else
+          echo "[SAFE] NFS service is not running"
+        fi
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
