@@ -1,0 +1,57 @@
+id: graphql-introspection
+info:
+  name: GraphQL Introspection & Interface Exposure
+  author: Jaenact
+  severity: medium
+  description: |
+    Detects if GraphQL introspection query is enabled or if a GraphQL explorer
+    interface (GraphiQL, Playground) is publicly exposed. This allows attackers
+    to easily enumerate the entire API schema.
+  reference:
+    - https://graphql.org/learn/introspection/
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/GraphQL%20Injection
+  classification:
+    cwe-id: CWE-200
+  tags: graphql,introspection,dast,graphiql,exposure
+
+requests:
+  - method: POST
+    path:
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api"
+      - "{{BaseURL}}/graph"
+      - "{{BaseURL}}/graphql.php"
+      - "{{BaseURL}}/graphql/console"
+      - "{{BaseURL}}/graphiql"
+      - "{{BaseURL}}/graphiql.php"
+      - "{{BaseURL}}/v1"
+      - "{{BaseURL}}/v2"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/graphql/v1"
+      - "{{BaseURL}}/v1/explorer"
+      - "{{BaseURL}}/v1/graphiql"
+
+    headers:
+      Content-Type: "{{contentType}}"
+    
+    body: |
+      {"query":"query IntrospectionQuery { __schema { types { name } } }"}
+
+    stop-at-first-match: true
+
+    payloads:
+      contentType:
+        - "application/json"
+        - "application/graphql"
+    
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "__schema"
+          - "types"
+        part: body
+        condition: and
