@@ -1,0 +1,37 @@
+id: magicinfo-config-exposure
+
+info:
+  name: Samsung MagicINFO Configuration File Exposure
+  author: s4e-io
+  severity: medium
+  description: |
+    Detects exposure of Samsung MagicINFO configuration file (/MagicInfo/config.js),
+    and extracts magicInfoFrontEndVersion.
+  reference:
+    - https://www.samsung.com/de/business/display-solutions/magicinfo/
+  metadata:
+    vendor: samsung
+    product: magicinfo_9_server
+    shodan-query: server:"magicinfo premium server"
+  tags: config,exposure,magicinfo
+
+http:
+  - raw:
+      - |
+        GET /MagicInfo/config.js HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "globalConfig", "MagicINFO", "samsung")'
+          - "status_code == 200"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: magicinfo_version
+        group: 1
+        part: body
+        regex:
+          - '"magicInfoFrontEndVersion":\s*"([^"]+)"'
