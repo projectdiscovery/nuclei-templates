@@ -1,0 +1,44 @@
+id: openplc-default-login
+
+info:
+  name: OpenPLC Webserver v3 - Default Login
+  author: machevalia
+  severity: high
+  description: |
+    Identifies default credentials (openplc:openplc) on OpenPLC Webserver v3, allowing unauthorized access to the web interface.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"OpenPLC"
+  tags: openplc,default-login,iot
+
+variables:
+  username: "openplc"
+  password: "openplc"
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+      - |
+        GET /dashboard HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "Dashboard"
+          - "Runtime Logs"
+          - "Logout</p>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
