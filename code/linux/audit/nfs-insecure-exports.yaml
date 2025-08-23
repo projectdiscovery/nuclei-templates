@@ -1,0 +1,34 @@
+id: nfs-insecure-exports
+
+info:
+  name: NFS Insecure Exports Check
+  author: songyaeji
+  severity: high
+  description: |
+    Verified whether access control was properly configured on NFS.Highlighted possibilities such as allowing all hosts, no_root_squash, or unrestricted all_squash that could let unauthorized users access shared directories.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      if grep -Eq '^[^#].*\(.*no_root_squash.*\)' /etc/exports; then
+        echo "[VULNERABLE] NFS allows root access with no_root_squash"
+      elif grep -Eq '^[^#].*\*' /etc/exports; then
+        echo "[VULNERABLE] NFS allows access to all (*) hosts"
+      elif grep -Eq '^[^#].*\(.*all_squash.*\)' /etc/exports; then
+        echo "[WARN] NFS uses all_squash (verify if access is restricted)"
+      else
+        echo "[SAFE] NFS access appears restricted"
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
