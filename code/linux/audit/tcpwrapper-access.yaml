@@ -14,32 +14,40 @@ self-contained: true
 
 code:
   - engine:
-      - sh
+      -sh
       - bash
     source: |
       echo "[*] Checking /etc/hosts.deny (default deny policy)"
       if grep -Eq "^[[:space:]]*ALL:[[:space:]]*ALL" /etc/hosts.deny; then
-        echo "[OK] /etc/hosts.deny has ALL:ALL policy"
+        echo "[SAFE] /etc/hosts.deny has ALL:ALL policy"
       else
-        echo "[WARN] /etc/hosts.deny is missing ALL:ALL (default deny)"
+        echo "[VULNERABLE] /etc/hosts.deny is missing ALL:ALL (default deny)"
       fi
 
+  - engine:
+      - sh
+      - bash
+    source: |
       echo "[*] Checking sshd allow policy in /etc/hosts.allow"
       if grep -Eq "^[[:space:]]*sshd" /etc/hosts.allow; then
         if grep -Eq "^[[:space:]]*sshd:[[:space:]]*ALL" /etc/hosts.allow; then
-          echo "[WARN] sshd allows ALL hosts (too permissive)"
+          echo "[VULNERABLE] sshd allows ALL hosts (too permissive)"
         else
-          echo "[OK] sshd-specific allow policy found with restrictions"
+          echo "[SAFE] sshd-specific allow policy found with restrictions"
         fi
       else
-        echo "[WARN] No sshd-specific allow policy found"
+        echo "[VULNERABLE] No sshd-specific allow policy found"
       fi
-
-      echo "[*] Reminder: TCP Wrappers process /etc/hosts.allow BEFORE /etc/hosts.deny"
 
     matchers:
       - type: word
-        part: response
+        name: hosts.deny
+        part: code_1_response
         words:
-          - "/etc/hosts.deny"
-          - "/etc/hosts.allow"
+          - "[VULNERABLE]"
+
+      - type: word
+        name: sshd
+        part: code_2_response
+        words:
+          - "[VULNERABLE]"
