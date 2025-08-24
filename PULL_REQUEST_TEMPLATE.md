@@ -6,14 +6,14 @@
 - Fixed CVE-2020-XXX / Added CVE-2020-XXX / Updated CVE-2020-XXX
 - References:
 
-### Temlate validation
+### Template validation
 
-<!-- Clarify if the valdation of the template was done on an actual system for which the template was developed -->
-<!-- If this concerns a vulnerability check, clarify if validation was done on a known vulnerable system -->
+<!-- Clarifies if the valdation of the template was done on an actual system for which the template was developed -->
+<!-- If this concerns a vulnerability check, please clarify if validation was done on a known vulnerable system and optionally on a known not vulnerable system to avoid false positives -->
 
 - [ ] Validated with a system running the software this template is written for
-- [ ] Validated with a system running a vulnerable version and configuration
-- [ ] Validated with a system running a patched version or configuration
+- [ ] Validated with a system running a vulnerable version and/or configuration (True Positive)
+- [ ] Validated with a system running a patched version and/or configuration (avoid False Positive)
 
 #### Additional Details (leave it blank if not applicable)
 
