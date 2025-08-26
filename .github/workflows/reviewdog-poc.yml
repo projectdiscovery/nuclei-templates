@@ -1,0 +1,35 @@
+name: CVE-2025-30154-PoC
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  poc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run simulated compromised step (container)
+        uses: docker://ubuntu:22.04
+        with:
+          args: bash -lc "apt-get update >/dev/null 2>&1 && apt-get install -y ca-certificates openssl >/dev/null 2>&1 && bash repros/CVE-2025-30154-reviewdog/poc/entrypoint.sh"
+
+      - name: Capture logs and run logscan
+        run: |
+          echo "---- BEGIN LOGSCAN DEBUG ----"
+          # the following reads the last 2000 lines of the runner log file, but
+          # since we are running in steps, we mimic by scanning the environment summary:
+          cat $GITHUB_STEP_SUMMARY 2>/dev/null || true
+          # fallback: search job log file pieces (best-effort)
+          echo "---- Running local scanner against step output ----"
+          repros/CVE-2025-30154-reviewdog/tools/logscan.py < <(echo "Simulated: no direct job log capture")
+          echo "---- END LOGSCAN DEBUG ----"
+
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: poc-debug
+          path: repros/CVE-2025-30154-reviewdog
