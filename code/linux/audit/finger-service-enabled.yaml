@@ -1,0 +1,40 @@
+id: finger-service-enabled
+
+info:
+  name: Linux Finger Should Be Disabled
+  author: songyaeji
+  severity: high
+  description: |
+    The Finger service was enabled on the system and exposed user account details to unauthorized users, which could have been used in password-based attacks or user enumeration.It was checked in both xinetd and systemd environments.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,code,audit,compliance,kisas
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      if [ -f /etc/xinetd.d/finger ]; then
+        disable_status=$(grep -i 'disable' /etc/xinetd.d/finger | grep -v '^#' | awk -F '=' '{print $2}' | xargs)
+        if [ "$disable_status" = "no" ]; then
+          echo "[VULNERABLE] Finger service is enabled via xinetd (disable = no)"
+        elif [ -z "$disable_status" ]; then
+          echo "[UNKNOWN] Finger service config found but no disable directive"
+        else
+          echo "[SAFE] Finger service is disabled in xinetd"
+        fi
+      elif systemctl is-active --quiet finger 2>/dev/null; then
+        echo "[VULNERABLE] Finger service is active under systemd"
+      else
+        echo "[SAFE] Finger service not found"
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
+# digest: 4a0a0047304502205e9c673beaa9a6a309e2bce4563861e7e9203c90de0a43b6f7a062c718370d32022100f613f7558707836ad5a1ec9f585874b6f4b2bc05829d3585e6f353ec0b81b721:922c64590222798bb761d5b6d8e72950

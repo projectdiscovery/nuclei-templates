@@ -1,0 +1,46 @@
+id: linux-anonymous-ftp-enabled
+
+info:
+  name: Linux Anonymous FTP Access Enabled
+  author: songyaeji
+  severity: high
+  description: |
+    FTP account allows malicious users to exploit it to log in anonymously and write to directories, potentially gaining unauthorized access or executing local exploits.This template checks for signs of anonymous FTP being enabled via /etc/passwd, vsFTPD, or ProFTPD configuration files.
+  reference:
+    - https://isms.kisa.or.kr
+  metadata:
+    verified: true
+  tags: linux,kisa,audit,ftp,anonymous,local
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      if grep -q -E '^ftp:' /etc/passwd; then
+          echo "[VULNERABLE] FTP user exists in /etc/passwd"
+      else
+          echo "[SAFE] No FTP user found in /etc/passwd"
+      fi
+
+      # Check vsftpd anonymous login
+      if grep -q -i 'anonymous_enable.*yes' /etc/vsftpd/vsftpd.conf 2>/dev/null; then
+          echo "[VULNERABLE] anonymous_enable=YES in vsftpd.conf"
+      else
+          echo "[SAFE] Anonymous login disabled in vsftpd.conf"
+      fi
+
+      # Check proftpd anonymous login
+      if grep -q -i 'UserAlias.*anonymous' /etc/proftpd/proftpd.conf 2>/dev/null; then
+          echo "[VULNERABLE] UserAlias anonymous in proftpd.conf"
+      else
+          echo "[SAFE] Anonymous login disabled in proftpd.conf"
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
+# digest: 4b0a00483046022100c6b1729dcd486c410e3284be1f58be741ce1cd1a86c04e0a49a4881ff219a30d022100a85c753d1e95f7b127c4d7990c5f8e18170683371a02062dc4c3e67402defad9:922c64590222798bb761d5b6d8e72950
