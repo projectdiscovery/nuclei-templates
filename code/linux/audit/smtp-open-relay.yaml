@@ -1,0 +1,59 @@
+id: smtp-open-relay
+
+info:
+  name: Linux SMTP Open Relay Misconfigured
+  author: songyaeji
+  severity: high
+  description: |
+    Sendmail and Postfix were checked for proper restrictions against unauthorized relay attempts. Improper configurations allowed attackers to abuse the server for spam or denial-of-service (DoS) attacks.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,kisa,audit,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      if ps -ef | grep -v grep | grep -q sendmail; then
+        if grep -q 'R\$.\* \$#error \$@ 5.7.1 \$: "550 Relaying denied"' /etc/mail/sendmail.cf 2>/dev/null \
+          || (test -f /etc/mail/access.db && echo "[INFO] Sendmail access.db exists (relay likely restricted)"); then
+          echo "[SAFE] Sendmail relay restriction is configured."
+        else
+          echo "[VULNERABLE] Sendmail relay restriction is missing."
+        fi
+      else
+        echo "[INFO] Sendmail is not active."
+      fi
+
+  - engine:
+      - bash
+    source: |
+      if systemctl is-active postfix | grep -q running; then
+        mynetworks=$(grep -E '^\s*mynetworks\s*=' /etc/postfix/main.cf 2>/dev/null)
+        relay_restrict=$(grep -E '^\s*smtpd_relay_restrictions\s*=.*permit_mynetworks' /etc/postfix/main.cf 2>/dev/null)
+        reject_unauth=$(grep -E '^\s*smtpd_relay_restrictions\s*=.*reject_unauth_destination' /etc/postfix/main.cf 2>/dev/null)
+
+        if [[ -z "$mynetworks" || -z "$relay_restrict" || -z "$reject_unauth" ]]; then
+          echo "[VULNERABLE] Postfix relay restrictions are missing or misconfigured."
+        else
+          echo "[SAFE] Postfix relay restrictions are properly configured."
+        fi
+      else
+        echo "[INFO] Postfix is not active."
+      fi
+
+    matchers:
+      - type: word
+        name: sendmail
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"
+
+      - type: word
+        name: postfix
+        part: code_2_response
+        words:
+          - "[VULNERABLE]"
+# digest: 4a0a0047304502205ecd35ee6bceef3bc70212a856376c39edf03a5abba2d89b3def218d98669f1d022100e269e0ca6e76ce2c2f5fa045cea9f585e7a955b4d9fbfb7327b704de31f6369d:922c64590222798bb761d5b6d8e72950
