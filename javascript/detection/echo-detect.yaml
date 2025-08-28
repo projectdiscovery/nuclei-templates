@@ -1,0 +1,40 @@
+id: echo-detect
+
+info:
+  name: Echo Protocol  Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Echo is a protocol that is used for debugging and measurement. It works by sending back all the data that was received from the source. The protocol works on TCP and UDP, typically on port 7.
+  reference:
+    - https://en.wikipedia.org/wiki/Echo_Protocol
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:7"
+  tags: echo,network,js,udp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = Payload
+      packet.WriteString(cmd)
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvString()
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: 7
+      Payload: "{{randstr}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - contains(response, "{{randstr}}")
+        condition: and
