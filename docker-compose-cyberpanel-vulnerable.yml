@@ -1,0 +1,57 @@
+# Vulnerable CyberPanel Environment for CVE-2024-51568 Testing
+# WARNING: FOR SECURITY TESTING ONLY - DO NOT USE IN PRODUCTION
+
+version: '3.8'
+
+services:
+  vulnerable-cyberpanel:
+    image: ubuntu:20.04
+    container_name: cyberpanel-vulnerable
+    ports:
+      - "8090:8090"
+      - "80:80"
+      - "443:443"
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - CYBERPANEL_VERSION=2.3.4
+    volumes:
+      - cyberpanel_data:/home/cyberpanel
+      - ./setup-vulnerable-cyberpanel.sh:/setup.sh:ro
+    networks:
+      - cyberpanel_vuln_net
+    command: ["/bin/bash", "/setup.sh"]
+    privileged: true
+
+volumes:
+  cyberpanel_data:
+    driver: local
+
+networks:
+  cyberpanel_vuln_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Usage Instructions:
+# 1. Create setup-vulnerable-cyberpanel.sh script (see below)
+# 2. Run: docker-compose -f docker-compose-cyberpanel-vulnerable.yml up -d
+# 3. Wait for CyberPanel to initialize (may take 10-15 minutes)
+# 4. Access: http://localhost:8090
+# 5. Test template: nuclei -t CVE-2024-51568.yaml -target http://localhost:8090 -debug
+
+---
+# setup-vulnerable-cyberpanel.sh content:
+#!/bin/bash
+
+# Install CyberPanel 2.3.4 (vulnerable version)
+apt-get update
+apt-get install -y curl wget python3 python3-pip
+cd /tmp
+wget https://github.com/usmannasir/cyberpanel/archive/v2.3.4.tar.gz
+tar -xf v2.3.4.tar.gz
+cd cyberpanel-2.3.4
+python3 install.py --installCyberPanel
+
+# Keep container running
+tail -f /dev/null
