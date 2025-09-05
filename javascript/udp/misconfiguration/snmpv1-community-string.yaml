@@ -1,23 +1,26 @@
-id: snmpv1-public-discovery
+id: snmpv1-community-string
 
 info:
-  name: SNMPv1 Public Discovery
+  name: SNMPv1 Public Community String
   author: matejsmycka
-  severity: medium
+  severity: high
   description: |
-    The remote host is running an SNMPv1 server with a default community string.
-    SNMPv1 is an insecure protocol that can be exploited to gather sensitive information.
-    Use other tools like snmpwalk to gather more information.
+    SNMPv1 was configured with the default public community string, which allows unauthorized users to query system information. This may expose sensitive details such as network configuration, running processes, and device information.
   reference:
     - https://hackers-arise.com/exploiting-snmpv1-for-reconnaissance/
     - https://hacktricks.boitatech.com.br/pentesting/pentesting-snmp
     - https://www.tenable.com/plugins/nnm/1344
     - https://linux.die.net/man/1/snmpwalk
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"SNMP"
   tags: js,udp,network
 
 javascript:
   - pre-condition: |
       isUDPPortOpen(Host, Port);
+
     code: |
       const c = require("nuclei/net");
       const conn = c.Open('udp', `${Host}:${Port}`, `${Timeout}`);
@@ -30,6 +33,7 @@ javascript:
       conn.SendHex(payload);
       let resp = conn.RecvFull(64);
       resp;
+
     args:
       Host: "{{Host}}"
       Port: 161
@@ -37,6 +41,7 @@ javascript:
       Community: "{{community_string}}"
 
     attack: clusterbomb
+
     payloads:
       community_string:
         - public
