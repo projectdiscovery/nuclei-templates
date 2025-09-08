@@ -1,7 +1,7 @@
 id: phoenix-contact-charx-api
 
 info:
-  name: Phoenix Contact CHARX SEC-3XXX AC Charging Controller - Exposed REST APIs
+  name: Phoenix Contact CHARX SEC-3XXX AC Charging Controller REST API - Detect 
   author: inokii
   severity: info
   description: |
@@ -9,11 +9,12 @@ info:
   reference:
     - https://www.phoenixcontact.com/en-us/products/ac-charging-controllers
   metadata:
+    verified: true
     max-request: 1
     vendor: Phoenix Contact
     product: CHARX SEC-3000
     shodan-query: title:"Phoenix Contact - CHARX"
-  tags: phoenix-contact,phoenix-contact-charx,ics,exposure,api
+  tags: phoenix-contact,charx,ics,api
 
 http:
   - method: GET
@@ -21,11 +22,25 @@ http:
       - "{{BaseURL}}/api/v1.0/web/retained-data"
 
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "charging_controllers", "system")'
+        condition: and
 
     extractors:
+      - type: json
+        part: body
+        name: kernel_release
+        json:
+          - '.system.info._v_.kernel_release'
+
+      - type: json
+        part: body
+        name: os_name
+        json:
+          - '.system.info._v_.os_name'
+
       - type: json
         part: body
         name: firmware_version
@@ -46,54 +61,6 @@ http:
 
       - type: json
         part: body
-        name: device_uid
-        json:
-          - '.charging_controllers | .[].info._v_.device_uid'
-
-      - type: json
-        part: body
-        name: device_type
-        json:
-          - '.charging_controllers | .[].info._v_.device_type'
-
-      - type: json
-        part: body
-        name: hardware_name
-        json:
-          - '.system.info._v_.hardware_name'
-
-      - type: json
-        part: body
-        name: kernel_release
-        json:
-          - '.system.info._v_.kernel_release'
-
-      - type: json
-        part: body
-        name: kernel_version
-        json:
-          - '.system.info._v_.kernel_version'
-
-      - type: json
-        part: body
-        name: machine_arch
-        json:
-          - '.system.info._v_.machine_arch'
-
-      - type: json
-        part: body
-        name: machine_id
-        json:
-          - '.system.info._v_.machine_id'
-
-      - type: json
-        part: body
-        name: os_name
-        json:
-          - '.system.info._v_.os_name'
-
-      - type: json
-        part: body
         name: os_release
         json:
           - '.system.info._v_.os_release'
@@ -103,4 +70,3 @@ http:
         name: os_build
         json:
           - '.system.info._v_.os_build'
-
