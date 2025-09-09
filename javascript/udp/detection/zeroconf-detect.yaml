@@ -1,0 +1,41 @@
+id: zeroconf-detect
+
+info:
+  name: Zeroconf - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Queried `_services._dns-sd._udp.local` over UDP/5353 and identified Zeroconf (mDNS/DNS-SD) services that were advertised locally.
+  reference:
+    - https://en.wikipedia.org/wiki/Zero-configuration_networking
+  metadata:
+    verified: true
+    zoomeye-query: service="zeroconf"
+  tags: zeroconf,network,js,udp
+
+javascript:
+
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "000000000001000000000000095f7365727669636573075f646e732d7364045f756470056c6f63616c00000c0001"
+      packet.WriteString(cmd)
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(packet);
+      const result = conn.RecvFullHex();
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: 5353
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'success == true'
+          - 'contains_all(response, "udp.local","rvices._dns-sd") || contains(response, "-servers.net")'
+        condition: and
+# digest: 4b0a00483046022100b9a010065afdcc27130ed5274fb55b87252a649736e3648dde05a4d9fba5af99022100bba14c22d55461ea2db67f1e2fdb02a9cb370c32eaff05ed2a4f7523ea931e4b:922c64590222798bb761d5b6d8e72950

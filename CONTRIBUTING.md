@@ -41,7 +41,7 @@ Along with the P.O.C following are the required fields in the info section for s
 
 **Don’t**
 
-- Don’t not share any real world target on the PR. If you have setup an vulnerable environment please share it privately on Discord with the team to easily validate the template.
+- Don’t share any real world target on the PR. If you have setup an vulnerable environment please share it privately on Discord with the team to easily validate the template.
 - Avoid submitting templates with weak matchers. For example: Adding GET/POST data as the matchers in the template, as it can result in false positive results on few hosts
 - Don’t make unnecessary changes to the existing templates like adding more requests to the templates when the existing requests or paths are good enough to verify that the bug exists
 - Try to keep the requests per template as low as possible

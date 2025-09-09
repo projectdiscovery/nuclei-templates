@@ -1,28 +1,43 @@
 id: adcs-certificate
 
 info:
-  name: Certification Authority Web Enrollment (ADCS) - Detection
-  author: pastaga,defte
+  name: Microsoft AD CS Web Enrollment - Detect
+  author: pastaga,defte,atomiczsec
   severity: info
   description: |
-    Web Enrollment is a service that can be installed on an AD CS server to allow users and computers in an Active Directory domain to request a certificate through an interactive web page.
+    Detects Microsoft Active Directory Certificate Services (AD CS) Web Enrollment and certificate download pages.
   metadata:
     verified: true
+    max-request: 3
     shodan-query: html:"/certenroll"
-  tags: ad,adcs,exposure,files
+  tags: ad,adcs,exposure,files,web-enrollment,detect
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/certenroll/"
       - "{{BaseURL}}/CertEnroll/"
+      - "{{BaseURL}}/certsrv/"
+      - "{{BaseURL}}/certsrv"
 
     host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: or
     matchers:
       - type: dsl
+        name: certenroll
         dsl:
-          - contains(body, ".crl") || contains(body, ".crt")
-          - contains(body, "CertEnroll") || contains(body, "certenroll")
-          - status_code == 200
+          - 'status_code == 200'
+          - 'contains_any(body, ".crl", ".crt", ".cer", ".p7b")'
+          - 'contains_any(tolower(body), "certenroll", "locmscertsrv", "certificate services")'
         condition: and
-# digest: 4b0a00483046022100834fe22a0cf908f657153bd2278bd1bb581fdb119537ad127e62ec7591c9c4f2022100ae681d05bbfec5621702a57f4bc67cd29afb9878d01c68c2b573086f3b0c6ea6:922c64590222798bb761d5b6d8e72950
+
+      - type: dsl
+        name: certsrv
+        dsl:
+          - 'status_code == 200 || status_code == 401 || status_code == 403'
+          - 'contains_any(tolower(body), "locmscertsrv", "certificate services", "web enrollment")'
+        condition: and
+# digest: 4b0a00483046022100a0491772103eabda138ce6d51e08bb0810723bb1da14bb2e3d6e33d40e9910cf0221009128a1399d033ee2dff8c0a7b86253e770679f38d2a2ae83e681eec519a68296:922c64590222798bb761d5b6d8e72950

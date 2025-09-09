@@ -1,0 +1,43 @@
+id: nfs-v3-exposed
+
+info:
+  name: NFSv3 Exposed
+  author: johnk3r
+  severity: info
+  description: |
+    This version of the protocol did not implement native encryption and transmitted all data in clear text over the network. Also, this version of NFSv3 relied on client IP address and UID/GID matching for authentication,mechanisms that were easily bypassed by attackers with control over their client machines.
+  reference:
+    - https://medium.com/@zoomeye_team/threat-intell-report-nfs-exposed-the-silent-attack-vector-8aa4ea0cbce1
+  metadata:
+    verified: true
+    zoomeye-query: service=nfs && port=2049
+    shodan-query: nfs
+  tags: network,nfs,rpc,detect,tcp
+
+tcp:
+  - inputs:
+      # Record Marking (0x80000028) + XDR CALL:
+      # xid='VER3' (0x56455233), CALL(0), rpcvers=2, prog=100003, vers=3, proc=NULL(0),
+      # cred=AUTH_NONE(0,len=0), verf=AUTH_NONE(0,len=0)
+      - data: "80000028564552330000000000000002000186a3000000030000000000000000000000000000000000000000"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+    port: 2049
+
+    read-size: 256
+
+    matchers-condition: and
+    matchers:
+      - type: binary
+        name: nfs-v3-success
+        binary:
+          # XID 'VER3' + REPLY(1) + MSG_ACCEPTED(0) + AUTH_NONE(0,0) + SUCCESS(0)
+          - "5645523300000001000000000000000000000000"
+
+      - type: word
+        words:
+          - "HTTP/1.1"
+        negative: true
+# digest: 4a0a00473045022100d45281246ef05f3596d9b162fe5b01831e66edecb8c05c48c85c0ca5dc7cf5860220609233242b4ea4582804bd10df453e74d7f1ad7023bd195bc9bde3ec349cd148:922c64590222798bb761d5b6d8e72950

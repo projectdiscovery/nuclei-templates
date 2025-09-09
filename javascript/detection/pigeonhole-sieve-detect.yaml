@@ -1,0 +1,45 @@
+id: pigeonhole-sieve-detect
+
+info:
+  name: Pigeonhole Sieve Service - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+      Pigeonhole Sieve is Dovecot’s plugin that implements the Sieve mail filtering language, allowing server-side email filtering at delivery. It adds extensions and ManageSieve support for user-friendly rule management.  metadata:
+  metadata:
+    verified: true
+    shodan-query: product:"Dovecot Pigeonhole sieve"
+  tags: sieve,network,js,tcp,detect
+
+javascript:
+
+  - pre-condition: |
+      isPortOpen(Host,Port);
+
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "00000000"
+      packet.WriteString(cmd)
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvString();
+      Export(result);
+
+    args:
+      Host: "{{Host}}"
+      Port: 4190
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - contains_all(response, "SIEVE","IMPLEMENTATION")
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        regex:
+          - 'VERSION([ "0-9.]+)'
+# digest: 4b0a00483046022100803903c4fd3878c2ad8e1834a06aa2340f38295a1c8e3d09ce208cc80839db3d022100b7bb2e56d5d86e57010f4b981f7b4febb9fb0e6f0b4ce783d8bb0548dcc55f1c:922c64590222798bb761d5b6d8e72950
