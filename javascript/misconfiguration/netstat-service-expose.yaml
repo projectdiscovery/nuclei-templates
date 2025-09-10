@@ -1,0 +1,45 @@
+id: netstat-service-expose
+
+info:
+  name: Netstat Service - Expose
+  author: pussycat0x
+  severity: low
+  description: |
+    Port 15 (Netstat) was found exposed, which could have disclosed sensitive network and system information to unauthorized users.
+  impact: |
+    This exposure increased the risk of information gathering and potential exploitation by attackers.
+  metadata:
+    verified: true
+    max-request: 1
+    zoomeye-query: port="15" && "netstat"
+  tags: netsat,network,js,tcp
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "00000000"
+      packet.WriteString(cmd)
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvString();
+      result;
+
+    args:
+      Host: "{{Host}}"
+      Port: 15
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - contains(response, "Active Internet connections")
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a004630440220077a62d283068234b11b93c737eadb043ac7456651dbdd36f3fb4a25d28d9048022047d96645b726f054ae3c69f314db38e06fa367efcf4b812c03520b8f89fed5ee:922c64590222798bb761d5b6d8e72950
