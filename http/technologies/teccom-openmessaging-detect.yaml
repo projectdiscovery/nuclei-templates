@@ -1,0 +1,49 @@
+id: teccom-openmessaging-detect
+
+info:
+  name: TecCom TecConnect OpenMessaging Webservice Detection
+  author: lunarcowboy
+  severity: info
+  description: |
+    Detects instances of the end-of-life TecCom TecConnect OpenMessaging webservice.
+    TecCom TecConnect is an end-of-life product with known security vulnerabilities.
+  reference:
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-10183
+  classification:
+    cpe: cpe:2.3:a:teccom:tecconnect:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: teccom
+    product: tecconnect
+    shodan-query: title:"TecConnect"
+  tags: tech,teccom,tecconnect,webservice,eol,wsdl
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/openmessaging.asmx?wsdl'
+      - '{{BaseURL}}/tecopenmessaging/openmessaging.asmx?wsdl'
+      - '{{BaseURL}}/tomconnect/openmessaging.asmx?wsdl'
+      - '{{BaseURL}}/tomconnect_apo/openmessaging.asmx?wsdl'
+      - '{{BaseURL}}/tompreprod/openmessaging.asmx?wsdl'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'www.teccom-eu.net/wsdl'
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'targetNamespace="([^"]*teccom[^"]*)"'
