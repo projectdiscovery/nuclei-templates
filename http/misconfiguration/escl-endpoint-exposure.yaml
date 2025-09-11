@@ -1,0 +1,43 @@
+id: escl-endpoint-exposure
+
+info:
+  name: eSCL unauthorized endpoint access
+  author: matejsmycka
+  severity: low
+  description: |
+    Unauthorized access to MFP (Multi-function printer) using eSCL protocol allows attackers to create scan jobs, send requests, eavesdrop sensitive documents.
+  reference:
+    - https://wiki.debian.org/eSCL
+    - https://support.princh.com/en/the-onboarding-process-1
+    - https://mopria.org/spec-download
+  tags: network,iot,printer,misconfig,http,escl
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/eSCL/ScannerCapabilities"
+
+    matchers:
+      - type: word
+        condition: and
+        words:
+          - "xmlns:pwg="
+          - "<scan:ScannerCapabilities>"
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        condition: or
+        words:
+          - "application/xml"
+          - "text/xml"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '<(?:pwg:)?SerialNumber>([^<]+)</(?:pwg:)?SerialNumber>'
+          - '<(?:pwg:)?Model>([^<]+)</(?:pwg:)?Model>'
+          - '<(?:pwg:)?MakeAndModel>([^<]+)</(?:pwg:)?MakeAndModel>'
