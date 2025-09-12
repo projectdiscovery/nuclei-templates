@@ -1,0 +1,43 @@
+id: xxl-job-default-login
+
+info:
+  name: XXL-JOB - Default Login
+  author: pussycat0x
+  severity: high
+  description: |
+    XXL-JOB Admin default credentials were discovered.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"/xxl-job-admin/static/favicon.ico"
+  tags: xxl-job,default-login
+
+variables:
+  username: "admin"
+  password: "123456"
+
+http:
+  - raw:
+      - |
+        POST /xxl-job-admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        userName={{username}}&password={{password}}
+
+      - |
+        POST /xxl-job-admin/jobgroup/pageList HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        X-Requested-With: XMLHttpRequest
+
+        start=0&length=100
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && status_code_2 == 200'
+          - 'contains(body_1, "code":200)'
+          - 'contains_all(body_2, "recordsFiltered","appname")'
+        condition: and
