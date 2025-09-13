@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  sitecore-vulnerable:
+    image: mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019
+    container_name: sitecore-cve-2025-34509
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./vulnerable-sitecore:/inetpub/wwwroot/sitecore
+    command: >
+      powershell -Command "
+        # Install IIS features
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServer -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-CommonHttpFeatures -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpErrors -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpLogging -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestFiltering -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-StaticContent -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-DefaultDocument -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-DirectoryBrowsing -All;
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 -All;
+
+        # Start IIS
+        Start-Service W3SVC;
+
+        # Keep container running
+        while ($true) { Start-Sleep -Seconds 3600 }
+      "
+    restart: unless-stopped
+
+  # Alternative: Use a pre-built vulnerable image if available
+  sitecore-vulnerable-alt:
+    image: sitecore/xp:10.1-ltsc2019  # Replace with actual vulnerable image
+    container_name: sitecore-cve-2025-34509-alt
+    ports:
+      - "8081:80"
+    environment:
+      - SITECORE_LICENSE_PATH=/license/license.xml
+      - SITECORE_ADMIN_PASSWORD=admin123
+    volumes:
+      - ./license:/license
+    restart: unless-stopped
