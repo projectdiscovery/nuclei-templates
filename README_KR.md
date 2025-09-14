@@ -31,7 +31,7 @@ Nuclei 템플릿
 
 템플릿은 실제 스캐닝 엔진을 동작하게 하는 [nuclei scanner](https://github.com/projectdiscovery/nuclei)의 핵심입니다.
 이 저장소는 우리 팀에서 제공하거나, 커뮤니티에서 기여한 다양한 템플릿들을 저장하고 보관합니다.
-**pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+)를 통해 템플릿을 보내주시는 기여도 환영합니다다.
+**pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+)를 통해 템플릿을 보내주시는 기여도 환영합니다.
 
 ## Nuclei 템플릿 개요
 
