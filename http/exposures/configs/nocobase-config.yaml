@@ -1,0 +1,53 @@
+id: nocobase-config
+
+info:
+  name: Nocobase - Config
+  author: icarot
+  severity: medium
+  description: |
+    Detects if path /api/v1/db/meta/nocodb/info of Nocobase web application is exposed, getting internal information. NocoBase is an extensibility-first, open-source no-code/low-code platform for building business applications and enterprise solutions.
+  reference:
+    - https://github.com/nocobase/nocobase/
+    - https://www.nocobase.com/
+  metadata:
+    max-request: 1
+    vendor: nocobase
+    product: nocobase
+  tags: nocobase,config,exposed
+
+http:
+  - raw:
+      - |
+        GET /api/v1/db/meta/nocodb/info HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"authType":'
+          - '"env":'
+          - '"version":'
+          - '"ncSiteUrl":'
+          - '"mainSubDomain":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json; charset=utf-8'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        json:
+          - '"authType: " + .authType'
+          - '"env: " + .env'
+          - '"version: " + .version'
+          - '"ncSiteUrl: " + .ncSiteUrl'
+          - '"mainSubDomain: " + .mainSubDomain'
