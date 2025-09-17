@@ -1,0 +1,54 @@
+id: oauth-param-injection-oast
+
+info:
+  name: OAuth Parameter Injection via Cloaking + OAST Verification
+  author: ProjectDiscoveryAI + s1d6p01nt7@bugcrowdninja.com
+  severity: high
+  description: |
+    Detects injection into OAuth and SAML flow parameters like `state`, `redirect`, `RelayState`, and `next`,
+    including cloaked forms that may bypass weak validation. Payloads are validated via out-of-band interaction.
+  tags: oauth,oidc,state,redirect,relaystate,oast,injection,param-miner,cloaking
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      oast:
+        - "{{interactsh-url}}"
+
+    fuzzing:
+      - part: query
+        mode: multiple
+        fuzz:
+          - "state={{oast}}"
+          - "redirect={{oast}}"
+          - "next={{oast}}"
+          - "RelayState={{oast}}"
+
+          # Cloaked / obfuscated variants
+          - "cb=1&state={{oast}}"
+          - "%26state={{oast}}"               # &state
+          - "state%00={{oast}}"              # Null byte
+          - "state={{oast}}&debug=true"
+          - "RelayState=/auth?next={{oast}}"
+          - "RelayState=/?cb=1&state={{oast}}&debug=true"
+          - "target={{oast}}"
+          - "continue={{oast}}"
+          - "RelayState=https://example.com@{{oast}}"
+          - "RelayState=https://example.com%09@{{oast}}"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+          - "http"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - "(state|RelayState|redirect|next|target|continue).*{{interactsh-url}}"
