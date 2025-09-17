@@ -1,0 +1,40 @@
+id: rlogin-detect
+
+info:
+  name: Rlogin Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    rlogin was a remote login protocol that allowed users to access UNIX systems over TCP port 513.  It transmitted credentials and session data in plaintext, which made it insecure and obsolete once SSH was introduced.
+  reference:
+    - https://www.ibm.com/docs/en/aix/7.1.0?topic=r-rlogin-command
+  metadata:
+    shodan-query: "rlogin"
+    verified: true
+    max-request: 1
+  tags: rlogin,network,js,tcp
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "\x00"
+      packet.WriteString(cmd)
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      const result = conn.RecvFullString()
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: 513
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - contains(response, "rlogin")
+        condition: and
+# digest: 490a00463044022020298c37242a60eaf811413662a2c0a989a567957f9e771bbfe00a2d0a93117f0220702f6a230536536e61e2d4532ea5c4b8767bf71e48066d46982c39a951aa0812:922c64590222798bb761d5b6d8e72950
