@@ -1,0 +1,70 @@
+id: adsb-ultrafeeder-detection
+
+info:
+  name: ADSB Ultrafeeder Beast Mode Detection
+  author: Random-Robbie
+  severity: info
+  description: |
+    Detects ADSB (Automatic Dependent Surveillance-Broadcast) Ultrafeeder devices running Beast mode protocol on port 30005.
+    These devices receive aircraft transponder data via software-defined radio and redistribute it over the internet.
+    Commonly used by aviation enthusiasts, flight tracking services, and research institutions.
+    Beast mode is a binary protocol that streams real-time aircraft position, altitude, speed, and identification data.
+    The protocol uses 0x1A as a start marker followed by message type identifiers (0x31, 0x32, 0x33).
+    Ultrafeeder is an all-in-one container that aggregates ADSB data from multiple sources and redistributes it to various flight tracking networks.
+  reference:
+    - https://github.com/sdr-enthusiasts/docker-adsb-ultrafeeder
+    - https://github.com/flightaware/dump1090
+    - https://github.com/wiedehopf/readsb
+    - https://mode-s.org/decode/content/ads-b/1-basics.html
+    - https://sdr-enthusiasts.gitbook.io/ads-b/foundations/deploy-ultrafeeder-container
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 3.7
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: 'port:30005'
+    fofa-query: 'port="30005"'
+  tags: network,adsb,aviation,ultrafeeder,beast-mode,dump1090,readsb,flight-tracking,detection,tcp
+
+tcp:
+  - inputs:
+      - data: ""
+    host:
+      - "{{Hostname}}"
+    port: 30005
+    read-size: 2048
+
+    matchers-condition: and
+    matchers:
+      - type: binary
+        name: beast_mode_marker
+        binary:
+          - "1a"
+
+      - type: binary
+        name: beast_mode_messages
+        binary:
+          - "1a31"
+          - "1a32"
+          - "1a33"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: message_types
+        group: 1
+        regex:
+          - "\\x1a(\\x31|\\x32|\\x33)"
+
+      - type: regex
+        name: feed_quality
+        group: 1
+        regex:
+          - "\\x1a\\x31(.{6})"
+
+      - type: kval
+        kval:
+          - beast_mode_marker
+          - beast_mode_messages
