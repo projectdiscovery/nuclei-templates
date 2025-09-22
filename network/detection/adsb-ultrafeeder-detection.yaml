@@ -5,32 +5,26 @@ info:
   author: Random-Robbie
   severity: info
   description: |
-    Detects ADSB (Automatic Dependent Surveillance-Broadcast) Ultrafeeder devices running Beast mode protocol on port 30005.
-    These devices receive aircraft transponder data via software-defined radio and redistribute it over the internet.
-    Commonly used by aviation enthusiasts, flight tracking services, and research institutions.
-    Beast mode is a binary protocol that streams real-time aircraft position, altitude, speed, and identification data.
-    The protocol uses 0x1A as a start marker followed by message type identifiers (0x31, 0x32, 0x33).
-    Ultrafeeder is an all-in-one container that aggregates ADSB data from multiple sources and redistributes it to various flight tracking networks.
+    Detected ADSB (Automatic Dependent Surveillance-Broadcast) ultrafeeders running the Beast mode protocol on port 30005. These devices received aircraft transponder data via software-defined radio and redistributed it over the internet.
   reference:
-    - https://github.com/sdr-enthusiasts/docker-adsb-ultrafeeder
     - https://github.com/flightaware/dump1090
     - https://github.com/wiedehopf/readsb
     - https://mode-s.org/decode/content/ads-b/1-basics.html
-    - https://sdr-enthusiasts.gitbook.io/ads-b/foundations/deploy-ultrafeeder-container
   classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
     cvss-score: 3.7
     cwe-id: CWE-200
   metadata:
-    verified: true
     max-request: 1
-    shodan-query: 'port:30005'
-    fofa-query: 'port="30005"'
-  tags: network,adsb,aviation,ultrafeeder,beast-mode,dump1090,readsb,flight-tracking,detection,tcp
+    shodan-query: '"1a" port:30005'
+    verified: true
+  tags: network,tcp,adsb,aviation,ultrafeeder,beast-mode,dump1090,readsb,flight-tracking
 
 tcp:
   - inputs:
-      - data: ""
+      - data: 00000000
+        type: hex
+
     host:
       - "{{Hostname}}"
     port: 30005
@@ -39,32 +33,24 @@ tcp:
     matchers-condition: and
     matchers:
       - type: binary
-        name: beast_mode_marker
         binary:
-          - "1a"
+          - "1a31"  # Beast mode message type 31 (DF 17/18 Extended Squitter)
+          - "1a32"  # Beast mode message type 32 (DF 5/21 Surveillance ID Reply)
+          - "1a33"  # Beast mode message type 33 (DF 4/20 Surveillance Altitude Reply)
+        condition: or
 
       - type: binary
-        name: beast_mode_messages
         binary:
-          - "1a31"
-          - "1a32"
-          - "1a33"
-        condition: or
+          - "1a"  # Multiple Beast start markers indicate active feed
 
     extractors:
       - type: regex
-        name: message_types
-        group: 1
+        name: beast_message_types
         regex:
-          - "\\x1a(\\x31|\\x32|\\x33)"
+          - "1a(3[1-3])"
+        group: 1
 
       - type: regex
         name: feed_quality
-        group: 1
         regex:
-          - "\\x1a\\x31(.{6})"
-
-      - type: kval
-        kval:
-          - beast_mode_marker
-          - beast_mode_messages
+          - "(1a)"
