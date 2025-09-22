@@ -23,7 +23,7 @@ code:
       import os
       from datetime import datetime, timezone
 
-      RDP_HOST, RDP_PORT = os.getenv('Host'), os.getenv('PORT')
+      RDP_HOST, RDP_PORT = os.getenv('Host'), int(os.getenv('PORT'))
       TIMEOUT = 5
 
       NTLM_NEGOTIATE_BLOB = bytes.fromhex(
@@ -65,31 +65,34 @@ code:
         blob = blob[sig_idx:]
         info = {}
         try:
+          if len(blob) < 12:
+            return None
           if struct.unpack("<I", blob[8:12])[0] != 2:
+            return None
+          if len(blob) < 20:
             return None
           target_len = struct.unpack("<H", blob[12:14])[0]
           target_offset = struct.unpack("<I", blob[16:20])[0]
-          if target_len > 0:
+          if target_len > 0 and len(blob) >= target_offset + target_len:
             info["Target_Name"] = blob[target_offset:target_offset+target_len].decode("utf-16-le", errors="ignore")
           if len(blob) >= 48:
             av_len = struct.unpack("<H", blob[40:42])[0]
             av_offset = struct.unpack("<I", blob[44:48])[0]
-            if av_len > 0:
+            if av_len > 0 and len(blob) >= av_offset + av_len:
               info.update(parse_av_pairs(blob, av_offset, av_len))
-          if len(blob) >= 56:
+          if len(blob) >= 52:
             info["Product_Version"] = f"{blob[48]}.{blob[49]}.{struct.unpack('<H', blob[50:52])[0]}"
         except Exception:
           return info
         return info
 
-      sock = socket.create_connection((RDP_HOST, RDP_PORT), timeout=TIMEOUT)
-      context = ssl._create_unverified_context()
-      ssock = context.wrap_socket(sock, server_hostname=RDP_HOST)
-
-      ssock.sendall(NTLM_NEGOTIATE_BLOB)
-      response = ssock.recv(8192)
-      ssock.close()
-      sock.close()
+      with socket.create_connection((RDP_HOST, RDP_PORT), timeout=TIMEOUT) as sock:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with context.wrap_socket(sock, server_hostname=RDP_HOST) as conn:
+          conn.sendall(NTLM_NEGOTIATE_BLOB)
+          response = conn.recv(8192)
 
       parsed = parse_ntlm_challenge(response)
       print(parsed)
