@@ -12,10 +12,11 @@ info:
     Configure GraphQL server to limit or prevent directive overloading by implementing proper validation and rate limiting.
   reference:
     - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/12-API_Testing/01-Testing_GraphQL
+    - https://github.com/dolevf/graphql-cop/blob/main/lib/tests/dos_directive_overloading.py
   metadata:
     verified: true
     max-request: 1
-  tags: graphql,dos,misconfig
+  tags: graphql,misconfig
 
 http:
   - raw:
@@ -24,25 +25,18 @@ http:
         Host: {{Hostname}}
         Content-Type: application/json
 
-        {
-          "query": "query { __typename @aa @aa @aa @aa @aa @aa @aa @aa @aa @aa }"
-        }
+        {"query": "query cop { __typename @aa@aa@aa@aa@aa@aa@aa@aa@aa@aa }", "operationName": "cop"}
 
-    stop-at-first-match: true
-    matchers-condition: or
+    matchers-condition: and
     matchers:
       - type: regex
         part: body
         regex:
           - "\\\"errors\\\":\\s*\\[.*?\\]"
-      - type: regex
-        part: body
-        regex:
           - "\\\"message\\\":\\s*\\\".*?@aa.*?\\\""
+        condition: and
 
-    extractors:
-      - type: regex
-        name: directive_errors
-        part: body
-        regex:
-          - "\\\"errors\\\":\\s*\\[.*?\\]"
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
