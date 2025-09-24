@@ -1,0 +1,46 @@
+id: ni-service-locator-enum
+
+
+info:
+  name: LabVIEW/NI Service Locator
+  author: matejsmycka
+  severity: medium
+  reference:
+    - https://forums.ni.com/t5/LabVIEW/Get-list-of-services-from-NI-service-locator/td-p/3850515
+    - https://www.ni.com/en/support/security/configuring-software-and-hardware-firewalls-to-support-national-.html
+  description: | 
+    National Instruments (LabVIEW) Service Locator detected and enumerated. 
+    This services leaks a list of all services provided by the device, hardware capabilities and possibly versions.
+    These hardware devices should not be exposed to the internet.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: 
+      - http.favicon.hash:1192389544 port:3580
+  tags: detect,ni,panel,enum
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/dumpinfo"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        condition: and
+        words:
+          - "Service Locator URL Mappings"
+          - "National Instruments"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '>National Instruments/([^<]+)</font'
+        
+      
