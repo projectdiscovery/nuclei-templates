@@ -1,0 +1,44 @@
+id: aspnet-viewstate-without-mac
+
+info:
+  name: ASP.NET ViewState Without MAC Validation
+  author: kali_optimization
+  severity: high
+  description: ASP.NET application has ViewState MAC validation disabled, allowing ViewState tampering attacks
+  reference:
+    - https://docs.microsoft.com/en-us/previous-versions/bb386448(v=vs.140)
+    - https://owasp.org/www-community/vulnerabilities/ASP.NET_Misconfiguration_ViewState_without_MAC
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cwe-id: CWE-345
+  tags: aspnet,viewstate,mac,tampering
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/default.aspx"
+      - "{{BaseURL}}/login.aspx"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'name="__VIEWSTATE"'
+
+      - type: regex
+        part: body
+        regex:
+          - 'enableViewStateMac="false"'
+          - 'viewStateEncryptionMode="Never"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'name="__VIEWSTATE"[^>]*value="([^"]+)"'
+          - 'enableViewStateMac="([^"]+)"'
