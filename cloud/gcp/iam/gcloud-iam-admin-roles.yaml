@@ -1,0 +1,56 @@
+id: gcloud-iam-admin-roles
+
+info:
+  name: IAM Users with Administrative Roles
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that IAM roles with privileged administrative permissions are not assigned to IAM identities (users, groups, and service accounts) to promote least privilege and provide your members (principals) the minimal access required to perform their tasks. When IAM members have administrator privileges (Owner and Editor roles, or roles containing "Admin" or "admin" in their names), they can access, create, and manage cloud resources.
+  impact: |
+    Administrative roles grant excessive permissions that violate the principle of least privilege, potentially allowing users to perform unauthorized or accidental changes across resources.
+  remediation: |
+    Remove administrative roles (Owner, Editor, and roles containing "Admin" or "admin") from IAM members and replace them with more granular roles that follow the principle of least privilege.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/IAM/roles-with-admin-permissions.html
+    - https://cloud.google.com/iam/docs/understanding-roles
+  tags: cloud,devops,gcp,gcloud,iam,security,admin,permissions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format="json(bindings[?(@.role=='roles/owner' || @.role=='roles/editor' || @.role contains 'admin' || @.role contains 'Admin')])"
+
+    matchers:
+      - type: word
+        words:
+          - '"role":'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has IAM users with administrative roles that grant excessive permissions"'
+# digest: 490a00463044022014266e9a674d6e36a5b28ee3a9d6582b0a4675548705931e71c3b34e8ec0cd9002204027a74caf1b478c1e623efacdacf7fad285f454c89fa0d178c440e91680c379:922c64590222798bb761d5b6d8e72950

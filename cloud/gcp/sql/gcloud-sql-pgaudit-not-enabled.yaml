@@ -1,0 +1,72 @@
+id: gcloud-sql-pgaudit-not-enabled
+
+info:
+  name: pgAudit Flags Not Enabled for PostgreSQL Instances in Cloud SQL
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "cloudsql.enable_pgaudit" and "pgaudit.log" database flags are enabled for your Google Cloud PostgreSQL server instances to enable database auditing. These configurations are crucial for compliance with government, financial, and ISO certifications.
+  impact: |
+    Without pgAudit and log configurations, critical database activities may go unmonitored, potentially leading to non-compliance with regulatory standards and increasing the risk of security incidents.
+  remediation: |
+    Configure your PostgreSQL instances with the "cloudsql.enable_pgaudit" flag set to "on" and the "pgaudit.log" flag set to "all". These settings enable enhanced auditing capabilities.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,postgresql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format=json | jq '.settings.databaseFlags[]? | select(.name=="cloudsql.enable_pgaudit") | .value'
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Cloud SQL instance " + sqlInstance + " in project " + projectId + " has pgAudit flag disabled (cloudsql.enable_pgaudit=off or pgaudit.log!=all)."'
+# digest: 4a0a004730450220471a57ddf94cdf8436fb9aa6bb169b4c074528262486b7dfb93434ae87e0230b022100b0f1685f7b43682b3c991f8282774f91f8639322db02fde9b3c8f72dd267a7a5:922c64590222798bb761d5b6d8e72950

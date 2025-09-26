@@ -1,0 +1,79 @@
+id: eks-aws-managed-iam-policy
+
+info:
+  name: Use AWS-managed policy to manage AWS resources
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all Amazon EKS clusters use the "AmazonEKSClusterPolicy" managed policy to efficiently manage the resources that you use with the EKS service. This policy grants Kubernetes the necessary permissions to handle resources on your behalf.
+  impact: |
+    Without the AmazonEKSClusterPolicy, Kubernetes may not have the required permissions to perform essential operations like EC2:CreateTags, which are needed for proper resource management and identification.
+  remediation: |
+    Attach the AmazonEKSClusterPolicy to the IAM role associated with your EKS cluster using either the AWS Console or AWS CLI.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/eks-aws-managed-iam-policy.html
+    - https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let cluster of iterate(template.clusters)){
+    set("cluster", cluster)
+    code(2)
+    code(3)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks describe-cluster --region $region --name $cluster --query 'cluster.roleArn' --output json
+
+    extractors:
+      - type: json
+        name: rolearn
+        internal: true
+        json:
+          - '.'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-attached-role-policies --role-name $(echo $rolearn | cut -d'/' -f2) --query 'AttachedPolicies[*].PolicyArn' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+        negative: true
+
+      - type: word
+        words:
+          - "["
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS cluster " + cluster + " does not have AmazonEKSClusterPolicy attached to its IAM role"'
+# digest: 4b0a00483046022100cb188ea7a1c621443962e0752bbd3c2ed69bff4d32f2235fdc081775da96d4e1022100b1f30b371acb9baa1fa798187a7a003c496d9b10b73f163722b365498bdd289e:922c64590222798bb761d5b6d8e72950

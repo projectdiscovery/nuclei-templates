@@ -1,0 +1,69 @@
+id: gcloud-iam-service-roles-project-level
+
+info:
+  name: Service Account Roles at Project Level
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Service Account User and Service Account Token Creator roles are assigned to a user for a specific GCP service account rather than to a user at the GCP project level, in order to implement the principle of least privilege (POLP). The principle of least privilege (also known as the principle of minimal privilege) is the practice of providing every user the minimal amount of access required to perform its tasks. The Service Account User (iam.serviceAccountUser) role allows an IAM user to attach a service account to a long-running job service such as an App Engine App or Dataflow Job, whereas the Service Account Token Creator (iam.serviceAccountTokenCreator) role allows a user to directly impersonate the identity of a service account.
+  impact: |
+    Assigning critical roles such as Service Account User and Token Creator at the project level can lead to excessive permissions that can be exploited.
+  remediation: |
+    Ensure these roles are assigned directly to service accounts and not at the project level to enforce the principle of least privilege.
+  reference:
+    - https://cloud.google.com/iam/docs/understanding-roles
+  tags: cloud,devops,gcp,gcloud,google-cloud-iam,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let binding of iterate(template.bindings)){
+        set("binding", binding)
+        javascript(1);
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format=json
+
+    extractors:
+      - type: json
+        name: bindings
+        internal: true
+        json:
+          - '.bindings[]'
+
+javascript:
+  - code: |
+        let binding = JSON.parse(template.binding);
+        let projectId = template.projectId;
+        if (binding.role == "roles/iam.serviceAccountUser" && binding.role == "roles/iam.serviceAccountTokenCreator"){
+          Export("Service Role Misconfiguration for role " + binding.role + " for member " + binding.members + " in Project " + projectId);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100caa8c57237fa231d6653f2d83fa719f24133549a2df932fde71ec14dfa003c2b022100944cbd22c9b1be4e04f3605258b3cd1646fec559d5900fe12fc2f4ee24c2f3e0:922c64590222798bb761d5b6d8e72950

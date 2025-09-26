@@ -1,0 +1,76 @@
+id: gcloud-gke-logging-disabled
+
+info:
+  name: GKE Clusters Without Cloud Logging Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that logging is enabled for your Google Kubernetes Engine (GKE) clusters to collect logs emitted by your Kubernetes applications and the GKE infrastructure. Once enabled, the logging feature sends logs and metrics to a remote aggregator to reduce the risk of tampering in case of a breach locally.
+  impact: |
+    Without logging enabled, you lack visibility into cluster health, application performance, and security incidents. This makes troubleshooting more difficult and may impact compliance with security standards.
+  remediation: |
+    Enable Cloud Logging for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --region=REGION --logging=SYSTEM,WORKLOAD,API_SERVER,CONTROLLER_MANAGER,SCHEDULER
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/logging
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-and-configure-logging.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,logging,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(loggingService)"
+
+    matchers:
+      - type: word
+        words:
+          - '"loggingService": "none"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have Cloud Logging enabled"'
+# digest: 4a0a004730450221009e4504094846e1c0f9bd8b6b9901658f4f62a4c68c39231429b896973150ef1802203467a6f80cc6546e7c27661cee083291f8932da1e9d9fe0e364b202a367fd01c:922c64590222798bb761d5b6d8e72950

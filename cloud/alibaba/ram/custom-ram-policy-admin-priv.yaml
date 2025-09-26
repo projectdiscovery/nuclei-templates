@@ -1,0 +1,64 @@
+id: custom-ram-policy-admin-priv
+
+info:
+  name: Custom RAM Policies With Full Administrative Privileges
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    The Alibaba Cloud Custom RAM policies with full administrative privileges grant users or groups unrestricted access to all resources and actions within the cloud environment.
+  reference:
+    - https://www.alibabacloud.com/help/en/ram/user-guide/create-a-custom-policy
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-RAM/policies-with-full-administrative-privileges.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,alibaba-ram
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let PolicyName of iterate(template.policyname)){
+    set("policy", PolicyName)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun ram ListPolicies --PolicyType Custom --region $region
+
+    extractors:
+      - type: json
+        name: policyname
+        internal: true
+        json:
+          - '.Policies.Policy[].PolicyName'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun ram GetPolicy --PolicyName $policyname --PolicyType Custom --region $region
+
+
+    matchers:
+      - type: word
+        words:
+          - '"Effect\":\"Allow\'
+          - '\"Action\":\"*\"'
+          - '\"Resource\":\"*\"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'policy + " custom RAM Policy allow Full Administrative Privileges "'
+# digest: 4a0a0047304502204cbc305a46f0716c1d9cde8d2e7eb3267ea7b1d03724236860e6bbb6e75ce077022100c4f3830e4b2e5d3f63b7f68d5fbd35792e74fb3f0faebb0f9b05877ff71dfb21:922c64590222798bb761d5b6d8e72950

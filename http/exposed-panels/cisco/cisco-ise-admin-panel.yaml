@@ -1,0 +1,48 @@
+id: cisco-ise-admin-panel
+
+info:
+  name: Cisco ISE Admin Login Panel - Detect
+  author: bhutch
+  severity: info
+  description: |
+    Cisco Identity Services Engine (ISE) admin login panel was discovered.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query:
+      - html:"Identity Services Engine"
+      - '"Set-Cookie: APPSESSIONID=" "Path=/admin"'
+      - http.favicon.hash:-945076912
+      - http.favicon.hash:-12304266
+    fofa-query:
+      - body="Identity Services Engine"
+      - '"Set-Cookie: APPSESSIONID=" && "Path=/admin"'
+      - icon_hash="-945076912"
+      - icon_hash="-12304266"
+  tags: cisco,ise,admin,login,panel,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/login.jsp"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200 && contains(body, "document.title =\'Identity Services Engine\';")
+          - status_code == 403 && contains(body, "<title>Identity Services Engine</title>")
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        regex:
+          - "\\?_isever=(\\d{10})"
+        group: 1
+        internal: true
+
+      - type: dsl
+        name: extracted_date
+        dsl:
+          - "date_time('%Y-%M-%D', extracted_unix_timestamp)"
+# digest: 490a00463044022059a249b65578502319e495e5fd8c6c856ce08e8e3f512ad2c631e4cf0a7ddb7e022039e85556d0dd611f68e13786887e4723c4086d297005ccb049aef04256497a0b:922c64590222798bb761d5b6d8e72950

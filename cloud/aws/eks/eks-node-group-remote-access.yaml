@@ -1,0 +1,82 @@
+id: eks-node-group-remote-access
+
+info:
+  name: EKS Node Group Remote Access Configuration
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Amazon EKS node groups are configured with appropriate remote access settings to maintain security and enable necessary administrative access.
+  impact: |
+    Improper remote access configuration in EKS node groups can lead to security vulnerabilities or hinder necessary administrative access, potentially affecting cluster management and troubleshooting capabilities.
+  remediation: |
+    Configure remote access settings for EKS node groups by specifying appropriate SSH key pairs and source security groups to enable secure administrative access while maintaining security best practices.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/eks-node-group-remote-access.html
+    - https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let clusterName of iterate(template.clusters)){
+    set("cluster", clusterName)
+    code(2)
+    for(let nodegroupName of iterate(template.nodegroups)){
+      set("nodegroup", nodegroupName)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters[]' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-nodegroups --cluster-name $cluster --region $region --query 'nodegroups[]' --output json
+
+    extractors:
+      - type: json
+        name: nodegroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks describe-nodegroup --cluster-name $cluster --nodegroup-name $nodegroup --region $region --query 'nodegroup.remoteAccess' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '.*'
+
+      - type: word
+        words:
+          - "null"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS node group " + nodegroup + " in cluster " + cluster + " does not have remote access configured"'
+# digest: 4a0a0047304502203d6f07c68d09531799f475c104159760b6ff871908abe6318495c472fcf12e75022100d887a58f8de4bf9665e832ed1af966ae0c186a2afe1f1749c1912bba4b308266:922c64590222798bb761d5b6d8e72950

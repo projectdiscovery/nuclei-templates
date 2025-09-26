@@ -1,0 +1,56 @@
+id: exposed-pki-cert
+
+info:
+  name: Exposed Internal PKI Infrastructure - Detect
+  author: nullenc0de
+  severity: high
+  description: |
+    Detects exposed internal PKI infrastructure including CRL distribution points and OCSP responders
+  metadata:
+    verified: true
+    max-request: 10
+  tags: pki,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+
+    payloads:
+      paths:
+        - "/"
+        - "/certsrv/"
+        - "/pki/"
+        - "/PKI/"
+        - "/crl/"
+        - "/CRL/"
+        - "/.well-known/pki-validation/"
+        - "/ocsp/"
+        - "/CertEnroll/"
+        - "/CertSrv/"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "Certificate Services", "CRL Distribution Point", "OCSP Responder")'
+          - '!regex("(?i)^\\s*This is an OCSP responder\\.?\\s*$", body)'
+        condition: and
+
+      - type: regex
+        regex:
+          - '\\bCN=[A-Za-z0-9-]+-CA\\b'
+          - '(?i)href\s*=\s*"[^"]+\.(?:crl|cer|p7b)"'
+
+    extractors:
+      - type: regex
+        name: certificate_details
+        regex:
+          - 'CN=[A-Za-z0-9-]+-CA'
+          - 'O=[A-Za-z0-9 ]+'
+          - 'OU=[A-Za-z0-9 ]+'
+# digest: 490a00463044022014d0f0a41702e21c11260d584c1c9ce66797b57af8d6f7c68d4b765a3a7c94f10220653fb1d7bfe7f69c249a6f755ddfabe34d4b8face6a5d80554964e601641bb7a:922c64590222798bb761d5b6d8e72950

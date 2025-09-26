@@ -1,0 +1,74 @@
+id: gcloud-func-public-access
+
+info:
+  name: Publicly Accessible Google Cloud Functions
+  author: princechaddha
+  severity: high
+  description: |
+    Identify any publicly accessible Google Cloud functions within your GCP account and update their IAM policy to protect against unauthorized users sending requests to invoke these functions. To deny access from anonymous and public users, remove the bindings for allUsers and allAuthenticatedUsers members from your function's IAM policy. The allUsers member represents any user on the Internet, while allAuthenticatedUsers represents any user or service account that can sign into Google Cloud Platform (GCP) with a Google account.
+  impact: |
+    Allowing public access to Google Cloud functions can lead to unauthorized use and potential security breaches.
+  remediation: |
+    Update the IAM policies of your Google Cloud functions to remove allUsers and allAuthenticatedUsers from the bindings to ensure that the functions are not publicly accessible.
+  reference:
+    - https://cloud.google.com/functions/docs/securing/managing-access-iam
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions get-iam-policy $functionName --project $projectId --format=json
+
+    matchers:
+      - type: word
+        words:
+          - 'allUsers'
+          - 'allAuthenticatedUsers'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Publicly Accessible Function: " + functionName + " in " + projectId + " project"'
+# digest: 490a00463044022054047032f873c063e6b06345f7ad406078d0cf08dd78848ffabcd133ed5fb8980220105c2dc6c2fc146108b01f2ee12c583705d22a93b09f11ea6420f97a8dd8b39f:922c64590222798bb761d5b6d8e72950

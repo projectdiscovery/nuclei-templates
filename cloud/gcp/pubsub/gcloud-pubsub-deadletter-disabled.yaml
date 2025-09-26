@@ -1,0 +1,72 @@
+id: gcloud-pubsub-deadletter-disabled
+
+info:
+  name: Dead Letter Topic Not Enabled for Google Pub/Sub Subscriptions
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that each Google Cloud Pub/Sub subscription is configured to use a dead-letter topic (DLQ) to capture undeliverable messages. Pub/Sub subscriptions allow for a maximum number of delivery attempts. Messages that cannot be delivered after the maximum attempts are sent to the dead-letter topic, ensuring they can be reviewed and handled appropriately.
+  impact: |
+    Subscriptions without a dead-letter topic may result in loss of undeliverable messages, leading to potential data loss and reduced message reliability.
+  remediation: |
+    Configure a dead-letter topic for all Google Cloud Pub/Sub subscriptions to capture undeliverable messages. This ensures messages can be retained and addressed later.
+  reference:
+    - https://cloud.google.com/pubsub/docs/dead-letter-topics
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let topicName of iterate(template.topics)){
+      set("pubsubTopic", topicName)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub topics list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: topics
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub subscriptions describe $pubsubTopic --format="json(deadLetterPolicy.deadLetterTopic)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Dead Letter Topic not enabled for Pub/Sub subscription: " + pubsubTopic + " in project: " + projectId'
+# digest: 4a0a0047304502210098038925cd3847e3e8f6f2c1e5a49b25585689a0a1fe8d36ff5f6bc7f2746c0502207341e7dd48090f3b14d8d588dff00e049fabd22d1a65208d7990eefd6849d580:922c64590222798bb761d5b6d8e72950

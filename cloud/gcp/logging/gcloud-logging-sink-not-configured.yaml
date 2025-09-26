@@ -1,0 +1,55 @@
+id: gcloud-logging-sink-not-configured
+
+info:
+  name: Export All Log Entries Using Sinks Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure there is at least one sink used to export copies of all the log entries available within your Google Cloud Platform (GCP) project. A sink is an object created to hold a log query and a destination. You can export logs by creating one or more log sinks that include a log query and an export destination. As Google Cloud Logging service receives new log entries, they are compared against each sink. If a log entry matches a sink object query, then a copy of the log entry is written to the sink's export destination.
+  impact: |
+    If no sinks are configured to export all log entries, critical log data might be lost or inaccessible for analysis, leading to potential security risks and compliance violations.
+  remediation: |
+    Create a log sink with a blank filter to export all log entries within the project. Ensure the export destination aligns with your organizational logging strategy.
+  reference:
+    - https://cloud.google.com/logging/docs/export/configure_export_v2
+  tags: cloud,devops,gcp,gcloud,google-cloud-logging,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging sinks list --project=$projectId --format="json(name,filter)"
+
+    matchers:
+      - type: word
+        words:
+          - '"filter": ""'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"No log sinks configured to export all entries in project: " + projectId'
+# digest: 4a0a00473045022100e398e18aee7b8ad0d1bb5308a79056388c05c2f47effd6bc64e929d8fdf1c158022022870b3f2c9bb9920455b48426e5f08b8de39d3b0a8fad6cb207c61993570d5c:922c64590222798bb761d5b6d8e72950

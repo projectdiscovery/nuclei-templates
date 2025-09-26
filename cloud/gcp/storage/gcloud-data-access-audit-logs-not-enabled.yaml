@@ -1,0 +1,63 @@
+id: gcloud-data-access-audit-logs-not-enabled
+
+info:
+  name: Enable Data Access Audit Logs for Cloud Storage
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Data Access audit logs are enabled for your Google Cloud Storage buckets and objects to track read, write, and admin operations. Data Access audit logs provide insights into resource usage and help ensure security, compliance, and effective troubleshooting.
+  impact: |
+    Without Data Access audit logs, tracking operations on storage resources becomes difficult, increasing the risk of undetected unauthorized access or non-compliance with security policies.
+  remediation: |
+    Enable Data Access audit logs for the "storage.googleapis.com" service in your project to monitor all read, write, and admin activities on Cloud Storage resources.
+  reference:
+    - https://cloud.google.com/logging/docs/audit
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,audit-logs,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format="json(auditConfigs)" | jq -r '.auditConfigs[]?.auditLogConfigs[]?.logType // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'ADMIN_READ'
+          - 'DATA_READ'
+          - 'DATA_WRITE'
+        condition: and
+
+      - type: word
+        words:
+          - '"service": "allServices"'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Data Access audit logs are not enabled for the \"storage.googleapis.com\" service in project " + projectId'
+# digest: 490a0046304402206d69add12a60408b0148fe42577cdb782dcbf96c8c75e0dc93363980e972388b022055d8bfacf38393e30c78693422ed7cec11557e02994e8f957c541c3e9b93ec75:922c64590222798bb761d5b6d8e72950

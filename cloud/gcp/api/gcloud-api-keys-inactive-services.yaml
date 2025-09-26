@@ -1,0 +1,61 @@
+id: gcloud-api-keys-inactive-services
+
+info:
+  name: API Keys Should Only Exist for Active Services
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that your Google Cloud projects are using the standard authentication flow as the preferred method for authentication, rather than relying on API keys. API keys are simple encrypted strings that can be used when calling certain APIs which don't need to access private user data. API keys should be exclusively employed for active services when alternative authentication methods are not accessible, otherwise deleted.
+  impact: |
+    Using API keys for inactive services can expose your applications to unnecessary security risks. It is advisable to employ standard authentication methods and ensure that API keys are used judiciously and only for active services.
+  remediation: |
+    Review and ensure that API keys are only configured for active services. Delete or disable API keys associated with inactive or unnecessary services to minimize security risks.
+  reference:
+    - https://cloud.google.com/docs/authentication/api-keys
+  tags: cloud,devops,gcp,gcloud,api-keys,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha services api-keys list --project=$projectId --format="json(uid)"
+
+    matchers:
+      - type: word
+        words:
+          - 'uid'
+
+    extractors:
+      - type: json
+        name: uid
+        internal: true
+        json:
+          - '.[].uid'
+
+      - type: dsl
+        dsl:
+          - '"Inactive API Key found: UID: " + uid + " in Project: " + projectId'
+# digest: 490a0046304402207d9636d01e08f534fa218db024859e2229a20f9545b6dda783fb652284e64785022049b4893759d0e724f60c748db1d8d00f7499c3830638f2d6d16bdd41043ee5e9:922c64590222798bb761d5b6d8e72950

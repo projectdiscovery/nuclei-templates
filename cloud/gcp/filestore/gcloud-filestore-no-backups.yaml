@@ -1,0 +1,75 @@
+id: gcloud-filestore-no-backups
+
+info:
+  name: Filestore Instance Not Using On-Demand Backup
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that on-demand backup and restore functionality is in use for your Google Cloud Filestore instances to ensure data protection, disaster recovery, and regulatory compliance. The backup and restore process does not consume provisioned capacity and has no impact on the performance and availability of your Filestore applications.
+  impact: |
+    Without backups, data loss from accidental deletion, corruption, or disaster events could lead to extended application downtime and inability to recover critical data.
+  remediation: |
+    Create on-demand backups for your Filestore instances using the 'gcloud filestore backups create' command or through the Google Cloud Console. Configure regular backup schedules to ensure point-in-time recovery capabilities.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/backup-and-restore.html
+    - https://cloud.google.com/filestore/docs/backup-restore
+  tags: cloud,devops,gcp,gcloud,filestore,security,backup,disaster-recovery,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore backups list --project $projectId --format="json" --filter='"sourceInstance":"$instanceName"'
+
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Filestore instance " + instanceName + " in project " + projectId + " has no backups configured for data protection and disaster recovery"'
+# digest: 4b0a0048304602210099362bbd987d58593729ab1de3e9c1a78816637d818bfbee6e7dced0f4867579022100f118e76f422b5701c21a05b147797f03c199b52056177b08e18d97911c1ca409:922c64590222798bb761d5b6d8e72950

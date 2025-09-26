@@ -2,12 +2,13 @@ id: netdata-panel
 
 info:
   name: Netdata Panel - Detect
-  author: TechbrunchFR
+  author: TechbrunchFR,righettod,matejsmycka
   severity: info
   description: |
-    Netdata panel was detected.
+    Netdata panel was discovered.
   reference:
     - https://github.com/netdata/netdata
+    - https://www.netdata.cloud/
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cwe-id: CWE-200
@@ -18,29 +19,48 @@ info:
     product: netdata
     shodan-query:
       - http.title:"netdata dashboard"
+      - http.title:"Netdata Console"
       - "server: netdata embedded http server"
     fofa-query: title="netdata dashboard"
     google-query: intitle:"netdata dashboard"
-  tags: panel,netdata
+  tags: panel,netdata,login,dashboard
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/api/v1/info"
+      - "{{BaseURL}}/api/v2/info"
+      - "{{BaseURL}}/sign-in"
 
-    matchers-condition: and
+    stop-at-first-match: true
+    matchers-condition: or
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "application/json")'
+          - 'contains(to_lower(body), "netdata")'
+        condition: and
 
-      - type: word
-        part: header
-        words:
-          - "application/json"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>netdata console</title>")'
+        condition: and
 
-      - type: word
+    extractors:
+      - type: regex
         part: body
-        words:
-          - "netdata"
-# digest: 490a004630440220107e0c1ce2e2424cd68b93f784568312fe8d84448148720720ea5ed979db99d4022005f922ca23a057fcd5940737054c03f7eba088b631ef2739ca1dff80263b9880:922c64590222798bb761d5b6d8e72950
+        regex:
+          - 'version"\s*:\s*"v([^"]+)"'
+
+      - type: regex
+        part: body
+        regex:
+          - 'kernel_version"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)nodeEnv:\s+"([a-z0-9]+)"'
+# digest: 490a0046304402204b62ff0e4c021a866c57502ea88215287b103d4549980cb927b5cb101ad5230f022038b36e401749f98a5672e5f35638b2de0fec5b5cea176e80402d8d0d039a5c79:922c64590222798bb761d5b6d8e72950

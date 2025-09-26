@@ -1,0 +1,94 @@
+id: gcloud-gke-confidential-nodes-disabled
+
+info:
+  name: GKE Clusters Not Using Confidential Nodes
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Kubernetes Engine (GKE) cluster node pools use confidential GKE nodes to encrypt all running workloads. Confidential GKE nodes employ hardware-based memory encryption to safeguard your data and applications from unauthorized access or modification while in use.
+  impact: |
+    Without confidential GKE nodes enabled, workload data may be vulnerable to unauthorized access or modification while in use, even if the underlying hardware is compromised.
+  remediation: |
+    Enable confidential GKE nodes for your cluster node pools using:
+    gcloud container node-pools update POOL_NAME --cluster=CLUSTER_NAME --region=REGION --enable-confidential-nodes
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/confidential-gke-nodes
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-confidential-gke-nodes.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,encryption,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+      for(let nodePool of iterate(template.nodePools)){
+        nodePool = JSON.parse(nodePool)
+        set("nodePoolName", nodePool.name)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container node-pools list --cluster $clusterName --location $location --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: nodePools
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container node-pools describe $nodePoolName --cluster $clusterName --location $location --project $projectId --format="json(confidentialNodes.enabled)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Node pool " + nodePoolName + " in GKE cluster " + clusterName + " (" + location + ") of project " + projectId + " does not have confidential nodes enabled"'
+# digest: 4b0a00483046022100b0e6356da4fd4cbd884550060526a32197cdb3a4a613b2f9f671a91c0a79bd48022100ff425b92399cdfc3d5e1a8452cb0e95012edc64f1f48ef740819bb56eb85ea00:922c64590222798bb761d5b6d8e72950

