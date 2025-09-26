@@ -1,0 +1,43 @@
+id: tolgee-api-anonymous
+
+info:
+  name: Tolgee API - Misconfiguration Anonymous Access
+  author: matejsmycka
+  severity: medium
+  description: |
+    Tolgee API without authentication allows creating Personal Access Tokens (PATs) via the `/v2/pats` endpoint.
+    This token can be then used to access the API with elevated privileges.
+  reference:
+    - https://docs.tolgee.io/api
+  metadata:
+    max-request: 1
+  tags: misconfiguration,api,tolgee
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v2/pats"
+    body: '{"description":"test token"}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - token
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/hal+json
+        condition: or
+
+      - type: status
+        status:
+          - 201
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '"token"\s*:\s*"([^"]+)"'
