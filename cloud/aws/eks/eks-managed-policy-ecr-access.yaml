@@ -1,0 +1,96 @@
+id: eks-managed-policy-ecr-access
+
+info:
+  name: Use AWS-managed policy to access Amazon ECR Repositories
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all EKS cluster node groups use the "AmazonEC2ContainerRegistryReadOnly" managed policy to access Amazon ECR repositories. This policy provides read-only access to Amazon EC2 Container Registry (ECR) repositories.
+  impact: |
+    Without the AmazonEC2ContainerRegistryReadOnly policy, EKS node groups cannot pull container images from ECR repositories, which will prevent pods from starting and running properly.
+  remediation: |
+    Attach the AmazonEC2ContainerRegistryReadOnly policy to the IAM role associated with your EKS node groups using either the AWS Console or AWS CLI.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/managed-policy-ecr-access.html
+    - https://docs.aws.amazon.com/AmazonECR/latest/userguide/ecr_managed_policies.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let cluster of iterate(template.clusters)){
+    set("cluster", cluster)
+    code(2)
+    for(let nodegroup of iterate(template.nodegroups)){
+      set("nodegroup", nodegroup)
+      code(3)
+      code(4)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-nodegroups --region $region --cluster-name $cluster --query 'nodegroups' --output json
+
+    extractors:
+      - type: json
+        name: nodegroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks describe-nodegroup --region $region --cluster-name $cluster --nodegroup-name $nodegroup --query 'nodegroup.nodeRole' --output json
+
+    extractors:
+      - type: json
+        name: rolearn
+        internal: true
+        json:
+          - '.'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-attached-role-policies --role-name $(echo $rolearn | cut -d'/' -f2) --query 'AttachedPolicies[*].PolicyArn' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        negative: true
+
+      - type: word
+        words:
+          - "["
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS node group " + nodegroup + " in cluster " + cluster + " does not have AmazonEC2ContainerRegistryReadOnly policy attached to its IAM role"'
+# digest: 4b0a00483046022100dfff86549934385d864486861683a6edb57b79f605a4d9fe4ec39ae73e89441a022100b9baaea0b29a98600ba9ac840f7ff8b99be1fd58679e781a011a6fe2bc8c0bfd:922c64590222798bb761d5b6d8e72950

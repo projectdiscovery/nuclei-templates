@@ -1,0 +1,56 @@
+id: gcloud-org-detailed-audit-logging
+
+info:
+  name: Detailed Audit Logging Mode Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Google Cloud Platform - Detailed Audit Logging Mode" policy is enforced at the organization level in order to enable Detailed Audit Logging feature for the supported Cloud Storage resources available within your GCP organization. When Detailed Audit Logging is enforced, both the request and response are included in Cloud Audit logs.
+  impact: |
+    Without detailed audit logging, you have limited visibility into Cloud Storage operations as request and response details are not captured in audit logs, making it harder to meet compliance requirements like SEC Rule 17a-4(f).
+  remediation: |
+    Enable the "Google Cloud Platform - Detailed Audit Logging Mode" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the gcp.detailedAuditLoggingMode constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/enable-detailed-audit-logging.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,audit,logging,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe gcp.detailedAuditLoggingMode --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not enabled detailed audit logging mode for Cloud Storage resources"'
+# digest: 4a0a00473045022100e3d0d36121d451ecff63c82fbfa363ee70fb64f3f9f474b9e9a48153de3636d202201a0317eb93a3130ac2a3a37bc34cf74a38be7114cc62ab869c2437ed49a7db1a:922c64590222798bb761d5b6d8e72950

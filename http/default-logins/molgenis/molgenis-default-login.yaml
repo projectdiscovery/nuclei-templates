@@ -1,0 +1,48 @@
+id: molgenis-default-login
+
+info:
+  name: Molgenis - Default Login
+  author: ritikchaddha
+  severity: high
+  description: |
+    Attempts to login to Molgenis using the default credentials (admin/admin). Successful login may indicate a security risk due to unchanged default credentials.
+  reference:
+    - https://molgenis.org/
+    - https://github.com/molgenis/molgenis-emx2
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"MOLGENIS"
+  tags: molgenis,default-login,exposure
+
+variables:
+  username: 'admin'
+  password: 'admin'
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+      - |
+        GET /menu/admin/logmanager HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header_1
+        words:
+          - "Set-Cookie: JSESSIONID="
+
+      - type: word
+        part: body_2
+        words:
+          - "Sign out</button>"
+          - "Log manager</a>"
+        condition: and
+# digest: 4a0a00473045022100efd35964f8350fff78632882d54e392b0eea3e229754dcf721a9bec4882e205a0220557d14ab9d3c9ab28639ad2f68c937eb2fb182c3519d45878293714b2f6f3000:922c64590222798bb761d5b6d8e72950

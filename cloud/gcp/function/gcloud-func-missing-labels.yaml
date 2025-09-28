@@ -1,0 +1,72 @@
+id: gcloud-func-missing-labels
+
+info:
+  name: Missing User-Defined Labels in Google Cloud Functions
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that user-defined labels are being used to tag, collect, and organize Google Cloud functions within your Google Cloud Platform (GCP) projects. User-defined labels are a lightweight and efficient way to group together related or associated cloud resources.
+  impact: |
+    Not using labels can lead to challenges in managing, identifying, and organizing resources, potentially increasing the complexity of operations and governance.
+  remediation: |
+    Define and apply user-defined labels to all Google Cloud functions to enhance resource management capabilities and improve operational efficiency.
+  reference:
+    - https://cloud.google.com/resource-manager/docs/creating-managing-labels
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="json(labels)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Missing labels for function: " + functionName + " in " + projectId + " project"'
+# digest: 4a0a004730450221009067d1e03e4170ee7a43672d9b82b01904b5ac69c5a3194e5f7d9b7722365dae02207f5df45308acb20653a56a1a8321d8feb4f6d9a4cb414be431bea5822becee13:922c64590222798bb761d5b6d8e72950

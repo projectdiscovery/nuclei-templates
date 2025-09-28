@@ -1,0 +1,56 @@
+id: gcloud-org-shared-vpc-subnets
+
+info:
+  name: Shared VPC Subnetworks Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the set of shared VPC subnetworks that eligible Google Cloud resources can use, are defined using the "Restrict Shared VPC Subnetworks" constraint policy. The allowed list of VPC subnetworks must be specified in the following form: projects/<project-id>/regions/<subnetwork-region>/subnetworks/<subnetwork-name>. You can also define the list of allowed subnetworks in a project, folder, or organization.
+  impact: |
+    By default, eligible Google Cloud resources can use any shared Virtual Private Cloud (VPC) subnetwork. Without restrictions, resources could be deployed in unauthorized or non-compliant network segments.
+  remediation: |
+    Configure the "Restrict Shared VPC Subnetworks" policy at the organization level to explicitly specify which VPC subnetworks can be used. Use the format projects/<project-id>/regions/<region>/subnetworks/<name> or under: prefix for broader scopes.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-shared-vps-subnetworks.html
+    - https://cloud.google.com/vpc/docs/shared-vpc
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,networking,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.restrictSharedVpcSubnetworks --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted shared VPC subnetworks, allowing resources to use any shared subnet"'
+# digest: 4a0a00473045022023b4870dec7d2476333d09d65ec95e357a86ea0f833411bc44ffa837b5e27d75022100aa069130744e3ca9cdb261db3b9b31d2e2ffb83314a22c81e2fe8e1f40f35e77:922c64590222798bb761d5b6d8e72950

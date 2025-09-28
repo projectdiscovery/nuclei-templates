@@ -1,0 +1,49 @@
+id: yacht-default-login
+
+info:
+  name: Yacht - Default Login
+  author: Fur1na
+  severity: high
+  description: |
+    Yacht is a web interface for managing Docker containers. This template detects instances with default admin credentials (admin@yacht.local:pass), which could allow unauthorized access to the Docker environment, potentially leading to container manipulation, data exposure, or even host system compromise.
+  reference:
+    - https://github.com/SelfhostedPro/Yacht
+    - https://dev.yacht.sh/docs/Installation/Getting_Started
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="Yacht"
+    zoomeye-query: app="Yacht"
+  tags: default-login,yacht,misconfig
+
+variables:
+  username: "admin@yacht.local"
+  password: "pass"
+
+http:
+  - raw:
+      - |
+        POST /api/auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username": "{{username}}", "password": "{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"access_token":'
+          - ':"successful"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220419090feee095ad3cab14b84d502cb8e22378dba1f8b3d9680961dc538f95132022048b9937a687f6636a05b78be961509b01493bf4d825472f5423e272997c28add:922c64590222798bb761d5b6d8e72950

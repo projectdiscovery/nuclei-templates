@@ -1,0 +1,72 @@
+id: gcloud-lifecycle-management-not-enabled
+
+info:
+  name: Enable Lifecycle Management for Cloud Storage Objects
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud Storage buckets are configured with lifecycle management rules to optimize object management and reduce storage costs. Lifecycle management rules help automate actions such as downgrading or deleting older objects based on user-defined conditions.
+  impact: |
+    Without lifecycle management, your storage costs may increase due to older objects occupying space unnecessarily, and object management becomes less efficient.
+  remediation: |
+    Enable lifecycle management rules for your Cloud Storage buckets to automate actions like deleting or downgrading storage class of objects based on conditions.
+  reference:
+    - https://cloud.google.com/storage/docs/lifecycle
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,lifecycle-management,cost-optimization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let bucketName of iterate(template.buckets)){
+      set("bucketName", bucketName)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gsutil ls -p $projectId | jq -R . | jq -s .
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gsutil lifecycle get $bucketName
+
+    matchers:
+      - type: word
+        words:
+          - 'no lifecycle configuration'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The bucket " + bucketName + " in project " + projectId + " does not have lifecycle management rules enabled."'
+# digest: 4a0a00473045022100cf4cc3e7348b578f7491cd7526f1c375548cb7ef4d742bb001312bc6c51322a202207b414327ca9c5d8845f25fd73ccb754485f0598ab5db4ebc460752ff15e20752:922c64590222798bb761d5b6d8e72950

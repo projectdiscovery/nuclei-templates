@@ -1,0 +1,57 @@
+id: ack-cluster-auditing-disable
+
+info:
+  name: Cluster Auditing with Simple Log Service - Disabled
+  author: ritikchaddha
+  severity: low
+  description: |
+    Ensure that cluster auditing with Simple Log Service is enabled for your Container Service for Kubernetes (ACK) clusters. Simple Log Service is a comprehensive real-time data logging solution, facilitating the seamless handling of log collection, shipping, search, storage, and analysis. The service provides a user-friendly interface for accessing the Log Viewer and an API for efficient log management. Simple Log Service automatically captures, processes, and stores container and audit logs in a dedicated persistent datastore, collecting container logs from your containers and audit logs from kube-apiserver or deployed ingress, including cluster activity events.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ACK/enable-log-service.html
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ack
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let cluster_id of iterate(template.cluster)) {
+    set("cluster", cluster_id)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters --header "Content-Type=application/json;" --body "{}"
+
+    extractors:
+      - type: json
+        name: cluster
+        internal: true
+        json:
+          - '.[].cluster_id'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters/$cluster --header "Content-Type=application/json;" --body "{}" --output cols=meta_data
+
+    matchers:
+      - type: regex
+        regex:
+          - '"AuditProjectName"\s*:\s*""'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'cluster + " Cluster auditing with Simple Log Service is not enabled"'
+# digest: 4a0a004730450220160df17dd98b2a12cee21ca6be28a84bf07a320c50059dd0513c0423203a3695022100b87631bebd1d69e7e6aa109c74ceb89f5c22358ee5bf1643a4f67e6986447559:922c64590222798bb761d5b6d8e72950

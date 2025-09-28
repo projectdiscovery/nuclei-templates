@@ -1,0 +1,76 @@
+id: gcloud-gke-private-nodes-disabled
+
+info:
+  name: GKE Clusters Without Private Nodes Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Kubernetes Engine (GKE) clusters are configured to provision all nodes with only internal IP addresses (private nodes). This prevents external clients from accessing the nodes and prevents the nodes from having direct access to the Internet, reducing the attack surface.
+  impact: |
+    Without private nodes enabled, cluster nodes are assigned public IP addresses, making them potentially accessible from the internet and increasing the risk of unauthorized access or attacks.
+  remediation: |
+    Enable private nodes for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --enable-private-nodes --enable-ip-alias
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-private-nodes.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(networkConfig.defaultEnablePrivateNodes)"
+
+    matchers:
+      - type: word
+        words:
+          - '"defaultEnablePrivateNodes": false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have private nodes enabled"'
+# digest: 4a0a004730450220056578bdd56ec7a99d04bb349ebb707f293b5cb711eb8b7179508552fda848b0022100b2a55e757d2ecf30526ddad67056f170f0551023a64122ef57294aa4d10f0984:922c64590222798bb761d5b6d8e72950

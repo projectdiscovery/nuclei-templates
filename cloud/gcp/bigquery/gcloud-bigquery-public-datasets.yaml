@@ -1,0 +1,75 @@
+id: gcloud-bigquery-public-datasets
+
+info:
+  name: Publicly Accessible BigQuery Datasets
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure there are no anonymously and/or publicly accessible BigQuery datasets available within your Google Cloud Platform (GCP) account. Google Cloud BigQuery datasets have Identity and Access Management (IAM) policies configured to determine who can have access to these resources. To refuse access from anonymous and public users, remove the bindings for "allUsers" and "allAuthenticatedUsers" members from the IAM policy associated with your datasets.
+  impact: |
+    Publicly accessible BigQuery datasets can lead to unauthorized data access or data leaks. Ensuring that access is restricted helps maintain the integrity and confidentiality of your data.
+  remediation: |
+    Update the IAM policies for each BigQuery dataset to remove "allUsers" and "allAuthenticatedUsers". This action will ensure that datasets are not exposed to any user on the internet or authenticated users not explicitly granted permission.
+  reference:
+    - https://cloud.google.com/bigquery/docs/managing-dataset-access
+  tags: cloud,devops,gcp,gcloud,bigquery,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let datasetId of iterate(template.datasetIds)){
+      set("datasetId", datasetId)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq ls --project_id $projectId --format=json
+
+    extractors:
+      - type: json
+        name: datasetIds
+        internal: true
+        json:
+          - '.[].datasetId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq show --format=prettyjson $projectId:$datasetId | jq '.access[] | select(.role != null and (.specialGroup == "allUsers" or .specialGroup == "allAuthenticatedUsers")) | .role'
+
+    matchers:
+      - type: word
+        words:
+          - 'roles/bigquery.dataViewer'
+          - 'roles/bigquery.dataEditor'
+          - 'roles/bigquery.dataOwner'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Publicly Accessible BigQuery Dataset: " + datasetId + " in Project: " + projectId'
+# digest: 490a004630440220244f74cd6bc6aa70ae3f127aab2e43cee539141d4eaf7c460ba11126ce1d46ed02202d883b802f8d9610b05efe7ff9d09e24acde57969de692f527722f4cf7f7de53:922c64590222798bb761d5b6d8e72950

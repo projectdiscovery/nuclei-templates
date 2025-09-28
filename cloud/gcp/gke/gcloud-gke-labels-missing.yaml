@@ -1,0 +1,75 @@
+id: gcloud-gke-labels-missing
+
+info:
+  name: GKE Clusters Missing Resource Labels
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that user-defined labels are being used to tag, collect, and organize GKE clusters within your Google Cloud Platform (GCP) projects. User-defined labels are a lightweight and efficient way to group together related or associated cloud resources. These are unrelated to Kubernetes labels.
+  impact: |
+    Without proper resource labels, it becomes difficult to organize, track, and manage GKE clusters effectively, leading to potential operational inefficiencies and cost management challenges.
+  remediation: |
+    Add user-defined labels to your GKE clusters using the 'gcloud container clusters update' command with --update-labels flag or through the Google Cloud Console. Use meaningful labels like environment, team, billing, version, or owner.
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/creating-managing-labels
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/use-labels-for-resource-management.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,labels,management,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(resourceLabels)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have any resource labels configured"'
+# digest: 4a0a00473045022100cec40c141ca784c0e611ded193b478d6674d4103b8a7c7f03b6cfe445c636eca022004ecea9e8e1482644003f09fcd28328c7edc3fc19f2c3b1d38850b949e746c24:922c64590222798bb761d5b6d8e72950

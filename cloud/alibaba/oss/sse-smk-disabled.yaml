@@ -1,0 +1,75 @@
+id: sse-smk-disabled
+
+info:
+  name: Server-Side Encryption with Service Managed Key - Disabled
+  author: ritikchaddha
+  severity: high
+  description: |
+    Ensure that Server-Side Encryption (SSE) is using customer-managed keys (CMKs) instead of service-managed keys to protect your OSS data at rest. SSE with customer-managed keys (also known as Bring Your Own Key - BYOK) enables you to have full control over the encryption and decryption process and meet strict compliance requirements.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/enable-sse-with-service-key.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,oss
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let BucketName of iterate(template.bucketname)) {
+    set("bucket", BucketName)
+    code(2)
+    for (let KMSMasterKeyID of iterate(template.KmsID)) {
+      set("KmsID", KMSMasterKeyID)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil ls -s --region $region
+
+    extractors:
+      - type: regex
+        name: bucketname
+        internal: true
+        regex:
+          - 'oss://([a-zA-Z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil bucket-encryption --method get $bucket
+
+    extractors:
+      - type: regex
+        name: KmsID
+        internal: true
+        regex:
+          - 'KMSMasterKeyID: ([a-z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun kms ListAliasesByKeyId --KeyId $KmsID
+
+    matchers:
+      - type: word
+        words:
+          - 'AliasName": "alias/acs/rds'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'KmsID + " SSE with service-managed key Disable"'
+# digest: 490a0046304402201f11561ccac93c5f9c3f01b039ab732fcda5bd2fbea367d3f69e40a2116e2e9d022072c6621d2ee39c602af009b2127eaf59b7fbb7d03a39843c98636bcdd61592b6:41987585204b393149694b2205534b1a

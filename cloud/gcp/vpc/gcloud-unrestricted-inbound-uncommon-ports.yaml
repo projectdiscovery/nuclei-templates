@@ -1,0 +1,109 @@
+id: gcloud-unrestricted-inbound-uncommon-ports
+
+info:
+  name: Check for Unrestricted Inbound Access on Uncommon Ports
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Virtual Private Cloud (VPC) firewall rules do not allow unrestricted access (0.0.0.0/0) to any uncommon ports to protect against brute force attacks targeting virtual machine instances associated with these firewall rules. Uncommon ports are TCP/UDP ports not included in the common service ports category.
+  impact: |
+    Allowing unrestricted access to uncommon ports increases the attack surface and exposes cloud resources to potential brute-force or unauthorized access attacks.
+  remediation: |
+    Update your VPC firewall rules to allow traffic only to common ports required for your applications, and restrict access to uncommon ports.
+  reference:
+    - https://cloud.google.com/vpc/docs/firewalls
+  tags: cloud,devops,gcp,gcloud,vpc,firewall,security,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let networkName of iterate(template.networks)){
+      set("networkName", networkName)
+      code(3)
+      set("firewallRules", template.firewallRules)
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute firewall-rules list --filter network=$networkName --sort-by priority --format="json(name,disabled,direction,sourceRanges,allowed[].ports)"
+
+    extractors:
+      - type: json
+        name: firewallRules
+        internal: true
+        json:
+          - '.[]'
+
+javascript:
+  - code: |
+      let firewallRules = template.firewallRules;
+      if (typeof firewallRules === "string") {
+        firewallRules = JSON.parse(firewallRules);
+      }
+
+      const commonPorts = [
+        "80", "443", "20", "21", "22", "23", "53", "3389",
+        "25", "465", "587", "3306", "5432", "1521", "1433",
+        "135", "137", "138", "139", "445"
+      ];
+
+      let insecureRules = [];
+      for (let rule of firewallRules) {
+        if (
+          rule.disabled === false &&
+          rule.direction === "INGRESS" &&
+          Array.isArray(rule.sourceRanges) && rule.sourceRanges.includes("0.0.0.0/0") &&
+          Array.isArray(rule.allowed) &&
+          rule.allowed.some(allowed =>
+            Array.isArray(allowed.ports) &&
+            allowed.ports.some(port => !commonPorts.includes(port))
+          )
+        ) {
+          insecureRules.push(rule.name);
+        }
+      }
+
+      if (insecureRules.length > 0) {
+        Export(`The firewall rules in network ${template.networkName} of project ${template.projectId} allow unrestricted access on uncommon ports: ${insecureRules.join(", ")}`);
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100ca3e9ccc5b79485a6429f83e8593cdad7d0434d2f735dc8b4af657cb4bb14caf022100fceee091970ffed5f6e54d40927e6a6b90f330cdaee58908ca27bb979bbac155:922c64590222798bb761d5b6d8e72950

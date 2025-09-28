@@ -1,0 +1,145 @@
+id: gcloud-vpc-network-changes-monitoring-not-enabled
+
+info:
+  name: Enable VPC Network Changes Monitoring
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that each Google Cloud Platform (GCP) project has configured an alerting policy that is triggered each time a Virtual Private Cloud (VPC) network change is made. The log filter pattern used to recognize VPC network changes is "resource.type=gce_network AND protoPayload.methodName=beta.compute.networks.insert OR protoPayload.methodName=beta.compute.networks.patch OR protoPayload.methodName=v1.compute.networks.delete OR protoPayload.methodName=v1.compute.networks.removePeering OR protoPayload.methodName=v1.compute.networks.addPeering".
+  impact: |
+    If VPC network changes monitoring is not enabled, critical network modifications may go undetected, leading to potential security risks and compliance violations.
+  remediation: |
+    Configure a logs-based metric with the specified filter pattern and create an alerting policy to monitor Virtual Private Cloud (VPC) network changes for all GCP projects.
+  reference:
+    - https://cloud.google.com/monitoring/alerts
+    - https://cloud.google.com/logging/docs/audit
+  tags: cloud,devops,gcp,gcloud,vpc,google-cloud-monitoring,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let metric of iterate(template.metrics)){
+      set("metricName", metric)
+      code(3)
+    }
+    for(let policy of iterate(template.policies)){
+      set("policyName", policy)
+      code(4)
+      for(let channel of iterate(template.channels)){
+        set("channelName", channel)
+        code(5)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging metrics list --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: metrics
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging metrics describe $metricName --project=$projectId --format="json(filter)"
+
+    matchers:
+      - type: word
+        words:
+          - 'resource.type=gce_network'
+          - 'protoPayload.methodName=beta.compute.networks.insert'
+          - 'protoPayload.methodName=beta.compute.networks.patch'
+          - 'protoPayload.methodName=v1.compute.networks.delete'
+          - 'protoPayload.methodName=v1.compute.networks.removePeering'
+          - 'protoPayload.methodName=v1.compute.networks.addPeering'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Missing logs-based metric with required filter in project: " + projectId + ", Metric: " + metricName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha monitoring policies list --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: policies
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha monitoring policies describe $policyName --project=$projectId --format="json(conditions,enabled)"
+
+    matchers:
+      - type: word
+        words:
+          - '"enabled": false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Alerting policy not enabled or missing required condition in project: " + projectId + ", Policy: " + policyName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha monitoring channels list --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: channels
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha monitoring channels describe $channelName --project=$projectId --format="json(enabled)"
+
+    matchers:
+      - type: word
+        words:
+          - '"enabled": false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Notification channel not enabled or misconfigured in project: " + projectId + ", Channel: " + channelName'
+# digest: 4a0a004730450220459b385111c88fe17b4c7951e9f328e01cffcfd6a4720c940c47ccdaca91d9db022100f217206f70f45d9e61b66fdfbf46823a47be701bf55551f81bda9050bfee22d8:922c64590222798bb761d5b6d8e72950

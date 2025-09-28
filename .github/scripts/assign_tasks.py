@@ -7,8 +7,8 @@ password = sys.argv[3]
 
 repo_owner = "projectdiscovery"
 repo_name = "nuclei-templates"
-pr_user_list = ["DhiyaneshGeek", "ritikchaddha"]
-issue_user_list = ["DhiyaneshGeek", "ritikchaddha", "princechaddha"]
+pr_user_list = ["pussycat0x", "DhiyaneshGeek", "ritikchaddha"]
+issue_user_list = ["DhiyaneshGeek", "ritikchaddha", "pussycat0x", "princechaddha"]
 
 headers = {'Authorization': f'Bearer {password}',
         'Accept': 'application/vnd.github+json',
