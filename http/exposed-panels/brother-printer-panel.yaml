@@ -1,0 +1,51 @@
+id: brother-printer-panel
+
+info:
+  name: Brother Printer Panel - Detect
+  author: pdteam
+  severity: info
+  description: |
+    Brother printer web interface and management panel was detected. This template identifies exposed Brother printer panels that may be accessible without authentication.
+  reference:
+    - https://www.rapid7.com/blog/post/multiple-brother-devices-multiple-vulnerabilities-fixed
+    - https://support.brother.com/g/b/faqend.aspx?c=eu_ot&lang=en&prod=group2&faqid=faq00100846_000
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query:
+      - http.title:"Brother" OR http.title:"Printer" AND "Brother Industries"
+    fofa-query:
+      - app="brother-Printer"
+    zoomeye-query:
+      - device="brother-Printer" || app="brother-Printer"
+  tags: panel,brother,printer,iot
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/general/status.html"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(tolower(body), "brother industries")'
+          - 'status_code == 200 && contains(tolower(body), "brother printer")'
+          - 'status_code == 200 && contains(tolower(body), "brother mfc")'
+          - 'status_code == 200 && contains(tolower(body), "brother hl")'
+          - 'status_code == 200 && contains(tolower(body), "brother dcp")'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(tolower(body), "solutions.brother.com")'
+
+    extractors:
+      - type: regex
+        group: 1
+        part: body
+        regex:
+          - '(?i)<title[^>]*>([^<]+)</title>'
+# digest: 4b0a004830460221009d26450b19bdecdaefacfae8b9b298ceaefb46862adb2441918b933f3d5196cf0221009c079dafef37ed4f3183da9bffee85bb87ff73aaaa16c0d7805eb1c395a25ba9:922c64590222798bb761d5b6d8e72950

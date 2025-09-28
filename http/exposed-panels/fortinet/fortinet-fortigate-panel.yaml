@@ -2,26 +2,37 @@ id: fortinet-fortigate-panel
 
 info:
   name: Fortinet FortiGate SSL VPN Login Panel - Detect
-  author: bsysop
+  author: bsysop,darses
   severity: info
-  description: Fortinet FortiGate SSL VPN login panel was detected.
-  classification:
-    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
-    cwe-id: CWE-200
+  description: |
+    Detect FortiGate SSL VPN login and extract release date.
   metadata:
     max-request: 1
-  tags: panel,fortinet,fortigate
+    shodan-query:
+      - cpe:"cpe:2.3:o:fortinet:fortios"
+      - http.html_hash:-1454941180
+  tags: panel,fortigate,vpn
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/remote/login"
+      - "{{BaseURL}}"
 
-    host-redirects: true
-    max-redirects: 2
     matchers:
-      - type: word
-        part: body
-        words:
-          - "/remote/fgt_lang"
-# digest: 4a0a004730450221008bd6afb9f48f7c4fe10d79be2c8bd7aba420d6352c401bdf24471d2583298fd7022014bb933f70167ced2c65a0eda826769933798627cd9d367475abf5824de94780:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - status_code==200 && contains(body, "top.location=\"/remote/login\";")
+
+    extractors:
+      - type: regex
+        name: etag
+        part: header
+        group: 1
+        internal: true
+        regex:
+          - '[Ee][Tt]ag: \"[\w\d]*\-([\w\d]{8})\"'
+
+      - type: dsl
+        dsl:
+          - '"Release date: " + date_time("Jan 2, 2006", hex_to_dec(etag))'
+# digest: 4a0a00473045022014d27fb1c56a9e2ce25817efdbbb0b0996edc368cefd5d89515969c6f90da5aa022100d752c02ae5c1bf26fab80ed78bb0c86a3ac02550fd5e41ac71d09bc89141b0bb:922c64590222798bb761d5b6d8e72950

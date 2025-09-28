@@ -1,0 +1,80 @@
+id: exposed-mcp-server
+
+info:
+  name: Exposed MCP JSON-RPC 2.0 API Detection
+  author: ivan_wallarm
+  severity: unknown
+  description: |
+    Detects exposed Machine Control Protocol (MCP) servers through JSON-RPC 2.0 API endpoints.
+    MCP servers often provide administrative access to AI tools, LLM systems, or other automation infrastructure.
+    Exposed MCP interfaces can lead to unauthorized access, information disclosure, and potential system compromise.
+    This template tests multiple detection methods including tools/list, rpc.discover, resources/list, and prompts/list.
+  metadata:
+    verified: true
+    max-request: 10
+  reference:
+    - https://jsonrpc.org/specification
+    - https://github.com/anthropics/anthropic-tools/tree/main/mcp
+    - https://lab.wallarm.com/wallarm-research-nuclei-template-counter-threats-targeting-llm-apps/
+  tags: mcp,jsonrpc,devtools,exposure,api,ai,llm
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/mcp/"
+
+    headers:
+      Accept: application/json, text/event-stream
+      Content-Type: application/json
+
+    payloads:
+      method:
+        - rpc.discover
+        - rpc.describe
+        - rpc.listTools
+        - tools/list
+        - resources/list
+        - prompts/list
+        - tool.status
+        - tool.help
+        - tool.version
+        - tool.list
+
+    attack: pitchfork
+
+    body: |
+      {
+        "jsonrpc": "2.0",
+        "method": "{{method}}",
+        "params": {},
+        "id": 1
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "jsonrpc"
+          - "result"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - "\"available_tools\"\\s*:\\s*\\["
+          - "\"name\"\\s*:\\s*\"get_tools\""
+          - "\"server_status\"\\s*:\\s*\\{"
+          - "\"observatories_by_type\""
+          - "\"parameters\"\\s*:\\s*\\{"
+          - "\"tools\"\\s*:\\s*\\[.*?\\]"
+          - "\"resources\"\\s*:\\s*\\[.*?\\]"
+          - "\"prompts\"\\s*:\\s*\\[.*?\\]"
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - "\"name\"\\s*:\\s*\"([^\"]+)\""
+# digest: 4b0a00483046022100c699fbf0b95b77692286f87e18a4a953a8a8ebc3f1d9940c0bfe8c6e54945cfb022100c156586c56a1569b26173c519903c01b57c9c675c41ececb8de58ef7694eeb33:922c64590222798bb761d5b6d8e72950

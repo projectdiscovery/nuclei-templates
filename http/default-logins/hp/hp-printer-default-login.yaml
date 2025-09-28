@@ -1,0 +1,65 @@
+id: hp-printer-default-login
+
+info:
+  name: Hewlett Packard LaserJet Printer - Default Login
+  author: JohnAsbjorn
+  severity: high
+  description: |
+    HP printers often allow administrative access without requiring a password by default. This behavior enables anyone to log in as the Administrator without authentication, potentially exposing sensitive settings or functions.
+  reference:
+    - https://h30434.www3.hp.com/t5/Printing-Errors-or-Lights-Stuck-Print-Jobs/What-is-the-user-name-and-password-in-Embedded-Web-Server/td-p/6165417
+  metadata:
+    verified: true
+    shodan-query: html:"hp/device/SignIn/Index"
+    max-request: 2
+  tags: hp,printer,default-login
+
+http:
+  - raw:
+      - |
+        GET /hp/device/SignIn/Index HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: identity
+        Accept-Language: en
+
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        group: 1
+        regex:
+          - 'id="CSRFToken" name="CSRFToken" value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /hp/device/SignIn/Index HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: identity
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/hp/device/SignIn/Index
+
+        CSRFToken={{token}}&agentIdSelect=hp_EmbeddedPin_v1&PinDropDown=AdminItem&PasswordTextBox=&signInOk=Sign+In
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "User: Administrator"
+          - "Sign out"
+        condition: and
+
+      - type: regex
+        part: header
+        regex:
+          - 'Set-Cookie: .*session.*'
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100d8096a3b7f42ccbf6c718b71a2f1bc217e557fcc3f7c4ae197781118694a0a1c022100997ac60587b5b5c7638f79b0eeeefc2c0ec0112020898c1b037b3847b98c88a9:922c64590222798bb761d5b6d8e72950

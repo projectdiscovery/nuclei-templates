@@ -1,0 +1,76 @@
+id: gcloud-vm-oslogin-2fa-disabled
+
+info:
+  name: OS Login with 2FA Authentication Not Enabled for VM Instances
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the OS Login feature enabled at the virtual machine instance level is configured with Two-Factor Authentication (2FA) in order to help protect the access to your Google Cloud VM instances. Two-Factor Authentication (also known as Multi-Factor Authentication - MFA) provides an additional layer of security on top of the existing credentials.
+  impact: |
+    Without 2FA enabled for OS Login, VM instances are more vulnerable to unauthorized access through compromised credentials.
+  remediation: |
+    Enable OS Login with 2FA authentication for all VM instances by setting the "enable-oslogin-2fa" metadata key to "TRUE".
+  reference:
+    - https://cloud.google.com/compute/docs/oslogin/set-up-oslogin
+  tags: cloud,devops,gcp,gcloud,compute,security,2fa,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json[](name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(metadata.items)" | jq '.items[]? | select(.key=="enable-oslogin-2fa") | .value // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - "FALSE"
+          - "null"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"OS Login with 2FA authentication is not enabled for VM instance " + instanceName + " in zone " + zone + " of project " + projectId'
+# digest: 4b0a00483046022100ec0b0d38721c46ad2e4dc2ed7079c6e6e8bc50657cc13c48fe68d37bdbdea45502210085d925e1ae3588e7fba54299325473f2ce75a2e8d65c49dfdd57bbec92a760a9:922c64590222798bb761d5b6d8e72950

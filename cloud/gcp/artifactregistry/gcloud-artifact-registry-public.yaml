@@ -1,0 +1,74 @@
+id: gcloud-artifact-registry-public
+
+info:
+  name: Publicly Accessible Artifact Registry Repositories
+  author: princechaddha
+  severity: high
+  description: |
+    Identify any publicly accessible Artifact Registry repositories within your Google Cloud account and update their IAM policy in order to protect against unauthorized access. To deny access from anonymous and public users, remove the bindings for "allUsers" and "allAuthenticatedUsers" members from the IAM policy associated with your repository.
+  impact: |
+    Public accessibility of Artifact Registry repositories can lead to unauthorized data access or data leaks. Restricting access ensures that only authorized entities can view or manipulate the repositories.
+  remediation: |
+    Update the IAM policies for each Artifact Registry repository to remove "allUsers" and "allAuthenticatedUsers". This action will ensure that repositories are not exposed to any user on the internet or authenticated users not explicitly granted permission.
+  reference:
+    - https://cloud.google.com/artifact-registry/docs/managing/access-control
+  tags: cloud,devops,gcp,gcloud,artifact-registry,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let repository of iterate(template.repositories)){
+      set("repositoryName", repository)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud artifacts repositories list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: repositories
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud artifacts repositories get-iam-policy $repositoryName --project $projectId --format=json | jq '.bindings[].members[]'
+
+    matchers:
+      - type: word
+        words:
+          - 'allUsers'
+          - 'allAuthenticatedUsers'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Publicly Accessible Artifact Repository: " + repositoryName + " in Project: " + projectId'
+# digest: 490a00463044022026de167568a630dd6a523997aa3e223e803d9c8e54f7425f71caf8c2e8dfb9e102201af5d1224515cbec4b09f8c167c0e1094aa807fd72b894a27c294228357e1ce6:922c64590222798bb761d5b6d8e72950

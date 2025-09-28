@@ -1,0 +1,56 @@
+id: gcloud-org-vpc-peering
+
+info:
+  name: VPC Peering Usage Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the VPC networks that are allowed to be peered with the networks created for your project, folder, or organization, are defined using the "Restrict VPC Peering Usage" constraint policy. This constraint helps you achieve regulatory compliance by explicitly defining the resource name of each Virtual Private Cloud (VPC) network allowed for VPC peering.
+  impact: |
+    By default, anyone with the right permissions can peer your VPC network with any other network within your organization. Without restrictions, this can pose a major security risk when peering development and production networks or if someone peers your VPC with a malicious entity.
+  remediation: |
+    Configure the "Restrict VPC Peering Usage" policy at the organization level to explicitly specify which VPC networks can be peered. Use the format projects/<project-id>/global/networks/<vpc-network-name> or under: prefix for broader scopes.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-vpc-peering-usage.html
+    - https://cloud.google.com/vpc/docs/vpc-peering
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,networking,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.restrictVpcPeering --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted VPC peering usage, allowing networks to be peered with any other network"'
+# digest: 490a00463044022020cddf58ff543559487290d3a0cf329ef711b1f34b55880cf3c1cbd401d76e1e0220308e6a2b480f13ae9a93e64ccd575ec3439944dc7de24616be033751a2bbb7ab:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,91 @@
+id: gcloud-dns-dangling-records
+
+info:
+  name: Dangling DNS Records Check
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that dangling DNS records are removed from your public Cloud DNS zones in order to maintain the integrity and authenticity of your domains/subdomains and to protect against domain hijacking.
+  impact: |
+    Dangling DNS records can lead to domain hijacking and misrouting of traffic, compromising the security and reliability of your domain infrastructure.
+  remediation: |
+    Regularly audit your DNS records and associated IP addresses. Remove any DNS records that point to IP addresses no longer reserved under your Google Cloud account.
+  reference:
+    - https://cloud.google.com/dns/docs
+  tags: cloud,devops,gcp,gcloud,dns,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let managedZone of iterate(template.managedZones)){
+      set("managedZone", managedZone)
+      code(3)
+      for(let recordSet of iterate(template.recordSets)){
+        recordSet = JSON.parse(recordSet)
+        set("recordType", recordSet.type)
+        set("recordData", recordSet.rrdatas)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns managed-zones list --project $projectId --format="json(name,visibility)"
+
+    extractors:
+      - type: json
+        name: managedZones
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dns record-sets list --zone=$managedZone --format="json(type,rrdatas)"
+
+    extractors:
+      - type: json
+        name: recordSets
+        internal: true
+        json:
+          - '{type: .type, rrdatas: .rrdatas[]}'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute addresses list --filter "addressType~EXTERNAL" --format="json(name,status,address)"
+
+    matchers:
+      - type: word
+        words:
+          - 'RESERVED'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Dangling DNS Record: Type: " + recordType + " Data: " + recordData + " in Zone: " + managedZone + " of Project: " + projectId'
+# digest: 490a0046304402202c5b70acf82fe3e4dbbdf2f4205f693e25cfafc642d5bc9c5b661b7685fcf2ee022032f7c3bd76089463d4bde9e6e4d9de7c25ffc32592167725b57b5ecf86d12e39:922c64590222798bb761d5b6d8e72950

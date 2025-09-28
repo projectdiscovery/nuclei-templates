@@ -1,0 +1,56 @@
+id: gcloud-vertexai-default-vpc
+
+info:
+  name: Default VPC Network In Use for Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud Vertex AI notebook instances are not created within the default Virtual Private Cloud (VPC) network. The default VPC comes with predefined, over-permissive firewall rules that are not included in audit logging. While suitable for quick starts, complex production AI applications with multi-tier architectures may require private network segments or customization.
+  impact: |
+    The default VPC network comes with predefined, insecure firewall rules that allow broad internal access, SSH, RDP, and ICMP traffic from any source. Additionally, being an auto-mode network, it cannot be used with Cloud VPN or VPC Network Peering features.
+  remediation: |
+    Re-create Vertex AI notebook instances in a custom VPC network with properly configured subnets and firewall rules. Use the 'gcloud workbench instances create' command with appropriate network and subnet parameters.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/default-vpc-in-use.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/create-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,networking,security,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="value(gceSetup.networkInterfaces[].network)"
+
+    matchers:
+      - type: word
+        words:
+          - "networks/default"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances using the default VPC network"'
+# digest: 4b0a004830460221009b5d1f2fcfc890c2f05563c6eb9622a256919795802a514c6182274d02a81818022100ebf9b5415abdc9b7966505657741b3d7e08b849035c0849d16be0aa5dcb8d7ed:922c64590222798bb761d5b6d8e72950

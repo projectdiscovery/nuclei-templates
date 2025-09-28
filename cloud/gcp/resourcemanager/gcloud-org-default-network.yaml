@@ -1,0 +1,56 @@
+id: gcloud-org-default-network
+
+info:
+  name: Default Network Creation Not Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Skip Default Network Creation" constraint policy is enforced for your Google Cloud Platform (GCP) organizations in order to follow security best practices and meet networking requirements. Once enabled, this constraint skips the creation of the default Virtual Private Cloud (VPC) network and related resources during Google Cloud project creation.
+  impact: |
+    By default, a default network and supporting resources are automatically created when you launch a new Google Cloud project. The default VPC comes with predefined, over-permissive firewall rules that are not included in audit logging, potentially creating security risks.
+  remediation: |
+    Enable the "Skip Default Network Creation" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the compute.skipDefaultNetworkCreation constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/disable-default-network-creation.html
+    - https://cloud.google.com/vpc/docs/vpc-network-overview
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,networking,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.skipDefaultNetworkCreation --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not disabled automatic default network creation, allowing potential insecure network configurations"'
+# digest: 4a0a00473045022050bfd0e14b5b45f261701f4c845561b97ed1b42dc2497ae5851a551946515d0d022100adea38d026251a8b5e9d667a48470ad3a7c566d078e3f349a45cd98b25122081:922c64590222798bb761d5b6d8e72950

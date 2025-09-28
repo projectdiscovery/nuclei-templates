@@ -1,0 +1,106 @@
+id: gcloud-nat-static-ip-unconfigured
+
+info:
+  name: Cloud NAT Gateways Not Configured with Reserved Static IPs
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud NAT gateways are configured to use static reserved external IPs in order to maintain consistent outbound IP addresses, which are critical for services requiring IP allowlisting, auditing, or compliance.
+  impact: |
+    Without static reserved external IPs, Cloud NAT gateways may use ephemeral IPs, causing disruptions in services requiring IP-based restrictions and compliance requirements.
+  remediation: |
+    Configure your Google Cloud NAT gateways to use static reserved external IPs by reserving external IPs and attaching them to the NAT configuration.
+  reference:
+    - https://cloud.google.com/nat/docs/using-nat
+  tags: cloud,devops,gcp,gcloud,google-cloud-nat,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let networkName of iterate(template.networks)){
+      set("networkName", networkName)
+      code(3)
+      for(let routerName of iterate(template.routers)){
+        set("routerName", routerName)
+        code(4)
+        for(let natName of iterate(template.nats)){
+          set("natName", natName)
+          code(5)
+        }
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers list --project=$projectId --filter="network:($networkName)" --format="json(name)"
+
+    extractors:
+      - type: json
+        name: routers
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats list --region=$region --router=$routerName --format="json(name)"
+
+    extractors:
+      - type: json
+        name: nats
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats describe $natName --region=$region --router=$routerName --format="json(natIps)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Cloud NAT gateway " + natName + " under Router " + routerName + " in Network " + networkName + " of Project " + projectId + " does not have static reserved external IPs configured."'
+# digest: 4b0a00483046022100f41365261aab789ee88e6f48ba6bf7ebd4f92da106705128429995fd19ab0a77022100fa4ef52aa7c3bd6e86d42a6fba8d22f6aef2fd60338203d22b9224e3e7ff8fe2:922c64590222798bb761d5b6d8e72950

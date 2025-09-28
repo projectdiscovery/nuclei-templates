@@ -1,0 +1,73 @@
+id: gcloud-iam-separation-duties
+
+info:
+  name: Enforce Separation of Duties for Service-Account Related Roles
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that separation of duties is enforced for all Google Cloud Platform (GCP) service-account related roles. This security principle prevents fraud and human error by dispersing the tasks and associated privileges for a specific business process among multiple users/members. Specifically, your GCP service accounts should not have the Service Account Admin and Service Account User roles assigned simultaneously.
+  impact: |
+    Failure to enforce separation of duties can lead to potential security risks including fraud and error due to excessive privileges assigned to single users.
+  remediation: |
+    Review and modify the roles assigned to GCP service accounts ensuring that no service account has both the Service Account Admin and Service Account User roles assigned at the same time.
+  reference:
+    - https://cloud.google.com/iam/docs/understanding-roles
+  tags: cloud,devops,gcp,gcloud,google-cloud-iam,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let binding of iterate(template.bindings)){
+      set("binding", binding)
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: bindings
+        internal: true
+        json:
+          - '.bindings[]'
+
+javascript:
+  - code: |
+      if (template.binding && Array.isArray(template.binding.members) && template.binding.role) {
+        let roles = new Set();
+        template.binding.members.forEach(member => {
+          roles.add(template.binding.role);
+        });
+        if (roles.has('roles/iam.serviceAccountAdmin') && roles.has('roles/iam.serviceAccountUser')) {
+          Export("Violation of SoD: Both Service Account Admin and User roles are assigned to one or more members in Project: " + template.projectId);
+        }
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100f96977873963d4572341b480be966bc5a739857da79d46a37e5329e0925b2ff4022100a1864f94fe2f7af79914fb819cdd6bfb5b657661bc30e13243827f9161f3ea03:922c64590222798bb761d5b6d8e72950

