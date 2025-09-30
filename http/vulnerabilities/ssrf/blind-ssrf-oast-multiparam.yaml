@@ -1,0 +1,37 @@
+id: blind-ssrf-oast-multiparam
+info:
+  name: Blind SSRF via common URL params (OAST)
+  author: hamza Sahin  hmzshn61@gmail.com
+  severity: critical
+  description: |
+    Detects blind SSRF by injecting OAST endpoint into common URL/redirect parameters.
+  tags: ssrf,oast,web
+
+variables:
+  o: "{{interactsh-url}}"
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?url=http://{{o}}"
+      - "{{BaseURL}}/?next=http://{{o}}"
+      - "{{BaseURL}}/?redirect=http://{{o}}"
+      - "{{BaseURL}}/?continue=http://{{o}}"
+      - "{{BaseURL}}/?download=http://{{o}}"
+      - "{{BaseURL}}/?image=http://{{o}}"
+      - "{{BaseURL}}/?feed=http://{{o}}"
+      - "{{BaseURL}}/?callback=http://{{o}}"
+      - "{{BaseURL}}/?return=http://{{o}}"
+    redirects: true
+    interactsh:
+      - matcher:
+          type: word
+          words: ["http"]   # any DNS/HTTP hit counts
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 307
+          - 308
