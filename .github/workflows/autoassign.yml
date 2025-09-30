@@ -69,12 +69,14 @@ jobs:
               )){
                 for (const it of page.data){
                   if (it.pull_request) continue;
-                  const ts = new Date(it.updated_at);
+                  const ts = new Date(it.created_at);
+                  if (ts < new Date(sinceISO)) continue;
                   for (const a of (it.assignees||[])){
                     const l=a.login.toLowerCase();
                     if (issuePool.has(l)){
                       issueCounts.set(l,(issueCounts.get(l)||0)+1);
-                      if (!lastIssueAssign.has(l)) lastIssueAssign.set(l, ts);
+                      const lastTs = lastIssueAssign.get(l);
+                      if (!lastTs || ts > lastTs) lastIssueAssign.set(l, ts);
                     }
                   }
                 }
@@ -87,20 +89,22 @@ jobs:
                 { owner: ORG, repo: REPO, state: 'all', per_page: 100 }
               )){
                 for (const pr of page.data){
-                  const ts = new Date(pr.updated_at);
+                  const ts = new Date(pr.created_at);
                   if (ts < new Date(sinceISO)) continue;
                   if (pr.assignee){
                     const l = pr.assignee.login.toLowerCase();
                     if (reviewPool.has(l)){
                       prCounts.set(l,(prCounts.get(l)||0)+1);
-                      if (!lastPrAssign.has(l)) lastPrAssign.set(l, ts);
+                      const lastTs = lastPrAssign.get(l);
+                      if (!lastTs || ts > lastTs) lastPrAssign.set(l, ts);
                     }
                   }
                   for (const r of (pr.requested_reviewers||[])){
                     const l=r.login.toLowerCase();
                     if (reviewPool.has(l)){
                       prCounts.set(l,(prCounts.get(l)||0)+1);
-                      if (!lastPrAssign.has(l)) lastPrAssign.set(l, ts);
+                      const lastTs = lastPrAssign.get(l);
+                      if (!lastTs || ts > lastTs) lastPrAssign.set(l, ts);
                     }
                   }
                 }
