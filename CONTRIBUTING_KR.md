@@ -1,7 +1,7 @@
 # Nuclei 기여 가이드
 템플릿은 실제 스캐닝 엔진을 구동하는 [nuclei 스캐너](https://github.com/projectdiscovery/nuclei)의 핵심 요소입니다. Nuclei 템플릿 저장소는 저희 팀과 여러 기여자분들이 TCP, DNS, HTTP, SSL, File, Whois, Websocket, Headless 등 다양한 프로토콜을 위한 템플릿을 저장하고 관리하는 공간입니다.
 
-현재까지 **800명** 이상의 보안 연구원 및 엔지니어분들이 기여해주셨고, **9000개** 이상의 템플릿을 보유하고 있습니다. 저희는 여러분이 **풀 리퀘스트(pull requests)**나 [깃허브 이슈(Github issues)](https://www.google.com/search?q=https://github.com/projectdiscovery/nuclei-templates/issues/new%3Fassignees%3D%26labels%3D%26template%3Dsubmit-template.md%26title%3D%255Bnuclei-template%255D%2B)를 통해 새로운 템플릿을 제출하여 이 목록을 더욱 풍성하게 만들어 주시기를 바랍니다. 이러한 기여 활동은 커뮤니티에 도움을 줄 뿐만 아니라 **❤️**, 여러분 스스로도 경험을 쌓고 동료들에게 인정받으며 커리어에도 긍정적인 영향을 줄 수 있습니다.
+현재까지 **800명** 이상의 보안 연구원 및 엔지니어분들이 기여해주셨고, **9000개** 이상의 템플릿을 보유하고 있습니다. 저희는 여러분이 **풀 리퀘스트(pull requests)** 나 [깃허브 이슈(Github issues)](https://www.google.com/search?q=https://github.com/projectdiscovery/nuclei-templates/issues/new%3Fassignees%3D%26labels%3D%26template%3Dsubmit-template.md%26title%3D%255Bnuclei-template%255D%2B)를 통해 새로운 템플릿을 제출하여 이 목록을 더욱 풍성하게 만들어 주시기를 바랍니다. 이러한 기여 활동은 커뮤니티에 도움을 줄 뿐만 아니라 **❤️**, 여러분 스스로도 경험을 쌓고 동료들에게 인정받으며 커리어에도 긍정적인 영향을 줄 수 있습니다.
 
 이 문서는 여러분의 기여 과정을 돕기 위한 가이드라인입니다. 저희는 이 프로젝트에 새로운 **템플릿을 추가**하거나 기존 템플릿을 **개선**하고자 하는 모든 분들의 기여를 기쁘게 생각합니다. 도움을 주셔서 감사드리며, **아무리 작은 기여라도 소중하다는 점**을 기억해 주세요.
 
