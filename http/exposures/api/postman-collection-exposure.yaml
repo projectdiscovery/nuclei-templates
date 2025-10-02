@@ -1,13 +1,20 @@
-id: postman-collection-json
-info:
-  name: Postman Collection JSON Exposed
-  author: Hamza Sahin
-  severity: medium
-  description: |
-    Detects exposed Postman collections which may disclose endpoints, auth headers, and environment variables.
-  tags: api,postman,exposure,inventory,web
+id: postman-collection-exposure
 
-requests:
+info:
+  name: Postman Collection Exposure
+  author: Hamza Sahin
+  severity: low
+  description: |
+    Detected exposed Postman collection JSON files that contained API endpoints and environment details. These files were publicly accessible and disclosed authentication headers and other sensitive information.
+  reference:
+    - https://medium.com/@utkarshporwal24/exposed-postman-collections-ed6086b96ba5
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"postman.json"
+  tags: api,postman,exposure
+
+http:
   - method: GET
     path:
       - "{{BaseURL}}/postman.json"
@@ -15,26 +22,26 @@ requests:
       - "{{BaseURL}}/api/postman.json"
       - "{{BaseURL}}/postman_collection.json"
       - "{{BaseURL}}/collections/postman.json"
+
+    stop-at-first-match: true
+
     matchers-condition: and
     matchers:
-      # Content-Type: application/json veya Postman vendor tipi
       - type: regex
         part: header
         regex:
           - '(?i)content-type:\s*application/(json|vnd\.postman\.[^;\s]+)'
 
-      # Postman collection "info.name" alanı ipucu
       - type: regex
         part: body
         regex:
           - '(?i)"info"\s*:\s*\{\s*"name"\s*:\s*".+?"'
 
-      # Koleksiyon "item" listesi ipucu
       - type: regex
         part: body
         regex:
           - '(?i)"item"\s*:\s*\['
 
-      # Genelde 200 döner; farklı durumlarda zaten body eşleşmezse fail olur
       - type: status
-        status: [200]
+        status:
+          - 200
