@@ -21,7 +21,7 @@ This documentation contains a set of guidelines to help you during the contribut
 
 - Take a look at the [Existing Templates](https://github.com/projectdiscovery/nuclei-templates) or search for endpoints before creating new one.
 - Take a look at Existing Templates in [GitHub Issues](https://github.com/projectdiscovery/nuclei-templates/issues) and [Pull Request](https://github.com/projectdiscovery/nuclei-templates/pulls) section to avoid duplicate work.
-- Take a look at [Templates](https://nuclei.projectdiscovery.io/templating-guide/) and [Matchers](https://github.com/projectdiscovery/nuclei-templates/wiki/Unique-Template-Matchers) Guideline for creating new template.
+- Take a look at [Templates](TEMPLATE-CREATION-GUIDE.md) and [Matchers](https://github.com/projectdiscovery/nuclei-templates/wiki/How-to-Write-Unique-Matchers-in-Nuclei-Templates) Guideline for creating new template.
 
 Along with the P.O.C following are the required fields in the info section for submitting new template.
 
@@ -41,7 +41,7 @@ Along with the P.O.C following are the required fields in the info section for s
 
 **Don’t**
 
-- Don’t not share any real world target on the PR. If you have setup an vulnerable environment please share it privately on Discord with the team to easily validate the template.
+- Don’t share any real world target on the PR. If you have setup an vulnerable environment please share it privately on Discord with the team to easily validate the template.
 - Avoid submitting templates with weak matchers. For example: Adding GET/POST data as the matchers in the template, as it can result in false positive results on few hosts
 - Don’t make unnecessary changes to the existing templates like adding more requests to the templates when the existing requests or paths are good enough to verify that the bug exists
 - Try to keep the requests per template as low as possible
