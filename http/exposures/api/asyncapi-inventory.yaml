@@ -5,6 +5,7 @@ info:
   severity: info
   description: Locates exposed AsyncAPI specifications which may reveal event-driven API surface.
   tags: api,asyncapi,inventory,exposure,web
+
 requests:
   - method: GET
     path:
@@ -12,12 +13,22 @@ requests:
       - "{{BaseURL}}/asyncapi.yaml"
       - "{{BaseURL}}/asyncapi.yml"
       - "{{BaseURL}}/api/asyncapi.json"
+
     matchers-condition: and
     matchers:
-      - type: word
+      # Content-Type looks like JSON/YAML
+      - type: regex
         part: header
-        words: ["application/json","application/yaml","text/yaml"]
+        regex:
+          - '(?i)content-type:\s*(application/json|application/yaml|application/x-yaml|text/yaml)'
+
+      # AsyncAPI major version 2.x present
       - type: regex
         part: body
         regex:
-          - "(?i)asyncapi\"?\\s*:\\s*\"?2\\."
+          - '(?i)"?asyncapi"?\s*:\s*"?2\.'
+
+      # Typical OK response
+      - type: status
+        status:
+          - 200
