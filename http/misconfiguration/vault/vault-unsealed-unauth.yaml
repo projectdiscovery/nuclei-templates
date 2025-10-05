@@ -1,0 +1,43 @@
+id: vault-unsealed-unauth
+info:
+  name: HashiCorp Vault Unsealed & Unauthenticated API
+  author: Hamza Sahin
+  severity: critical
+  description: |
+    Detects a publicly reachable Vault API that is unsealed and answers without authentication.
+    This exposes secrets/metadata and enables further impact.
+  tags: vault,hashicorp,unauth,exposure,misconfig
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/sys/seal-status"
+    redirects: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+      - type: regex
+        part: header
+        regex:
+          - "(?i)content-type:\\s*application/json"
+      - type: word
+        part: body
+        words:
+          - '"sealed":false'
+      - type: regex
+        part: header
+        regex:
+          - "(?i)X-Vault-(?:Version|Cluster-Name)"
+
+    extractors:
+      - type: regex
+        part: header
+        name: vault-version
+        regex:
+          - "(?i)X-Vault-Version:\\s*([\\w\\.-]+)"
+      - type: regex
+        part: header
+        name: vault-cluster
+        regex:
+          - "(?i)X-Vault-Cluster-Name:\\s*([^\\r\\n]+)"
