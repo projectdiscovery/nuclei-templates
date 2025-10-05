@@ -1,43 +1,33 @@
 id: vault-unsealed-unauth
 info:
-  name: HashiCorp Vault Unsealed & Unauthenticated API
+  name: HashiCorp Vault - Unsealed & Unauthenticated API
   author: Hamza Sahin
   severity: critical
   description: |
-    Detects a publicly reachable Vault API that is unsealed and answers without authentication.
-    This exposes secrets/metadata and enables further impact.
-  tags: vault,hashicorp,unauth,exposure,misconfig
+    Detects a publicly reachable HashiCorp Vault API that is UNSEALED and responds without authentication.
+  tags: vault,hashicorp,misconfig,exposure,critical
 
 requests:
   - method: GET
     path:
       - "{{BaseURL}}/v1/sys/seal-status"
-    redirects: true
+    headers:
+      Accept: application/json
+      User-Agent: nuclei
     matchers-condition: and
     matchers:
       - type: status
-        status: [200]
-      - type: regex
-        part: header
-        regex:
-          - "(?i)content-type:\\s*application/json"
+        status:
+          - 200
       - type: word
-        part: body
+        part: header
         words:
-          - '"sealed":false'
-      - type: regex
+          - "X-Vault-Version"
+      - type: word
         part: header
-        regex:
-          - "(?i)X-Vault-(?:Version|Cluster-Name)"
-
-    extractors:
+        words:
+          - "X-Vault-Cluster"
       - type: regex
-        part: header
-        name: vault-version
+        part: body
         regex:
-          - "(?i)X-Vault-Version:\\s*([\\w\\.-]+)"
-      - type: regex
-        part: header
-        name: vault-cluster
-        regex:
-          - "(?i)X-Vault-Cluster-Name:\\s*([^\\r\\n]+)"
+          - '"sealed"\s*:\s*false'
