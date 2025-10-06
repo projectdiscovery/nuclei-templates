@@ -1,0 +1,36 @@
+id: symfony-trusted-headers-misconfig
+
+info:
+  name: Symfony Conflicting Headers Information Disclosure
+  author: wakedxy
+  severity: high
+  description: |
+    Detects a misconfiguration in Symfony’s trusted proxy and header settings that can trigger a ConflictingHeadersException when both Forwarded and X-Forwarded-* headers are present.If debug mode is enabled in production, this issue may expose sensitive environment details such as SMTP credentials, application paths, or system configuration.
+  reference:
+    - https://symfony.com/doc/current/deployment/proxies.html
+    - https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"Symfony"
+  tags: symfony,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    headers:
+      Forwarded: "for=127.0.0.1;host=evil.com"
+      X-Forwarded-Host: "evil.com"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Symfony\\Component\\HttpFoundation\\Exception\\ConflictingHeadersException"
+
+      - type: status
+        status:
+          - 500
