@@ -4,12 +4,7 @@ info:
   author: Hamza Sahin
   severity: info
   description: Locates exposed AsyncAPI specifications which may reveal event-driven API surface.
-  tags:
-    - api
-    - asyncapi
-    - inventory
-    - exposure
-    - web
+  tags: api,asyncapi,inventory,exposure,web
 
 requests:
   - method: GET
@@ -20,16 +15,19 @@ requests:
       - "{{BaseURL}}/api/asyncapi.json"
     matchers-condition: and
     matchers:
-      - type: status
-        status: [200]
-      - type: word
+      # Content-Type looks like JSON/YAML (including vendor type)
+      - type: regex
         part: header
-        words:
-          - "application/json"
-          - "application/yaml"
-          - "text/yaml"
-          - "text/plain"
+        regex:
+          - '(?i)content-type:\s*(application/(json|yaml|x-yaml|vnd\.aai\.asyncapi\+json)|text/yaml)'
+
+      # AsyncAPI 2.x marker in body
       - type: regex
         part: body
         regex:
-          - "(?i)\\basyncapi\\b\\s*[:\"]\\s*\"?2\\."
+          - '(?i)"?asyncapi"?\s*:\s*"?2\.'
+
+      # Typical OK response
+      - type: status
+        status:
+          - 200
