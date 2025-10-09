@@ -1,6 +1,6 @@
-# Nuclei Templates Community Rewards Program - FAQ
+# Nuclei Templates Bounty - FAQ
 
-## What is the purpose of this rewards program?
+## What is the purpose of this bounty program?
 The program is designed to reward the community for their efforts in contributing high-quality templates for critical and trending vulnerabilities.
 
 ## What are the bounty ranges for template submissions?
@@ -10,12 +10,17 @@ Bounties range from **$50 to $250**, depending on the complexity of the template
 Only issues listed by us on our GitHub repository with the 💎 **Bounty** label are eligible for rewards. You can find these bounty issues [here](https://github.com/projectdiscovery/nuclei-templates/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22%F0%9F%92%8E%20Bounty%22)
 
 ## What is the acceptance criteria for templates?
+The template must include a complete POC and should not rely solely on version-based detection. **Contributors MUST share vulnerable setup information or a testable instance by emailing templates@projectdiscovery.io.** This is a mandatory requirement to qualify for the bounty.
+
 Templates must meet the following criteria:
 1. **Complete POC**: A full Proof of Concept (POC) must be provided and not rely solely on version detection.
-2. **Debug Data**: Include debug data to assist with template validation.
-3. **Validation Required**: The template will be reviewed and validated before rewards are given.
-4. **Accurate Matchers**: Use strong matchers to avoid false positives.
-> **Note**: Triagers will make the final decision on whether a template qualifies for a reward based on validation and the acceptance criteria outlined.
+2. **Testable Instance (REQUIRED)**: Contributors **must** share vulnerable setup information or a testable instance by emailing templates@projectdiscovery.io. If you have hosted a vulnerable environment for validation, send the details (IP or Docker setup) along with the PR number to templates@projectdiscovery.io. **This is mandatory to qualify for the bounty.**
+3. **No AI-Simulated Environments**: Do not submit AI-simulated vulnerable environments.
+4. **Protocol Requirements**: Avoid submitting code templates for CVEs that can be detected using HTTP, TCP, or JavaScript only—these are not run on default scans and will not result in any findings.
+5. **Validation Required**: To qualify for the bounty, the team must be able to fully validate the POC. Templates that are incomplete, invalid, or non-verifiable will not be accepted.
+6. **Accurate Matchers**: Use strong matchers to avoid false positives.
+
+> **Note**: Triagers will make the final decision on whether a template qualifies for a reward based on validation and the acceptance criteria outlined. **Providing a testable instance is mandatory and significantly reduces validation time.**
 
 ## How do I start working on a bounty issue?
 1. **Find an Issue**: Look for issues tagged with 💎 **Bounty**.
@@ -65,7 +70,7 @@ Templates may be rejected if they:
 Yes! We now have a **leaderboard** that showcases top contributors. You can check it out here: [Leaderboard](https://cloud.projectdiscovery.io/templates/leaderboard).
 
 ## Is this program permanent?
-The rewards program is currently a test run, but we may make changes based on community feedback.
+The bounty program is currently a test run, but we may make changes based on community feedback.
 
 ## What additional rewards are available besides bounties?
 Beyond bounties, we also reward contributors with:
