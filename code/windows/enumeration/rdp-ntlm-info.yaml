@@ -1,0 +1,112 @@
+id: rdp-ntlm-info
+
+info:
+  name: RDP - NTLM Information Disclosure
+  author: matejsmycka
+  severity: info
+  description: |
+    The enumeration gathered NTLM-related information from remote RDP services with Network Level Authentication (NLA) enabled. By sending an incomplete authentication request, it disclosed details such as the target’s NetBIOS and DNS names, domain, product version, and system time, which proved useful for network reconnaissance and asset profiling.
+  reference:
+    - https://nmap.org/nsedoc/scripts/rdp-ntlm-info.html
+    - https://svn.nmap.org/nmap/scripts/rdp-ntlm-info.nse
+  metadata:
+    verified: true
+    max-request: 1
+  tags: code,rdp,ntlm,info,enum
+
+variables:
+  PORT: 3389
+
+code:
+  - engine:
+      - py
+      - python3
+
+    source: |
+
+      import socket
+      import ssl
+      import struct
+      import os
+      from datetime import datetime, timezone
+
+      RDP_HOST, RDP_PORT = os.getenv('Host'), int(os.getenv('PORT'))
+      TIMEOUT = 5
+
+      NTLM_NEGOTIATE_BLOB = bytes.fromhex(
+          "30 37 A0 03 02 01 60 A1 30 30 2E 30 2C A0 2A 04 28"
+          "4e 54 4c 4d 53 53 50 00"  # NTLMSSP signature
+          "01 00 00 00"              # Type 1: Negotiate
+          "B7 82 08 E2"              # Flags
+          "00 00"                    # DomainNameLen
+          "00 00"                    # DomainNameMaxLen
+          "00 00 00 00"              # DomainNameBufferOffset
+          "00 00"                    # WorkstationLen
+          "00 00"                    # WorkstationMaxLen
+          "00 00 00 00"              # WorkstationBufferOffset
+          "0A 00 63 45 00 00 00 00 0F"  # Version & NTLMRevision
+      )
+
+      AV_PAIRS = {0x00:"EndOfList",0x01:"NetBIOS_ComputerName",0x02:"NetBIOS_DomainName",0x03:"DNS_ComputerName",0x04:"DNS_DomainName",0x05:"DNS_TreeName",0x07:"Timestamp"}
+
+      def parse_av_pairs(blob, offset, length):
+        info, pos, end = {}, offset, offset + length
+        while pos + 4 <= end:
+          av_id, av_len = struct.unpack("<HH", blob[pos:pos+4])
+          pos += 4
+          if av_id == 0: break
+          val = blob[pos:pos+av_len]; pos += av_len
+          key = AV_PAIRS.get(av_id, f"Unknown_{av_id}")
+          if av_id == 0x07 and av_len == 8:
+            ft = struct.unpack("<Q", val)[0]
+            #info[key] = datetime.fromtimestamp(ft/10_000_000-11644473600, tz=timezone.utc).isoformat()
+          else:
+            try: info[key] = val.decode("utf-16-le")
+            except: info[key] = val.hex()
+        return info
+
+      def parse_ntlm_challenge(blob):
+        sig_idx = blob.find(b"NTLMSSP")
+        if sig_idx == -1:
+          return None
+        blob = blob[sig_idx:]
+        info = {}
+
+        try:
+          if len(blob) < 12:
+            return None
+          if struct.unpack("<I", blob[8:12])[0] != 2:
+            return None
+          if len(blob) < 20:
+            return None
+          target_len = struct.unpack("<H", blob[12:14])[0]
+          target_offset = struct.unpack("<I", blob[16:20])[0]
+          if target_len > 0 and len(blob) >= target_offset + target_len:
+            info["Target_Name"] = blob[target_offset:target_offset+target_len].decode("utf-16-le", errors="ignore")
+          if len(blob) >= 48:
+            av_len = struct.unpack("<H", blob[40:42])[0]
+            av_offset = struct.unpack("<I", blob[44:48])[0]
+            if av_len > 0 and len(blob) >= av_offset + av_len:
+              info.update(parse_av_pairs(blob, av_offset, av_len))
+          if len(blob) >= 52:
+            info["Product_Version"] = f"{blob[48]}.{blob[49]}.{struct.unpack('<H', blob[50:52])[0]}"
+        except Exception:
+          return info
+        return info
+
+      with socket.create_connection((RDP_HOST, RDP_PORT), timeout=TIMEOUT) as sock:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with context.wrap_socket(sock, server_hostname=RDP_HOST) as conn:
+          conn.sendall(NTLM_NEGOTIATE_BLOB)
+          response = conn.recv(8192)
+
+      parsed = parse_ntlm_challenge(response)
+      print(parsed)
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a004630440220488ac6a5c9db2aff153a56bf24662a0136ddbc1ca3ed2c72160b115867c275f1022003ae169c7f0613a8a1f026d53823c063c90e3315f13b5eba5b1366783e443bcb:922c64590222798bb761d5b6d8e72950
