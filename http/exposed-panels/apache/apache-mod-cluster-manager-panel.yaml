@@ -1,0 +1,80 @@
+id: apache-mod-cluster-manager-panel
+info:
+  name: Apache mod_proxy_cluster - Cluster Manager Exposed (CVE-2023-6710 Prerequisite)
+  author: oleveloper
+  severity: info
+  description: |
+    Detects publicly exposed Apache mod_proxy_cluster cluster-manager UI.
+    While this template does not confirm CVE-2023-6710 (stored XSS) directly,
+    it identifies an exposure that is a prerequisite for its exploitation.
+    The cluster-manager console should not be publicly accessible as it can
+    lead to misconfigurations and further security risks.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-6710
+    - https://www.exploit-db.com/exploits/52010
+    - https://httpd.apache.org/docs/2.4/mod/mod_proxy_cluster.html
+  tags: panel,apache,mod_cluster,exposure,cluster-manager
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cluster-manager"
+      - "{{BaseURL}}/mod_cluster_manager"
+      - "{{BaseURL}}/mcm"
+    redirects: true
+    max-redirects: 2
+    max-size: 2097152
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: dsl
+        dsl:
+          - "!contains(tolower(all_headers), 'www-authenticate')"
+
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "Cluster Manager"
+          - "Mod_cluster Status"
+          - "mod_proxy_cluster"
+          - "Context list"
+          - "Node list"
+
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<title>[^<]*(?:cluster[\\s_-]?manager|mod[\\s_-]?cluster)[^<]*</title>"
+          - "(?i)mod_proxy_cluster\\s+\\d+\\.\\d+"
+          - "(?i)alias\\s*=\\s*['\"][^'\"]*['\"]"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: title
+        regex:
+          - "(?i)<title>([^<]+)</title>"
+
+      - type: regex
+        part: header
+        name: server
+        regex:
+          - "(?i)server:\\s*(.+)"
+
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - "(?i)mod_proxy_cluster\\s+(\\d+\\.\\d+(?:\\.\\d+)?)"
+
+      - type: regex
+        part: body
+        name: cluster_info
+        regex:
+          - "(?i)(context\\s+list|node\\s+list|cluster\\s+status)"
