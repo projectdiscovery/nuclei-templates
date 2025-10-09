@@ -1,0 +1,96 @@
+id: s3-allinone-detect
+info:
+  name: All-in-one cloud storage public bucket discovery
+  author: bit0x1er
+  severity: info
+  description: >
+    Non-destructive checks for public/listable buckets across multiple providers
+    (AWS S3 virtual-host style, Google Cloud Storage, Azure Blob, DigitalOcean Spaces, Alibaba OSS).
+    Uses HEAD (fallback GET) and safe body/header matchers to reduce false positives.
+  tags: s3,gcp,azure,digitalocean,alibaba,discovery,info
+requests:
+  - method: HEAD
+    # Try multiple provider URL patterns for the given target hostname
+    path:
+      - "https://{{Hostname}}.s3.amazonaws.com/"
+      - "https://{{Hostname}}.s3.amazonaws.com/?" 
+      - "https://{{Hostname}}.s3.us-east-1.amazonaws.com/"
+      - "https://storage.googleapis.com/{{Hostname}}/"
+      - "https://{{Hostname}}.storage.googleapis.com/"
+      - "https://{{Hostname}}.blob.core.windows.net/"
+      - "https://{{Hostname}}.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.nyc3.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.sfo2.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.oss.aliyuncs.com/"
+    follow_redirects: false
+    max-size: 2048        # limit downloaded body bytes if HEAD falls back to GET
+    matchers-condition: or
+    matchers:
+      # common useful status codes indicating existence or ACL-protected buckets
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 403
+      # XML listing patterns used by S3/GCS/OSS when a bucket is listable
+      - type: word
+        part: body
+        words:
+          - "ListBucketResult"
+          - "<Contents>"
+          - "<Key>"
+          - "BucketListing"
+          - "<?xml"
+      # presence of provider-specific response headers (strong signal)
+      - type: word
+        part: header
+        words:
+          - "x-amz-request-id"
+          - "x-amz-id-2"
+          - "x-goog-generation"
+          - "x-oss-request-id"
+    extractors:
+      - type: regex
+        # capture the first matching URL (useful for output / triage)
+        regex:
+          - "(https?://[^\\s'\"]+)"
+  # fallback GET in case HEAD returns 405 or server doesn't support HEAD
+  - method: GET
+    path:
+      - "https://{{Hostname}}.s3.amazonaws.com/"
+      - "https://storage.googleapis.com/{{Hostname}}/"
+      - "https://{{Hostname}}.storage.googleapis.com/"
+      - "https://{{Hostname}}.blob.core.windows.net/"
+      - "https://{{Hostname}}.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.oss.aliyuncs.com/"
+    follow_redirects: false
+    max-size: 2048
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
+          - 403
+      - type: word
+        part: body
+        words:
+          - "ListBucketResult"
+          - "<Contents>"
+          - "<Key>"
+          - "BucketListing"
+          - "<?xml"
+      - type: word
+        part: header
+        words:
+          - "x-amz-request-id"
+          - "x-amz-id-2"
+          - "x-goog-generation"
+          - "x-oss-request-id"
+    extractors:
+      - type: regex
+        regex:
+          - "(https?://[^\\s'\"]+)"
+
