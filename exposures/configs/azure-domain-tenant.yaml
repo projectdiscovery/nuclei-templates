@@ -1,0 +1,33 @@
+id: azure-domain-tenant
+
+info:
+  name: Microsoft Azure - Domain Tenant ID
+  author: V0idC0de
+  severity: info
+  description: Checks if the domain is part of an Azure tenant and finds the ID using Azure's OpenID discovery page.
+  tags: azure,microsoft,cloud
+
+
+requests:
+  - raw:
+      - |
+        @Host: https://login.microsoftonline.com:443
+        GET /{{Host}}/v2.0/.well-known/openid-configuration HTTP/1.1
+        Host: login.microsoftonline.com
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "token_endpoint"
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "\"https:\\/\\/login\\.microsoftonline\\.com\\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"

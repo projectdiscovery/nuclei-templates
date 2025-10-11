@@ -1,0 +1,81 @@
+id: ntlm-directories
+
+info:
+  name: Discovering directories w/ NTLM
+  author: puzzlepeaches,incogbyte
+  severity: info
+  reference:
+    - https://medium.com/swlh/internal-information-disclosure-using-hidden-ntlm-authentication-18de17675666
+  tags: misc,fuzz,windows
+
+requests:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: NTLM TlRMTVNTUAABAAAAB4IIAAAAAAAAAAAAAAAAAAAAAAA=
+
+    threads: 10
+    payloads:
+      path:
+        - /
+        - /abs/
+        - /ecp/
+        - /etc/
+        - /ews/
+        - /mcx/
+        - /oab/
+        - /owa/
+        - /rgs/
+        - /rpc/
+        - /conf/
+        - /meet/
+        - /ocsp/
+        - /ucwa/
+        - /adfs/
+        - /dialin/
+        - /public/
+        - /certsrv/
+        - /exchweb/
+        - /meeting/
+        - /certprov/
+        - /exchange/
+        - /scheduler/
+        - /webticket/
+        - /autoupdate/
+        - /certenroll/
+        - /powershell/
+        - /rgsclients/
+        - /rpcwithcert/
+        - /autodiscover/
+        - /hybridconfig/
+        - /reach/sip.svc
+        - /aspnet_client/
+        - /groupexpansion/
+        - /persistentchat/
+        - /requesthandler/
+        - /unifiedmessaging/
+        - /mcx/mcxservice.svc
+        - /phoneconferencing/
+        - /requesthandlerext/
+        - /deviceupdatefiles_ext/
+        - /deviceupdatefiles_int/
+        - /microsoft-server-activesync/
+        - /webticket/webticketservice.svc
+        - /webticket/webticketservice.svcabs/
+        - /adfs/services/trust/2005/windowstransport
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers), 'www-authenticate: ntlm')"
+
+      - type: status
+        status:
+          - 401
+
+    extractors:
+      - type: kval
+        kval:
+          - 'www_authenticate'

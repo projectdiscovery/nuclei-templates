@@ -1,0 +1,47 @@
+id: aem-felix-console
+
+info:
+  name: AEM Felix Console
+  author: DhiyaneshDk
+  severity: high
+  description: Felix Console is exposed, you may get RCE by installing OSGI bundle.
+  reference:
+    - https://github.com/0ang3el/aem-hacker/blob/master/aem_hacker.py
+    - https://github.com/0ang3el/aem-rce-bundle
+  metadata:
+    shodan-query:
+      - http.title:"AEM Sign In"
+      - http.component:"Adobe Experience Manager"
+  tags: default-login,misconfig,aem,adobe
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/system/console/bundles"
+      - "{{BaseURL}}///system///console///bundles"
+    headers:
+      Authorization: Basic {{base64(username + ':' + password)}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>Adobe Experience Manager Web Console - Bundles</title>"
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200

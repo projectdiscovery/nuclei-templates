@@ -1,0 +1,33 @@
+id: cache-poisoning
+
+info:
+  name: Cache Poisoning
+  author: melbadry9,xelkomy,akincibor,dogasantos
+  severity: low
+  reference:
+    - https://blog.melbadry9.xyz/fuzzing/nuclei-cache-poisoning
+    - https://portswigger.net/research/practical-web-cache-poisoning
+  tags: cache,generic
+
+requests:
+  - raw:
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+        X-Forwarded-Prefix: prefix.cache.interact.sh
+        X-Forwarded-Host: host.cache.interact.sh
+        X-Forwarded-For: for.cache.interact.sh
+
+      - |
+        GET /?{{randstr}}=9 HTTP/1.1
+
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "cache.interact.sh")'
+
+    extractors:
+      - type: regex
+        part: response
+        regex:
+          - "(prefix|host|for).cache.interact.sh"

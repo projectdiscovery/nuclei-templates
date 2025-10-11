@@ -1,0 +1,48 @@
+id: adminer-panel-fuzz
+
+info:
+  name: Adminer Login Panel Fuzz
+  author: random_robbie,meme-lord
+  severity: info
+  reference:
+    - https://blog.sorcery.ie/posts/adminer/
+  tags: fuzz,adminer,login
+
+  # <= 4.2.4 can have unauthenticated RCE via SQLite driver
+  # <= 4.6.2 can have LFI via MySQL LOAD DATA LOCAL
+  # Most versions have some kind of SSRF usability
+  # Is generally handy if you find SQL creds
+
+requests:
+
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+
+    payloads:
+      path: helpers/wordlists/adminer-paths.txt
+
+    threads: 50
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        condition: and
+        words:
+          - "- Adminer</title>"
+          - "partial(verifyVersion"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<span class="version">([0-9.]+)'

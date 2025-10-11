@@ -1,0 +1,40 @@
+id: magento-cacheleak
+
+info:
+  name: Magento Cacheleak
+  author: TechbrunchFR
+  severity: high
+  description: Magento Cacheleak is an implementation vulnerability, result of bad implementation of web-server configuration for Magento platform. Magento was developed to work under the Apache web-server which
+    natively works with .htaccess files, so all needed configuration directives specific for various internal Magento folders were placed in .htaccess files.  When Magento is installed on web servers that are ignoring
+    .htaccess files (such as nginx), an attacker can get access to internal Magento folders (such as the Magento cache directory) and extract sensitive information from cache files.
+  reference:
+    - https://support.hypernode.com/en/best-practices/security/how-to-secure-magento-cacheleak
+    - https://www.acunetix.com/vulnerabilities/web/magento-cacheleak/
+    - https://royduineveld.nl/magento-cacheleak-exploit/
+  metadata:
+    verified: true
+    shodan-query: http.component:"Magento"
+  tags: magento
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/var/resource_config.json'
+      # Based on royduineveld.nl blogpost, was not tested against a vulnerable Magento site
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "media_directory"
+          - "allowed_resources"
+        part: body
+
+      - type: word
+        words:
+          - "application/json"
+        part: header
