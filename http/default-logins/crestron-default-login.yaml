@@ -1,0 +1,65 @@
+id: crestron-default-login
+info:
+  name: Crestron Devices Default Login
+  author: mister-joe
+  severity: medium
+  description: |
+    Test for default credentials on various Crestron devices and versions.
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: Crestron
+  tags: crestron,default-login
+
+http:
+  - raw:
+      - |
+        POST /userlogin.html HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login={{username}}&passwd={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 302
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie:\\s?AuthByPasswd=.*"
+
+  - raw:
+      - |
+        POST /main.html HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"Cmd":"Authenticate","User":"{{username}}","Pass":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie:\\s?User=.*;"
+      - type: regex
+        part: body
+        regex:
+          - '{"Authenticated":true}'
