@@ -1,0 +1,51 @@
+id: hpe-ilo-login-check
+ 
+info:
+  name: HPE ILO Login Check
+  author: tpierru
+  severity: critical
+  description: Checks for a valid login on Integrated Lights-Out.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  classification:
+    cpe: cpe:2.3:a:hp:proliant_integrated_lights_out:-:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: title:"ILO"
+    fofa-query: title="ILO"
+    product: Integrated Lights-Out
+    vendor: HPE
+  tags: self-hosted,creds-stuffing,login-check,ilo
+variables:
+  username: "{{username}}"
+  password: "{{password}}"
+ 
+http:
+  - raw:
+      - |
+        POST /redfish/v1/Sessions/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-type: application/json
+ 
+        {"UserName":"{{username}}","Password":"{{password}}"}
+ 
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+ 
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+      - type: word
+        part: header
+        words:
+          - 'X-Auth-Token'
+      - type: word
+        part: body
+        words:
+          - 'HpeiLOSession'
