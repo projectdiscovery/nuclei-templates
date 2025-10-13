@@ -1,20 +1,17 @@
 id: asyncapi-inventory
 info:
-  name: AsyncAPI Spec Inventory (JSON/YAML)
+  name: AsyncAPI Spec Inventory
   author: hamzasahin61
   severity: info
   description: |
-    Detects publicly accessible AsyncAPI specification documents (YAML or JSON).
-    These files often disclose message channels, server endpoints, and security schemes.
+    Detects publicly accessible AsyncAPI specification files (YAML/JSON), which may expose message channels, server endpoints, and security schemes.
   reference:
     - https://www.asyncapi.com/docs/reference/specification
     - https://raw.githubusercontent.com/asyncapi/spec/v2.6.0/examples/streetlights-kafka.yml
-  tags: exposure,asyncapi,api,inventory,yaml,json
+  tags: exposure,asyncapi,api
 
 http:
   - method: GET
-    # Probe the target directly first (works when BaseURL is a raw file or direct spec URL),
-    # then try common AsyncAPI spec locations used by APIs and docs portals.
     path:
       - "{{BaseURL}}"
       - "{{BaseURL}}/asyncapi"
@@ -31,19 +28,20 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
       - type: regex
         part: body
-        condition: or
         regex:
           - (?i)\basyncapi\s*:\s*['"]?[0-9.]+
           - (?i)"asyncapi"\s*:\s*"([0-9.]+)"
+        condition: or
+
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
-        name: asyncapi-version
+        name: version
         part: body
         group: 1
         regex:
