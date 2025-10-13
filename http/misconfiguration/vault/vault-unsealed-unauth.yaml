@@ -1,0 +1,35 @@
+id: vault-unsealed-unauth
+
+info:
+  name: HashiCorp Vault API - Exposure
+  author: Hamza Sahin
+  severity: low
+  description: |
+    Detects a publicly accessible HashiCorp Vault API instance that is unsealed and responding without authentication. This critical misconfiguration can expose sensitive secrets and enable privilege escalation or lateral movement.
+  reference:
+    - https://developer.hashicorp.com/vault/docs/concepts/seal
+    - https://developer.hashicorp.com/vault/api-docs/system/seal-status
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"Vault"
+  tags: hashicorp,vault,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/sys/seal-status"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "sealed\":false", "cluster_id\":")'
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '"Version: "+ .version , "Cluster Name: "+ .cluster_name'
+# digest: 4a0a00473045022100da551c699c5932b8cf4887a2aa8af037fde6424401541137435d961da8434f960220726ae377c073f13f12c48826a51c4f00d8ec83029cfa11ac5ed0854e7a8dcea7:922c64590222798bb761d5b6d8e72950
