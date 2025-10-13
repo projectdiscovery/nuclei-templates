@@ -1,0 +1,47 @@
+id: k8s-apiserver-token-auth-file
+
+info:
+  name: Detect kube-apiserver --token-auth-file usage
+  author: songyaeji
+  severity: high
+  description: Detects whether kube-apiserver includes the --token-auth-file startup argument.
+  impact: |
+    If the API server is started with --token-auth-file, static token file authentication may be allowed, which can enable long-lived or poorly managed tokens and weaken cluster authentication posture.
+  remediation: |
+    Remove the --token-auth-file argument from the kube-apiserver startup flags (e.g., edit
+    /etc/kubernetes/manifests/kube-apiserver.yaml) or ensure any tokens in that file are rotated
+    and managed securely. Prefer dynamic, short-lived service account tokens and RBAC.
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: cloud,devops,kubernetes,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "--token-auth-file"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      # Try to fetch kube-apiserver container command line(s) from common selectors
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null || \
+      # fallback: read manifest file if present on filesystem (static kubeadm manifests)
+      grep -h -- '--token-auth-file' /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null || \
+      echo ""
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+      - type: word
+        words:
+          - "{{argument}}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-apiserver is configured with " + argument + ". Review and remove if unnecessary."'
