@@ -1,0 +1,42 @@
+id: unauthenticated-ckfinder
+
+info:
+  name: CKFinder Exposed Interface - Broken Access Control
+  author: Amjad Ali
+  severity: high
+  description: |
+    CKFinder is a powerful file manager for web browsers. If exposed without authentication,
+    it allows unauthorized users to browse, upload, or manage files on the server,
+    leading to Broken Access Control.
+  reference:
+    - https://cksource.com/ckfinder
+    - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+  tags: ckfinder,exposure,broken-access-control,file-upload
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path}}"
+
+    payloads:
+      path:
+        - "/ckfinder/ckfinder.html"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<title>CKFinder</title>"
+          - "CKFinderFrameWindow"
+          - "var ckfinder = new CKFinder"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "<title>([^<]+)</title>"
