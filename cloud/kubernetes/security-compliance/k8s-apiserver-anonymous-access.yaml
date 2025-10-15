@@ -25,24 +25,39 @@ code:
       - sh
       - bash
     source: |
-      # Try to fetch kube-apiserver container command line(s) from common selectors
-      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
-      kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
-      kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null || \
-      echo ""
+      get_apiserver_config() {
+        local commands=""
+        local args=""
 
-    matchers-condition: and
+        for selector in "component=kube-apiserver" "k8s-app=kube-apiserver"; do
+          commands=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null)
+          args=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].args}" 2>/dev/null)
+
+          if [ -n "$commands$args" ]; then
+            echo "$commands $args"
+            return 0
+          fi
+        done
+
+        commands=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null)
+        args=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].args}" 2>/dev/null)
+
+        if [ -n "$commands$args" ]; then
+          echo "$commands $args"
+        else
+          echo "NO_APISERVER_FOUND"
+        fi
+      }
+
+      config=$(get_apiserver_config)
+      echo "$config"
+
     matchers:
-      - type: word
-        words:
-          - 'kube-apiserver'
-      - type: word
-        words:
-          - "{{argument}}"
-        negative: true
+      - type: dsl
+        dsl:
+          - 'contains(body, "kube-apiserver") && !contains(body, "NO_APISERVER_FOUND") && !contains(body, "{{argument}}")'
 
     extractors:
       - type: dsl
         dsl:
           - '"kube-apiserver configuration does not explicitly set " + argument + ". This may allow anonymous access."'
-# digest: 4a0a00473045022100c062a7b5f4e4f843ef6b5e0d88d8d53610cf5cc8a489cd5112f8c8fae58e965e02203b5a8c1b7fb77db8c9e3827cf66d39bee9a5bf89aff1967f699459f19994cb14:bd4199f08311fe94da3c6b619521b96e
