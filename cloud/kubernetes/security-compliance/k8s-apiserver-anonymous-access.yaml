@@ -1,0 +1,63 @@
+id: k8s-apiserver-anonymous-access
+
+info:
+  name: Ensure kube-apiserver --anonymous-auth is explicitly disabled
+  author: songyaeji
+  severity: high
+  description: Checks whether kube-apiserver explicitly sets --anonymous-auth=false in its startup arguments.
+  impact: |
+    If --anonymous-auth is not explicitly disabled, anonymous unauthenticated requests might be allowed,
+    enabling unauthenticated access to cluster resources.
+  remediation: |
+    Edit the kube-apiserver manifest (e.g., /etc/kubernetes/manifests/kube-apiserver.yaml) or startup flags
+    and ensure "--anonymous-auth=false" is present in the apiserver arguments.
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: cloud,devops,kubernetes,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "--anonymous-auth=false"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      get_apiserver_config() {
+        local commands=""
+        local args=""
+
+        for selector in "component=kube-apiserver" "k8s-app=kube-apiserver"; do
+          commands=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null)
+          args=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].args}" 2>/dev/null)
+
+          if [ -n "$commands$args" ]; then
+            echo "$commands $args"
+            return 0
+          fi
+        done
+
+        commands=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null)
+        args=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].args}" 2>/dev/null)
+
+        if [ -n "$commands$args" ]; then
+          echo "$commands $args"
+        else
+          echo "NO_APISERVER_FOUND"
+        fi
+      }
+
+      config=$(get_apiserver_config)
+      echo "$config"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "kube-apiserver") && !contains(body, "NO_APISERVER_FOUND") && !contains(body, "{{argument}}")'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-apiserver configuration does not explicitly set " + argument + ". This may allow anonymous access."'
