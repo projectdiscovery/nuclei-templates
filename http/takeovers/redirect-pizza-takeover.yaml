@@ -1,16 +1,18 @@
 id: redirect-pizza-takeover
-
 info:
   name: Redirect.pizza Subdomain Takeover Detection
   author: Ranjan Kumar
   severity: high
   description: |
-    Detects potential subdomain takeover vulnerability on domains pointing to redirect.pizza.
-    This occurs when a subdomain is pointing to redirect.pizza but is not yet configured, leaving it open to hijacking.
+    Redirect.pizza subdomain takeover was detected.
   reference:
     - https://redirect.pizza
     - https://github.com/EdOverflow/can-i-take-over-xyz
     - https://redirect.pizza/docs
+  metadata:
+    max-request: 1
+    shodan-query: html:"redirect.pizza"
+    fofa-query: body="redirect.pizza"
   tags: takeover,redirect.pizza,subdomain,bugbounty
 
 http:
@@ -20,10 +22,9 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-          - 404
+      - type: dsl
+        dsl:
+          - Host != ip
 
       - type: word
         part: body
@@ -33,7 +34,11 @@ http:
         condition: or
 
       - type: word
-        part: body
+        part: content_type
         words:
-          - "redirect.pizza"
-        condition: or
+          - "text/html"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - cname
