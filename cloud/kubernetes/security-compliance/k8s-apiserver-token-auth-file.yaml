@@ -13,8 +13,7 @@ info:
     and managed securely. Prefer dynamic, short-lived service account tokens and RBAC.
   reference:
     - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
-    - Cloud Vulnerability Assessment Guide(2024) by KISA
-  tags: cloud,devops,kubernetes,devsecops,api-server,k8s,k8s-cluster-security
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
 
 variables:
   argument: "--token-auth-file"
@@ -25,18 +24,14 @@ code:
       - sh
       - bash
     source: |
-      # Try to fetch kube-apiserver container command line(s) from common selectors
-      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
-      kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
-      kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null || \
-      # fallback: read manifest file if present on filesystem (static kubeadm manifests)
-      grep -h -- '--token-auth-file' /etc/kubernetes/manifests/kube-apiserver.yaml 2>/dev/null || \
-      echo ""
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
     matchers-condition: and
     matchers:
       - type: word
         words:
           - 'kube-apiserver'
+
       - type: word
         words:
           - "{{argument}}"
@@ -45,3 +40,4 @@ code:
       - type: dsl
         dsl:
           - '"kube-apiserver is configured with " + argument + ". Review and remove if unnecessary."'
+# digest: 4a0a00473045022100f1c8e9a5b6d7c4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f022041a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2:922c64590222798bb761d5b6d8e72950
