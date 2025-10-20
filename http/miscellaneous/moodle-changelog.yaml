@@ -1,54 +1,52 @@
 id: moodle-changelog-file
 
 info:
-  name: Moodle Changelog File
+  name: Moodle Changelog File Detection
   author: oppsec,lap1nou
   severity: info
-  description: Moodle has multiple files which describes API changes in core libraries and APIs, and can be used to discover Moodle version.
+  description: |
+    Moodle has multiple files which describe API changes in core libraries and APIs.
+    These files can be used to discover Moodle installation details.
+    Detects both legacy upgrade.txt (< v4.5) and newer UPGRADING.md (>= v4.5) formats.
+  reference:
+    - https://moodledev.io/general/development/upgradenotes
+    - https://moodle.atlassian.net/browse/MDL-81125
+    - https://github.com/moodle/moodle
   metadata:
-    max-request: 1
-  tags: miscellaneous,misc,moodle
+    max-request: 2
+    verified: true
+  tags: moodle,changelog,exposure,misconfig
+  classification:
+    cwe-id: CWE-200
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/lib/upgrade.txt"
-
-    matchers-condition: and
-    matchers:
-      - type: word
-        words:
-          - "This files describes API changes in core libraries and APIs,"
-          - "information provided here is intended especially for developers."
-          - "new my moodle and profiles API"
-        condition: and
-
-      - type: word
-        part: header
-        words:
-          - "text/plain"
-
-      - type: status
-        status:
-          - 200
-
-  - method: GET
-    path:
       - "{{BaseURL}}/UPGRADING.md"
 
-    matchers-condition: and
+    stop-at-first-match: true
+
+    matchers-condition: or
     matchers:
-      - type: word
-        words:
-          - "This file contains important information for developers on changes to the Moodle codebase."
-          - "More detailed information on key changes can be found in the [Developer update notes](https://moodledev.io/docs/devupdate) for your version of Moodle."
+      - type: dsl
+        name: legacy-upgrade-txt
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(content_type), "text/plain")'
+          - 'contains(body, "This files describes API changes")'
         condition: and
 
-      - type: word
-        part: header
-        words:
-          - "text/markdown"
+      - type: dsl
+        name: new-upgrading-md
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(content_type), "text/")'
+          - 'contains(body, "Developer update notes")'
+        condition: and
 
-      - type: status
-        status:
-          - 200
+    extractors:
+      - type: dsl
+        name: info
+        dsl:
+          - 'contains(path, "upgrade.txt") ? "Legacy Format (< Moodle 4.5)" : "Modern Format (>= Moodle 4.5)"'
