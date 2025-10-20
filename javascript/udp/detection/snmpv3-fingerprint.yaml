@@ -1,0 +1,74 @@
+id: snmpv3-fingerprint
+
+info:
+  name: SNMPv3 Fingerprint - Detect
+  author: matejsmycka
+  severity: info
+  description: |
+    SNMPv3 can leak information about the device even without proper authentication.
+    Use `nmap -sU <ADDRESS> -p 161 --script snmp-info` to get more information.
+  reference:
+    - https://support.huawei.com/enterprise/en/doc/EDOC1100174721/46bd64e2/snmpv3
+    - https://svn.nmap.org/nmap/nselib/data/enterprise_numbers.txt
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"SNMP"
+  tags: js,udp,network,snmp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+
+    code: |
+      const c = require("nuclei/net");
+      const b = require('nuclei/bytes');
+
+      const conn = c.Open('udp', `${Host}:${Port}`, `${Timeout}`);
+      // SNMPv3: F=r U="" E= C="" GetRequest(12)
+      let payload = "303a020103300f02024a69020300ffe30401040201030410300e0400020100020100040004000400301204000400a00c020237f00201000201003000";
+      conn.SendHex(payload);
+      let resp = conn.RecvFull(128);
+      const hexBuffer = new b.Buffer();
+      hexBuffer.Write(resp);
+      const respHex = hexBuffer.Hex()
+
+
+      const known_vendors = {
+        "80000009": "Cisco",
+        "80003a8c": "MikroTik",
+        "800007db": "Huawei",
+        "8000040e": "SageCom SAS",
+        "80001f88": "net-snmp",
+        "80000B2f": "Thomson Inc",
+        "8000113d": "Broadcom Corporation",
+        "8000124c": "Ambit Microsystems Corporation",
+        "800011ae": "Netgear",
+        "800063a2": "H3C",
+        "8000130a": "Juniper Networks, Inc.",
+        "80003044": "Fortinet Inc",
+      }
+      function getVendor(msgHex) {
+        for (const [key, value] of Object.entries(known_vendors)) {
+          if (msgHex.includes(key)) {
+            return "Enterprise: " + value;
+          }
+        }
+        return "Enterprise: " + msgHex.match(/8000[0-9a-fA-F]*?0201/);
+      }
+      getVendor(respHex);
+    args:
+      Host: "{{Host}}"
+      Port: 161
+      Timeout: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "(.*)"
