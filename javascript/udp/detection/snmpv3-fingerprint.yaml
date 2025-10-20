@@ -7,9 +7,12 @@ info:
   description: |
     SNMPv3 can leak information about the device even without proper authentication.
     Use `nmap -sU <ADDRESS> -p 161 --script snmp-info` to get more information.
+    Engine IDs can help to determine one device with multiple interfaces.
   reference:
     - https://support.huawei.com/enterprise/en/doc/EDOC1100174721/46bd64e2/snmpv3
+    - https://pure.tudelft.nl/ws/portalfiles/portal/103172599/3487552.3487848.pdf
     - https://svn.nmap.org/nmap/nselib/data/enterprise_numbers.txt
+    - http://docs.logmatrix.com/nervecenter/guides/NC-SNMPv3-EngineIDs.pdf
   metadata:
     verified: true
     max-request: 1
@@ -51,8 +54,14 @@ javascript:
       function getVendor(msgHex) {
         for (const [key, value] of Object.entries(known_vendors)) {
           if (msgHex.includes(key)) {
-            return "Enterprise: " + value;
-          }
+            msgHex = (typeof msgHex === "string") ? msgHex : (msgHex ? String(msgHex) : "");
+            if (!msgHex) return "Unknown";
+
+            if (msgHex.toLowerCase().includes(key.toLowerCase())) {
+              const m = msgHex.match(/8000([0-9a-fA-F]*?)0201/i);
+              const engineId = m && m[1] ? m[1] : null;
+              return value + (engineId ? (", Engine ID: " + engineId) : "");
+            }    }
         }
         return "Enterprise: " + msgHex.match(/8000[0-9a-fA-F]*?0201/);
       }
