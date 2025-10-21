@@ -1,34 +1,41 @@
-id: moodle-changelog-file
+id: moodle-changelog
 
 info:
-  name: Moodle Changelog File
-  author: oppsec
+  name: Moodle Changelog File Detect
+  author: oppsec,lap1nou
   severity: info
-  description: Moodle has a file which describes API changes in core libraries and APIs, and can be used to discover Moodle version.
+  description: |
+    Moodle has a file which describes API changes in core libraries and APIs, and can be used to discover Moodle version.
+  reference:
+    - https://moodledev.io/general/development/upgradenotes
+    - https://moodle.atlassian.net/browse/MDL-81125
+    - https://github.com/moodle/moodle
   metadata:
-    max-request: 1
-  tags: miscellaneous,misc,moodle
+    verified: true
+    max-request: 2
+  tags: moodle,exposure,misc
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/lib/upgrade.txt"
+      - "{{BaseURL}}/UPGRADING.md"
 
-    matchers-condition: and
+    stop-at-first-match: true
+
+    matchers-condition: or
     matchers:
-      - type: word
-        words:
-          - "This files describes API changes in core libraries and APIs,"
-          - "information provided here is intended especially for developers."
-          - "new my moodle and profiles API"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(content_type), "text/plain")'
+          - 'contains(body, "This files describes API changes")'
         condition: and
 
-      - type: word
-        part: header
-        words:
-          - "text/plain"
-
-      - type: status
-        status:
-          - 200
-# digest: 490a0046304402202ccd02692f28fa45a34a337df5100fdf9069a0742d4fe6fb43b0e595d4df934202203eb5fb0195e4cb6e5c2e58979f56db2f154e714c1589de1b498c8be8273dc0b1:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(content_type), "text/")'
+          - 'contains(body, "Developer update notes")'
+        condition: and
+# digest: 4b0a00483046022100a3d2270274aa388a10342efe221628802043f45ef25e2d71d34e59ce36ecd9990221008c4e0e6d388fb521510457374c42279195602613d6b0ae0d8e1204b146fde9e1:922c64590222798bb761d5b6d8e72950

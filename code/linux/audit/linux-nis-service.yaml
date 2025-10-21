@@ -1,0 +1,42 @@
+id: linux-nis-service
+
+info:
+  name: NIS Service Should Be Disabled
+  author: songyaeji
+  severity: high
+  description: |
+    Evaluated the status of NIS service daemons on the system. Active NIS services could have permitted unauthorized users to escalate privileges or access sensitive account information, posing a significant security risk.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,local,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      if command -v systemctl >/dev/null 2>&1; then
+          if systemctl is-active --quiet ypserv ypbind; then
+              echo "[VULNERABLE] NIS service is running"
+              systemctl status ypserv ypbind
+          else
+              echo "[SAFE] NIS service is not running"
+          fi
+      else
+          running=$(ps -ef | egrep "ypserv|ypbind" | grep -v grep)
+          if [ -n "$running" ]; then
+              echo "[VULNERABLE] NIS service is running"
+              echo "$running"
+          else
+              echo "[SAFE] NIS service is not running"
+          fi
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
+# digest: 4a0a00473045022100b5b0f42b84f5cd2ca06b1a201d906667dc91a01dfd53273bdc01b3a65cc4595d0220603376d78e13e2573dd6af85849d0e5c9d897410e6be681645167165bc5d2a62:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,61 @@
+id: ssh-gssapiauthentication-disabled
+
+info:
+  name: sshd GSSAPIAuthentication - Disabled
+  author: Th3l0newolf
+  severity: low
+  description: |
+    The GSSAPIAuthentication parameter in the SSH configuration file (sshd_config) controls whether GSSAPI-based user authentication is permitted. When enabled, it allows the use of Kerberos or other GSSAPI mechanisms for authenticating SSH connections.
+  remediation:
+    Disable GSSAPIAuthentication by editing /etc/ssh/sshd_config to set GSSAPIAuthentication no and restart SSH with sudo systemctl restart sshd.
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  metadata:
+    verified: true
+  tags: cis,local,ssh,linux,audit,ubuntu,benchmark
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+
+    args:
+      - "-c"
+
+      - |
+        # Use sudo for elevated access to parse the effective SSH configuration
+        if ! command -v sshd &> /dev/null; then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Error] [SSH daemon not found] [CIS_ERROR] [medium]"
+          exit 1
+        fi
+
+        # Get the effective SSH configuration
+        if ! gssapi_auth=$(sudo sshd -T 2>/dev/null | grep -i gssapiauthentication | awk '{print tolower($2)}' | tr -d ' \t'); then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Error] [Failed to get SSH configuration] [CIS_ERROR] [medium]"
+          exit 1
+        fi
+
+        # Check if the value is explicitly set to 'no'
+        if [[ -n "$gssapi_auth" && "$gssapi_auth" == "no" ]]; then
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Pass] [GSSAPIAuthentication $gssapi_auth] [CIS_PASS] [medium]"
+        else
+          echo "[cis-ssh-gssapiauthentication-disabled:Policy-Fail] [GSSAPIAuthentication ${gssapi_auth:-unset}] [CIS_FAIL] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"
+
+      - type: word
+        name: policy-error
+        words:
+          - "Policy-Error"
+# digest: 490a0046304402203ea0832a8c4b917fb2679f7ad2ab9487115c54adfcff441be71dbb40d59da13a02201683771b631252e5015bae4fbebb7762c9b6af94da44c42224e548f8e0e4e3c8:922c64590222798bb761d5b6d8e72950
