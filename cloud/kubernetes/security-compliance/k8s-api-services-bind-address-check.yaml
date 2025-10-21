@@ -1,0 +1,129 @@
+id: k8s-api-services-bind-address-check
+
+info:
+  name: Check kube-scheduler & kube-controller-manager --bind-address not bound to all interfaces
+  author: songyaeji
+  severity: high
+  description: |
+    Ensure kube-scheduler and kube-controller-manager are bound to localhost (127.0.0.1) or otherwise
+    restricted addresses. If --bind-address is missing or set to 0.0.0.0 (::), the service API may be
+    reachable from all network interfaces which increases exposure of control-plane components.
+  impact: |
+    If these control-plane components listen on all interfaces, an attacker with network access may be
+    able to interact with scheduler/controller-manager APIs causing potential information leakage or enabling
+    further attacks against the cluster.
+  remediation: |
+    Set --bind-address=127.0.0.1 (or another restricted IP) in the component's startup arguments (e.g.,
+    edit /etc/kubernetes/manifests/kube-scheduler.yaml and /etc/kubernetes/manifests/kube-controller-manager.yaml).
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: cloud,kubernetes,kube-scheduler,kube-controller-manager,api-server,bind-address,hardening
+
+variables:
+  allowed_address: "127.0.0.1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      set -euo pipefail
+
+      find_bind_in_manifest() {
+        file="$1"
+        if [ -f "$file" ]; then
+          val=$(grep -Eo -- '--bind-address[[:space:]]*=?[[:space:]]*[0-9:.]+' "$file" 2>/dev/null | head -n1 || true)
+          if [ -n "$val" ]; then
+            echo "$val" | sed -E 's/--bind-address[[:space:]]*=?[[:space:]]*//'
+            return 0
+          fi
+        fi
+        return 1
+      }
+
+      find_bind_in_pod_cmd() {
+        label="$1"   # kubectl label selector (e.g., component=kube-scheduler)
+        cmds=$(kubectl get pods -n kube-system -l "$label" -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || true)
+        if [ -z "$cmds" ]; then
+          cmds=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-scheduler')>=0)].spec.containers[*].command}" 2>/dev/null || true)
+        fi
+        if [ -n "$cmds" ]; then
+          echo "$cmds" | grep -Eo -- '--bind-address[[:space:]]*=?[[:space:]]*[0-9:.]+' | head -n1 | sed -E 's/--bind-address[[:space:]]*=?[[:space:]]*//'
+          return 0
+        fi
+        return 1
+      }
+
+      check_component() {
+        comp_name="$1"
+        manifest="$2"
+        selector="$3"
+
+        if val=$(find_bind_in_manifest "$manifest"); then
+          echo "${comp_name}_BIND=${val}"
+        else
+          if val=$(find_bind_in_pod_cmd "$selector"); then
+            echo "${comp_name}_BIND=${val}"
+          else
+            echo "${comp_name}_BIND=MISSING"
+          fi
+        fi
+
+        if [ "${val:-}" = "" ]; then
+          if [ -z "${val:-}" ]; then
+            echo "[VULNERABLE] ${comp_name} bind-address missing or could not be determined"
+            return
+          fi
+        fi
+      }
+
+      SCHED_BIND=""
+      if b=$(find_bind_in_manifest "/etc/kubernetes/manifests/kube-scheduler.yaml" 2>/dev/null || true); then
+        SCHED_BIND="$b"
+      elif b=$(find_bind_in_pod_cmd "component=kube-scheduler" 2>/dev/null || true); then
+        SCHED_BIND="$b"
+      fi
+      if [ -n "$SCHED_BIND" ]; then
+        echo "SCHEDULER_BIND=${SCHED_BIND}"
+        if [ "$SCHED_BIND" = "127.0.0.1" ] || [ "$SCHED_BIND" = "::1" ]; then
+          echo "[SAFE] kube-scheduler bind-address is restricted (${SCHED_BIND})"
+        else
+          echo "[VULNERABLE] kube-scheduler bind-address is ${SCHED_BIND}"
+        fi
+      else
+        echo "SCHEDULER_BIND=MISSING"
+        echo "[VULNERABLE] kube-scheduler bind-address not set (may listen on all interfaces)"
+      fi
+
+      CM_BIND=""
+      if b=$(find_bind_in_manifest "/etc/kubernetes/manifests/kube-controller-manager.yaml" 2>/dev/null || true); then
+        CM_BIND="$b"
+      elif b=$(find_bind_in_pod_cmd "component=kube-controller-manager" 2>/dev/null || true); then
+        CM_BIND="$b"
+      fi
+      if [ -n "$CM_BIND" ]; then
+        echo "CONTROLLER_MANAGER_BIND=${CM_BIND}"
+        if [ "$CM_BIND" = "127.0.0.1" ] || [ "$CM_BIND" = "::1" ]; then
+          echo "[SAFE] kube-controller-manager bind-address is restricted (${CM_BIND})"
+        else
+          echo "[VULNERABLE] kube-controller-manager bind-address is ${CM_BIND}"
+        fi
+      else
+        echo "CONTROLLER_MANAGER_BIND=MISSING"
+        echo "[VULNERABLE] kube-controller-manager bind-address not set (may listen on all interfaces)"
+      fi
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: response
+        name: vulnerable
+        words:
+          - "[VULNERABLE]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-scheduler bind: " + (match("SCHEDULER_BIND=([^\\n]+)","$response").group(1) ?: "MISSING")'
+          - '"kube-controller-manager bind: " + (match("CONTROLLER_MANAGER_BIND=([^\\n]+)","$response").group(1) ?: "MISSING")'
