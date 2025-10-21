@@ -13,8 +13,7 @@ info:
     and ensure "--anonymous-auth=false" is present in the apiserver arguments.
   reference:
     - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
-    - Cloud Vulnerability Assessment Guide(2024) by KISA
-  tags: cloud,devops,kubernetes,devsecops,api-server,k8s,k8s-cluster-security
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
 
 variables:
   argument: "--anonymous-auth=false"
@@ -25,37 +24,19 @@ code:
       - sh
       - bash
     source: |
-      get_apiserver_config() {
-        local commands=""
-        local args=""
-
-        for selector in "component=kube-apiserver" "k8s-app=kube-apiserver"; do
-          commands=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null)
-          args=$(kubectl get pods -n kube-system -l "$selector" -o jsonpath="{.items[*].spec.containers[*].args}" 2>/dev/null)
-
-          if [ -n "$commands$args" ]; then
-            echo "$commands $args"
-            return 0
-          fi
-        done
-
-        commands=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null)
-        args=$(kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].args}" 2>/dev/null)
-
-        if [ -n "$commands$args" ]; then
-          echo "$commands $args"
-        else
-          echo "NO_APISERVER_FOUND"
-        fi
-      }
-
-      config=$(get_apiserver_config)
-      echo "$config"
-
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null || \
+      echo ""
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(body, "kube-apiserver") && !contains(body, "NO_APISERVER_FOUND") && !contains(body, "{{argument}}")'
+      - type: word
+        words:
+          - 'kube-apiserver'
+      - type: word
+        words:
+          - "{{argument}}"
+        negative: true
 
     extractors:
       - type: dsl
