@@ -112,11 +112,12 @@ class EnhancedKEVUpdater:
 
         vkev_cves = set()
         page = 1
-        max_pages = 10  # Safety limit
+        total_pages = None
+        pages_fetched = 0
 
         print("Fetching VulnCheck KEV catalog...")
 
-        while page <= max_pages:
+        while True:
             for attempt in range(MAX_RETRIES):
                 try:
                     headers = {
@@ -141,33 +142,46 @@ class EnhancedKEVUpdater:
                                     if cve_id and cve_id.startswith('CVE-'):
                                         vkev_cves.add(cve_id.upper())
 
-                        # Check if we have more pages
+                        # Check pagination info
                         meta = data.get('_meta', {})
                         total_pages = meta.get('total_pages', 0)
                         current_page = meta.get('page', page)
 
+                        pages_fetched += 1
+                        print(f"Fetched page {current_page}/{total_pages} ({len(data['data'])} entries, {len(vkev_cves)} unique CVEs so far)")
+
+                        # Check if we've reached the last page
                         if current_page >= total_pages:
-                            break
+                            print(f"Completed fetching all {pages_fetched} pages")
+                            return vkev_cves
+
+                        # Rate limiting: small delay between requests to avoid hitting API limits
+                        if pages_fetched % 10 == 0:  # Every 10 pages, longer delay
+                            print(f"Pausing for rate limiting after {pages_fetched} pages...")
+                            time.sleep(2)
+                        else:
+                            time.sleep(0.5)  # Small delay between requests
 
                         page += 1
                         break  # Break retry loop, continue to next page
                     else:
                         print("No more VulnCheck KEV data")
-                        page = max_pages + 1  # Exit outer loop
-                        break
+                        return vkev_cves
 
                 except requests.RequestException as e:
                     print(f"VulnCheck KEV fetch failed (attempt {attempt + 1}/{MAX_RETRIES}, page {page}): {e}")
                     if attempt == MAX_RETRIES - 1:
                         print(f"Failed to fetch VulnCheck KEV data for page {page}")
-                        page = max_pages + 1  # Exit on final failure
+                        return vkev_cves  # Return what we have so far
                     else:
-                        time.sleep(2 * (attempt + 1))
+                        # Exponential backoff with rate limiting consideration
+                        delay = min(10, 2 * (attempt + 1))
+                        print(f"Retrying after {delay} seconds...")
+                        time.sleep(delay)
 
                 except Exception as e:
                     print(f"Unexpected error fetching VulnCheck KEV: {e}")
-                    page = max_pages + 1  # Exit on unexpected error
-                    break
+                    return vkev_cves  # Return what we have so far
 
         print(f"Retrieved {len(vkev_cves)} CVEs from VulnCheck KEV catalog")
         return vkev_cves
