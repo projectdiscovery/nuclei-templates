@@ -1,0 +1,39 @@
+id: ntp-enum
+
+info:
+  name: NTP Enumeration
+  author: matejsmycka
+  severity: low
+  description: |
+    NTP may disclose details about services running on a local network. When NTP traffic is accessible from the public Internet, attackers can exploit it to map internal services. If exposure is suspected, perform enumeration with tools such as dig to collect additional information.
+  metadata:
+    verified: true
+    shodan-query: port:123
+  tags: dns,udp,ntp,enum,js
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+
+    code: |
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      let packet = "d60200010000000000000000"
+      conn.SendHex(packet);
+      let resp = conn.Recv(128);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 123
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "(version=[0-9]+)"
