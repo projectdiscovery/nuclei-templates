@@ -1,0 +1,48 @@
+id: postman-collection-exposure
+
+info:
+  name: Postman Collection Exposure
+  author: Hamza Sahin
+  severity: low
+  description: |
+    Detected exposed Postman collection JSON files that contained API endpoints and environment details. These files were publicly accessible and disclosed authentication headers and other sensitive information.
+  reference:
+    - https://medium.com/@utkarshporwal24/exposed-postman-collections-ed6086b96ba5
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"postman.json"
+  tags: api,postman,exposure,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/postman.json"
+      - "{{BaseURL}}/docs/postman.json"
+      - "{{BaseURL}}/api/postman.json"
+      - "{{BaseURL}}/postman_collection.json"
+      - "{{BaseURL}}/collections/postman.json"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)content-type:\s*application/(json|vnd\.postman\.[^;\s]+)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)"info"\s*:\s*\{\s*"name"\s*:\s*".+?"'
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)"item"\s*:\s*\['
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502202cabbbff299c7ec7e1579b794950cdd6f73bdfd65ce8c6c65a62bd120be19734022100d15074a57eb787a8d5390e7abffdd6728999ea69055f5caa111ded55b5963bd2:922c64590222798bb761d5b6d8e72950

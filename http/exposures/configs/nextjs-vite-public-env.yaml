@@ -1,0 +1,67 @@
+id: nextjs-vite-public-env
+
+info:
+  name: Next.js / Vite Public ENV Exposure
+  author: Hamza Sahin
+  severity: medium
+  description: |
+    Identified public environment variables exposed to the client in Next.js (__NEXT_DATA__.env) and Vite applications through runtime configurations.
+  reference:
+    - https://nextjs.org/docs/app/building-your-application/configuring/environment-variables
+    - https://vitejs.dev/guide/env-and-mode.html
+    - https://supabase.com/docs/guides/api#api-keys
+  metadata:
+    verified: true
+  tags: exposure,env,nextjs,vite,supabase,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)"NEXT_PUBLIC_SUPABASE_URL"\s*:\s*"https?://[a-z0-9\.\-:/]+"'
+          - '(?i)"NEXT_PUBLIC_SUPABASE_ANON_KEY"\s*:\s*"[A-Za-z0-9\.\-_]{20,}"'
+          - '(?i)\bVITE_SUPABASE_URL\b"\s*:\s*"https?://[a-z0-9\.\-:/]+"'
+          - '(?i)\bVITE_SUPABASE_ANON_KEY\b"\s*:\s*"[A-Za-z0-9\.\-_]{20,}"'
+          - '(?i)window\.__env\s*=\s*\{[^}]*?(SUPABASE_(URL|ANON_KEY))[^}]*?\}'
+          - '(?i)__NEXT_DATA__.*?"env"\s*:\s*\{[^}]*?NEXT_PUBLIC_[A-Z0-9_]{2,}'
+          - '(?i)\bVITE_[A-Z0-9_]{2,}"\s*:\s*"[^"]{3,}'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+
+    extractors:
+      - type: regex
+        part: body
+        name: supabase_url
+        group: 1
+        regex:
+          - '(?i)"NEXT_PUBLIC_SUPABASE_URL"\s*:\s*"(https?://[a-z0-9\.\-:/]+)"'
+          - '(?i)\bVITE_SUPABASE_URL\b"\s*:\s*"(https?://[a-z0-9\.\-:/]+)"'
+
+      - type: regex
+        part: body
+        name: supabase_anon_key
+        group: 1
+        regex:
+          - '(?i)"NEXT_PUBLIC_SUPABASE_ANON_KEY"\s*:\s*"([A-Za-z0-9\.\-_]{20,})"'
+          - '(?i)\bVITE_SUPABASE_ANON_KEY\b"\s*:\s*"([A-Za-z0-9\.\-_]{20,})"'
+
+      - type: regex
+        part: body
+        name: public_env
+        regex:
+          - '(?i)"(NEXT_PUBLIC_[A-Z0-9_]{2,})"\s*:\s*"([^"]{3,})"'
+          - '(?i)"(VITE_[A-Z0-9_]{2,})"\s*:\s*"([^"]{3,})"'
+# digest: 4a0a0047304502210092280b4135320f0c8154e3524acd48f052e528b7585d1b188b088ed2d0cecbdd022055e0ba62b913b503e666c77006a35ee0bf0f38c88339a1931a047c606080475d:922c64590222798bb761d5b6d8e72950

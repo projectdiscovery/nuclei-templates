@@ -1,0 +1,50 @@
+id: mfp-unauth-exposure
+
+info:
+  name: Multi-function Printer - Unauthorized Access
+  author: matejsmycka
+  severity: medium
+  description: |
+    Unauthorized access to MFP (Multi-function printer) using eSCL protocol allows attackers to scan documents left physically in the printer and send them to an arbitrary location. Furthermore, exposure of this endpoint allows attackers to gather information about the printer, serial number, model, and possibly pull documents scanned by legitimate users.
+  reference:
+    - https://wiki.debian.org/eSCL
+    - https://support.princh.com/en/the-onboarding-process-1
+    - https://mopria.org/spec-download
+    - https://github.com/xJonathanLEI/escl-rs
+  metadata:
+    max-request: 1
+    verified: true
+  tags: network,iot,printer,misconfig,escl,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/eSCL/ScannerCapabilities"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "xmlns:pwg="
+          - "<scan:ScannerCapabilities"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/xml"
+          - "text/xml"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '<(?:pwg:)?SerialNumber>([^<]+)</(?:pwg:)?SerialNumber>'
+          - '<(?:pwg:)?Model>([^<]+)</(?:pwg:)?Model>'
+          - '<(?:pwg:)?MakeAndModel>([^<]+)</(?:pwg:)?MakeAndModel>'
+# digest: 4a0a0047304502204f7e3fd638cc2cccf73a8a94818ba303a6f676b6c6d2d78b8b32560878d2dce6022100b6d0d67d3ca30b2c7e5ec48092e45a173a1519a1c842d9029a8db0d54db39c01:922c64590222798bb761d5b6d8e72950

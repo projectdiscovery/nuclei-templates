@@ -1,0 +1,45 @@
+id: k8s-apiserver-anonymous-access
+
+info:
+  name: Ensure kube-apiserver --anonymous-auth is explicitly disabled
+  author: songyaeji
+  severity: high
+  description: Checks whether kube-apiserver explicitly sets --anonymous-auth=false in its startup arguments.
+  impact: |
+    If --anonymous-auth is not explicitly disabled, anonymous unauthenticated requests might be allowed,
+    enabling unauthenticated access to cluster resources.
+  remediation: |
+    Edit the kube-apiserver manifest (e.g., /etc/kubernetes/manifests/kube-apiserver.yaml) or startup flags
+    and ensure "--anonymous-auth=false" is present in the apiserver arguments.
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "--anonymous-auth=false"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -l k8s-app=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}" 2>/dev/null || \
+      kubectl get pods -n kube-system -o jsonpath="{.items[?(@.metadata.name.indexOf('kube-apiserver')>=0)].spec.containers[*].command}" 2>/dev/null || \
+      echo ""
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+      - type: word
+        words:
+          - "{{argument}}"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-apiserver configuration does not explicitly set " + argument + ". This may allow anonymous access."'
+# digest: 490a004630440220400b5c65f92d20c1e43c6fd1832b52f91802eec0b70ab33eb9fb354f0a6d22d102200af5a11e626932f53faab18840f6ede44a22390a9525461c393917ef94c10310:922c64590222798bb761d5b6d8e72950

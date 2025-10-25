@@ -1,0 +1,57 @@
+id: mDNS-enum
+
+info:
+  name: mDNS Enumeration
+  author: matejsmycka
+  severity: low
+  description: |
+    mDNS may disclose details about services running on a local network. When mDNS traffic is accessible from the public Internet, attackers can exploit it to map internal services. If exposure is suspected, perform enumeration with tools such as dig to collect additional information.
+  metadata:
+    verified: true
+    shodan-query: port:5353
+  tags: dns,udp,mdns,enum,js,enum
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+
+    code: |
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      // same as dig @<HOST> -p 5353 _services._dns-sd._udp.local PTR
+      let packet = "e3bc01200001000000000001095f7365727669636573075f646e732d7364045f756470056c6f63616c00000c000100002904d000000000000c000a00083e6e072b14fd0be3"
+      conn.SendHex(packet);
+      let resp = conn.Recv(512);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 5353
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: regex
+        regex:
+          - "workstation"
+          - "http"
+          - "smb"
+          - "qmobile"
+          - "qdiscover"
+          - "ftp"
+          - "nut"
+          - "dacp"
+          - "airplay"
+          - "device-info"
+          - "home-assistant"
+          - "spotify-connect"
+          - "sftp-ssh"
+          - "ssh"
+          - "afpovertcp"
+          - "googlecast"
+          - "printer"
+          - "occam"
+# digest: 4b0a00483046022100cbf4e8efb747088218bc83f016c550915565dd21edb2629a2ab5280b82d3066602210089aaf631bed9fec045e390dad6e2916f438b6397cafdf1016e775135da264341:922c64590222798bb761d5b6d8e72950
