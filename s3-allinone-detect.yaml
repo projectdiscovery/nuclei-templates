@@ -1,0 +1,81 @@
+id: s3-allinone-detect
+info:
+  name: All-in-one cloud storage public bucket discovery
+  author: bit0x1er
+  severity: info
+  description: |
+    Non-destructive checks for public/listable buckets across multiple providers (AWS S3 virtual-host style, Google Cloud Storage, Azure Blob, DigitalOcean Spaces, Alibaba OSS). Uses HEAD (fallback GET) and safe body/header matchers to reduce false positives.
+  metadata:
+    verified: true
+    max-request: 13
+  tags: s3,gcp,azure,digitalocean,alibaba,discovery,info,cloud
+
+http:
+  - method: GET
+    path:
+      - "https://{{Hostname}}.s3.amazonaws.com/"
+      - "https://{{Hostname}}.s3.us-east-1.amazonaws.com/"
+      - "https://{{Hostname}}.s3.us-west-2.amazonaws.com/"
+      - "https://{{Hostname}}.s3.eu-west-1.amazonaws.com/"
+      - "https://storage.googleapis.com/{{Hostname}}/"
+      - "https://{{Hostname}}.blob.core.windows.net/"
+      - "https://{{Hostname}}.nyc3.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.sfo3.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.sgp1.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.fra1.digitaloceanspaces.com/"
+      - "https://{{Hostname}}.oss-cn-hangzhou.aliyuncs.com/"
+      - "https://{{Hostname}}.oss-us-west-1.aliyuncs.com/"
+
+    redirects: false
+    max-size: 10240
+    stop-at-first-match: false
+
+    matchers-condition: and
+    matchers:
+      # Valid HTTP status (bucket exists)
+      - type: status
+        status:
+          - 200
+          - 403
+
+      - type: dsl
+        dsl:
+          - 'contains(tolower(all_headers), "x-amz-request-id") || contains(tolower(all_headers), "x-amz-id-2")'
+          - 'contains(tolower(all_headers), "x-goog-generation")'
+          - 'contains(tolower(all_headers), "x-ms-request-id") && contains(tolower(all_headers), "x-ms-version")'
+          - 'contains(tolower(all_headers), "x-oss-request-id")'
+        condition: or
+
+    extractors:
+      - type: dsl
+        name: provider
+        dsl:
+          - 'contains(tolower(host), "s3.amazonaws.com") ? "AWS S3" : ""'
+          - 'contains(tolower(host), "digitaloceanspaces.com") ? "DigitalOcean Spaces" : ""'
+          - 'contains(tolower(host), "storage.googleapis.com") ? "Google Cloud Storage" : ""'
+          - 'contains(tolower(host), "blob.core.windows.net") ? "Azure Blob Storage" : ""'
+          - 'contains(tolower(host), "aliyuncs.com") ? "Alibaba Cloud OSS" : ""'
+
+      - type: dsl
+        name: access-level
+        dsl:
+          - 'status_code == 200 && contains(tolower(body), "listbucketresult") ? "PUBLIC-LISTABLE" : ""'
+          - 'status_code == 200 ? "PUBLIC-READABLE" : ""'
+          - 'status_code == 403 ? "EXISTS-PRIVATE" : ""'
+
+      # Extract exposed files (if public and listable)
+      - type: regex
+        name: exposed-files
+        part: body
+        group: 1
+        regex:
+          - '<Key>([^<]+)</Key>'
+
+      - type: kval
+        name: request-id
+        part: header
+        kval:
+          - x_amz_request_id
+          - x_goog_generation
+          - x_ms_request_id
+          - x_oss_request_id
