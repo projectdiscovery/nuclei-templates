@@ -2,7 +2,7 @@ id: git-config
 
 info:
   name: Git Configuration - Detect
-  author: pdteam,pikpikcu,Mah3Sec_,m4lwhere
+  author: pdteam,pikpikcu,Mah3Sec_,m4lwhere,AliHzSec
   severity: medium
   description: Git configuration was detected via the pattern /.git/config and log file on passed URLs.
   classification:
@@ -16,16 +16,22 @@ info:
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/.git/config"
+      - "http://{{Hostname}}/.git/config"
+      - "https://{{Hostname}}/.git/config"
 
     matchers-condition: and
     matchers:
-      - type: word
+      - type: regex
         part: body
-        words:
-          - "[credentials]"
-          - "[core]"
         condition: or
+        regex:
+          - "\\[gc"
+          - "\\[core"
+          - "\\[user"
+          - "\\[http"
+          - "\\[remote"
+          - "\\[branch"
+          - "\\[credentials"
 
       - type: dsl
         dsl:
@@ -40,9 +46,12 @@ http:
     extractors:
       - type: regex
         part: body
-        group: 1
         regex:
-          - "url ?= ?https?://(.*:.*)@"
-          - "AUTHORIZATION: basic (.*)"
-          - "pass = (.*)"
+          - "url ?= ?https?://(.*:.*)@"                       # creds in remote url
+          - "AUTHORIZATION: basic (.*)"                       # basic auth
+          - "pass = (.*)"                                     # plain pass
+          - "ghp_.*"                                          # GitHub PAT
+          - "github-oauth-.*"                                 # GitHub OAuth
+          - "glpat-.*"                                        # GitLab PAT
+          - "vsts-.*"                                         # Azure DevOps PAT
 # digest: 490a0046304402207d23b25497c3568eb0db1ec90876f525d4dd27dbe59ee8e3888a9f1d9968fed902203e9a6166889099155b6ef07d7c088556808c1eb5017f196d186e20de2b365bd7:922c64590222798bb761d5b6d8e72950
