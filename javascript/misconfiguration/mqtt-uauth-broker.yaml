@@ -1,11 +1,10 @@
----
-id: mqtt-unauth-broker
+id: unauth-mqtt-broker
 info:
   name: MQTT Unauthenticated Broker - Detect
   author: matejsmycka
   severity: high
   description: |
-    MQTT is used for IoT device communication. This template checks for the presence of an MQTT broker and attempts subscribe to the "SYS/#" topic to enumerate system information.
+    Detects an unauthenticated MQTT broker and attempts to subscribe to the $SYS/# topic to enumerate broker and system information.
   reference:
     - https://en.wikipedia.org/wiki/MQTT
     - https://github.com/kh4sh3i/MQTT-Pentesting
@@ -13,11 +12,12 @@ info:
     verified: true
     max-request: 1
     shodan-query: port:1883 broker
-  tags: js,tcp,network,mqtt
+  tags: js,tcp,network,mqtt,unauth
 
 javascript:
   - pre-condition: |
-      isUDPPortOpen(Host, Port);
+      isPortOpen(Host,Port);
+
     code: |
       const c = require("nuclei/net");
       const conn = c.Open('tcp', `${Host}:${Port}`, `${Timeout}`);
@@ -26,7 +26,7 @@ javascript:
 
       let subscribe_command = "820b00010006245359532f2300";
       conn.SendHex(subscribe_command);
-      let resp = conn.RecvFull(128);
+      let resp = conn.RecvFullString(1024);
       resp;
 
     args:
@@ -42,5 +42,6 @@ javascript:
     extractors:
       - type: regex
         group: 1
+        name: version
         regex:
-          - "SYS/broker(.*)"
+          - "version ([0-9.]+)"
