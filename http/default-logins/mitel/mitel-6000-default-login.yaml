@@ -1,0 +1,39 @@
+id: mitel-6000-default-login
+
+info:
+  name: Mitel 6000 - Default Login
+  author: matejsmycka
+  severity: high
+  description: |
+   This template detects the use of default credentials (admin:22222) on Mitel 6000 devices, which may allow unauthorized access to system information.
+  reference:
+    - https://wiki.bicomsystems.com/UADs/Mitel_6930
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "Server: Aragorn Mitel"
+  tags: mitel,mitel-6000,default-login,vuln
+
+variables:
+  username: "admin"
+  password: "22222"
+
+http:
+  - raw:
+      - |
+        GET /sysinfo.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64('{{username}}:{{password}}')}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Mitel", "System Information", "logout.html")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Username: " + username + " Password: " + password'
+# digest: 4a0a00473045022100bc2ad325efc19ac7746f71494d8e22f96d0f991d77f98ebfa378db97e10564710220196ae9d613af7d15be2b7e42a9a9d29bf4c439fb94c3fb8d7a03584991fd1f44:922c64590222798bb761d5b6d8e72950
