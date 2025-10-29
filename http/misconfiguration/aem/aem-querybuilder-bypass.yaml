@@ -5,7 +5,7 @@ info:
   author: tess,assetnote
   severity: critical
   description: |
-    Detected an exposed AEM QueryBuilder endpoint that returned user repository information, including password hashes (rep:password) from /home/users.This behavior indicated that the instance had leaked sensitive data through unauthenticated access to the querybuilder.json API.
+    Adobe Experience Manager QueryBuilder endpoint allows unauthenticated attackers to extract sensitive user repository data, including password hashes from the rep:password field in /home/users. This vulnerability bypasses access controls and exposes bcrypt/SHA-256 password hashes through the querybuilder.json API, enabling potential credential compromise and account takeover attacks.
   reference:
     - https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/query-builder/querybuilder-api.html
     - https://slcyber.io/assetnote-security-research-center/finding-critical-bugs-in-adobe-experience-manager/
@@ -27,13 +27,25 @@ http:
       - type: word
         part: body
         words:
-          - '"rep:password":'
-
-      - type: word
-        part: content_type
-        words:
-          - "application/json"
+          - '"rep:password"'
+          - '"success":true'
+          - '"results":'
+          - '"hits":'
+        condition: and
 
       - type: status
         status:
           - 200
+
+    extractors:
+      - type: regex
+        name: password_count
+        group: 1
+        part: body
+        regex:
+          - '"results":(\d+)'
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"Found password: " + password_count'
