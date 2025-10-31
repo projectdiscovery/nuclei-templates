@@ -1,0 +1,43 @@
+id: graphql-directive-overloading
+
+info:
+  name: GraphQL Directive Overloading
+  author: shamo0
+  severity: info
+  description: |
+    GraphQL directive overloading occurs when multiple duplicated directives are allowed in a single query, potentially leading to denial of service attacks or resource exhaustion.
+  impact: |
+    An attacker could exploit directive overloading to consume excessive server resources, potentially leading to denial of service conditions.
+  remediation: |
+    Configure GraphQL server to limit or prevent directive overloading by implementing proper validation and rate limiting.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/12-API_Testing/01-Testing_GraphQL
+    - https://github.com/dolevf/graphql-cop/blob/main/lib/tests/dos_directive_overloading.py
+  metadata:
+    verified: true
+    max-request: 1
+  tags: graphql,misconfig,vuln
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query": "query cop { __typename @aa@aa@aa@aa@aa@aa@aa@aa@aa@aa }", "operationName": "cop"}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "\\\"errors\\\":\\s*\\[.*?\\]"
+          - "\\\"message\\\":\\s*\\\".*?@aa.*?\\\""
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+# digest: 4b0a0048304602210097d562e2a894e1f5f434dd06bc23e0a24514d0026424bd30695e78452ac518d2022100e579ed2b37b4346062a20f8826c5254e45562e900aac9b6807c5ce6e3cb38426:922c64590222798bb761d5b6d8e72950
