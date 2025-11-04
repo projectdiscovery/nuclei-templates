@@ -1,0 +1,53 @@
+id: rtl-tcp-server-detection
+
+info:
+  name: RTL-TCP Server Detection
+  author: RandomRobbie
+  severity: info
+  description: |
+    Detects RTL-TCP servers used for Software Defined Radio (SDR).
+    RTL-TCP allows remote access to RTL-SDR dongles over TCP.
+    These servers can be used with SDR software like SDR#, GQRX, CubicSDR, etc.
+  reference:
+    - https://github.com/steve-m/librtlsdr
+    - https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr
+  metadata:
+    verified: true
+    max-request: 1
+  tags: rtl-sdr,sdr,radio,iot,network,exposure
+
+tcp:
+  - inputs:
+      - data: "{{hex_decode('01000000070b8140')}}"
+      - data: "{{hex_decode('020000000024f600')}}"
+    host:
+      - "{{Hostname}}"
+    port: "1234,8888,50000,50001,1235,8889"
+    read-size: 1024
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: rtl0-handshake
+        words:
+          - "RTL0"
+
+      - type: word
+        name: sdr-software
+        words:
+          - "SoapySDR"
+          - "GNU Radio"
+          - "rtl_tcp"
+
+      - type: dsl
+        name: iq-data-stream
+        dsl:
+          - "len(body) > 100"
+        condition: and
+
+    extractors:
+      - type: kval
+        name: server-info
+        kval:
+          - host
+          - port
