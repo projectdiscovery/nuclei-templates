@@ -1,0 +1,42 @@
+id: linux-root-remote-login
+
+info:
+  name: Linux Root Remote Login Enabled - Misconfig
+  author: songyaeji
+  severity: high
+  description: |
+    Root remote login was enabled either through /etc/securetty or via SSH configuration.This misconfiguration increased the risk of unauthorized system access.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/
+  metadata:
+    verified: true
+  tags: local,linux,ssh,root,misconfig,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      cat /etc/securetty 2>/dev/null | grep -E 'pts/[0-9]+' || echo "no-securetty"
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      cat /etc/ssh/sshd_config 2>/dev/null | grep -E '^PermitRootLogin\s+yes' || echo "no-root-ssh"
+
+    matchers:
+      - type: word
+        name: tty
+        part: code_1_response
+        words:
+          - "pts/"
+
+      - type: word
+        name: ssh
+        part: code_2_response
+        words:
+          - "PermitRootLogin yes"
+# digest: 4a0a00473045022100d3f9e9bf332239dff21fed19b2f4e154516bd0150c3e2664a3bc8d47bdc936eb022048de72c0c6425034051202b5d63abff5701dbe0b2b6e84870cfe4760a05a4e1a:922c64590222798bb761d5b6d8e72950

