@@ -1,8 +1,8 @@
-id: iis-shortname
+id: iis-shortname-detect
 
 info:
   name: IIS - Short Name Detect
-  author: nodauf
+  author: nodauf,liquidsec
   severity: info
   description: A website running via IIS on an old .net framework contains a get request vulnerability. Using the the tilde character "~" in the request, an attacker can locate short names of files and folders not normally visible.
   reference:
@@ -15,13 +15,26 @@ info:
     cvss-score: 0
     cwe-id: CWE-200
   metadata:
-    max-request: 6
-  tags: iis,edb,fuzzing,vuln
+    max-request: 7
+  tags: iis,edb,vuln
 
 variables:
   randstring: "{{to_lower(rand_base(8))}}"
 
+flow: http(1) && http(2)
+
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        regex:
+          - "(?i)Microsoft-IIS"
+        part: header
+        internal: true
+
   - raw:
       - |
         GET /{{randstring}}*~1*/a.aspx HTTP/1.1
