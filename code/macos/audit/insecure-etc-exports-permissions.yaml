@@ -1,15 +1,15 @@
 id: insecure-etc-exports-permissions
 
 info:
-  name: Insecure /etc/exports Permissions
+  name: macOS Insecure /etc/exports Permissions
   author: geeknik
   severity: high
   description: |
-    The /etc/exports file is used to configure NFS exports. This template checks for insecure permissions on this file.
+    Identifies insecure permissions on the /etc/exports file used to configure NFS exports on macOS.
   impact: |
     Insecure permissions on /etc/exports could allow unauthorized users to modify the file and gain access to exported filesystems.
   remediation: |
-    Ensure that the /etc/exports file is owned by root and has permissions of 0644.
+    Ensure that the /etc/exports file is owned by root with a system group (wheel, admin, etc.) and has permissions of 0644 or more restrictive.
   tags: macos,audit,local,security,nfs
 
 self-contained: true
@@ -19,9 +19,13 @@ code:
       - sh
       - bash
     source: |
-      ls -l /etc/exports
+      ls -l /etc/exports 2>&1
+    matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 0
       - type: regex
         regex:
-          - "^-rw-r--r--.+root.+wheel.*"
+          - "^-rw-r--r--\\s+\\d+\\s+root\\s+\\w+"
         negative: true

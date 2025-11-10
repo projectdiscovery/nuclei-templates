@@ -1,15 +1,15 @@
 id: insecure-etc-fstab-permissions
 
 info:
-  name: Insecure /etc/fstab Permissions
+  name: macOS Insecure /etc/fstab Permissions
   author: geeknik
   severity: high
   description: |
-    The /etc/fstab file is used to define how disk partitions, various other block devices, or remote filesystems are mounted into the filesystem. This template checks for insecure permissions on this file.
+    Validates permissions on the /etc/fstab file that defines how disk partitions and filesystems are mounted on macOS.
   impact: |
     Insecure permissions on /etc/fstab could allow unauthorized users to modify the file and mount malicious filesystems.
   remediation: |
-    Ensure that the /etc/fstab file is owned by root and has permissions of 0644.
+    Ensure that the /etc/fstab file is owned by root with a system group (wheel, admin, etc.) and has permissions of 0644 or more restrictive.
   tags: macos,audit,local,security
 
 self-contained: true
@@ -19,9 +19,13 @@ code:
       - sh
       - bash
     source: |
-      ls -l /etc/fstab
+      ls -l /etc/fstab 2>&1
+    matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 0
       - type: regex
         regex:
-          - "^-rw-r--r--.+root.+wheel.*"
+          - "^-rw-r--r--\\s+\\d+\\s+root\\s+\\w+"
         negative: true

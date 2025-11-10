@@ -1,15 +1,15 @@
 id: insecure-etc-hostconfig-permissions
 
 info:
-  name: Insecure /etc/hostconfig Permissions
+  name: macOS Insecure /etc/hostconfig Permissions
   author: geeknik
   severity: high
   description: |
-    The /etc/hostconfig file is used to configure system services. This template checks for insecure permissions on this file.
+    Evaluates permissions on the /etc/hostconfig file used to configure system services on macOS.
   impact: |
     Insecure permissions on /etc/hostconfig could allow unauthorized users to modify the file and reconfigure system services.
   remediation: |
-    Ensure that the /etc/hostconfig file is owned by root and has permissions of 0644.
+    Ensure that the /etc/hostconfig file is owned by root with a system group (wheel, admin, etc.) and has permissions of 0644 or more restrictive.
   tags: macos,audit,local,security
 
 self-contained: true
@@ -19,9 +19,13 @@ code:
       - sh
       - bash
     source: |
-      ls -l /etc/hostconfig
+      ls -l /etc/hostconfig 2>&1
+    matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 0
       - type: regex
         regex:
-          - "^-rw-r--r--.+root.+wheel.*"
+          - "^-rw-r--r--\\s+\\d+\\s+root\\s+\\w+"
         negative: true

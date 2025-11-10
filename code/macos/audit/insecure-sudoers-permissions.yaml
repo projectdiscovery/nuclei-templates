@@ -1,15 +1,15 @@
 id: insecure-sudoers-permissions
 
 info:
-  name: Insecure /etc/sudoers Permissions
+  name: macOS Insecure /etc/sudoers Permissions
   author: geeknik
   severity: high
   description: |
-    The /etc/sudoers file defines which users and groups are allowed to run commands with root privileges. This template checks for insecure permissions on this file.
+    Audits permissions on the /etc/sudoers file that defines which users can run commands with root privileges on macOS.
   impact: |
     Insecure permissions on /etc/sudoers could allow unauthorized users to modify the file and grant themselves root privileges.
   remediation: |
-    Ensure that the /etc/sudoers file is owned by root and has permissions of 0440.
+    Ensure that the /etc/sudoers file is owned by root with a system group (wheel, admin, etc.) and has permissions of 0440 or more restrictive.
   tags: macos,audit,local,security,sudo
 
 self-contained: true
@@ -19,9 +19,13 @@ code:
       - sh
       - bash
     source: |
-      ls -l /etc/sudoers
+      ls -l /etc/sudoers 2>&1
+    matchers-condition: and
     matchers:
+      - type: status
+        status:
+          - 0
       - type: regex
         regex:
-          - "^-r--r-----.+root.+wheel.*"
+          - "^-r--r-----\\s+\\d+\\s+root\\s+\\w+"
         negative: true
