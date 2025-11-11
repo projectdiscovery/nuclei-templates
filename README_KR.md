@@ -31,7 +31,7 @@ Nuclei 템플릿
 
 템플릿은 실제 스캐닝 엔진을 동작하게 하는 [nuclei scanner](https://github.com/projectdiscovery/nuclei)의 핵심입니다.
 이 저장소는 우리 팀에서 제공하거나, 커뮤니티에서 기여한 다양한 템플릿들을 저장하고 보관합니다.
-템플릿 목록을 증가시키기 위해서 **pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) 를 통해 기여해주시기를 부탁드립니다.
+**pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+)를 통해 템플릿을 보내주시는 기여도 환영합니다.
 
 ## Nuclei 템플릿 개요
 
@@ -44,19 +44,19 @@ Nuclei 템플릿
 ## Nuclei 템플릿 통계 Top 10
 
 |    태그    | 개수 |    작성자     | 개수 |    디렉토리     | 개수 | 심각도 | 개수 |  종류   | 개수 |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1325 | daffainfo     |   629 | cves             |  1306 | info     |  1398 | http    |  3644 |
-| panel     |   604 | dhiyaneshdk   |   509 | exposed-panels   |   613 | high     |   955 | file    |    76 |
-| lfi       |   490 | pikpikcu      |   322 | vulnerabilities  |   506 | medium   |   784 | network |    50 |
-| xss       |   451 | pdteam        |   269 | technologies     |   273 | critical |   445 | dns     |    17 |
-| wordpress |   409 | geeknik       |   187 | exposures        |   254 | low      |   211 |         |       |
-| exposure  |   360 | dwisiswant0   |   169 | token-spray      |   230 | unknown  |     7 |         |       |
-| cve2021   |   324 | 0x_akoko      |   157 | misconfiguration |   210 |          |       |         |       |
-| rce       |   319 | princechaddha |   149 | workflows        |   187 |          |       |         |       |
-| wp-plugin |   304 | pussycat0x    |   130 | default-logins   |   102 |          |       |         |       |
-| tech      |   286 | gy741         |   126 | file             |    76 |          |       |         |       |
+|-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
+| cve       |  3288 | dhiyaneshdk   |  1882 | http       |  8967 | info     |  4190 | file |   435 |
+| panel     |  1342 | daffainfo     |   868 | cloud      |   657 | high     |  2446 | dns  |    26 |
+| xss       |  1257 | princechaddha |   854 | file       |   435 | medium   |  2379 |      |       |
+| wordpress |  1181 | dwisiswant0   |   806 | dast       |   255 | critical |  1425 |      |       |
+| exposure  |  1107 | ritikchaddha  |   649 | workflows  |   202 | low      |   318 |      |       |
+| wp-plugin |  1032 | pussycat0x    |   532 | code       |   198 | unknown  |    56 |      |       |
+| osint     |   841 | pikpikcu      |   352 | network    |   145 |          |       |      |       |
+| tech      |   803 | pdteam        |   310 | javascript |    71 |          |       |      |       |
+| rce       |   786 | pdresearch    |   269 | ssl        |    38 |          |       |      |       |
+| lfi       |   777 | iamnoooob     |   257 | dns        |    23 |          |       |      |       |
 
-**286개 디렉토리, 4012개 파일**.
+**848개 디렉토리, 11344개 파일**.
 
 </td>
 </tr>

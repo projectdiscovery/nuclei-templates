@@ -1,26 +1,164 @@
-name: 🤖 issue/pr assignment
-on:
-  pull_request:
-    types: [opened]
-    branches: 
-      - main
-  issues:
-    types: [opened]
+name: Auto-assign on open
 
-env:
-  ASSIGN_TASK_TOKEN: ${{ secrets.PDTEAMX_PAT }} # github personal token
+on:
+  issues:
+    types: [opened, reopened]
+  # Use pull_request_target so the job has permissions on PRs from forks.
+  pull_request_target:
+    types: [opened, ready_for_review, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: auto-assign-on-open
+  cancel-in-progress: false
 
 jobs:
-  build:
-    permissions: write-all
+  assign:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # checkout the repository content
-      - uses: actions/setup-python@v5
+      - uses: actions/github-script@v8
         with:
-          python-version: '3.10' # install the python version needed
-      - run: pip install requests
-      - if: github.event_name == 'pull_request'
-        run: python .github/scripts/assign_tasks.py ${{ github.event.pull_request.number }} pr ${{ secrets.GITHUB_TOKEN }}
-      - if: github.event_name == 'issues'
-        run: python .github/scripts/assign_tasks.py ${{ github.event.issue.number }} issue ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const ORG = context.repo.owner;
+            const REPO = context.repo.repo;
+
+            // ======= CONFIG: put your user pools here =======
+            // Usernames must be GitHub logins and collaborators on this repo.
+            const ISSUE_ASSIGNEES = [
+              "princechaddha","pussycat0x","ritikchaddha","DhiyaneshGeek","akokonunes","theamanrawat"
+            ];
+            const REVIEW_POOL = [
+              "pussycat0x","ritikchaddha","DhiyaneshGeek","akokonunes","theamanrawat"
+            ];
+            const LOOKBACK_DAYS = 7; // only used as a tie-break fairness metric
+            // ================================================
+
+            function toLowerAll(xs){ return xs.map(x => x.toLowerCase()); }
+            const issuePool = new Set(toLowerAll(ISSUE_ASSIGNEES));
+            const reviewPool = new Set(toLowerAll(REVIEW_POOL));
+            const sinceISO = new Date(Date.now() - LOOKBACK_DAYS*24*60*60*1000).toISOString();
+
+            // Simple "least recent then fewest in lookback" picker
+            function initMap(arr){ const m=new Map(); for(const a of arr) m.set(a,0); return m; }
+            const issueCounts = initMap(issuePool);
+            const prAssigneeCounts = initMap(reviewPool);
+            const prReviewerCounts = initMap(reviewPool);
+            const lastIssueAssign = new Map();
+            const lastPrAssignee = new Map();
+            const lastPrReviewer = new Map();
+
+            function pick(countsMap, lastMap, exclude=new Set()){
+              const cands = [...countsMap.keys()].filter(x => !exclude.has(x));
+              if (!cands.length) return null;
+              cands.sort((a,b)=>{
+                const ca=countsMap.get(a)||0, cb=countsMap.get(b)||0;
+                if (ca!==cb) return ca-cb;
+                const ta=lastMap.get(a)?.getTime()||0, tb=lastMap.get(b)?.getTime()||0;
+                if (ta!==tb) return ta-tb;
+                return a.localeCompare(b);
+              });
+              return cands[0];
+            }
+
+            async function buildIssueStats(){
+              for await (const page of github.paginate.iterator(
+                github.rest.issues.listForRepo,
+                { owner: ORG, repo: REPO, state: 'all', since: sinceISO, per_page: 100 }
+              )){
+                for (const it of page.data){
+                  if (it.pull_request) continue;
+                  const ts = new Date(it.created_at);
+                  if (ts < new Date(sinceISO)) continue;
+                  for (const a of (it.assignees||[])){
+                    const l=a.login.toLowerCase();
+                    if (issuePool.has(l)){
+                      issueCounts.set(l,(issueCounts.get(l)||0)+1);
+                      const lastTs = lastIssueAssign.get(l);
+                      if (!lastTs || ts > lastTs) lastIssueAssign.set(l, ts);
+                    }
+                  }
+                }
+              }
+            }
+
+            async function buildPrStats(){
+              for await (const page of github.paginate.iterator(
+                github.rest.pulls.list,
+                { owner: ORG, repo: REPO, state: 'all', per_page: 100 }
+              )){
+                for (const pr of page.data){
+                  const ts = new Date(pr.created_at);
+                  if (ts < new Date(sinceISO)) continue;
+                  // Count all assignees (plural)
+                  for (const a of (pr.assignees||[])){
+                    const l = a.login.toLowerCase();
+                    if (reviewPool.has(l)){
+                      prAssigneeCounts.set(l,(prAssigneeCounts.get(l)||0)+1);
+                      const lastTs = lastPrAssignee.get(l);
+                      if (!lastTs || ts > lastTs) lastPrAssignee.set(l, ts);
+                    }
+                  }
+                  // Count all reviewers separately
+                  for (const r of (pr.requested_reviewers||[])){
+                    const l=r.login.toLowerCase();
+                    if (reviewPool.has(l)){
+                      prReviewerCounts.set(l,(prReviewerCounts.get(l)||0)+1);
+                      const lastTs = lastPrReviewer.get(l);
+                      if (!lastTs || ts > lastTs) lastPrReviewer.set(l, ts);
+                    }
+                  }
+                }
+              }
+            }
+
+            // Build stats once per run (cheap enough for small repos)
+            await Promise.all([buildIssueStats(), buildPrStats()]);
+
+            // Determine context
+            if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              if (issue.pull_request) return; // guard
+              if ((issue.assignees||[]).length>0) return;
+
+              const pickee = pick(issueCounts, lastIssueAssign);
+              if (!pickee) return;
+
+              await github.rest.issues.addAssignees({
+                owner: ORG, repo: REPO, issue_number: issue.number, assignees: [pickee]
+              });
+
+            } else if (context.eventName === 'pull_request_target') {
+              const pr = context.payload.pull_request;
+              const prNum = pr.number;
+
+              const author = (pr.user?.login||"").toLowerCase();
+              const assignee = pr.assignee?.login?.toLowerCase();
+
+              // Ensure one assignee (use assignee counts only)
+              let finalAssignee = assignee;
+              if (!finalAssignee) {
+                const a = pick(prAssigneeCounts, lastPrAssignee, new Set([author]));
+                if (a) {
+                  await github.rest.issues.addAssignees({
+                    owner: ORG, repo: REPO, issue_number: prNum, assignees: [a]
+                  });
+                  finalAssignee = a;
+                }
+              }
+
+              // One reviewer, not the author, not the assignee (use reviewer counts only)
+              const already = new Set((pr.requested_reviewers||[]).map(x=>x.login.toLowerCase()));
+              if (already.size === 0 && !pr.draft) {
+                const exclude = new Set([author, finalAssignee].filter(Boolean));
+                const reviewer = pick(prReviewerCounts, lastPrReviewer, exclude);
+                if (reviewer) {
+                  await github.rest.pulls.requestReviewers({
+                    owner: ORG, repo: REPO, pull_number: prNum, reviewers: [reviewer]
+                  });
+                }
+              }
+            }

