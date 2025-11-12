@@ -1,0 +1,35 @@
+id: servicenow-stats-page
+
+info:
+  name: ServiceNow Stats Page - Detection
+  author: cham423
+  severity: info
+  description: |
+    Detects exposed ServiceNow statistics pages (stats.do) that reveal system information.
+  reference:
+    - https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB0517269
+    - https://www.servicenow.com/community/servicenow-ai-platform-forum/is-there-a-way-to-restrict-access-to-the-stats-do-page/m-p/1026919
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.component:"ServiceNow"
+  tags: servicenow,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/stats.do"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(body), "servlet statistics")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: build_tag
+        group: 1
+        regex:
+          - 'Build tag:\s*([^\s<]+)'
