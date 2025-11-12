@@ -1,41 +1,36 @@
-id: servicenow-status-page
+id: servicenow-stats-page
 
 info:
-  name: ServiceNow Status Page Detection
+  name: ServiceNow Stats Page Detection
   author: cham423
-  severity: low
-  description: Detects ServiceNow status pages (stats.do)
+  severity: info
+  description: |
+    Detects exposed ServiceNow statistics pages (stats.do) that reveal system information.
   reference:
     - https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB0517269
     - https://www.servicenow.com/community/servicenow-ai-platform-forum/is-there-a-way-to-restrict-access-to-the-stats-do-page/m-p/1026919
   metadata:
+    verified: true
     max-request: 1
-  tags: servicenow,exposure,detection
+    shodan-query: http.html:"Servlet Statistics" http.component:"ServiceNow"
+  tags: servicenow,exposure,misconfig
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/stats.do"
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-      - type: word
-        words:
-          - "Servlet Statistics"
-        case-insensitive: true
-
-      - type: word
-        words:
-          - "snow_adc"
-        part: header
-        case-insensitive: true
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(body), "servlet statistics")'
+          - 'contains(tolower(header), "snow_adc")'
+        condition: and
 
     extractors:
       - type: regex
         name: build_tag
-        regex:
-          - 'Build tag:\s*(.+?)(?:\s|$|<)'
         group: 1
+        regex:
+          - 'Build tag:\s*([^\s<]+)'
