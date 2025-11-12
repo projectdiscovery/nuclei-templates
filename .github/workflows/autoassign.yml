@@ -20,7 +20,7 @@ jobs:
   assign:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
           script: |
             const ORG = context.repo.owner;
@@ -29,12 +29,12 @@ jobs:
             // ======= CONFIG: put your user pools here =======
             // Usernames must be GitHub logins and collaborators on this repo.
             const ISSUE_ASSIGNEES = [
-              "princechaddha","pussycat0x","ritikchaddha","DhiyaneshGeek"
+              "princechaddha","pussycat0x","ritikchaddha","DhiyaneshGeek","akokonunes","theamanrawat"
             ];
             const REVIEW_POOL = [
-              "pussycat0x","ritikchaddha","DhiyaneshGeek"
+              "pussycat0x","ritikchaddha","DhiyaneshGeek","akokonunes","theamanrawat"
             ];
-            const LOOKBACK_DAYS = 15; // only used as a tie-break fairness metric
+            const LOOKBACK_DAYS = 7; // only used as a tie-break fairness metric
             // ================================================
 
             function toLowerAll(xs){ return xs.map(x => x.toLowerCase()); }
@@ -45,9 +45,11 @@ jobs:
             // Simple "least recent then fewest in lookback" picker
             function initMap(arr){ const m=new Map(); for(const a of arr) m.set(a,0); return m; }
             const issueCounts = initMap(issuePool);
-            const prCounts    = initMap(reviewPool);
+            const prAssigneeCounts = initMap(reviewPool);
+            const prReviewerCounts = initMap(reviewPool);
             const lastIssueAssign = new Map();
-            const lastPrAssign    = new Map();
+            const lastPrAssignee = new Map();
+            const lastPrReviewer = new Map();
 
             function pick(countsMap, lastMap, exclude=new Set()){
               const cands = [...countsMap.keys()].filter(x => !exclude.has(x));
@@ -69,12 +71,14 @@ jobs:
               )){
                 for (const it of page.data){
                   if (it.pull_request) continue;
-                  const ts = new Date(it.updated_at);
+                  const ts = new Date(it.created_at);
+                  if (ts < new Date(sinceISO)) continue;
                   for (const a of (it.assignees||[])){
                     const l=a.login.toLowerCase();
                     if (issuePool.has(l)){
                       issueCounts.set(l,(issueCounts.get(l)||0)+1);
-                      if (!lastIssueAssign.has(l)) lastIssueAssign.set(l, ts);
+                      const lastTs = lastIssueAssign.get(l);
+                      if (!lastTs || ts > lastTs) lastIssueAssign.set(l, ts);
                     }
                   }
                 }
@@ -87,20 +91,24 @@ jobs:
                 { owner: ORG, repo: REPO, state: 'all', per_page: 100 }
               )){
                 for (const pr of page.data){
-                  const ts = new Date(pr.updated_at);
+                  const ts = new Date(pr.created_at);
                   if (ts < new Date(sinceISO)) continue;
-                  if (pr.assignee){
-                    const l = pr.assignee.login.toLowerCase();
+                  // Count all assignees (plural)
+                  for (const a of (pr.assignees||[])){
+                    const l = a.login.toLowerCase();
                     if (reviewPool.has(l)){
-                      prCounts.set(l,(prCounts.get(l)||0)+1);
-                      if (!lastPrAssign.has(l)) lastPrAssign.set(l, ts);
+                      prAssigneeCounts.set(l,(prAssigneeCounts.get(l)||0)+1);
+                      const lastTs = lastPrAssignee.get(l);
+                      if (!lastTs || ts > lastTs) lastPrAssignee.set(l, ts);
                     }
                   }
+                  // Count all reviewers separately
                   for (const r of (pr.requested_reviewers||[])){
                     const l=r.login.toLowerCase();
                     if (reviewPool.has(l)){
-                      prCounts.set(l,(prCounts.get(l)||0)+1);
-                      if (!lastPrAssign.has(l)) lastPrAssign.set(l, ts);
+                      prReviewerCounts.set(l,(prReviewerCounts.get(l)||0)+1);
+                      const lastTs = lastPrReviewer.get(l);
+                      if (!lastTs || ts > lastTs) lastPrReviewer.set(l, ts);
                     }
                   }
                 }
@@ -130,10 +138,10 @@ jobs:
               const author = (pr.user?.login||"").toLowerCase();
               const assignee = pr.assignee?.login?.toLowerCase();
 
-              // Ensure one assignee
+              // Ensure one assignee (use assignee counts only)
               let finalAssignee = assignee;
               if (!finalAssignee) {
-                const a = pick(prCounts, lastPrAssign, new Set([author]));
+                const a = pick(prAssigneeCounts, lastPrAssignee, new Set([author]));
                 if (a) {
                   await github.rest.issues.addAssignees({
                     owner: ORG, repo: REPO, issue_number: prNum, assignees: [a]
@@ -142,11 +150,11 @@ jobs:
                 }
               }
 
-              // One reviewer, not the author, not the assignee
+              // One reviewer, not the author, not the assignee (use reviewer counts only)
               const already = new Set((pr.requested_reviewers||[]).map(x=>x.login.toLowerCase()));
               if (already.size === 0 && !pr.draft) {
                 const exclude = new Set([author, finalAssignee].filter(Boolean));
-                const reviewer = pick(prCounts, lastPrAssign, exclude);
+                const reviewer = pick(prReviewerCounts, lastPrReviewer, exclude);
                 if (reviewer) {
                   await github.rest.pulls.requestReviewers({
                     owner: ORG, repo: REPO, pull_number: prNum, reviewers: [reviewer]
