@@ -1,0 +1,46 @@
+id: openwebui-noauth
+
+info:
+  name: Open WebUI - No Authentication
+  author: matejsmycka
+  severity: critical
+  description: |
+    An OpenWebUI panel without authentication detected.
+    You can achieve remote code execution via defining custom "tool".
+
+  reference:
+    - https://openwebui.com/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.favicon.hash:-286484075
+  tags: panel,openwebui,login,discovery
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/api/v1/auths/signin"
+    body: '{"email": "admin@localhost", "password": "admin"}'
+    headers:
+      Content-Type: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        condition: and
+        words:
+          - 'token'
+          - 'role'
+          - 'user'
+          - 'email'
+
+      - type: word
+        part: header
+        condition: and
+        words:
+          - "application/json"
+          - "Set-Cookie"
+
+      - type: status
+        status:
+          - 200
