@@ -1,0 +1,65 @@
+id: service-pack-check
+
+info:
+  name: Latest Service Pack Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Confirm that the system is updated with the latest security patches and service packs. Regular updates help protect against known vulnerabilities.
+  impact: |
+    Neglecting to install the latest service packs or updates can leave the system vulnerable to exploits and security breaches.
+  remediation: |
+    Apply the latest service packs or build updates as follows:
+      - Windows Server 2012: Refer to https://support.microsoft.com/ko-kr/help/4009470
+      - Windows Server 2016: Refer to https://support.microsoft.com/ko-kr/help/4043454
+      - Windows Server 2019: Refer to https://support.microsoft.com/ko-kr/help/4581839
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: code,windows-audit,kisa,service-pack,security,patch-management
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+
+    engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+
+    pattern: "*.ps1"
+    source: |
+      # Retrieve operating system details.
+      $os = Get-CimInstance -ClassName Win32_OperatingSystem
+      $caption = $os.Caption
+      $servicePack = $os.ServicePackMajorVersion
+      # For Windows Server 2012, a service pack should be installed.
+      if ($caption -match "2012") {
+          if ($servicePack -gt 0) {
+              "SERVICE_PACK_COMPLIANT"
+          } else {
+              "SERVICE_PACK_VULNERABLE"
+          }
+      }
+      # For Windows Server 2016, 2019, or 2022, service packs are generally not applicable; assume compliance.
+      elseif ($caption -match "2016" -or $caption -match "2019" -or $caption -match "2022") {
+          "SERVICE_PACK_COMPLIANT"
+      }
+      else {
+          # For other versions, check if a service pack is installed.
+          if ($servicePack -gt 0) {
+              "SERVICE_PACK_COMPLIANT"
+          } else {
+              "SERVICE_PACK_VULNERABLE"
+          }
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "SERVICE_PACK_VULNERABLE"
+# digest: 4b0a00483046022100e9936511acbd6aa8d53493ae304f9720cfa57633ba6f5445fe28f0f73ef15771022100c72324f300f46d3125f554310e950c43b8db81b69cc2df67c0f2c8caf05fa698:922c64590222798bb761d5b6d8e72950

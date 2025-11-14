@@ -1,0 +1,48 @@
+id: unauth-mqtt-broker
+info:
+  name: MQTT Unauthenticated Broker - Detect
+  author: matejsmycka
+  severity: high
+  description: |
+    Detects an unauthenticated MQTT broker and attempts to subscribe to the $SYS/# topic to enumerate broker and system information.
+  reference:
+    - https://en.wikipedia.org/wiki/MQTT
+    - https://github.com/kh4sh3i/MQTT-Pentesting
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:1883 broker
+  tags: js,tcp,network,mqtt,unauth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+
+    code: |
+      const c = require("nuclei/net");
+      const conn = c.Open('tcp', `${Host}:${Port}`, `${Timeout}`);
+      let connect_command = "100C00044D5154540402003C0000";
+      conn.SendHex(connect_command);
+
+      let subscribe_command = "820b00010006245359532f2300";
+      conn.SendHex(subscribe_command);
+      let resp = conn.RecvFullString(1024);
+      resp;
+
+    args:
+      Host: '{{Host}}'
+      Port: 1883
+      Timeout: 2
+
+    matchers:
+      - type: word
+        words:
+          - "SYS/broker"
+
+    extractors:
+      - type: regex
+        group: 1
+        name: version
+        regex:
+          - "version ([0-9.]+)"
+# digest: 4a0a00473045022063cbbf6e327a905d78b424757102e52077432f8284617d358e3ca15e4dcb20b202210099868a1ac12acc630754d1af99fd5ba9880c24b48d8631dd469c0001f1fe4a4e:922c64590222798bb761d5b6d8e72950
