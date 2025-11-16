@@ -1,0 +1,63 @@
+id: celonis-login-panel
+
+info:
+  name: Celonis Login Panel
+  author: your-name
+  severity: info
+  description: |
+    Detects Celonis login panels by identifying unique HTML markers, version strings, and favicon fingerprints.
+  reference:
+    - https://www.celonis.com/
+  classification:
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:celonis:celonis:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: celonis
+    product: celonis
+    shodan-query:
+      - http.title:"Celonis"
+      - html:"Amazing insights. Better results."
+    fofa-query: body="Amazing insights. Better results."
+    google-query: intitle:"Celonis" login
+  tags: panel,celonis,login,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/welcome"
+      - "{{BaseURL}}/favicon.ico"
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - "Celonis\\s([0-9]+\\.[0-9]+)"   # Extract possible versions from HTML
+
+    matchers-condition: or
+    matchers:
+
+      # HTML Detection
+      - type: word
+        words:
+          - "Amazing insights. Better results."
+          - "class=\"login-screen flex-center\""
+        condition: and
+
+      # Version regex: Celonis 4.7, 4.x, 5.x, 6.x, etc.
+      - type: regex
+        regex:
+          - "Celonis\\s[0-9]+\\.[0-9]+"
+          - "<title>Log in - Celonis\\s?[0-9]+\\.[0-9]+</title>"
+
+      # Favicon hash fingerprint (replace with real hash if known)
+      - type: dsl
+        dsl:
+          - "favicon.hash == \"-261986541\""
+
+      # HTTP 200 OK
+      - type: status
+        status:
+          - 200
