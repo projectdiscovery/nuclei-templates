@@ -1,63 +1,38 @@
-id: celonis-login-panel
+id: celonis-login-panel-dsl
 
 info:
   name: Celonis Login Panel
   author: r3dg33k
   severity: info
   description: |
-    Detects Celonis Process Intelligence login panels and favicon fingerprints.
-  reference:
-    - https://www.celonis.com/
-  classification:
-    cwe-id: CWE-200
-    cpe: cpe:2.3:a:celonis:celonis:*:*:*:*:*:*:*:*
+    Detects Celonis Process Intelligence login panels.
+  reference: https://www.celonis.com
   metadata:
-    max-request: 3
+    max-request: 1
     vendor: celonis
     product: celonis
     shodan-query:
       - http.title:"Celonis"
       - html:"Amazing insights. Better results."
     fofa-query: body="Amazing insights. Better results."
-    google-query: intitle:"Celonis" login
+    google-query: intitle:"Celonis" "welcome"
   tags: panel,celonis,login
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/"
       - "{{BaseURL}}/welcome"
-      - "{{BaseURL}}/favicon.ico"
 
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(to_lower(body), 'amazing insights. better results.')"
+          
     extractors:
       - type: regex
         name: version
         group: 1
         regex:
-          - "Celonis\\s([0-9]+\\.[0-9]+)"   # Extract possible versions from HTML
-
-    matchers-condition: or
-    matchers:
-
-      # HTML Detection
-      - type: word
-        words:
-          - "Amazing insights. Better results."
-          - "class=\"login-screen flex-center\""
-        condition: and
-
-      # Version regex: Celonis 4.7, 4.x, 5.x, 6.x, etc.
-      - type: regex
-        regex:
-          - "Celonis\\s[0-9]+\\.[0-9]+"
-          - "<title>Log in - Celonis\\s?[0-9]+\\.[0-9]+</title>"
-
-      # Favicon hash fingerprint (replace with real hash if known)
-      - type: dsl
-        dsl:
-          - "favicon.hash == \"-261986541\""
-
-      # HTTP 200 OK
-      - type: status
-        status:
-          - 200
+          - "Celonis\\s([0-9]+\\.[0-9]+)"
