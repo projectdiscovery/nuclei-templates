@@ -1,0 +1,40 @@
+id: odoo-detection
+
+info:
+  name: Odoo - Detect
+  author: keyboard-slayer
+  severity: info
+  description: |
+    Detected Odoo by sending an empty JSON POST request to the /web/webclient/version_info endpoint.
+  reference:
+    - https://github.com/odoo/odoo/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: odoo
+    product: odoo
+  tags: tech,odoo,detect,discovery
+
+http:
+  - raw:
+      - |
+        POST /web/webclient/version_info HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "server_version")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"server_version":\s*"([^"]+)"'
