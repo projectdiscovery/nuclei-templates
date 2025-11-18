@@ -1,0 +1,52 @@
+id: vtigercrm-default-login
+
+info:
+  name: Vtiger CRM - Default Login
+  author: icarot
+  severity: high
+  description: |
+    Detects if a Vtiger CRM enables default admin credentials. This web application is a PHP based web application that enables businesses to increase sales wins, marketing ROI, and support satisfaction capabilities.
+  reference:
+    - https://github.com/vtiger-crm/vtigercrm
+    - https://code.vtiger.com/vtiger/vtigercrm
+  classification:
+    cpe: cpe:2.3:a:vtiger:vtiger_crm:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    vendor: vtiger
+    product: vtiger_crm
+    shodan-query: title:"vtiger"
+  tags: default-login,vtiger,vtiger_crm,vuln
+
+variables:
+  username: admin
+
+http:
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        module=Users&action=Login&username={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      password:
+        - admin
+        - vicidialnow
+        - goautodial
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - 'PHPSESSID='
+          - "Content-Type: text/html; charset=UTF-8"
+          - 'Location: index.php?module=Users&parent=Settings&view=SystemSetup'
+        condition: and
+
+      - type: status
+        status:
+          - 302
