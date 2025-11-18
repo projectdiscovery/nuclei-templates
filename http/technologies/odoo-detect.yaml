@@ -4,8 +4,8 @@ info:
   name: Odoo Detection
   author: keyboard-slayer
   severity: info
-  classification:
-    cpe: cpe:2.3:a:odoo:odoo:*:*:*:*:*:*:*:*
+  description: |
+    Detects Odoo installation and extracts version information.
   reference:
     - https://github.com/odoo/odoo/blob/6f5d300b38772b743cb7d1367d7a7be2f19b10b9/addons/web/controllers/webclient.py#L88-L90
   metadata:
@@ -13,25 +13,28 @@ info:
     max-request: 1
     vendor: odoo
     product: odoo
-  tags: tech,odoo,discovery
+  tags: tech,odoo,detect,discovery
 
 http:
-  - method: POST
-    path: 
-      - "{{BaseURL}}/web/webclient/version_info"
-    headers:
-      Content-Type: application/json
+  - raw:
+      - |
+        POST /web/webclient/version_info HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
 
-    body: "{}"
+        {}
 
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "server_version")'
+        condition: and
 
     extractors:
-      - type: json
+      - type: regex
         part: body
-        name: odoo-version
-        json:
-          - ".result.server_version"
+        group: 1
+        regex:
+          - '"server_version":\s*"([^"]+)"'
