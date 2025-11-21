@@ -5,21 +5,19 @@ info:
   author: icarot
   severity: high
   description: |
-    Detects if a Vtiger CRM enables default admin credentials. This web application is a PHP based web application that enables businesses to increase sales wins, marketing ROI, and support satisfaction capabilities.
+    Detected a Vtiger CRM instance that enabled default admin credentials.
   reference:
     - https://github.com/vtiger-crm/vtigercrm
     - https://code.vtiger.com/vtiger/vtigercrm
-  classification:
-    cpe: cpe:2.3:a:vtiger:vtiger_crm:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 3
-    vendor: vtiger
-    product: vtiger_crm
-    shodan-query: title:"vtiger"
+    verified: true
+    max-request: 2
+    shodan-query: html:"Powered by vtiger CRM"
   tags: default-login,vtiger,vtiger_crm,vuln
 
 variables:
   username: admin
+  password: admin
 
 http:
   - raw:
@@ -28,25 +26,18 @@ http:
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-        module=Users&action=Login&username={{username}}&password={{password}}
+        module=Users&action=Authenticate&return_module=Users&return_action=Login&user_name={{username}}&user_password={{password}}
 
-    attack: pitchfork
-    payloads:
-      password:
-        - admin
-        - vicidialnow
-        - goautodial
+      - |
+        GET /index.php?action=index&module=Home HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
+    host-redirects: true
+    max-redirects: 2
     matchers:
-      - type: word
-        part: header
-        words:
-          - 'PHPSESSID='
-          - "Content-Type: text/html; charset=UTF-8"
-          - 'Location: index.php?module=Users&parent=Settings&view=SystemSetup'
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(header_1, "PHPSESSID=")'
+          - 'contains_all(body_2, "home", "index.php?module=Emails&action=index")'
         condition: and
-
-      - type: status
-        status:
-          - 302
