@@ -1,0 +1,54 @@
+id: unnecessary-service-check
+
+info:
+  name: Unnecessary Service Removal Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure that unnecessary services such as Alerter, Clipbook, Messenger, and Simple TCP/IP Services are not running. If enabled, these services can expose the system to security vulnerabilities.
+  impact: |
+    Operating these services can offer attackers potential entry points to exploit the system, as they are known to have vulnerabilities.
+  remediation: |
+    To stop and disable these services, run:
+    > net stop [ServiceName]
+    > sc config [ServiceName] start= disabled
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: service-management,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+
+    engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+
+    pattern: "*.ps1"
+    source: |
+      $servicesToCheck = @("Alerter", "Clipbook", "Messenger", "Simple TCP/IP Services")
+      $vulnerable = $false
+      foreach ($svc in $servicesToCheck) {
+          $service = Get-Service -Name $svc -ErrorAction SilentlyContinue
+          if ($service -and $service.Status -eq "Running") {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "UNNECESSARY_SERVICE_RUNNING"
+      } else {
+          "UNNECESSARY_SERVICE_STOPPED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "UNNECESSARY_SERVICE_RUNNING"
+# digest: 4b0a00483046022100a5b51f0949b8d7d77496b26bff70e0fdbb95808825e0d377f3910ab091a21b68022100ad1b195f8c1da3fb1e3a4ed6985b3aa570e5981a0249476d8146c2f26fbe6ba1:922c64590222798bb761d5b6d8e72950

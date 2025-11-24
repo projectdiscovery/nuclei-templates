@@ -1,0 +1,42 @@
+id: linux-nisplus-service
+
+info:
+  name: NIS+ Service Should Be Disabled
+  author: songyaeji
+  severity: high
+  description: |
+    Evaluated the status of NIS+ service daemons on the system.Active NIS+ services could have permitted unauthorized users to escalate privileges or access sensitive account information, representing a significant security risk.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,local,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      if command -v systemctl >/dev/null 2>&1; then
+          if systemctl is-active --quiet rpc.yppasswdd rpc.yppupdated ypxfrd; then
+              echo "[VULNERABLE] NIS+ service is running"
+              systemctl status rpc.yppasswdd rpc.yppupdated ypxfrd
+          else
+              echo "[SAFE] NIS+ service is not running"
+          fi
+      else
+          running=$(ps -ef | egrep "rpc.yppasswdd|rpc.yppupdated|ypxfrd" | grep -v grep)
+          if [ -n "$running" ]; then
+              echo "[VULNERABLE] NIS+ service is running"
+              echo "$running"
+          else
+              echo "[SAFE] NIS+ service is not running"
+          fi
+      fi
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "[VULNERABLE]"
+# digest: 4b0a00483046022100ec34476a472e1a3b3be1d9a49138bc89f071403a821f0a1faef12d98134ca6fa022100ca746f642a4eb1564535e3ceafdde417713b4d795f53ecd7c874cae12a7587f8:922c64590222798bb761d5b6d8e72950

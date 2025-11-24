@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  3122 | dhiyaneshdk   |  1844 | http       |  8669 | info     |  4086 | file |   434 |
-| panel     |  1305 | daffainfo     |   868 | cloud      |   655 | high     |  2377 | dns  |    25 |
-| xss       |  1239 | princechaddha |   806 | file       |   434 | medium   |  2322 |      |       |
-| wordpress |  1143 | dwisiswant0   |   805 | dast       |   255 | critical |  1321 |      |       |
-| exposure  |  1084 | ritikchaddha  |   597 | workflows  |   202 | low      |   316 |      |       |
-| wp-plugin |  1002 | pussycat0x    |   504 | code       |   168 | unknown  |    53 |      |       |
-| osint     |   808 | pikpikcu      |   352 | network    |   140 |          |       |      |       |
-| tech      |   776 | pdteam        |   304 | javascript |    71 |          |       |      |       |
-| lfi       |   764 | ricardomaia   |   249 | ssl        |    38 |          |       |      |       |
-| misconfig |   739 | geeknik       |   235 | dns        |    22 |          |       |      |       |
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |

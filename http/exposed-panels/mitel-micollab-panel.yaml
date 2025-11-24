@@ -2,7 +2,7 @@ id: mitel-micollab-panel
 
 info:
   name: Mitel MiCollab Login Panel - Detect
-  author: righettod
+  author: righettod,darses
   severity: info
   description: |
     Mitel MiCollab login panel was detected.
@@ -12,21 +12,35 @@ info:
     cpe: cpe:2.3:a:mitel:micollab:*:*:*:*:-:*:*:*
   metadata:
     verified: true
-    max-request: 1
+    max-request: 2
     vendor: mitel
     product: micollab
-    shodan-query: http.html:"MiCollab End User Portal"
-  tags: panel,mitel,login,detect
+    shodan-query:
+      - http.html:"MiCollab End User Portal"
+      - http.favicon.hash:-1922044295
+    fofa-query:
+      - '"MiCollab End User Portal" && title=="Redirecting..."'
+      - icon_hash="-1922044295"
+  tags: panel,mitel,login,detect,discovery
 
 http:
   - method: GET
     path:
+      - "{{BaseURL}}/wd/en-us/wapplink.asp"
       - "{{BaseURL}}/portal/"
 
+    stop-at-first-match: true
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200'
-          - 'contains_any(to_lower(body), "micollab", "mitel_logo", "com.mitel.mas.portal.domain")'
+          - "status_code == 200"
+          - "contains_any(to_lower(body), 'micollab', 'mitel_logo', 'micollab end user portal')"
         condition: and
-# digest: 490a00463044022062634f1d54c535a9f90a194bb427664496bbf6a2484168e043534c682f56bc7702207a2fe2be12aa24b680a84a18489bbf30301ed7bb9d9d7cb47b0ac7cd394af2ac:922c64590222798bb761d5b6d8e72950
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - "SVR_VER=([\\d.\\-]+)"
+# digest: 490a0046304402202e64b58cd1386058f98078747866b10117c8266d9f5162075bae4df2f15a57a402200ea26f7f2c2c42bbf16345631829d0224208742ddaa4151c13b2929607320bab:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,84 @@
+id: snmpv3-detect
+
+info:
+  name: SNMPv3 Fingerprint - Detect
+  author: matejsmycka
+  severity: info
+  description: |
+    SNMPv3 can leak information about the device even without proper authentication.Use `nmap -sU <ADDRESS> -p 161 --script snmp-info` to get more information.Engine IDs can help to determine one device with multiple interfaces.
+  reference:
+    - https://support.huawei.com/enterprise/en/doc/EDOC1100174721/46bd64e2/snmpv3
+    - https://pure.tudelft.nl/ws/portalfiles/portal/103172599/3487552.3487848.pdf
+    - https://svn.nmap.org/nmap/nselib/data/enterprise_numbers.txt
+    - http://docs.logmatrix.com/nervecenter/guides/NC-SNMPv3-EngineIDs.pdf
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: product:"SNMP"
+  tags: js,udp,network,snmp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+
+    code: |
+      const c = require("nuclei/net");
+      const b = require('nuclei/bytes');
+
+      const conn = c.Open('udp', `${Host}:${Port}`, `${Timeout}`);
+      // SNMPv3: F=r U="" E= C="" GetRequest(12)
+      let payload = "303a020103300f02024a69020300ffe30401040201030410300e0400020100020100040004000400301204000400a00c020237f00201000201003000";
+      conn.SendHex(payload);
+      let resp = conn.RecvFull(128);
+      const hexBuffer = new b.Buffer();
+      hexBuffer.Write(resp);
+      const respHex = hexBuffer.Hex()
+
+
+      const known_vendors = {
+        "80000009": "Cisco",
+        "80003a8c": "MikroTik",
+        "800007db": "Huawei",
+        "8000040e": "SageCom SAS",
+        "80001f88": "net-snmp",
+        "80000B2f": "Thomson Inc",
+        "8000113d": "Broadcom Corporation",
+        "8000124c": "Ambit Microsystems Corporation",
+        "800011ae": "Netgear",
+        "800063a2": "H3C",
+        "8000130a": "Juniper Networks, Inc.",
+        "80003044": "Fortinet Inc",
+      }
+      function getVendor(msgHex) {
+        for (const [key, value] of Object.entries(known_vendors)) {
+          if (msgHex.includes(key)) {
+            msgHex = (typeof msgHex === "string") ? msgHex : (msgHex ? String(msgHex) : "");
+            if (!msgHex) return "Unknown";
+
+            if (msgHex.toLowerCase().includes(key.toLowerCase())) {
+              const m = msgHex.match(/8000([0-9a-fA-F]*?)0201/i);
+              const engineId = m && m[1] ? m[1] : null;
+              return value + (engineId ? (", Engine ID: " + engineId) : "");
+            }    }
+        }
+        const m = msgHex.match(/8000[0-9a-fA-F]*?0201/);
+        return "Enterprise: " + (m ? m[0] : "unknown");
+      }
+      getVendor(respHex);
+
+    args:
+      Host: "{{Host}}"
+      Port: 161
+      Timeout: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "(.*)"
+# digest: 4b0a0048304602210094aea547ef8edbe734a64fbe3e4e8b1609c469f99e11708d6a074d71be3beccd022100ec05cd74b50383414a98a3580653cc1cabcfe4d5c678ddbadba6d6de0c6e83ff:922c64590222798bb761d5b6d8e72950
