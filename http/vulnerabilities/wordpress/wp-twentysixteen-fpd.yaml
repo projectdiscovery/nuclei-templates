@@ -1,0 +1,31 @@
+id: wp-twentysixteen-fpd
+
+info:
+  name: WordPress Twenty Sixteen - Full Path Disclosure
+  author: theamanrawat
+  severity: low
+  description: |
+    WordPress Twenty Sixteen theme files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/themes/twentysixteen/
+  metadata:
+    max-request: 1
+    publicwww-query: "/wp-content/themes/twentysixteen/"
+    verified: true
+  tags: debug,wordpress,fpd,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/themes/twentysixteen/inc/back-compat.php"
+      - "{{BaseURL}}/wp-content/themes/twentysixteen/genericons/"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "Index of", "twentysixteen", "Parent Directory")
+          - contains_any(body, "Uncaught Error:", "Call to undefined function", "Fatal error:")
+        condition: or
