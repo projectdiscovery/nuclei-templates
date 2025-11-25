@@ -31,7 +31,7 @@ Nuclei 템플릿
 
 템플릿은 실제 스캐닝 엔진을 동작하게 하는 [nuclei scanner](https://github.com/projectdiscovery/nuclei)의 핵심입니다.
 이 저장소는 우리 팀에서 제공하거나, 커뮤니티에서 기여한 다양한 템플릿들을 저장하고 보관합니다.
-**pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+)를 통해 템플릿을 보내주시는 기여도 환영합니다.
+템플릿 목록을 증가시키기 위해서 **pull requests** 나 [Github issues](https://github.com/projectdiscovery/nuclei-templates/issues/new?assignees=&labels=&template=submit-template.md&title=%5Bnuclei-template%5D+) 를 통해 기여해주시기를 부탁드립니다.
 
 ## Nuclei 템플릿 개요
 
@@ -39,24 +39,38 @@ Nuclei 템플릿
 
 <table>
 <tr>
-<td> 
+<td>
 
-## Nuclei 템플릿 통계 Top 10
+### 🚨 알려진 악용되는 취약점 (KEV) 적용 범위
 
-|    태그    | 개수 |    작성자     | 개수 |    디렉토리     | 개수 | 심각도 | 개수 |  종류   | 개수 |
+Nuclei 템플릿은 실제로 악용되고 있는 취약점에 대한 적용 범위를 제공합니다:
+
+| **KEV 소스** | **템플릿 수** | **설명** |
+|----------------|---------------|-----------------|
+| 🔴 **CISA KEV** | **454** | [CISA 알려진 악용되는 취약점 카탈로그](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) |
+| 🟠 **VulnCheck KEV** | **1449** | [VulnCheck KEV](https://vulncheck.com/kev) - 강화된 취약점 인텔리전스 |
+| 🟢 **두 소스 모두** | **407** | 두 카탈로그의 취약점을 포함하는 템플릿 |
+
+> 💡 **총 고유 KEV 템플릿: 1496** - `nuclei -tags kev,vkev`를 사용하여 적극적으로 악용되는 취약점 스캔
+
+---
+
+## Nuclei Templates Top 10 statistics
+
+|    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  3288 | dhiyaneshdk   |  1882 | http       |  8967 | info     |  4190 | file |   435 |
-| panel     |  1342 | daffainfo     |   868 | cloud      |   657 | high     |  2446 | dns  |    26 |
-| xss       |  1257 | princechaddha |   854 | file       |   435 | medium   |  2379 |      |       |
-| wordpress |  1181 | dwisiswant0   |   806 | dast       |   255 | critical |  1425 |      |       |
-| exposure  |  1107 | ritikchaddha  |   649 | workflows  |   202 | low      |   318 |      |       |
-| wp-plugin |  1032 | pussycat0x    |   532 | code       |   198 | unknown  |    56 |      |       |
-| osint     |   841 | pikpikcu      |   352 | network    |   145 |          |       |      |       |
-| tech      |   803 | pdteam        |   310 | javascript |    71 |          |       |      |       |
-| rce       |   786 | pdresearch    |   269 | ssl        |    38 |          |       |      |       |
-| lfi       |   777 | iamnoooob     |   257 | dns        |    23 |          |       |      |       |
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
 
-**848개 디렉토리, 11344개 파일**.
+**873 directories, 11997 files**.
 
 </td>
 </tr>
