@@ -1,0 +1,32 @@
+id: spf-limit-lookup
+
+info:
+  name: SPF record DNS lookup limit
+  author: theamanrawat
+  severity: info
+  description: |
+    This template checks for SPF (Sender Policy Framework) records that exceed the 10 DNS lookup limit. SPF records with more than 10 DNS-based mechanisms may cause SPF authentication failures, leading to potential email delivery issues and spoofing risks.
+  tags: dns,spf,discovery
+
+dns:
+  - name: "{{FQDN}}"
+    type: TXT
+
+    extractors:
+      - type: regex
+        name: spf_record
+        regex:
+          - 'v=spf1[^\"]*'
+        internal: true
+
+      - type: regex
+        name: spf_record_limit
+        part: spf_record
+        regex:
+          - '(?i)(include|all):?[^ ]*?'
+        internal: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - len(spf_record_limit)>10
