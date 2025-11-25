@@ -1,0 +1,40 @@
+id: traggo-server-detect
+
+info:
+  name: Traggo Time Tracking Server - Detect
+  author: 0x_Akoko
+  severity: info
+  description: |
+    Detected Traggo time tracking server.
+  reference:
+    - https://github.com/traggo/server
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"Traggo"
+  tags: tech,traggo,detect,graphql,discovery
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"{ version { name commit buildDate } }"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "<title>Traggo</title>") && contains(body_1, "webpackJsonpui") && contains(body_2, "\"data\"") && contains(body_2, "\"version\"")'
+
+    extractors:
+      - type: json
+        name: version
+        part: body_2
+        json:
+          - '.data.version.name'
