@@ -17,19 +17,6 @@ variables:
 flow: http(1) && http(2)
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-
-    host-redirects: true
-    max-redirects: 2
-    matchers:
-      - type: word
-        part: body
-        words:
-          - "U9-登录"
-        internal: true
-
   - raw:
       - |
         POST /CS/Office/AutoUpdates/PatchFile.asmx HTTP/1.1
@@ -48,6 +35,14 @@ http:
           </soap:Body>
         </soap:Envelope>
 
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<SaveFileResult>true</SaveFileResult>"
+        internal: true
+
+  - raw:
       - |
         GET /CS/Office/AutoUpdates/{{filename}} HTTP/1.1
         Host: {{Hostname}}
@@ -55,8 +50,6 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - status_code_1 == 200
-          - contains(body_1, "SaveFileResponse")
-          - status_code_2 == 200
-          - contains(body_2, "2468642")
+          - status_code == 200
+          - contains_all(body, "2468642","File deleted successfully")
         condition: and
