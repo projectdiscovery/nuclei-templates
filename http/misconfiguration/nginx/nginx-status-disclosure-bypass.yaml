@@ -1,7 +1,7 @@
-id: nginx-status-disclosure-bypass
+id: nginx-status-403-bypass
 
 info:
-  name: Nginx Status Disclosure 403 Bypass
+  name: Nginx Status Page - 403 Bypass
   author: pussycat0x
   severity: medium
   description: |
@@ -13,9 +13,19 @@ info:
     shodan-query: "server:nginx"
   tags: nginx,status,disclosure,bypass,misconfig
 
-flow: http(1) || http(2)
+flow: http(1) && (http(2) || http (3))
 
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nginx_status"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 403"
+        internal: true
+
   - method: GET
     path:
       - "{{BaseURL}}{{paths}}"
@@ -36,15 +46,18 @@ http:
         - "/./nginx_status%20"
         - "/./nginx_status/"
 
+    stop-at-first-match: true
+
     matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
-          - 'contains_all(body, "Active connections:","server accepts handled requests","Reading:","Writing:","Waiting:")'
+          - 'contains(body, "Active connections:")'
         condition: and
 
   - raw:
       - |
+        @Host: localhost
         GET /nginx_status HTTP/1.1
         Host: localhost
 
@@ -52,5 +65,5 @@ http:
       - type: dsl
         dsl:
           - 'status_code == 200'
-          - 'contains_all(body, "Active connections:","server accepts handled requests","Reading:","Writing:","Waiting:")'
+          - 'contains(body, "Active connections:")'
         condition: and
