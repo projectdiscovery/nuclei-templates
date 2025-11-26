@@ -1,0 +1,38 @@
+id: exposed-gitattributes
+
+info:
+  name: .gitattributes File Exposure
+  author: ritikchaddha
+  severity: info
+  description: |
+    Detects publicly accessible .gitattributes files that may reveal repository structure, custom merge strategies, or other configuration details useful for reconnaissance.
+  reference:
+    - https://git-scm.com/docs/gitattributes
+  metadata:
+    max-request: 1
+    verified: true
+  tags: exposure,git,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.gitattributes"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - ^\*\s+text=auto
+          - ^\*\.sh\s+text\s+eol=lf
+          - ^\*\.bat\s+text\s+eol=crlf
+          - ^\*\.jpg\s+-text
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: content_type
+        words:
+          - "text/plain"
