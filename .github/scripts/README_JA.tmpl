@@ -11,11 +11,11 @@ Nuclei テンプレート
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">ドキュメント</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">ドキュメント</a> •
   <a href="#-contributions">貢献</a> •
   <a href="#-discussion">ディスカッション</a> •
   <a href="#-community">コミュニティ</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">Discordに参加</a>
 </p>
 
