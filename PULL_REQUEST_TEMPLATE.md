@@ -22,7 +22,7 @@
 
 ### Additional References:
 
-- [Nuclei Template Creation Guideline](https://nuclei.projectdiscovery.io/templating-guide/)
+- [Nuclei Template Creation Guideline](https://docs.projectdiscovery.io/templates/introduction)
 - [Nuclei Template Matcher Guideline](https://github.com/projectdiscovery/nuclei-templates/wiki/Unique-Template-Matchers)
 - [Nuclei Template Contribution Guideline](https://github.com/projectdiscovery/nuclei-templates/blob/master/CONTRIBUTING.md)
 - [PD-Community Discord server](https://discord.gg/projectdiscovery)

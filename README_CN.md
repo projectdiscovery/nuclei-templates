@@ -20,11 +20,11 @@ Nuclei 模板
 </p>
 
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">文档</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">文档</a> •
   <a href="#-贡献">贡献</a> •
   <a href="#-交流">交流</a> •
   <a href="#-社区">社区</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">加入Discord</a>
 </p>
 

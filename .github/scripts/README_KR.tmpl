@@ -14,11 +14,11 @@ Nuclei 템플릿
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">가이드 문서</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">가이드 문서</a> •
   <a href="#-contributions">기여</a> •
   <a href="#-discussion">논의</a> •
   <a href="#-community">커뮤니티</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">디스코드</a>
 </p>
 

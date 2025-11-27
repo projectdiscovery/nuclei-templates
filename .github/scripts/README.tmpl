@@ -14,11 +14,11 @@ Nuclei Templates
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">Documentation</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">Documentation</a> •
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
