@@ -16,7 +16,35 @@ info:
 variables:
   path: "{{rand_base(4)}}.php"
 
+flow: http(1) && http(2)
+
 http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2"
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '<generator>https?:\/\/wordpress\.org.*</generator>'
+          - 'wp-login.php'
+          - 'name="generator" content="wordpress'
+          - '<link[^>]+s\d+\.wp\.com'
+          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin
+            v([\d.]+) -'
+          - '<!--[^>]+WP-Super-Cache'
+          - '/wp-content/uploads/(.*)'
+        condition: or
+        internal: true
+
   - method: GET
     path:
       - "{{BaseURL}}/{{path}}"
@@ -47,6 +75,7 @@ http:
       - "{{BaseURL}}/wp-content/themes/generatepress-child/functions.php"
 
     stop-at-first-match: true
+    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
@@ -70,4 +99,3 @@ http:
         group: 1
         regex:
           - "/wp-content/themes/([a-zA-Z0-9_\\-]+)/functions\\.php"
-# digest: 4a0a0047304502204aa2b35e1719380f6644318ceac066955a8099fe89a57602d1c903ab09411ab8022100b55fb8216b23e24f317d8f44e1e1429f98ceb3343f7e751a475add49da00ace1:922c64590222798bb761d5b6d8e72950
