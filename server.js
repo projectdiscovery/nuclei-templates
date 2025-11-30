@@ -29,6 +29,14 @@ async function parseTemplate(filePath) {
   try {
     const content = await fs.readFile(filePath, 'utf8');
     const parsed = yaml.load(content);
+    
+    let tags = parsed.info?.tags || [];
+    if (typeof tags === 'string') {
+      tags = [tags];
+    } else if (!Array.isArray(tags)) {
+      tags = [];
+    }
+    
     return {
       path: filePath,
       id: parsed.id || path.basename(filePath, path.extname(filePath)),
@@ -36,7 +44,7 @@ async function parseTemplate(filePath) {
       author: parsed.info?.author || 'Unknown',
       severity: parsed.info?.severity || 'info',
       description: parsed.info?.description || '',
-      tags: parsed.info?.tags || [],
+      tags: tags,
       reference: parsed.info?.reference || [],
       classification: parsed.info?.classification || {},
       content: content

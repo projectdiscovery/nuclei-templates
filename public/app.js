@@ -77,7 +77,7 @@ async function searchTemplates() {
                     ` : ''}
                 </div>
                 
-                ${template.tags && template.tags.length > 0 ? `
+                ${template.tags && Array.isArray(template.tags) && template.tags.length > 0 ? `
                     <div class="tags">
                         ${template.tags.map(tag => `
                             <span class="tag">${escapeHtml(tag)}</span>
