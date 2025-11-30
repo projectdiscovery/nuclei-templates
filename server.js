@@ -206,6 +206,54 @@ app.get('/api/template/:path(*)', async (req, res) => {
   }
 });
 
+const labFiles = {};
+
+app.get('/api/lab/exploit', async (req, res) => {
+  const filename = 'exploit_' + Math.random().toString(36).substring(2, 8) + '.phar';
+  const marker = 'NUCLEI_RCE_' + Math.random().toString(36).substring(2, 14);
+  const payload = `<?php echo "${marker}"; ?>`;
+  
+  const result = {
+    step1: { success: false, filename, payload, status: 0, response: null, hash: null },
+    step2: { success: false, status: 0, body: '' },
+    step3: { success: false, marker, found: false, statusOk: false, markerMatch: false }
+  };
+  
+  try {
+    const hash = 'l1_' + Buffer.from(filename).toString('base64').replace(/[^A-Za-z0-9]/g, '').substring(0, 16);
+    labFiles[filename] = { hash, content: payload, marker };
+    
+    result.step1.success = true;
+    result.step1.status = 200;
+    result.step1.hash = hash;
+    result.step1.response = {
+      added: [{
+        mime: 'application/octet-stream',
+        ts: Math.floor(Date.now() / 1000),
+        hash: hash,
+        phash: 'l1_Lw',
+        name: filename
+      }]
+    };
+    
+    if (labFiles[filename] && labFiles[filename].content) {
+      result.step2.success = true;
+      result.step2.status = 200;
+      result.step2.body = marker;
+    }
+    
+    result.step3.statusOk = result.step2.status === 200;
+    result.step3.markerMatch = result.step2.body.includes(marker);
+    result.step3.found = result.step3.markerMatch;
+    result.step3.success = result.step3.statusOk && result.step3.markerMatch;
+    
+  } catch (err) {
+    console.error('Lab exploit error:', err);
+  }
+  
+  res.json(result);
+});
+
 async function startServer() {
   console.log('Starting server...');
   await loadAllTemplates();

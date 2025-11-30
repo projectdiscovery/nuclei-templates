@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE-2021-23394 Exploit Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.95rem;
+        }
+
+        .cve-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-box h3 {
+            color: #feca57;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,107,107,0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .step {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            border-color: #feca57;
+            background: rgba(254,202,87,0.05);
+        }
+
+        .step.success {
+            border-color: #26de81;
+            background: rgba(38,222,129,0.05);
+        }
+
+        .step.error {
+            border-color: #ff6b6b;
+            background: rgba(255,107,107,0.05);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step.success .step-number {
+            background: #26de81;
+        }
+
+        .step.active .step-number {
+            background: #feca57;
+            color: #000;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .step-status {
+            margin-left: auto;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(255,255,255,0.1);
+            color: #888;
+        }
+
+        .status-running {
+            background: rgba(254,202,87,0.2);
+            color: #feca57;
+            animation: pulse 1s infinite;
+        }
+
+        .status-success {
+            background: rgba(38,222,129,0.2);
+            color: #26de81;
+        }
+
+        .status-error {
+            background: rgba(255,107,107,0.2);
+            color: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .step-content {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .step-content pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .request {
+            color: #79c0ff;
+        }
+
+        .response {
+            color: #7ee787;
+        }
+
+        .highlight {
+            background: rgba(254,202,87,0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-box.success {
+            display: block;
+            background: linear-gradient(135deg, rgba(38,222,129,0.1), rgba(38,222,129,0.05));
+            border: 2px solid #26de81;
+        }
+
+        .result-box.error {
+            display: block;
+            background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,107,107,0.05));
+            border: 2px solid #ff6b6b;
+        }
+
+        .result-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .result-box.success h2 {
+            color: #26de81;
+        }
+
+        .result-box.error h2 {
+            color: #ff6b6b;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #888;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #feca57;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CVE-2021-23394 Exploit Lab</h1>
+            <p class="subtitle">elFinder < 2.1.58 - Remote Code Execution via .phar Upload</p>
+            <span class="cve-badge">Critical Severity</span>
+        </header>
+
+        <div class="info-box">
+            <h3>About This Exploit</h3>
+            <p>This lab demonstrates CVE-2021-23394, a remote code execution vulnerability in elFinder before version 2.1.58. The exploit uploads a malicious .phar file containing PHP code, then triggers execution by requesting the file directly.</p>
+        </div>
+
+        <div class="controls">
+            <button id="runExploit" class="btn btn-primary">Run Exploit</button>
+            <button id="resetExploit" class="btn btn-secondary">Reset</button>
+        </div>
+
+        <div class="steps">
+            <div class="step" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <span class="step-title">Upload Malicious .phar File</span>
+                    <span class="step-status status-pending" id="status1">Pending</span>
+                </div>
+                <div class="step-content">
+                    <pre id="content1">Waiting to start...</pre>
+                </div>
+            </div>
+
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <span class="step-title">Trigger RCE - Request .phar File</span>
+                    <span class="step-status status-pending" id="status2">Pending</span>
+                </div>
+                <div class="step-content">
+                    <pre id="content2">Waiting for Step 1...</pre>
+                </div>
+            </div>
+
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <span class="step-title">Validate RCE - Check Output</span>
+                    <span class="step-status status-pending" id="status3">Pending</span>
+                </div>
+                <div class="step-content">
+                    <pre id="content3">Waiting for Step 2...</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <h2 id="resultTitle"></h2>
+            <p id="resultMessage"></p>
+        </div>
+
+        <a href="/" class="back-link">← Back to Templates Browser</a>
+    </div>
+
+    <script>
+        const runBtn = document.getElementById('runExploit');
+        const resetBtn = document.getElementById('resetExploit');
+        const resultBox = document.getElementById('resultBox');
+
+        function updateStep(stepNum, status, content) {
+            const step = document.getElementById(`step${stepNum}`);
+            const statusEl = document.getElementById(`status${stepNum}`);
+            const contentEl = document.getElementById(`content${stepNum}`);
+
+            step.className = 'step';
+            statusEl.className = 'step-status';
+
+            if (status === 'running') {
+                step.classList.add('active');
+                statusEl.classList.add('status-running');
+                statusEl.innerHTML = '<span class="loader"></span>Running';
+            } else if (status === 'success') {
+                step.classList.add('success');
+                statusEl.classList.add('status-success');
+                statusEl.textContent = 'Success';
+            } else if (status === 'error') {
+                step.classList.add('error');
+                statusEl.classList.add('status-error');
+                statusEl.textContent = 'Failed';
+            } else {
+                statusEl.classList.add('status-pending');
+                statusEl.textContent = 'Pending';
+            }
+
+            if (content) {
+                contentEl.innerHTML = content;
+            }
+        }
+
+        function showResult(success, title, message) {
+            resultBox.className = 'result-box ' + (success ? 'success' : 'error');
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+        }
+
+        function reset() {
+            resultBox.className = 'result-box';
+            for (let i = 1; i <= 3; i++) {
+                updateStep(i, 'pending', i === 1 ? 'Waiting to start...' : `Waiting for Step ${i-1}...`);
+            }
+            runBtn.disabled = false;
+        }
+
+        async function runExploit() {
+            runBtn.disabled = true;
+            resultBox.className = 'result-box';
+
+            try {
+                // Step 1: Upload
+                updateStep(1, 'running', 'Uploading malicious .phar file...');
+
+                const response = await fetch('/api/lab/exploit');
+                const data = await response.json();
+
+                if (data.step1) {
+                    const s1 = data.step1;
+                    updateStep(1, s1.success ? 'success' : 'error', 
+                        `<span class="request">POST /elFinder/php/connector.minimal.php</span>\n` +
+                        `Content-Type: multipart/form-data\n` +
+                        `Filename: <span class="highlight">${s1.filename}</span>\n` +
+                        `Payload: <span class="highlight">${s1.payload}</span>\n\n` +
+                        `<span class="response">Response (${s1.status}):</span>\n${JSON.stringify(s1.response, null, 2)}\n\n` +
+                        `Extracted Hash: <span class="highlight">${s1.hash || 'N/A'}</span>`
+                    );
+                }
+
+                await new Promise(r => setTimeout(r, 500));
+
+                if (data.step2) {
+                    updateStep(2, 'running', 'Requesting .phar file to trigger execution...');
+                    await new Promise(r => setTimeout(r, 500));
+
+                    const s2 = data.step2;
+                    updateStep(2, s2.success ? 'success' : 'error',
+                        `<span class="request">GET /elFinder/files/${data.step1.filename}</span>\n\n` +
+                        `<span class="response">Response (${s2.status}):</span>\n` +
+                        `<span class="highlight">${s2.body}</span>`
+                    );
+                }
+
+                await new Promise(r => setTimeout(r, 500));
+
+                if (data.step3) {
+                    updateStep(3, 'running', 'Validating RCE output...');
+                    await new Promise(r => setTimeout(r, 500));
+
+                    const s3 = data.step3;
+                    updateStep(3, s3.success ? 'success' : 'error',
+                        `Matcher: Response contains RCE marker\n` +
+                        `Expected: <span class="highlight">${s3.marker}</span>\n` +
+                        `Found: <span class="highlight">${s3.found ? 'YES' : 'NO'}</span>\n\n` +
+                        `Status Code: ${s3.statusOk ? '200 OK ✓' : 'Failed ✗'}\n` +
+                        `Marker Match: ${s3.markerMatch ? 'YES ✓' : 'NO ✗'}`
+                    );
+
+                    if (s3.success) {
+                        showResult(true, '🎉 RCE CONFIRMED!', 
+                            'The exploit chain completed successfully. PHP code was executed on the server.');
+                    } else {
+                        showResult(false, '❌ Exploit Failed', 
+                            'The exploit chain did not complete successfully.');
+                    }
+                }
+
+            } catch (error) {
+                updateStep(1, 'error', 'Error: ' + error.message);
+                showResult(false, '❌ Error', error.message);
+            }
+        }
+
+        runBtn.addEventListener('click', runExploit);
+        resetBtn.addEventListener('click', reset);
+    </script>
+</body>
+</html>
