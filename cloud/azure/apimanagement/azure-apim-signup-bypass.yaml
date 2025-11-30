@@ -1,0 +1,60 @@
+
+id: azure-apim-cross-tenant-signup-bypass
+
+info:
+  name: Azure APIM Cross-Tenant Signup Bypass
+  author: Mihalis Haatainen (Bountyy Oy) - www.bountyy.fi
+  severity: high
+  description: |
+    Azure API Management Developer Portal allows cross-tenant account registration 
+    by bypassing UI signup restrictions. When Basic Authentication is configured,
+    the signup API remains accessible even if administrators disable signup in the UI.
+    Attackers can intercept signup requests from one portal and change the Host header
+    to target a different APIM instance.
+  reference:
+    - https://github.com/bountyy/Azure-APIM-Cross-Tenant-Signup-Bypass
+    - https://www.bountyy.fi
+  remediation: |
+    Remove the Basic Authentication identity provider completely from Azure Portal.
+    Navigate to APIM instance -> Developer Portal -> Identities -> Delete "Username and password".
+  tags: azure,apim,bypass,authentication,misconfiguration
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/signup"
+
+    headers:
+      Content-Type: application/json
+      Accept: "*/*"
+      Origin: "{{BaseURL}}"
+      Referer: "{{BaseURL}}/signup"
+
+    body: '{"challenge":{"testCaptchaRequest":{"challengeId":"00000000-0000-0000-0000-000000000000","inputSolution":"AAAAAA"},"azureRegion":"NorthCentralUS","challengeType":"visual"},"signupData":{"email":"nuclei-probe@nonexistent.test","firstName":"Nuclei","lastName":"Probe","password":"NucleiProbe123!","confirmation":"signup","appType":"developerPortal"}}'
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 400
+          - 401
+          - 403
+          - 409
+          - 422
+
+      - type: word
+        part: body
+        words:
+          - "captcha"
+          - "challenge"
+          - "ValidationError"
+          - "invalid"
+          - "email"
+          - "already exists"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
