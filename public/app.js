@@ -42,13 +42,19 @@ async function searchTemplates() {
             resultsDiv.innerHTML = `
                 <div class="no-results">
                     <h3>No templates found</h3>
-                    <p>Try adjusting your search criteria</p>
+                    <p>Searched ${data.totalTemplates || 0} templates. Try adjusting your search criteria.</p>
                 </div>
             `;
             return;
         }
         
-        resultsDiv.innerHTML = data.templates.map(template => `
+        const infoBar = `
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; color: #666;">
+                Showing ${data.showing} of ${data.matched} matches (${data.totalTemplates} total templates)
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = infoBar + data.templates.map(template => `
             <div class="template-card">
                 <div class="template-header">
                     <div>
