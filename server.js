@@ -208,6 +208,81 @@ app.get('/api/template/:path(*)', async (req, res) => {
 
 const labFiles = {};
 
+// Mock elFinder connector for testing
+app.post('/api/lab/mock/upload', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
+  const body = req.body.toString();
+  const filenameMatch = body.match(/filename="([^"]+)"/);
+  
+  if (filenameMatch) {
+    const filename = filenameMatch[1];
+    const contentMatch = body.match(/<\?php[^]*?\?>/);
+    const content = contentMatch ? contentMatch[0] : '';
+    const hash = 'l1_' + Buffer.from(filename).toString('base64').replace(/[^A-Za-z0-9]/g, '').substring(0, 16);
+    
+    labFiles[filename] = { hash, content };
+    
+    res.json({
+      added: [{
+        hash, phash: 'l1_Lw', name: filename,
+        mime: 'application/octet-stream', size: content.length,
+        ts: Math.floor(Date.now() / 1000)
+      }]
+    });
+  } else {
+    res.status(400).json({ error: 'Invalid upload' });
+  }
+});
+
+// Mock file execution endpoint
+app.get('/api/lab/mock/files/:filename', (req, res) => {
+  const file = labFiles[req.params.filename];
+  if (file && file.content) {
+    const markerMatch = file.content.match(/(PWNED_BY_\w+|NUCLEI_RCE_\w+)/);
+    if (markerMatch) {
+      return res.send(markerMatch[1]);
+    }
+  }
+  res.status(404).send('Not found');
+});
+
+// Run full test suite API
+app.get('/api/lab/tests/run', async (req, res) => {
+  const { spawn } = require('child_process');
+  const testProcess = spawn('node', ['cve-2021-23394/tests/run_all_tests.js']);
+  
+  let output = '';
+  testProcess.stdout.on('data', data => output += data.toString());
+  testProcess.stderr.on('data', data => output += data.toString());
+  
+  testProcess.on('close', code => {
+    const lines = output.split('\n');
+    const tests = [];
+    let summary = { total: 0, passed: 0, failed: 0 };
+    
+    lines.forEach(line => {
+      if (line.includes('[PASS]')) {
+        const name = line.replace(/.*\[PASS\]\s*/, '').trim();
+        tests.push({ name, status: 'pass' });
+      } else if (line.includes('[FAIL]')) {
+        const name = line.replace(/.*\[FAIL\]\s*/, '').split(' - ')[0].trim();
+        tests.push({ name, status: 'fail' });
+      } else if (line.includes('Total:')) {
+        const match = line.match(/Total:\s*(\d+)\s*\|\s*Passed:\s*(\d+)\s*\|\s*Failed:\s*(\d+)/);
+        if (match) {
+          summary = { total: parseInt(match[1]), passed: parseInt(match[2]), failed: parseInt(match[3]) };
+        }
+      }
+    });
+    
+    res.json({
+      success: code === 0,
+      summary,
+      tests,
+      raw: output
+    });
+  });
+});
+
 app.get('/api/lab/exploit', async (req, res) => {
   const filename = 'exploit_' + Math.random().toString(36).substring(2, 8) + '.phar';
   const marker = 'NUCLEI_RCE_' + Math.random().toString(36).substring(2, 14);
