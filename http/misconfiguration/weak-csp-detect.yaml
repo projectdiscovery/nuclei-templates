@@ -1,0 +1,50 @@
+id: weak-csp-detect
+
+info:
+  name: Weak Content Security Policy  - Detect
+  author: pussycat0x
+  severity: low
+  description: |
+    Detected misconfigured CSP directives containing unsafe and overly permissive keywords that weakened resource loading restrictions. This configuration allowed high-risk script behaviors, resulting in reduced protection against XSS attacks.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
+    - https://content-security-policy.com/
+  metadata:
+    max-request: 1
+    verified: true
+  tags: csp,misconfig,headers
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+        case-insensitive: true
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)script-src[^;]*(?:https:|'unsafe-inline'|'unsafe-eval'|'unsafe-hashes'|\\*|data:|blob:)[^;]*(?:;|$)"
+          - "(?i)default-src[^;]*(?:https:|'unsafe-inline'|'unsafe-eval|'unsafe-hashes'|\\*|data:|blob:)[^;]*(?:;|$)"
+
+    extractors:
+      - type: regex
+        part: header
+        name: script-src-directive
+        group: 1
+        regex:
+          - '(?i)(script-src[^;]+)'
+
+      - type: regex
+        part: header
+        name: default-src-directive
+        group: 1
+        regex:
+          - '(?i)(default-src[^;]+)'
+# digest: 4a0a00473045022100f43f54497afd0fbc120aa3ca0b4078642fd9436ce2e131025ab454a7955001d8022043f0bac59d8824b260456a47a981c6d07284d7bf803d162dad8db45880eeb0f5:922c64590222798bb761d5b6d8e72950
