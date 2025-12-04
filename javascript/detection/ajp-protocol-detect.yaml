@@ -1,0 +1,41 @@
+id: ajp-protocol-detect
+
+info:
+  name: AJP Protocol Detection
+  author: pussycat0x
+  severity: info
+  reference:
+    - https://tomcat.apache.org/connectors-doc/ajp/ajpv13a.html
+  metadata:
+    verfied: true
+    shodan-query: 'port:8009 product:"Apache Tomcat"'
+    max-request: 1
+  tags: js,network,detect,tomcat,apache,tcp,discovery
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      let ajp_ping = "\x12\x34\x00\x01\x0a"
+      data = packet.Write(ajp_ping )
+      const c = require("nuclei/net");
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.Send(data);
+      let resp = conn.RecvFullString();
+      // AJP messages start with "AB"
+      if (resp.includes("AB\x00\x01")) {
+        Export("AJP Detected");
+      } else {
+        conn.Close();
+      }
+
+    args:
+      Host: "{{Host}}"
+      Port: 8009
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100853806f79ec18b20bb8764484f88623cc93bf7ee2ac65b9f90feba271b1183d5022100d30030cd88330b0bfefb0a89a4761610a838c4d223497a52e79a314d2dc46579:922c64590222798bb761d5b6d8e72950

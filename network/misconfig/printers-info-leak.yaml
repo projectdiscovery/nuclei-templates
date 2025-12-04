@@ -2,26 +2,39 @@ id: printers-info-leak
 
 info:
   name: Unauthorized Printer Access
-  author: pussycat0x
+  author: pussycat0x,matejsmycka
   severity: info
   description: |
     Unauthorized access to printers allows attackers to print, eavesdrop sensitive documents.
+  impact: |
+     Attackers can gain access to sensitive printed documents, manipulate print jobs, and potentially compromise printer security
+  remediation: |
+     Implement proper network segmentation, disable unnecessary printer services, and ensure printers are not directly accessible from untrusted networks.
   reference:
-    - https://book.hacktricks.xyz/pentesting/9100-pjl
+    - https://book.hacktricks.wiki/en/network-services-pentesting/9100-pjl.html
+    - https://en.wikipedia.org/wiki/Printer_Job_Language
   metadata:
     max-request: 1
-  tags: network,iot,printer,misconfig,tcp
+    vendor: generic
+    product: printer
+    shodan-query: port:9100
+  tags: network,iot,printer,misconfig,tcp,pjl,vuln
+
 tcp:
   - inputs:
-      - data: "@PJL INFO STATUS\n"
+      - data: "@PJL INFO ID\n"
     host:
       - "{{Hostname}}"
     port: 9100
 
     matchers:
-      - type: word
-        words:
-          - "CODE="
-          - "PJL INFO STATUS"
-        condition: and
-# digest: 4a0a00473045022100e5cd3caafcba367256fc02a088505cf294ceb9eba20a33e032ce2aca6b16c8110220510d9b154b7130143030f9f441ed0a1ea44c52053a2fb945d9a603d59c122f95:922c64590222798bb761d5b6d8e72950
+      - type: binary
+        binary:
+          - "40504a4c20494e464f2049440d0a22"
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - '"([^"]+)"'
+# digest: 4a0a00473045022100fea938ac5c82a97ee575709bbaf39d843621982246cc7f16905ca49b850c7cc8022050ddc66d207ec5f6a159e94f1e737bf555859be125979c072c6718d143691c2d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,60 @@
+id: linux-rhosts-hostsequiv-misconfig
+
+info:
+  name: Rhosts and Hosts.equiv Misconfiguration Check
+  author: songyaeji
+  severity: high
+  description: |
+    Assessed the presence and configuration of .rhosts and /etc/hosts.equiv files. Files with unsafe '+' entries, incorrect permissions, or improper ownership could have permitted unauthorized remote command execution via rlogin or rsh.
+  reference:
+    - https://isms.kisa.or.kr
+    - https://linux.die.net/man/5/hosts.equiv
+  tags: linux,local,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    source: |
+      check_hosts_equiv() {
+          if [ -f /etc/hosts.equiv ]; then
+              echo "[FOUND] /etc/hosts.equiv exists"
+              ls -l /etc/hosts.equiv
+              if grep -q '^\+' /etc/hosts.equiv; then
+                  echo "[WARN] Unsafe '+' entry found in /etc/hosts.equiv"
+              fi
+              perms=$(stat -c "%a" /etc/hosts.equiv)
+              owner=$(stat -c "%U" /etc/hosts.equiv)
+              if [ "$perms" -gt 644 ] || [ "$owner" != "root" ]; then
+                  echo "[WARN] /etc/hosts.equiv has improper permissions or ownership"
+              fi
+          fi
+      }
+
+      check_rhosts() {
+          find /home /root -maxdepth 2 -name ".rhosts" 2>/dev/null | while read rhost; do
+              echo "[FOUND] $rhost"
+              ls -l "$rhost"
+              if grep -q '^\+' "$rhost"; then
+                  echo "[WARN] Unsafe '+' entry found in $rhost"
+              fi
+              perms=$(stat -c "%a" "$rhost")
+              owner=$(stat -c "%U" "$rhost")
+              if [ "$perms" -gt 600 ] || [ "$owner" != "root" ]; then
+                  echo "[WARN] $rhost has improper permissions or ownership"
+              fi
+          done
+      }
+
+      check_hosts_equiv
+      check_rhosts
+
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "/etc/hosts.equiv"
+          - ".rhosts"
+          - "[WARN]"
+# digest: 490a00463044022055990939cd2ff6e0a667754a6946d386089f4113dec88883b5db24420baf3ebc022058e5e428009c5edab46a409bddb9a4ea3104561a85f3683e1c5ee940a6315038:922c64590222798bb761d5b6d8e72950

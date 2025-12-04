@@ -14,11 +14,11 @@ Nuclei Templates
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">Documentation</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">Documentation</a> •
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
@@ -36,24 +36,38 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 <table>
 <tr>
-<td> 
+<td>
+
+### 🚨 Known Exploited Vulnerabilities (KEV) Coverage
+
+Nuclei templates provide coverage for vulnerabilities actively exploited in the wild:
+
+| **KEV Source** | **Templates** | **Description** |
+|----------------|---------------|-----------------|
+| 🔴 **CISA KEV** | **454** | [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) |
+| 🟠 **VulnCheck KEV** | **1449** | [VulnCheck KEV](https://vulncheck.com/kev) - Enhanced vulnerability intelligence |
+| 🟢 **Both Sources** | **407** | Templates covering vulnerabilities in both catalogs |
+
+> 💡 **Total unique KEV templates: 1496** - Use `nuclei -tags kev,vkev` to scan for actively exploited vulnerabilities
+
+---
 
 ## Nuclei Templates Top 10 statistics
 
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  3225 | dhiyaneshdk   |  1866 | http       |  8825 | info     |  4118 | file |   435 |
-| panel     |  1327 | daffainfo     |   868 | cloud      |   657 | high     |  2423 | dns  |    26 |
-| xss       |  1246 | dwisiswant0   |   806 | file       |   435 | medium   |  2339 |      |       |
-| wordpress |  1168 | princechaddha |   806 | dast       |   255 | critical |  1391 |      |       |
-| exposure  |  1094 | ritikchaddha  |   633 | workflows  |   202 | low      |   318 |      |       |
-| wp-plugin |  1023 | pussycat0x    |   519 | code       |   174 | unknown  |    54 |      |       |
-| osint     |   810 | pikpikcu      |   352 | network    |   141 |          |       |      |       |
-| tech      |   782 | pdteam        |   308 | javascript |    71 |          |       |      |       |
-| lfi       |   772 | pdresearch    |   251 | ssl        |    38 |          |       |      |       |
-| rce       |   770 | ricardomaia   |   249 | dns        |    23 |          |       |      |       |
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
 
-**840 directories, 11171 files**.
+**873 directories, 11997 files**.
 
 </td>
 </tr>
