@@ -1,0 +1,35 @@
+id: jenkins-users-exposure
+
+info:
+  name: Jenkins Users - Exposure
+  author: theamanrawat
+  severity: info
+  description: |
+    Detected an exposed Jenkins asynchPeople endpoint that discloses user information (e.g., users, full names, and profile URLs) allowing user enumeration.
+  classification:
+    cpe: cpe:2.3:a:jenkins:jenkins:*:*:*:*:*:*:*:*
+  reference:
+    - https://issues.jenkins.io/browse/JENKINS-18884
+  metadata:
+    max-request: 1
+    vendor: jenkins
+    product: jenkins
+    shodan-query:
+      - http.favicon.hash:81586312
+      - cpe:"cpe:2.3:a:jenkins:jenkins"
+      - product:"jenkins"
+    fofa-query: icon_hash=81586312
+  tags: exposure,jenkins,vuln,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/asynchPeople/api/json"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "users", "fullName", "absoluteUrl")'
+        condition: and
