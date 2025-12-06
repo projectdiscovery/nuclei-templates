@@ -1,0 +1,51 @@
+id: symfony-profiler-sqli
+
+info:
+  name: Symfony Profiler < 2.5.4 - SQL Injection
+  author: rscq
+  severity: high
+  description: |
+    Symfony versions before 2.3.19, 2.4.9, and 2.5.4 are vulnerable to SQL injection through the web profiler's import/export feature. The export route was removed in patched versions, so its existence confirms the vulnerability.
+  impact: |
+    Successful exploitation allows attackers to extract sensitive data from the database through blind SQL injection.
+  remediation: |
+    Upgrade to Symfony 2.3.19+, 2.4.9+, or 2.5.4+. Never expose app_dev.php to production environments.
+  reference:
+    - https://symfony.com/blog/cve-2014-6072-csrf-vulnerability-in-the-web-profiler
+    - https://github.com/sysdream/sf2-profiler-exploit
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: sensiolabs
+    product: symfony
+    shodan-query: html:"app_dev.php"
+    fofa-query: body="app_dev.php"
+  tags: symfony,sqli,profiler,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/app_dev.php/_profiler/export/test.txt"
+      - "{{BaseURL}}/_profiler/export/test.txt"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "does not exist"
+
+      - type: word
+        part: body
+        words:
+          - "Token"
+
+      - type: status
+        status:
+          - 404
