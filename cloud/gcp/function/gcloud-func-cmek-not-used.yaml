@@ -1,0 +1,72 @@
+id: gcloud-func-cmek-not-used
+
+info:
+  name: No Customer-Managed Encryption Keys in Google Cloud Functions
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud functions use Customer-Managed Encryption Keys (CMEK) instead of Google-managed encryption keys to encrypt data at rest. CMEKs provide greater control over the encryption and decryption process, enabling you to meet stringent compliance requirements.
+  impact: |
+    Using Google-managed encryption keys instead of CMEKs reduces your ability to control the encryption process and comply with certain regulatory standards.
+  remediation: |
+    Configure your Google Cloud functions to use Customer-Managed Encryption Keys (CMEK) to ensure data encryption at rest is managed according to your compliance and security requirements.
+  reference:
+    - https://cloud.google.com/functions/docs/securing/managing-encryption-keys
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionName of iterate(template.functions)){
+      set("functionName", functionName)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="json(kmsKeyName)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Function not using CMEK: " + functionName + " in " + projectId + " project"'
+# digest: 4a0a00473045022036beb2fd770344d590d37a8790e66f07d95b0f780fcca88dd87eb122dc5113f5022100ad2e88670bf9c93de176a2c68bc25d3c01a749aa3236f6736614fbf6b46de3a9:922c64590222798bb761d5b6d8e72950

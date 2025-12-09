@@ -1,0 +1,75 @@
+id: gcloud-vm-automatic-restart-disabled
+
+info:
+  name: VM Instance Automatic Restart Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Google Cloud Compute Engine service restarts automatically your virtual machine instances when they are terminated due to non-user initiated reasons such as maintenance events, hardware, and software failures. The Automatic Restart feature configures the virtual machine restart behavior when an instance crashes or it is terminated by the system.
+  impact: |
+    Without automatic restart enabled, VM instances that crash or are terminated due to system events will not automatically recover, potentially leading to extended service disruptions.
+  remediation: |
+    Enable automatic restart for your VM instances. Note that this behavior does not affect any terminations initiated by the user, such as when the instance is taken offline through a user action like calling sudo shutdown.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-automatic-restart.html
+    - https://cloud.google.com/compute/docs/instances/setting-instance-scheduling-options
+  tags: cloud,devops,gcp,gcloud,compute,reliability,automatic-restart,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(scheduling.automaticRestart)" | jq '. // "false"'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " does not have automatic restart enabled"'
+# digest: 4b0a00483046022100b4895a6742c95935939c8a32186a178c403d0ce8b848f679bbfb0f90214693d4022100f1c8aa148c2979fe8e8d37c8f0f493b9b56d27b484cdf78a0bd50b8a4350971e:922c64590222798bb761d5b6d8e72950

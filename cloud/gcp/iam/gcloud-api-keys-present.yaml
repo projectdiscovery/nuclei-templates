@@ -1,0 +1,66 @@
+id: gcloud-api-keys-present
+
+info:
+  name: Delete Google Cloud API Keys
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that all your Google Cloud projects are using standard authentication flow instead of API keys for authentication. Google Cloud Platform (GCP) API keys are simple encrypted strings that can be used when calling certain APIs which don't need to access private user data. GCP API keys are usually accessible to clients, as they can be publicly viewed from within a browser, making it easy to discover and steal an API key.
+  impact: |
+    Using API keys that are publicly accessible can lead to unauthorized access and potential security breaches.
+  remediation: |
+    Remove all API keys and replace them with standard authentication methods to secure your applications.
+  reference:
+    - https://cloud.google.com/docs/authentication/api-keys
+  tags: cloud,devops,gcp,gcloud,google-cloud-api,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let apiKey of iterate(template.apiKeys)){
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha services api-keys list --project=$projectId --format="json(keyId)"
+    extractors:
+      - type: json
+        name: apiKeys
+        internal: true
+        json:
+          - '.[].keyId'
+
+javascript:
+  - code: |
+      let apiKey = template.apiKey;
+      let projectId = template.projectId;
+      if (apiKey) {
+        Export("API key " + apiKey + " found in Project " + projectId);
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a0046304402206810feba886ae7701bf4868be1fd8cca8c47317a75ddfa752b8a70fc02f36271022052ae9669645bccbd9d98e6bf6d11820ffcc29a3182fa0506a2a2a91b93ded722:922c64590222798bb761d5b6d8e72950

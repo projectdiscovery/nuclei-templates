@@ -1,0 +1,56 @@
+id: gcloud-default-vpc-in-use
+
+info:
+  name: Default VPC Network In Use
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud Platform (GCP) projects are not using the default Virtual Private Cloud (VPC) network. Using the default VPC network does not adhere to security best practices and may not meet specific networking requirements.
+  impact: |
+    Using the default VPC network can expose your infrastructure to security risks due to overly permissive rules and configurations.
+  remediation: |
+    Delete the default VPC network and create custom VPC networks with tailored configurations to meet your organization's security and networking requirements.
+  reference:
+    - https://cloud.google.com/vpc/docs/vpc
+  tags: cloud,devops,gcp,gcloud,google-cloud-vpc,networking,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - ".[].projectId"
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"name": "default"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The default VPC network is in use in project " + projectId'
+# digest: 4a0a00473045022100dac56d5c0cf82c13d6b7d4b2556aea94ece44bd1ee3fa9dea355cfee33296539022035233a06905e636e15a23dae37054a6eef797b37db6da1a9f716fd119562de7c:922c64590222798bb761d5b6d8e72950

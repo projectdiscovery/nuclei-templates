@@ -1,0 +1,56 @@
+id: gcloud-vertexai-vtpm
+
+info:
+  name: Virtual Trusted Platform Module Not Enabled for Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Virtual Trusted Platform Module (vTPM) feature is enabled for your Vertex AI notebook instances in order to protect them against persistent and advanced attacks. vTPM safeguards the guest VM's boot process by validating its integrity before and during startup. Additionally, it provides secure generation and protection for encryption keys.
+  impact: |
+    Without vTPM enabled, notebook instances lack hardware-based encryption and secure storage for cryptographic keys. This could make them more vulnerable to unauthorized access and tampering with sensitive data.
+  remediation: |
+    Enable vTPM for Vertex AI notebook instances using the 'gcloud workbench instances update' command with --shielded-vtpm flag set to true. Note that instances must be stopped before updating this configuration.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/enable-vtpm.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,security,vtpm,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.shieldedInstanceConfig.enableVtpm)"
+
+    matchers:
+      - type: word
+        words:
+          - "shieldedInstanceConfig: {}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances without Virtual Trusted Platform Module (vTPM) enabled"'
+# digest: 4b0a004830460221008daab33ee8514bd0a358a39a0c7d5230d9f00695fc2dafcea6cb20b78efe6c1a022100f29c8980ff8d878cdca0220035201e74e8670496e896f4e8c4b6a1f41675ae13:922c64590222798bb761d5b6d8e72950

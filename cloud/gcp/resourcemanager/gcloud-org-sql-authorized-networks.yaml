@@ -1,0 +1,56 @@
+id: gcloud-org-sql-authorized-networks
+
+info:
+  name: Cloud SQL Authorized Networks Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Restrict Authorized Networks on Cloud SQL instances" policy is enforced for your Google Cloud Platform (GCP) organization to deny IAM members to add authorized networks in order to provide access to your security-critical SQL database instances. By default, authorized networks can be added to any Cloud SQL database instance.
+  impact: |
+    Without restricting authorized networks, Cloud SQL instances can be configured to allow access from any IP address, potentially exposing databases to unauthorized access from the internet.
+  remediation: |
+    Enable the "Restrict Authorized Networks on Cloud SQL instances" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the sql.restrictAuthorizedNetworks constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-authorized-networks.html
+    - https://cloud.google.com/sql/docs/mysql/authorize-networks
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,sql,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe sql.restrictAuthorizedNetworks --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted authorized networks for Cloud SQL instances, allowing potential public access"'
+# digest: 4a0a00473045022100803f05ecf3abaa8d0e458937c01e133537c7d3a941acd349df98bdbf774e695502206d5bc20b1b5953e4c513e6412ddd8fc77f5ba78e3c7b1e0f94326cd40273c662:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: gcloud-iam-unrestricted-decryption
+
+info:
+  name: IAM Users with Unrestricted Data Decryption Permissions
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that IAM users with data decryption permissions should use conditions to enforce strict controls, enhancing data protection and reducing risks of unauthorized decryption. For compliance, the Cloud KMS CryptoKey Decrypter (roles/cloudkms.cryptoKeyDecrypter), Cloud KMS Crypto Operator (roles/cloudkms.cryptoOperator), and Cloud KMS CryptoKey Encrypter/Decrypter (roles/cloudkms.cryptoKeyEncrypterDecrypter) roles must have a condition preventing data decryption with any KMS key.
+  impact: |
+    Without conditions on decryption permissions, IAM users can decrypt data using any KMS key in the project, potentially leading to unauthorized access to sensitive data.
+  remediation: |
+    Add IAM conditions to roles that allow decryption operations, restricting access to specific KMS keys. This can be done using resource.type and resource.name conditions in the IAM policy.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/IAM/decryption-with-all-keys-not-allowed.html
+    - https://cloud.google.com/kms/docs/reference/permissions-and-roles
+  tags: cloud,devops,gcp,gcloud,iam,security,encryption,kms,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format="json(bindings[?(@.role=='roles/cloudkms.cryptoKeyDecrypter' || @.role=='roles/cloudkms.cryptoOperator' || @.role=='roles/cloudkms.cryptoKeyEncrypterDecrypter')])"
+
+    matchers:
+      - type: word
+        words:
+          - '"condition":'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has IAM users with unrestricted decryption permissions that can access all KMS keys"'
+# digest: 490a00463044022012b07c04fff07c91b88ee8cd99e7411c0e7d79981f997ef24f1673f40235e490022055de031c4e4baf88803b9dbe0bc30fe24c5edbf8c3d04fe0f8ff3bce3b68316e:922c64590222798bb761d5b6d8e72950

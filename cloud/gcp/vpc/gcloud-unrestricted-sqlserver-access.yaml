@@ -1,0 +1,103 @@
+id: gcloud-unrestricted-sqlserver-access
+
+info:
+  name: Check for Unrestricted SQL Server Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Ensure that Google Cloud VPC network firewall rules do not allow unrestricted access (0.0.0.0/0 on TCP port 1433). Restrict access to trusted IP addresses or ranges to implement the Principle of Least Privilege (POLP) and reduce the attack surface.
+  impact: |
+    Allowing unrestricted access to TCP port 1433 exposes your resources to potential brute-force or unauthorized access attacks on SQL Server.
+  remediation: |
+    Update your VPC firewall rules to allow SQL Server traffic only from trusted IP addresses or ranges.
+  reference:
+    - https://cloud.google.com/vpc/docs/firewalls
+  tags: cloud,devops,gcp,gcloud,vpc,firewall,security,sqlserver,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let networkName of iterate(template.networks)){
+      set("networkName", networkName)
+      code(3)
+      set("firewallRules", template.firewallRules)
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute firewall-rules list --filter network=$networkName --sort-by priority --format="json(name,disabled,direction,sourceRanges,allowed[].ports)"
+
+    extractors:
+      - type: json
+        name: firewallRules
+        internal: true
+        json:
+          - '.[]'
+
+javascript:
+  - code: |
+      let firewallRules = template.firewallRules;
+      if (typeof firewallRules === "string") {
+          firewallRules = JSON.parse(firewallRules);
+      }
+
+      let unrestrictedSQLRules = [];
+      for (let rule of firewallRules) {
+          if (
+              rule.disabled === false &&
+              rule.direction === "INGRESS" &&
+              Array.isArray(rule.sourceRanges) && rule.sourceRanges.includes("0.0.0.0/0") &&
+              Array.isArray(rule.allowed) &&
+              rule.allowed.some(allowed =>
+                  Array.isArray(allowed.ports) &&
+                  (allowed.ports.includes("1433"))
+              )
+          ) {
+              unrestrictedSQLRules.push(rule.name);
+          }
+      }
+
+      if (unrestrictedSQLRules.length > 0) {
+          Export(`The firewall rules in network ${template.networkName} of project ${template.projectId} allow unrestricted SQL Server access: ${unrestrictedSQLRules.join(", ")}`);
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100bb924f1b8a6c25951751348d9dbb93ae7630ff44fdd66dde03290b6f3b0e75de022100eb3fb94653b4eb69d8bb8d37906aea3b50c525fb22575b9adf9f37a15124d6ec:922c64590222798bb761d5b6d8e72950

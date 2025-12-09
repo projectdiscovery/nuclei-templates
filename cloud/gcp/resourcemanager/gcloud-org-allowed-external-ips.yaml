@@ -1,0 +1,56 @@
+id: gcloud-org-allowed-external-ips
+
+info:
+  name: Organization Policy for Allowed External IPs Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Define Allowed External IPs for VM Instances" constraint policy is enforced at the GCP organization level in order to enable you to define the set of virtual machine (VM) instances that are allowed to use external IP addresses. This constraint helps you to minimize your instance's exposure to the Internet.
+  impact: |
+    By default, all Google Cloud virtual machine instances are allowed to use external IP addresses. Without proper constraints, this increases the attack surface as instances may be unnecessarily exposed to the internet.
+  remediation: |
+    Configure the "Define Allowed External IPs for VM Instances" policy at the organization level to explicitly specify which VM instances are allowed to have external IP addresses. Use the format: projects/<project-id>/zones/<instance-zone>/instances/<instance-name>.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/allowed-external-ips.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,networking,organization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.vmExternalIpAccess --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " allows all VM instances to use external IP addresses, increasing exposure to the internet"'
+# digest: 4a0a00473045022100c25c8cdc695c3a701577a6ebcec287d3426299e54a949dbc3a7e431d463149c90220111bb9000045b42865cb4dc90ed928b750e5c8fa1e9d1daf3e3639f79e7092ef:922c64590222798bb761d5b6d8e72950

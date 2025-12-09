@@ -1,0 +1,73 @@
+id: gcloud-bucket-lock-not-configured
+
+info:
+  name: Configure Retention Policies with Bucket Lock for Log Buckets
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all retention policies attached to your Google Cloud log sink buckets are configured with the Bucket Lock feature. This prevents logging data from being overwritten or deleted and ensures compliance with data retention policies by locking the retention configuration.
+  impact: |
+    Without the Bucket Lock feature, retention policies can be modified or removed, potentially leading to accidental or unauthorized deletion of critical logging data.
+  remediation: |
+    Enable Bucket Lock on your Google Cloud log sink buckets to enforce retention policies and prevent changes to the data retention duration.
+  reference:
+    - https://cloud.google.com/storage/docs/bucket-lock
+  tags: cloud,devops,gcp,gcloud,google-cloud-logging,retention,bucket-lock,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sink of iterate(template.sinks)){
+      sink = JSON.parse(sink);
+      set("bucketName", sink.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging sinks list --project=$projectId --format="json(name,destination)"
+
+    extractors:
+      - type: json
+        name: sinks
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gsutil retention get gs://$bucketName
+
+    matchers:
+      - type: word
+        words:
+          - 'no Retention Policy'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The bucket " + bucketName + " in project " + projectId + " does not have a configured retention policy with Bucket Lock."'
+# digest: 490a00463044022043b403b27d08ff7acebd5c37a0e40bf1e3b9e07b1e8eff442300d5720f71f16d0220594099820f1f08a2656908dd45017f34958112ee9f5aea1b3a1ae76baf2fef0b:922c64590222798bb761d5b6d8e72950

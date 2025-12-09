@@ -1,0 +1,65 @@
+id: eks-cluster-logging
+
+info:
+  name: Kubernetes Cluster Logging
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that your Amazon Elastic Kubernetes Service (EKS) clusters have control plane logs enabled to publish API, audit, controller manager, scheduler and authenticator logs to AWS CloudWatch Logs.
+  impact: |
+    Without control plane logging enabled, you lose visibility into API requests, authentication attempts, and cluster operations, making it difficult to monitor, troubleshoot, and audit cluster activities.
+  remediation: |
+    Enable control plane logging for your EKS cluster by configuring all log types (api, audit, authenticator, controllerManager, scheduler) in the cluster configuration.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/cluster-logging.html
+    - https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let cluster of iterate(template.clusters)){
+    set("cluster", cluster)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks describe-cluster --region $region --name $cluster --query 'cluster.logging.clusterLogging[*].enabled' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+      - type: word
+        words:
+          - "true"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS cluster " + cluster + " does not have control plane logging enabled"'
+# digest: 4a0a0047304502207abbc7892b2cc08d5d295b171c31d5ae2ef322d6278e92f662aeb47c659f8885022100ba3672bb61d247c24db1fc1b6ef3cd256258f04a268d52faa5e8105261796fd7:922c64590222798bb761d5b6d8e72950

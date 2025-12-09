@@ -1,0 +1,72 @@
+id: gcloud-sql-log-lock-waits-disabled
+
+info:
+  name: Log Lock Waits Flag Disabled for PostgreSQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "log_lock_waits" database flag is enabled for all your Google Cloud PostgreSQL database instances to improve database performance monitoring and troubleshooting.
+  impact: |
+    Disabling the "log_lock_waits" flag can lead to reduced visibility into database lock wait events, which may result in difficulty identifying and resolving performance bottlenecks.
+  remediation: |
+    Enable the "log_lock_waits" database flag for all PostgreSQL database instances in your Google Cloud environment. This ensures better monitoring and identification of lock wait issues.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,postgreSQL,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)" | jq '.[]? | select(.name=="log_lock_waits") | .value'
+
+    matchers:
+      - type: word
+        words:
+          - '"off"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Log Lock Waits Flag is not enabled for PostgreSQL Database Instance: " + sqlInstance + " in project: " + projectId'
+# digest: 490a00463044022059cc59835a8e5ce142444e5120a97b0fc5f430955b6c9de08b2a0c304d2df5bd02206984240ac92b0398f79dbd7c300f6f1266eae59431a51512061a65b7eae9e000:922c64590222798bb761d5b6d8e72950

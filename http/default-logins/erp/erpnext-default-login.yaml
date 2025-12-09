@@ -1,0 +1,43 @@
+id: erpnext-default-login
+
+info:
+  name: ERPNext - Default Login
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detects ERPNext installations that use the default Administrator/admin login credentials. This misconfiguration grants attackers full administrative access to the system.
+  reference:
+    - https://github.com/frappe/erpnext
+    - https://github.com/frappe/erpnext/blob/develop/README.md
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: frappe
+    product: erpnext
+    shodan-query: html:"Login to Frappe"
+  tags: erpnext,erp,default-login,vuln
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        cmd=login&usr={{username}}&pwd={{password}}&device=desktop
+
+    attack: pitchfork
+    payloads:
+      username:
+        - Administrator
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Logged In", "home_page", "Administrator")'
+          - 'contains_all(set_cookie, "sid=", "system_user=yes")'
+        condition: and
+# digest: 4a0a0047304502204f9ce25a317d242a6d8bbb48f37e25cb172e0509de0a96be19e4915860204ef9022100e504441af2dd6588ba046f8bd83adf7f83362b23d228262f1b48f1f981a7d965:922c64590222798bb761d5b6d8e72950

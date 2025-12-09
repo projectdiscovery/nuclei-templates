@@ -1,0 +1,92 @@
+id: gcloud-enable-vpc-flow-logs
+
+info:
+  name: Enable VPC Flow Logs for VPC Subnets
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that VPC Flow Logs is enabled for every subnet created within your production Virtual Private Cloud (VPC) network. Flow Logs capture information about the IP traffic (accepted, rejected, or all traffic) to and from the network interfaces within your VPC subnets.
+  impact: |
+    Without VPC Flow Logs, you lose visibility into network traffic within your subnets, making it difficult to monitor, troubleshoot, and enhance the security posture of your network.
+  remediation: |
+    Enable VPC Flow Logs for your VPC subnets to gain insights into network traffic and support network security, compliance, and operational monitoring.
+  reference:
+    - https://cloud.google.com/vpc/docs/using-flow-logs
+  tags: cloud,devops,gcp,gcloud,google-cloud-vpc,flow-logs,networking,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let network of iterate(template.networks)){
+      set("networkName", network)
+      code(3)
+      for(let subnet of iterate(template.subnets)){
+        subnet = JSON.parse(subnet);
+        set("subnetName", subnet.name)
+        set("subnetRegion", subnet.region)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks subnets list --network=$networkName --project=$projectId --format="json(name,region.basename())"
+
+    extractors:
+      - type: json
+        name: subnets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks subnets describe $subnetName --project=$projectId --format=json --region $subnetRegion | jq '.enableFlowLogs // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The subnet " + subnetName + " of network " + networkName + " in project " + projectId + " does not have VPC Flow Logs enabled"'
+# digest: 490a00463044021f6cabea175d20c5928a8cf754003d52c2c1f0b7e5616adac6bf7d6d8f52ee8e022100d7df18476349cf451e2d96b0eab91579831091e5c1be1ed6c5111d8b956661cf:922c64590222798bb761d5b6d8e72950

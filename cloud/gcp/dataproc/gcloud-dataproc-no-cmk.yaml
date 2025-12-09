@@ -1,0 +1,75 @@
+id: gcloud-dataproc-no-cmk
+
+info:
+  name: Dataproc Cluster Not Using Customer-Managed Keys
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Dataproc clusters on Compute Engine are encrypted with Customer-Managed Keys (CMKs) in order to control the cluster data encryption/decryption process. You can create and manage your own Customer-Managed Keys (CMKs) with Cloud Key Management Service (Cloud KMS). Cloud KMS provides secure and efficient encryption key management, controlled key rotation, and revocation mechanisms.
+  impact: |
+    Without Customer-Managed Keys, you have less control over data encryption and key management, potentially impacting compliance requirements and security controls.
+  remediation: |
+    Re-create your Dataproc clusters with Customer-Managed Keys using Cloud KMS. Configure a key ring and CMK in Cloud KMS, then specify the key when creating the cluster using the '--gce-pd-kms-key' flag or through the console.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Dataproc/enable-encryption-with-cmks-for-dataproc-clusters.html
+    - https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/customer-managed-encryption
+  tags: cloud,devops,gcp,gcloud,dataproc,security,encryption,cmk,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.clusterName)
+      set("region", cluster.region)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dataproc clusters list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud dataproc clusters describe $clusterName --region $region --project $projectId --format="json(config.encryptionConfig.gcePdKmsKeyName)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Dataproc cluster " + clusterName + " in region " + region + " of project " + projectId + " is not encrypted with Customer-Managed Keys"'
+# digest: 4b0a00483046022100c004a4c2a84ce03f512e6118356fe0de1a2f530511802817b482769edcda0a13022100afe35a1292495300c69a24062ff7bfe079edfc6e791fc3100015315a23750d2e:922c64590222798bb761d5b6d8e72950

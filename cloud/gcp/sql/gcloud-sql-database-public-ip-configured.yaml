@@ -1,0 +1,72 @@
+id: gcloud-sql-database-public-ip-configured
+
+info:
+  name: Cloud SQL Database Instances with Public IPs
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud SQL database instances are configured to use private IP addresses instead of public IPs to protect against potential security risks and unauthorized access.
+  impact: |
+    Database instances with public IP addresses are exposed to the internet, increasing the risk of unauthorized access and potential attacks.
+  remediation: |
+    Configure your Cloud SQL database instances to use private IP addresses to limit exposure to external networks and enhance security.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/configure-private-ip
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,networking,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq -r '.ipAddresses[]?.type // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'PRIMARY'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The SQL instance " + sqlInstance + " in project " + projectId + " is configured with a public IP address and is not set to use only private IPs."'
+# digest: 4b0a00483046022100e6e4c14e2bcae311944595134ffa79ea922ecc15caac0dcc118b72706440be7e0221009635facdcf33e4ddad128d744c81e72ed68508f7b9556df779c136674dc58a3a:922c64590222798bb761d5b6d8e72950

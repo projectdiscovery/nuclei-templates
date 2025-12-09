@@ -1,0 +1,46 @@
+id: topdesk-detect
+
+info:
+  name: TOPdesk - Detect
+  author: darses
+  severity: info
+  description: |
+    Detects the use of TOPdesk, a web-based IT service management (ITSM) and helpdesk platform. Identification is based on unique page titles, HTML patterns.
+  metadata:
+    verified: true
+    max-requests: 1
+    shodan-query: html:"TOPdesk"
+    fofa-query: app="TOPdesk"
+  tags: topdesk,tech,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'href="/tas/'
+          - "topdeskidploginforwardurl"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: extracted_unix_timestamp
+        part: body
+        regex:
+          - "auth\\.css\\?timestamp=(\\d{10})"
+        group: 1
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"Release date: " + date_time("%Y-%M-%D", extracted_unix_timestamp)'
+# digest: 4a0a00473045022100e9539d96985a5fb4f167627dd714e4bc109a79cfd90a18e98b7d8638c3bc2ae7022025609dcec3cc79dc7f7d7d26504b50e092e4b0db253d9fa69a23ba6a93dc07d2:922c64590222798bb761d5b6d8e72950

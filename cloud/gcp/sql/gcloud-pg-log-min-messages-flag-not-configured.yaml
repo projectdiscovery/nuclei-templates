@@ -1,0 +1,72 @@
+id: gcloud-pg-log-min-messages-flag-not-configured
+
+info:
+  name: Log Min Messages Flag Not Configured Properly for PostgreSQL Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "log_min_messages" database flag configured for your Google Cloud PostgreSQL database instances has the appropriate severity level in accordance with your organization's logging policy. The "log_min_messages" flag defines the minimum severity level for messages to be logged. Valid levels include DEBUG5, DEBUG4, DEBUG3, DEBUG2, DEBUG1, INFO, NOTICE, WARNING, ERROR, LOG, FATAL, and PANIC.
+  impact: |
+    An improperly configured "log_min_messages" flag can result in insufficient logging, making it difficult to troubleshoot or audit issues, or excessive logging, which can impact performance and increase storage costs.
+  remediation: |
+    Set the "log_min_messages" flag to the appropriate severity level (e.g., ERROR) as per your organization's logging policy to balance logging effectiveness and performance.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,postgresql,logging,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter=DATABASE_VERSION:POSTGRES* --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq -r '.settings.databaseFlags[]? | select(.name=="log_min_messages") | .value // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The log_min_messages flag is not configured properly or is set to an inappropriate value for PostgreSQL instance " + sqlInstance + " in project " + projectId'
+# digest: 4b0a00483046022100afc14181844ae2c200dc8963212e9809eed2f3e3589b35a51305c363bf04f3c0022100de0b60a87999daf08e11fd0b5f15403a151192569bbe4602cda63a54ab2d97d4:922c64590222798bb761d5b6d8e72950

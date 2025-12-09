@@ -1,0 +1,72 @@
+id: gcloud-sql-ssl-not-enforced
+
+info:
+  name: SSL/TLS Not Enforced for Cloud SQL Incoming Connections
+  author: princechaddha
+  severity: medium
+  description: |
+    Enforce all incoming connections to your Cloud SQL database instances to use SSL/TLS only. If the SSL/TLS protocol is not enforced for all Cloud SQL connections, clients without a valid certificate are allowed to connect to the database, leading to potential security vulnerabilities.
+  impact: |
+    Without SSL/TLS enforcement, Cloud SQL database connections are vulnerable to eavesdropping, tampering, and impersonation attacks, posing a significant security risk.
+  remediation: |
+    Enable SSL/TLS for all incoming connections to your Cloud SQL instances. Update the SSL_MODE configuration to allow only encrypted connections.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/configure-ssl-instance
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.ipConfiguration.sslMode)"
+
+    matchers:
+      - type: word
+        words:
+          - 'ALLOW_UNENCRYPTED_AND_ENCRYPTED'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SSL/TLS Not Enforced for incoming connections on Cloud SQL instance " + sqlInstance + " in project " + projectId'
+# digest: 4a0a004730450221009d6b418d54ee98301191a173b76f193e7bfd1d6775c233720d29448898110586022076dbb04c837c0aa5d7c725d5bf95e1d6b887d193a6f9d19a37fe134b923f4c81:922c64590222798bb761d5b6d8e72950

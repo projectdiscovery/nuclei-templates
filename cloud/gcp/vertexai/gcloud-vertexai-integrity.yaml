@@ -1,0 +1,58 @@
+id: gcloud-vertexai-integrity
+
+info:
+  name: Integrity Monitoring Not Enabled for Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Integrity Monitoring feature is enabled for your Google Cloud Vertex AI notebook instances to automatically check and monitor the runtime boot integrity of your shielded notebook instances using Google Cloud Monitoring. The feature requires Virtual Trusted Platform Module (vTPM) and helps ensure that the boot loader on your instances remains untampered.
+  impact: |
+    Without integrity monitoring enabled, you cannot verify the boot integrity of your notebook instances. This makes it difficult to detect potential tampering with the boot loader or other security-critical components.
+  remediation: |
+    Enable integrity monitoring for Vertex AI notebook instances using the 'gcloud workbench instances update' command with --shielded-integrity-monitoring flag set to true. Note that instances must be stopped before updating this configuration.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/enable-integrity-monitoring.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,security,integrity,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.shieldedInstanceConfig.enableIntegrityMonitoring)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+          - "null"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances without integrity monitoring enabled"'
+# digest: 4a0a00473045022100b215d362db9c0383615363d071e45a71b376694eb6a974ce4cbd5db9dec5691502200bc26776e97130ee6e43a1b6763258c4c8d24cc0095b319854af3f8812045dfa:922c64590222798bb761d5b6d8e72950

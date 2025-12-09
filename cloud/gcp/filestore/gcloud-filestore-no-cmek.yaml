@@ -1,0 +1,74 @@
+id: gcloud-filestore-no-cmek
+
+info:
+  name: Filestore Instance Not Using Customer-Managed Encryption Keys
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that data stored on your Google Cloud Filestore instances is encrypted at rest with Customer-Managed Encryption Keys (CMEK) instead of Google-managed encryption keys. CMEKs provide greater control over the encryption and decryption process, enabling you to meet stringent compliance requirements.
+  impact: |
+    Without Customer-Managed Encryption Keys, you have less control over data encryption and key management, potentially impacting compliance requirements and security controls.
+  remediation: |
+    Re-create your Filestore instances with Customer-Managed Encryption Keys using Cloud KMS. Configure a key ring and CMK in Cloud KMS, then specify the key when creating the instance using the '--kms-key' flag or through the console.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/instances-encrypted-with-cmeks.html
+    - https://cloud.google.com/filestore/docs/encryption
+  tags: cloud,devops,gcp,gcloud,filestore,security,encryption,cmek,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances describe $instanceName --format="json(kmsKeyName)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Filestore instance " + instanceName + " in project " + projectId + " is not encrypted with Customer-Managed Keys"'
+# digest: 4b0a00483046022100fd2570405f1c980b4b00e67f6196382afe7256a57a48e0e84d7cfe692829cb69022100818fb544dedb23d518adf3957d5f3204d55a58873afd58e13283777684a714e8:922c64590222798bb761d5b6d8e72950

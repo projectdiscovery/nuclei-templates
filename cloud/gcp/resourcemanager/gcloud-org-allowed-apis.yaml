@@ -1,0 +1,56 @@
+id: gcloud-org-allowed-apis
+
+info:
+  name: Google Cloud APIs and Services Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all the Google Cloud APIs and services restricted within your organization are defined using the "Restrict allowed Google Cloud APIs and services" organization policy. This constraint policy helps you achieve regulatory compliance by defining the set of cloud services and APIs that cannot be used within your GCP organization.
+  impact: |
+    By default, all Google Cloud APIs and services are allowed. Without restrictions, users can enable any API or service, potentially leading to increased attack surface and compliance violations.
+  remediation: |
+    Configure the "Restrict allowed Google Cloud APIs and services" policy at the organization level to explicitly deny specific APIs. Note that only certain APIs can be restricted: compute.googleapis.com, deploymentmanager.googleapis.com, dns.googleapis.com, doubleclicksearch.googleapis.com, replicapool.googleapis.com, replicapoolupdater.googleapis.com, and resourceviews.googleapis.com.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/allowed-apis-and-services.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,api,services,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe serviceuser.services --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted Google Cloud APIs and services, allowing all services to be enabled"'
+# digest: 4a0a0047304502204301cc345b5570e9c06b6798a008a0383886448490b1641da4816ed0204138a1022100c27cf86fd2bf84612bacace341b9fd0c5e9c49dd06818cfe4e2bc817ab50d4c0:922c64590222798bb761d5b6d8e72950

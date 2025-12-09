@@ -1,0 +1,61 @@
+id: gcloud-enable-data-access-audit-logging
+
+info:
+  name: Enable Data Access Audit Logging for All Critical Service APIs
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that data access audit logging is enabled for all critical service APIs in your Google Cloud project for security, compliance, and troubleshooting purposes. The critical service APIs that you can enable for your GCP project include but are not limited to Identity and Access Management (IAM) API (iam.googleapis.com), Compute Engine API (compute.googleapis.com), Cloud Storage (storage-component.googleapis.com), Google Cloud Pub/Sub API (pubsub.googleapis.com), Cloud Key Management Service (KMS) API (cloudkms.googleapis.com), and Cloud Logging API (logging.googleapis.com).
+  impact: |
+    Without enabling data access audit logging, you may miss critical details for compliance, security investigations, and operational troubleshooting, exposing your environment to potential risks.
+  remediation: |
+    Configure the IAM policy of your Google Cloud project to include the "auditConfigs" configuration object that enables data access audit logging for all critical APIs.
+  reference:
+    - https://cloud.google.com/logging/docs/audit/configure-data-access
+  tags: cloud,devops,gcp,gcloud,google-cloud-iam,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format=json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"auditConfigs"'
+        negative: true
+
+      - type: word
+        words:
+          - '"bindings":'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Audit logging not enabled for all services in project: " + projectId'
+# digest: 4a0a00473045022100a057166f9e73de31031152d25cd869bfcd9253cba0565d1b6a0e1e23188aa9e3022016f30e3e52002dc21bbf8a48b13947212421125d7583eb0616fd1c5e5a0f69fb:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,76 @@
+id: gcloud-gke-notifications-disabled
+
+info:
+  name: GKE Clusters Without Critical Notifications Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that critical alert notifications are enabled for your Google Kubernetes Engine (GKE) clusters to receive important Pub/Sub messages about upgrades, security bulletins, and other relevant information. This helps you stay informed about potential risks and opportunities for optimization.
+  impact: |
+    Without critical notifications enabled, you may miss important updates about scheduled upgrades, security bulletins, and new GKE version releases, potentially leading to delayed security patches and unplanned downtime.
+  remediation: |
+    Enable critical notifications for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --notification-config=pubsub=ENABLED,pubsub-topic=projects/PROJECT_ID/topics/TOPIC_NAME
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-notifications
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-notifications.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,monitoring,notifications,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(notificationConfig.pubsub.enabled)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have critical notifications enabled"'
+# digest: 4a0a00473045022071076c1407ad04e4c14023d21296d134488877f3008e4fec21e5f3f2e029095f02210099b205d5014b6da263ec136ed1aa527586e43657564c18edb2c2d9a892f567b5:922c64590222798bb761d5b6d8e72950

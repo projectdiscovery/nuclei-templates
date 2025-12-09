@@ -1,0 +1,74 @@
+id: gcloud-publicly-accessible-storage-buckets
+
+info:
+  name: Check for Publicly Accessible Cloud Storage Buckets
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the IAM policy associated with your Google Cloud Storage buckets is restricting anonymous and/or public access. The IAM policy should not include bindings for "allUsers" or "allAuthenticatedUsers" to prevent unauthorized access to sensitive data.
+  impact: |
+    Publicly accessible Cloud Storage buckets can lead to unauthorized access and potential data breaches, exposing sensitive information to the Internet.
+  remediation: |
+    Update the IAM policy of your Google Cloud Storage buckets to remove bindings for "allUsers" and "allAuthenticatedUsers" members, restricting access to authorized users only.
+  reference:
+    - https://cloud.google.com/storage/docs/access-control/iam
+  tags: cloud,devops,gcp,gcloud,google-cloud-storage,iam,security,public-access,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let bucketName of iterate(template.buckets)){
+      set("bucketName", bucketName)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gsutil ls -p $projectId | jq -R . | jq -s .
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gsutil iam get $bucketName --format=json | jq -r '.bindings[].members[]? // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - 'allUsers'
+          - 'allAuthenticatedUsers'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The bucket " + bucketName + " in project " + projectId + " is publicly accessible because it includes \"allUsers\" or \"allAuthenticatedUsers\" in its IAM policy."'
+# digest: 4a0a00473045022100ca343efb1fdb4637265347cdbfe3addcca0e190c2380f1bd0036f03a5c92f44302205d1f5bf2a77c7c47f0c885372be462ab5016675157d11cc7668801b97d740778:922c64590222798bb761d5b6d8e72950

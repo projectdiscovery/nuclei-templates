@@ -1,0 +1,75 @@
+id: gcloud-vm-project-ssh-keys-enabled
+
+info:
+  name: Block Project-Wide SSH Keys Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Compute Engine instances are configured to ignore GCP project-wide (shared) public SSH keys and use instance-level SSH keys instead. Project-wide SSH keys can be used to log in to all the VM instances running inside a GCP project. While project-wide SSH keys can ease SSH key management, if compromised, they pose a security risk which can impact all VM instances within the project.
+  impact: |
+    Using project-wide SSH keys increases the attack surface - if compromised, an attacker could gain access to all VM instances in the project instead of just a single instance.
+  remediation: |
+    Enable "Block Project-Wide SSH Keys" feature for your VM instances and configure instance-specific SSH keys instead. This limits the impact if any single key is compromised.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-block-project-wide-ssh-keys.html
+    - https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys
+  tags: cloud,devops,gcp,gcloud,compute,security,ssh,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(metadata.items)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " is not configured to block project-wide SSH keys"'
+# digest: 490a0046304402207f53624c0d249b3aac27bf5fb31e65c05aec746010620bd810326b22598254f00220109787c755180220327be63e40bf99f95211d459a00abb5adb61d89e9b55afa1:922c64590222798bb761d5b6d8e72950

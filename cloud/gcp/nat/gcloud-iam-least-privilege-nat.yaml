@@ -1,0 +1,59 @@
+id: gcloud-iam-least-privilege-nat
+
+info:
+  name: Least Privilege Access for Cloud NAT Management
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that IAM roles with administrative permissions are not assigned to IAM identities (users, groups, and service accounts) managing Cloud NAT resources. This helps enforce the Principle of Least Privilege (POLP) by granting members (principals) only the minimum access necessary to complete their tasks.
+  impact: |
+    Assigning administrative permissions to IAM identities managing Cloud NAT resources can result in over-privileged access, increasing the risk of security incidents and non-compliance with security best practices.
+  remediation: |
+    Review the IAM roles assigned to IAM identities managing Cloud NAT and ensure only least-privilege roles such as `roles/compute.networkUser` are assigned.
+  reference:
+    - https://cloud.google.com/iam/docs/understanding-roles
+    - https://cloud.google.com/nat/docs/overview
+  tags: cloud,devops,gcp,gcloud,iam,cloud-nat,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects get-iam-policy $projectId --format="json(bindings)"
+
+    matchers:
+      - type: word
+        words:
+          - '"roles/owner"'
+          - '"roles/editor"'
+          - '"roles/compute.networkAdmin"'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Overprivileged role found in project: " + projectId'
+# digest: 4a0a0047304502205786021a2136fbad6bdb591449a5b4d007c6a223b9ee5b867c01ae1a37095f81022100e52e64946a4ca73652152782b2539589161476a7932f2d2cbda4526afa6a7499:922c64590222798bb761d5b6d8e72950
