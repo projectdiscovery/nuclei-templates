@@ -1,0 +1,31 @@
+id: wp-wp-pagenavi-fpd
+
+info:
+  name: WordPress WP-PageNavi Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress WP-PageNavi plugin files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/wp-pagenavi/
+  metadata:
+    max-request: 1
+    verified: false
+    shodan-query: html:"/plugins/wp-pagenavi/"
+  tags: debug,wordpress,fpd,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wp-pagenavi/admin.php"
+      - "{{BaseURL}}/wp-content/plugins/wp-pagenavi/wp-pagenavi.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "/plugins/wp-pagenavi/")'
+          - 'contains_all(body, "Fatal error", "Uncaught Error:")'
+        condition: and
