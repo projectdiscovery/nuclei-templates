@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import subprocess
+import re
 
 def countTpl(path):
 	return len(glob.glob(path + "/*.*"))
@@ -13,8 +14,38 @@ def get_top10():
 	TOP10 = command(["cat", "TOP-10.md"])
 	return HEADER + TOP10 if len(TOP10) > 0 else ""
 
+def get_kev_stats():
+	"""Get KEV and vKEV statistics by running the count-kev-stats.py script."""
+	try:
+		result = subprocess.run(
+			["python3", ".github/scripts/count-kev-stats.py"],
+			text=True,
+			capture_output=True,
+			timeout=120
+		)
+
+		# Parse the output
+		stats = {}
+		for line in result.stdout.strip().split('\n'):
+			if '=' in line:
+				key, value = line.split('=')
+				stats[key.lower()] = int(value)
+
+		return stats
+	except Exception as e:
+		print(f"Error getting KEV stats: {e}")
+		return {
+			'kev_total': 0,
+			'vkev_total': 0,
+			'both': 0,
+			'kev_only': 0,
+			'vkev_only': 0,
+			'total_templates': 0
+		}
+
 if __name__ == "__main__":
 	version = command(["git", "describe", "--tags", "--abbrev=0"])
+	kev_stats = get_kev_stats()
 	template = eval(open(".github/scripts/README.tmpl", "r").read())
 
 	print(template)

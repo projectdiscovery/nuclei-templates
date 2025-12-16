@@ -1,0 +1,48 @@
+id: openwebui-default-login
+
+info:
+  name: Open WebUI - Default Login
+  author: matejsmycka
+  severity: critical
+  description: |
+    Detected the presence of an OpenWebUI panel with default credentials (admin@localhost/admin). Successful authentication using these default credentials allows attackers to access the admin interface and potentially perform remote code execution by defining a custom "tool".
+  reference:
+    - https://openwebui.com/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.favicon.hash:-286484075
+    fofa-query: icon_hash:"-286484075"
+  tags: default-login,vuln,openwebui
+
+variables:
+  username: admin@localhost
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /api/v1/auths/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"email": "{{username}}", "password": "{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'token":'
+          - 'role":'
+          - 'token_type":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502205e53791f8593252e8486ef3a0614b34bf2619f522a906e36f7607886bd064129022100f03a1ba9ed0c1b1610cf8823587f944e7c09d86965a086cdd34e2c8b0d0d18b3:922c64590222798bb761d5b6d8e72950
