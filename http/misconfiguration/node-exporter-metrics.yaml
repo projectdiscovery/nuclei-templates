@@ -2,7 +2,7 @@ id: node-exporter-metrics
 
 info:
   name: Detect Node Exporter Metrics
-  author: pussycat0x
+  author: pussycat0x,matejsmycka
   severity: low
   description: Information Disclosure of Garbage Collection
   metadata:
@@ -19,11 +19,59 @@ http:
       - type: word
         part: body
         words:
-          - "node_cooling_device"
-          - "node_network"
-        condition: and
+          - "node_cooling_device_cur_state{name="
+          - "node_network_carrier{device="
+          - "node_network_flags{device="
+          - "node_cpu_seconds_total{cpu="
+          - "node_filesystem_files{device="
+        condition: or
 
       - type: status
         status:
           - 200
-# digest: 4a0a00473045022100f6e969b829ffd2b305cb60d5ff11bf6313ace7fbb8f305635993dee07d9ee8b0022034eaf6c060ada677d31c7a13af67af19e52d2ba064adb49548cfef0ecd1233f8:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'node_os_info\{([^}]*)\}\s+1'
+        internal: true
+        name: os_info
+
+      - type: regex
+        part: body
+        regex:
+          - 'node_exporter_build_info\{([^}]*)\}\s+1'
+        internal: true
+        name: build_info
+
+      - type: regex
+        part: body
+        regex:
+          - 'node_dmi_info\{([^}]*)\}\s+1'
+        internal: true
+        name: bios_info
+
+      - type: regex
+        part: os_info
+        group: 1
+        regex:
+          - 'pretty_name="([^"]+)"'
+
+      - type: regex
+        part: build_info
+        group: 1
+        regex:
+          - 'goversion="([^"]+)"'
+          - 'version="([^"]+)"'
+
+      - type: regex
+        part: bios_info
+        group: 1
+        regex:
+          - 'bios_version="([^"]+)"'
+          - 'bios_vendor="([^"]+)"'
+          - 'chassis_vendor="([^"]+)"'
+          - 'chassis_version="([^"]+)"'
+          - 'product_name="([^"]+)"'
+          - 'product_version="([^"]+)"'
+# digest: 490a00463044022009c509fb3482ac2049deac78c1a86781782b67f4c4575bee89bdcc0fedbe50de02205cdc37ace218d746b4e6bccbe118992cef8db49850b0c8807a551064b5740739:922c64590222798bb761d5b6d8e72950
