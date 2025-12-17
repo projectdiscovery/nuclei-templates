@@ -1,0 +1,82 @@
+id: shell-script-exposure
+
+info:
+  name: Shell Script Exposure
+  author: projectdiscovery
+  severity: low
+  description: |
+    Detected exposed shell scripts on web servers that could have contained sensitive information such as credentials, API keys, database connection strings, or internal paths.These exposed scripts could have revealed application logic and security configurations.
+  metadata:
+    verified: true
+  tags: exposure,config,shell-script,misconfig,bash
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/backup.sh"
+      - "{{BaseURL}}/install.sh"
+      - "{{BaseURL}}/setup.sh"
+      - "{{BaseURL}}/deploy.sh"
+      - "{{BaseURL}}/update.sh"
+      - "{{BaseURL}}/upgrade.sh"
+      - "{{BaseURL}}/build.sh"
+      # Database Scripts
+      - "{{BaseURL}}/db-backup.sh"
+      - "{{BaseURL}}/mysql-backup.sh"
+      - "{{BaseURL}}/database-backup.sh"
+      - "{{BaseURL}}/dump.sh"
+      - "{{BaseURL}}/restore.sh"
+      # Config/Init Scripts
+      - "{{BaseURL}}/config.sh"
+      - "{{BaseURL}}/init.sh"
+      - "{{BaseURL}}/start.sh"
+      - "{{BaseURL}}/stop.sh"
+      - "{{BaseURL}}/run.sh"
+      - "{{BaseURL}}/entrypoint.sh"
+      - "{{BaseURL}}/bootstrap.sh"
+      # Cron/Automation
+      - "{{BaseURL}}/cron.sh"
+      - "{{BaseURL}}/cronjob.sh"
+      - "{{BaseURL}}/cleanup.sh"
+      - "{{BaseURL}}/maintenance.sh"
+      # User Profiles
+      - "{{BaseURL}}/.bashrc"
+      - "{{BaseURL}}/.bash_profile"
+      - "{{BaseURL}}/.profile"
+      - "{{BaseURL}}/.bash_history"
+      - "{{BaseURL}}/.zshrc"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "^#!(/usr)?/bin/(ba)?sh"
+          - "^#!/usr/bin/env (ba)?sh"
+
+      - type: word
+        part: body
+        words:
+          - "export "
+          - "source "
+          - "if ["
+          - "then"
+          - "echo "
+          - "for "
+          - "do"
+          - "done"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<!DOCTYPE"
+          - "404"
+          - "Not Found"
+        negative: true
+
+      - type: status
+        status:
+          - 200
