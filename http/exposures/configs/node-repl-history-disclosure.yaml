@@ -1,0 +1,31 @@
+id: node-repl-history-disclosure
+
+info:
+  name: Node.js REPL History Disclosure
+  author: pussycat0x
+  severity: low
+  description: |
+    The Node.js REPL history file (.node_repl_history) was exposed, which had contained a log of commands entered into the Node.js interactive shell.
+  reference:
+    - https://nodejs.org/api/repl.html#persistent-history
+    - https://joshtronic.com/2022/12/18/nodejs-repl-history/
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: http.html:".node_repl_history"
+  tags: exposure,nodejs,history,disclosure,misconfiguration
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.node_repl_history"
+      - "{{BaseURL}}/node_repl_history"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "require(",".exit","module.exports","let","process.","console.log(")'
+          - 'contains(header, "application/octet-stream")'
+        condition: and
