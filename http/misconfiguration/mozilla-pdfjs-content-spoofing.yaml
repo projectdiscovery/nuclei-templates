@@ -1,0 +1,36 @@
+id: mozilla-pdfjs-content-spoofing
+
+info:
+  name: Mozilla PDF.js Content Spoofing
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected PDF.js viewer accepts external file parameter. Older versions (< v1.3.91) are more likely vulnerable to content spoofing. Manual verification required.
+  reference:
+    - https://groups.google.com/g/mozilla.dev.pdf-js/c/_WdU9T0TRfo
+    - https://github.com/mozilla/pdf.js/issues/6920
+  classification:
+    cwe-id: CWE-451
+  metadata:
+    verified: false
+    max-request: 5
+  tags: pdfjs,spoofing,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/pdf.js/web/viewer.html?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+      - "{{BaseURL}}/pdfjs/web/viewer.html?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+      - "{{BaseURL}}/web/viewer.html?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+      - "{{BaseURL}}/pdfjs-dist/web/viewer.html?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+      - "{{BaseURL}}/uiFramework/js/pdfjs/web/viewer.html?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "PDF.js viewer")'
+          - 'contains_any(body, "pdf.js", "pdf.mjs")'
+          - '!contains_any(tolower(body), "validatefileurl", "file origin does not match")'
+        condition: and
