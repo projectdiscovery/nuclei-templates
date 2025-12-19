@@ -5,18 +5,14 @@ info:
   author: rxerium,darses
   severity: info
   description: |
-    Cisco Email Security Appliance login panel was detected.
+    Detected Cisco Email Security Appliance login panel.
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cwe-id: CWE-200
   metadata:
     verified: true
     max-request: 1
-    vendor: cisco
-    product: email_security_appliance
-    shodan-query:
-      - product:"IronPort AsyncOS http config"
-      - '"Set-Cookie: sid=" "303 Redirecting"'
+    shodan-query: product:"IronPort AsyncOS http config"
   tags: login,cisco,panel,email
 
 http:
@@ -24,24 +20,18 @@ http:
     path:
       - "{{BaseURL}}/login"
 
-    redirects: true
-    max-redirects: 2
-
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "<title>        Cisco         Email Security Appliance"
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - contains_any(body, "Email Security Appliance", "Email Security Virtual Appliance", "text_login_title", "IronPort C")
+          - contains(body, "action:Login")
+          - '!contains(body, "Access Denied")'
 
     extractors:
       - type: regex
         part: body
-        name: version
         group: 1
+        internal: true
         regex:
-          - 'scfw/1y-([0-9.-]+)'
+          - 'scfw\/1y-([0-9.-]+)'
+          - 'Version:\s*([0-9.-]+)'
