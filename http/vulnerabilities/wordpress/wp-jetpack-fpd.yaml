@@ -1,0 +1,37 @@
+id: wp-jetpack-fpd
+
+info:
+  name: JetPack - Full Path Disclosure
+  author: theamanrawat
+  severity: low
+  description: |
+    JetPack WordPress plugin contains a full path disclosure vulnerability due to improper access restrictions in its source files, allowing unauthenticated attackers to retrieve full server paths and aiding exploitation.
+  impact: |
+    Attackers can obtain server file paths, aiding in further exploitation of the website.
+  reference:
+    - https://wordpress.org/plugins/jetpack/
+  metadata:
+    verified: true
+    max-requests: 1
+    public-www: "/wp-content/plugins/jetpack/"
+  tags: debug,wordpress,wp,wp-plugin,jetpack,fpd
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/jetpack.php"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Fatal error", "undefined function", "jetpack.php")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: disclosed-path
+        group: 0
+        regex:
+          - '([A-Za-z]:\\[^\s<>"]+|/[^\s<>"]+)wp-content/plugins/jetpack/jetpack\.php'
+# digest: 4a0a0047304502201618db38675fc4e1df9ce5f0cc858e57cb81827092cf8fc0c5134e38179b13af022100bef52565f86601af757a3fe2e9bbc173cc5965de1e811d7a1e3e086870010dae:922c64590222798bb761d5b6d8e72950
