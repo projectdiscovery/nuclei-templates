@@ -1,0 +1,49 @@
+id: renovate-config-exposure
+
+info:
+  name: Renovate Configuration Exposure
+  author: ritikchaddha
+  severity: info
+  description: |
+    Detects exposed Renovate configuration files that may contain sensitive tokens or credentials.
+  reference:
+    - https://github.com/renovatebot/renovate
+    - https://docs.renovatebot.com/configuration-options/
+  metadata:
+    verified: true
+    max-request: 5
+  tags: exposure,config,renovate
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/renovate.json"
+      - "{{BaseURL}}/renovate.json5"
+      - "{{BaseURL}}/.github/renovate.json"
+      - "{{BaseURL}}/.github/renovate.json5"
+      - "{{BaseURL}}/.gitlab/renovate.json"
+      - "{{BaseURL}}/.gitlab/renovate.json5"
+      - "{{BaseURL}}/.renovaterc"
+      - "{{BaseURL}}/.renovaterc.json"
+      - "{{BaseURL}}/.renovaterc.json5"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'extends":'
+          - 'packageRules":'
+          - 'hostRules":'
+          - 'registryAliases":'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
