@@ -1,0 +1,47 @@
+id: xspeeder-router-detect
+
+info:
+  name: XSpeeder Router - Detect
+  author: rxerium
+  severity: info
+  description: |
+    Detects XSpeeder router login panels and extracts the build timestamp.
+  reference:
+    - https://www.xspeeder.com/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: Changsha Tongxun Computer Technology Co., Ltd
+    product: xspeeder_router
+    zoomeye-query: "admin@xspeeder.com"
+  tags: xspeeder,router,login,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login/?nLang=1"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>神行者路由"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: build_timestamp
+        part: body
+        group: 1
+        regex:
+          - 'version=(\d{10})'
+        internal: true
+
+      - type: dsl
+        name: build-date
+        dsl:
+          - 'date_time("Jan 2, 2006 15:04:05", to_number(build_timestamp))'
