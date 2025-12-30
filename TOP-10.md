@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
-| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
-| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
-| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
-| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
-| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
-| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
-| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
-| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
-| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
+| vuln      |  6542 | dhiyaneshdk   |  1954 | http       |  9631 | info     |  4438 | file |   445 |
+| cve       |  3757 | daffainfo     |   927 | cloud      |   661 | high     |  2639 | dns  |    28 |
+| discovery |  3269 | princechaddha |   862 | file       |   445 | medium   |  2548 |      |       |
+| vkev      |  1543 | dwisiswant0   |   806 | network    |   277 | critical |  1628 |      |       |
+| wordpress |  1396 | ritikchaddha  |   718 | code       |   275 | low      |   413 |      |       |
+| panel     |  1374 | pussycat0x    |   710 | dast       |   246 | unknown  |    56 |      |       |
+| xss       |  1308 | pikpikcu      |   352 | workflows  |   206 |          |       |      |       |
+| wp-plugin |  1221 | pdteam        |   316 | javascript |   100 |          |       |      |       |
+| exposure  |  1219 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| rce       |   868 | iamnoooob     |   263 | dns        |    25 |          |       |      |       |
