@@ -9,6 +9,21 @@ def home():
 @app.route('/ews/exchange.asmx', methods=['POST'])
 def ews():
     print(f"Received request to EWS: {request.data}")
+    
+    # Simple regex to find the URL in the XML
+    import re
+    import requests
+    url_match = re.search(r'<t:URL>(.*?)</t:URL>', request.data.decode('utf-8'))
+    if url_match:
+        target_url = url_match.group(1)
+        print(f"Found callback URL: {target_url}")
+        try:
+            # Trigger the interaction
+            requests.get(target_url, timeout=5)
+            print("Triggered callback")
+        except Exception as e:
+            print(f"Failed to trigger callback: {e}")
+
     xml_response = """<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
