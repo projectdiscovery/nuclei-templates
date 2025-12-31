@@ -1,0 +1,31 @@
+id: makefile-exposure
+
+info:
+  name: Makefile - Exposure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected Makefile configuration file was identified, which potentially exposed build process details, author information, and directory structure
+  reference:
+    - https://www.gnu.org/software/make/manual/make.html
+  metadata:
+    verified: true
+    max-request: 2
+  tags: exposure,config,makefile
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/Makefile"
+      - "{{BaseURL}}/makefile"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "PHONY:", "all:", "clean:", ".SUFFIXES:", "$(MAKE)")'
+          - '!contains_any(body,"<!DOCTYPE","<html","<script>")'
+          - 'len(body) > 100 && len(body) < 100000'
+        condition: and
