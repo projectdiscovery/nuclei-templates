@@ -6,11 +6,11 @@ import base64
 app = Flask(__name__)
 
 # Simulated NTLM states
-# In a real attack, we'd relay these. For a mock, we just facilitate the handshake.
+# In a real attack, we'd relay these. Here we facilitate the handshake.
 
 @app.route('/')
 def home():
-    return "NTLM Mock Exchange Server Running"
+    return "Vulnerable Exchange Server Running"
 
 @app.route('/ews/exchange.asmx', methods=['POST', 'GET'])
 def ews():
