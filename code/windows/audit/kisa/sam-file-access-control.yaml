@@ -1,0 +1,59 @@
+id: sam-file-access-control
+
+info:
+  name: SAM File Access Control Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the SAM file (%SystemRoot%\system32\config\SAM) is secured so that only the Administrators and SYSTEM groups have full access.The presence of permissions for any other users or groups represents a potential security vulnerability.
+  impact: |
+    If users or groups besides Administrators and SYSTEM have access to the SAM file, attackers could exploit this to obtain sensitive password data, raising the risk of password-based attacks.
+  remediation: |
+    Revoke any permissions assigned to users or groups other than Administrators and SYSTEM by:
+    - Running the command: > cacls %systemroot%\system32\config\SAM /remove:g [UserOrGroup]
+    - Or by adjusting the permissions through File Explorer.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: sam,account-management,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $samPath = "$env:SystemRoot\system32\config\SAM"
+      if (-Not (Test-Path $samPath)) {
+          "SAM_FILE_NOT_FOUND"
+          exit
+      }
+      # Retrieve the ACL for the SAM file
+      $acl = Get-Acl $samPath
+      # Define allowed identities (variations may exist)
+      $allowed = @("BUILTIN\Administrators", "Administrators", "NT AUTHORITY\SYSTEM", "SYSTEM")
+      $vulnerable = $false
+      foreach ($ace in $acl.Access) {
+          $account = $ace.IdentityReference.ToString()
+          if ($allowed -notcontains $account) {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "SAM_ACCESS_VULNERABLE"
+      } else {
+          "SAM_ACCESS_COMPLIANT"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "SAM_ACCESS_VULNERABLE"
+# digest: 490a00463044022040dec32d4771631e7b3d39511a48983e2fadad35eb9c1c0ddd873fbdf3d204ab02203870f2731378bab592f0218f083a88ca737324ef53a99f9a182488e58c645970:922c64590222798bb761d5b6d8e72950

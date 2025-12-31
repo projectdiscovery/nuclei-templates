@@ -1,28 +1,43 @@
 id: adcs-certificate
 
 info:
-  name: Certification Authority Web Enrollment (ADCS) - Detection
-  author: pastaga,defte
+  name: Microsoft AD CS Web Enrollment - Detect
+  author: pastaga,defte,atomiczsec
   severity: info
   description: |
-    Web Enrollment is a service that can be installed on an AD CS server to allow users and computers in an Active Directory domain to request a certificate through an interactive web page.
+    Detects Microsoft Active Directory Certificate Services (AD CS) Web Enrollment and certificate download pages.
   metadata:
     verified: true
+    max-request: 3
     shodan-query: html:"/certenroll"
-  tags: ad,adcs,exposure,files
+  tags: ad,adcs,exposure,files,web-enrollment,detect,vuln
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/certenroll/"
       - "{{BaseURL}}/CertEnroll/"
+      - "{{BaseURL}}/certsrv/"
+      - "{{BaseURL}}/certsrv"
 
     host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: or
     matchers:
       - type: dsl
+        name: certenroll
         dsl:
-          - contains(body, ".crl") || contains(body, ".crt")
-          - contains(body, "CertEnroll") || contains(body, "certenroll")
-          - status_code == 200
+          - 'status_code == 200'
+          - 'contains_any(body, ".crl", ".crt", ".cer", ".p7b")'
+          - 'contains_any(tolower(body), "certenroll", "locmscertsrv", "certificate services")'
         condition: and
-# digest: 4b0a00483046022100834fe22a0cf908f657153bd2278bd1bb581fdb119537ad127e62ec7591c9c4f2022100ae681d05bbfec5621702a57f4bc67cd29afb9878d01c68c2b573086f3b0c6ea6:922c64590222798bb761d5b6d8e72950
+
+      - type: dsl
+        name: certsrv
+        dsl:
+          - 'status_code == 200 || status_code == 401 || status_code == 403'
+          - 'contains_any(tolower(body), "locmscertsrv", "certificate services", "web enrollment")'
+        condition: and
+# digest: 4a0a004730450220722f728e0657003af9e7d941b0edabd587e94e83cf26a4372533c70cc37f7b0b022100aa3fab1ae0892828cb01bd96b2ae02f973dbabcdd9795b403fe3002a03d9fd75:922c64590222798bb761d5b6d8e72950
