@@ -1,0 +1,61 @@
+id: apache-mod-negotiation-listing
+
+info:
+  name: Apache mod_negotiation - Pseudo Directory Listing
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected Apache server with mod_negotiation and MultiViews enabled, exposing a pseudo directory listing when invalid Accept headers are sent to extensionless filenames.
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/apache-mod_negotiation-filename-bruteforcing/
+    - https://cwe.mitre.org/data/definitions/538.html
+  classification:
+    cwe-id: CWE-538
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+  metadata:
+    verified: true
+    max-request: 5
+  tags: apache,misconfig,exposure,mod-negotiation
+
+http:
+  - raw:
+      - |
+        GET {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: fake/fake
+
+    payloads:
+      path:
+        - /index
+        - /test
+        - /admin
+        - /login
+        - /config
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Available variants"
+          - "href="
+        condition: and
+
+      - type: status
+        status:
+          - 406
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+    extractors:
+      - type: regex
+        name: exposed_files
+        part: body
+        regex:
+          - '<a href="([^"]+)">'
+        group: 1
+# digest: 490a0046304402204ad5c67359cb420afb24441f5d2a9f35311205534cf062c59db84405d931a2280220561627dceccfed3759d0ad0b9bb2a8488d1af0c78deadb2fe5615faffd8afd9e:922c64590222798bb761d5b6d8e72950
