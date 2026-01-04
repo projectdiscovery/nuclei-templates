@@ -1,0 +1,49 @@
+id: joomla-fpd
+
+info:
+  name: Joomla! - Full Path Disclosure
+  author: pussycat0x
+  severity: low
+  description: |
+    Detects full path disclosure in Joomla! sending requests to specific paths and identifying fatal error stack traces that leaked absolute filesystem paths.
+  reference:
+    - https://developer.joomla.org/security-centre/884-20220801-core-multiple-full-path-disclosures-because-of-missing-jexec-or-die-check.html
+  metadata:
+    verified: true
+    shodan-query: http.component:"joomla"
+  tags: joomla,misconfiguration,fpd,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/libraries/php-inputfilter/inputfilter.php"
+      - "{{BaseURL}}/libraries/php-fileupload/fileupload.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/archive.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/tar.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/zip.php"
+      - "{{BaseURL}}/libraries/phpmailer/phpmailer.php"
+      - "{{BaseURL}}/libraries/phputf8/utils/bad.php"
+      - "{{BaseURL}}/libraries/phputf8/utils/unicode.php"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+"
+          - "(?i)fatal\\s+error"
+          - "(?i)warning"
+          - "(?i)notice"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(/[^\\s:]+/joomla[^\\s:]*)"
+          - "(/[^\\s:]+/libraries[^\\s:]*)"
