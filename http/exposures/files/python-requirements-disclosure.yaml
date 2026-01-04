@@ -1,0 +1,39 @@
+id: python-requirements-disclosure
+
+info:
+  name: Python Requirements File Disclosure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected Python requirements.txt file. This file contains Python package dependencies and versions that could reveal technology stack, vulnerable package versions, and internal dependencies.
+  reference:
+    - https://pip.pypa.io/en/stable/reference/requirements-file-format/
+  classification:
+    cwe-id: CWE-538
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+  metadata:
+    verified: true
+    max-request: 4
+    google-query: intitle:"index of" "requirements.txt"
+  tags: exposure,python,config,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/requirements.txt"
+      - "{{BaseURL}}/requirements/requirements.txt"
+      - "{{BaseURL}}/app/requirements.txt"
+      - "{{BaseURL}}/src/requirements.txt"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/plain")'
+          - 'contains_any(body, "==", ">=", "<=", "~=")'
+          - '!contains(body, "<!DOCTYPE") && !contains(body, "<html") && !contains(body, "{\"props\"") && !contains(body, "<script")'
+          - 'len(body) > 10 && len(body) < 20000'
+        condition: and
+# digest: 4b0a00483046022100d7f30033b9230b0d1099be6b7315f5cea36ba6d8087d8b3c857ac0b1b76a3041022100ea3ca1a0c201bf056ea19099af9639b622c5d7909d3921e5307ef6a21114d805:922c64590222798bb761d5b6d8e72950
