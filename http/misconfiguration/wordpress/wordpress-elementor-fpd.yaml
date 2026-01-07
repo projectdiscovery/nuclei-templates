@@ -1,0 +1,35 @@
+id: wordpress-elementor-fpd
+
+info:
+  name: WordPress Elementor Page Builder - Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress Plugin Elementor Page Builder plugin files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/elementor/
+  metadata:
+    plugin: elementor
+    verified: true
+    max-request: 6
+  tags: wp,wordpress,wp-plugin,fpd,elementor,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export/runners/export/wp-content.php"
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export/runners/import/wp-content.php"
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export/runners/revert/wp-content.php"
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export-customization/runners/export/wp-content.php"
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export-customization/runners/import/wp-content.php"
+      - "{{BaseURL}}/wp-content/plugins/elementor/app/modules/import-export-customization/runners/revert/wp-content.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 500'
+          - 'contains(body, "elementor")'
+          - 'contains_all(body, "Fatal error", "Uncaught Error") || contains_all(body, "Warning:","failed to open stream")'
+        condition: and
