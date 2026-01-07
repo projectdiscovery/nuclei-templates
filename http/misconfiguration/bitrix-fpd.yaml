@@ -1,0 +1,39 @@
+id: bitrix-fpd
+
+info:
+  name: Bitrix Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    Detected Full Path Disclosure (FPD) in Bitrix by sending requests request to specific paths and identifying fatal error stack traces that leaked absolute filesystem paths.
+  reference:
+    - https://www.bitrix24.in/tools/crm/
+  metadata:
+    max-request: 9
+    verified: true
+    shodan-query: html:"/bitrix/"
+  tags: debug,bitrix,fpd,vuln
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/?USER_FIELD_MANAGER=1'
+      - '{{BaseURL}}/bitrix/admin/restore_export.php'
+      - '{{BaseURL}}/bitrix/admin/tools_index.php'
+      - '{{BaseURL}}/bitrix/bitrix.php'
+      - '{{BaseURL}}/bitrix/modules/main/ajax_tools.php'
+      - '{{BaseURL}}/bitrix/php_interface/after_connect_d7.php'
+      - '{{BaseURL}}/bitrix/themes/.default/.description.php'
+      - '{{BaseURL}}/bitrix/components/bitrix/main.ui.selector/templates/.default/template.php'
+      - '{{BaseURL}}/bitrix/components/bitrix/forum.user.profile.edit/templates/.default/interface.php'
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 500'
+          - 'contains(body, "bitrix")'
+          - 'contains_any(body, "Fatal error", "require_once", "Error")'
+        condition: and
+# digest: 4a0a00473045022100824ccea17a9e4bc8a2b1dcb11da04f010e3d78d2bab66a558b8c8ac09d00d53a02203a0329a98f8a8bdf4c8074e487c1d1e261a4208e9b9ea00be24696befef7b6c2:922c64590222798bb761d5b6d8e72950

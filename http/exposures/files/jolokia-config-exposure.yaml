@@ -1,0 +1,32 @@
+id: jolokia-config-exposure
+
+info:
+  name: Jolokia Configuration - Exposure
+  author: theamanrawat
+  severity: medium
+  description: |
+    Detected exposed Jolokia configuration files (jolokia-agent.properties and jolokia-access.xml). Exposure of these files could have revealed sensitive agent configuration, authentication credentials, or access control policies (CORS, allowed MBeans).
+  reference:
+    - https://jolokia.org/reference/html/agents.html
+    - https://docs.microfocus.com/doc/388/24.3/confjolokia
+  metadata:
+    verified: false
+    max-request: 4
+  tags: config,exposure,jolokia,jmx,devops
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/jolokia-agent.properties"
+      - "{{BaseURL}}/jolokia-access.xml"
+      - "{{BaseURL}}/WEB-INF/classes/jolokia-agent.properties"
+      - "{{BaseURL}}/WEB-INF/classes/jolokia-access.xml"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "host=", "port=", "protocol=", "password=") || contains_all(body, "<restrict>", "<remote>", "<host>", "<mbean>")'
+        condition: and
+# digest: 4a0a0047304502205ea35f78b31cdceed7876936dd6effcfda553f27a7b4bacfcfdfe6afe7b69398022100c1757ed2b620afb97763f215a2e20b4ee2dae7363c284ffa6683d71374fa3108:922c64590222798bb761d5b6d8e72950
