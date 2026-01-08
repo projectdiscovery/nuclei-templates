@@ -1,0 +1,39 @@
+id: consul-ui-exposed-services
+
+info:
+  name: HashiCorp Consul - Exposed Services
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected HashiCorp Consul API was accessible without authentication, which potentially exposed service discovery information, key-value store data, and cluster configuration.
+  reference:
+    - https://developer.hashicorp.com/consul/docs/security
+    - https://exploit-notes.hdks.org/exploit/web/hashicorp-consul/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-306
+  metadata:
+    max-request: 2
+    product: consul
+    vendor: hashicorp
+    shodan-query: http.title:"Consul" port:8500
+    fofa-query: title="Consul" && port="8500"
+  tags: exposure,consul,misconfig,hashicorp
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/agent/members"
+      - "{{BaseURL}}/v1/catalog/services"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(header, "X-Consul-Index", "application/json")'
+          - 'contains_any(body, "\"Name\"", "\"consul\"")'
+        condition: and
