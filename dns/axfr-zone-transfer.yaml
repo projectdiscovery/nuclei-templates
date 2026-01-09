@@ -1,0 +1,46 @@
+id: axfr-zone-transfer
+
+info:
+  name: DNS Zone Transfer - AXFR Vulnerability
+  author: rxerium
+  severity: high
+  description: |
+    DNS zone transfer (AXFR) is enabled. This allows unauthorized users to retrieve the entire DNS zone data, potentially exposing internal network structure and hosts.
+  reference:
+    - https://www.acunetix.com/blog/articles/dns-zone-transfers-axfr/
+    - https://owasp.org/www-community/vulnerabilities/Zone_Transfer
+    - https://www.rfc-editor.org/rfc/rfc5936.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+  tags: dns,axfr,zone-transfer,misconfiguration
+
+dns:
+  - name: "{{FQDN}}"
+    type: AXFR
+    
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "IN\tSOA\t"
+        part: answer
+      
+      - type: word
+        words:
+          - "IN\tNS\t"
+        part: answer
+        condition: or
+      
+      - type: regex
+        regex:
+          - "IN\\s+(A|AAAA|MX|TXT|CNAME)\\s+"
+        part: answer
+    
+    extractors:
+      - type: regex
+        regex:
+          - "([a-zA-Z0-9.-]+)\\s+IN\\s+(A|AAAA|MX|NS|TXT|CNAME)\\s+(.+)"
