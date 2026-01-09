@@ -1,0 +1,61 @@
+id: dmarc-weak-policy
+
+info:
+  name: DMARC Weak Policy Detection
+  author: phulelouch
+  severity: low
+  description: |
+    Detects weak DMARC configurations that allow email spoofing:
+    - p=none: DMARC policy is set to 'none' which means emails failing SPF/DKIM checks are still delivered 
+    - sp=none: Subdomain policy set to none
+    - pct<100: Policy not applied to all emails
+    These misconfigurations enable phishing and email spoofing attacks.
+  impact: |
+    Attackers can send spoofed emails appearing to originate from the target domain,
+    enabling phishing attacks against employees, customers, and partners.
+  remediation: |
+    Configure DMARC with p=reject or p=quarantine to enforce email authentication.
+    Example: v=DMARC1; p=reject; rua=mailto:dmarc-reports@domain.com
+  reference:
+    - https://dmarc.org/
+    - https://dmarc.org/wiki/FAQ#Why_is_DMARC_important.3F
+    - https://www.cloudflare.com/learning/email-security/dmarc-dkim-spf/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-290
+  metadata:
+    max-request: 1
+    verified: true
+  tags: dns,dmarc,misconfig,email,spoof,phishing
+
+dns:
+  - name: "_dmarc.{{FQDN}}"
+    type: TXT
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: answer
+        words:
+          - "v=DMARC1"
+
+      - type: regex
+        part: answer
+        regex:
+          - "p=none"
+          - "sp=none"
+          - "pct=[0-9]{1,2}[^0-9]"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: dmarc-record
+        group: 1
+        regex:
+          - "IN\tTXT\t\"(v=DMARC1[^\"]+)\""
+
+      - type: kval
+        name: policy
+        kval:
+          - answer
