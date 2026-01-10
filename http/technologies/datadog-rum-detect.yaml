@@ -1,0 +1,58 @@
+id: datadog-rum-detect
+
+info:
+  name: Datadog Browser RUM - Tech Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detects Datadog Browser RUM (Real User Monitoring) SDK artifacts in HTML responses.
+  reference:
+    - https://docs.datadoghq.com/real_user_monitoring/browser/
+    - https://docs.datadoghq.com/real_user_monitoring/browser/setup/
+    - https://www.npmjs.com/package/@datadog/browser-rum
+  metadata:
+    max-request: 1
+    verified: true
+  tags: tech,discovery,rum,datadog,monitoring
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code >= 200 && status_code < 400"
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers), 'text/html') || contains(tolower(all_headers), 'application/xhtml') || contains(tolower(body), '<html') || contains(tolower(body), '<!doctype html')"
+
+      - type: word
+        words:
+          - "datadogRum.init"
+          - "DD_RUM.init"
+          - "DD_RUM.onReady"
+          - "DD_RUM.setUser"
+          - "DD_RUM.addAction"
+          - "DD_RUM.addError"
+          - "DD_RUM.startView"
+          - "DD_RUM.setGlobalContext"
+          - "DD_RUM.addTiming"
+          - "datadoghq-browser-agent.com/datadog-rum"
+          - "datadoghq-browser-agent.com/us"
+          - "datadoghq-browser-agent.com/eu"
+          - "browser-intake-datadoghq.com"
+          - "browser-intake-datadoghq.eu"
+          - "browser-intake-us3-datadoghq.com"
+          - "browser-intake-us5-datadoghq.com"
+          - "@datadog/browser-rum"
+          - "unpkg.com/@datadog/browser-rum"
+          - "cdn.jsdelivr.net/npm/@datadog/browser-rum"
+          - "cdnjs.cloudflare.com/ajax/libs/datadog-rum"
+        condition: or
+        part: body
