@@ -1,0 +1,51 @@
+id: bitrix-log-file-disclosure
+
+info:
+  name: Bitrix Site Manager - Log File Disclosure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected Bitrix Site Manager log files, potentially exposing sensitive information including database credentials, file paths, SQL queries, and user session data.
+  reference:
+    - https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=43&LESSON_ID=2795
+    - https://dev.1c-bitrix.ru/api_help/main/general/error.php
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-532
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.html:"bitrix"
+    fofa-query: body="/bitrix/modules/"
+  tags: exposure,bitrix,logs,files,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/bitrix/modules/updater.log"
+      - "{{BaseURL}}/bitrix/modules/updater_partner.log"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "LICENSE_KEY"
+          - "CUpdateClient"
+          - "UPD_SUCCESS"
+          - "UPD_ERROR"
+          - "SUPD_VER"
+          - "bitm_"
+        condition: or
+
+      - type: word
+        part: content_type
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100ad10a6ddf299c33488657f2ef28b3720e744a457b5385b804b1577e8d663d8a4022100f9400e78be6a3029b354685827c3c6416fe4eb7a1e3ce2e0b55b5636d3ffcc30:922c64590222798bb761d5b6d8e72950
