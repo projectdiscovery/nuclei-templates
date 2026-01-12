@@ -1,0 +1,29 @@
+id: mybb-full-path-disclosure
+
+info:
+  name: MyBB - Full Path Disclosure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected MyBB forum software exposed the server's full filesystem path through PHP fatal errors when files that implemented interfaces were accessed without dependencies.
+  reference:
+    - https://mybb.com/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"Powered by MyBB"
+    fofa-query: body="Powered by MyBB"
+  tags: mybb,missconfig,fpd
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/inc/cachehandlers/disk.php"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Fatal error")'
+          - 'regex("(?:/var/www/|/home/|/srv/|/opt/|[A-Z]:[/\\\\\\\\]).+?disk\\.php", body)'
+        condition: and
