@@ -22,32 +22,12 @@ http:
       - "{{BaseURL}}/headers"
       - "{{BaseURL}}/netlify.toml"
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - "[build]"
-          - "[[redirects]]"
-          - "X-Frame-Options"
-          - "X-XSS-Protection"
-          - "Content-Security-Policy"
-          - "X-Content-Type-Options"
-          - "Access-Control-Allow-Origin"
-          - "Strict-Transport-Security"
-          - "Cache-Control"
-          - "Basic-Auth"
-        condition: or
-
-      - type: word
-        part: body
-        words:
-          - "<html"
-          - "<!DOCTYPE"
-          - "Page not found"
-        negative: true
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "[build]", "[[redirects]]") || contains_any(body, "X-Frame-Options", "X-XSS-Protection", "Content-Security-Policy", "X-Content-Type-Options", "Access-Control-Allow-Origin", "Strict-Transport-Security", "Cache-Control", "Basic-Auth")'
+          - '!(contains(to_lower(body), "<html") || contains(body, "<!doctype") || contains(body, "page not found"))'
         condition: and
