@@ -1,0 +1,34 @@
+id: wp-hostinger-fpd
+
+info:
+  name: WordPress Hostinger Tools - Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress Plugin Hostinger Tools files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/hostinger/
+  metadata:
+    verified: true
+    max-request: 1
+    publicwww-query: "/plugins/hostinger"
+  tags: wp,wordpress,wp-plugin,fpd,hostinger,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/hostinger/vendor/woocommerce/action-scheduler/classes/ActionScheduler_AdminView.php"
+      - "{{BaseURL}}/wp-content/plugins/hostinger/vendor/woocommerce/action-scheduler/classes/ActionScheduler_ListTable.php"
+      - "{{BaseURL}}/wp-content/plugins/hostinger/vendor/woocommerce/action-scheduler/classes/abstracts/ActionScheduler_Abstract_QueueRunner.php"
+      - "{{BaseURL}}/wp-content/plugins/hostinger/vendor/woocommerce/action-scheduler/classes/abstracts/ActionScheduler_Store.php"
+      - "{{BaseURL}}/wp-content/plugins/hostinger/vendor/woocommerce/action-scheduler/classes/abstracts/ActionScheduler_Abstract_ListTable.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "Fatal error", "Uncaught Error") || contains_all(body, "Warning:", "failed to open stream")'
+          - 'status_code == 200 || status_code == 500'
+          - 'contains(body, "hostinger")'
+        condition: and
