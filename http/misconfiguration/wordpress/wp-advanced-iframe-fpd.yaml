@@ -1,0 +1,31 @@
+id: wp-advanced-iframe-fpd
+
+info:
+  name: WordPress Advanced iFrame - Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress Advanced iFrame plugin files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/advanced-iframe/
+  metadata:
+    verified: true
+    max-request: 1
+    publicwww-query: "/wp-content/plugins/advanced-iframe/"
+  tags: wp,wordpress,wp-plugin,fpd,advanced-iframe,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/advanced-iframe/advanced-iframe.php"
+      - "{{BaseURL}}/wp-content/plugins/advanced-iframe/advanced-iframe-admin-page.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "Fatal error", "Uncaught Error") || contains_all(body, "Warning:","failed to open stream")'
+          - 'contains(body, "advanced-iframe")'
+          - 'status_code == 200 || status_code == 500'
+        condition: and
