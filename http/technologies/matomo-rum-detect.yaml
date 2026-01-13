@@ -1,0 +1,59 @@
+id: matomo-rum-detect
+
+info:
+  name: Matomo (Piwik) RUM - Tech Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detects Matomo (formerly Piwik) Web Analytics & RUM artifacts. Identifies Standard Tracking, Image Tracking, Tag Manager, and Cloud instances using strict matching.
+  reference:
+    - https://matomo.org/
+    - https://developer.matomo.org/guides/tracking-javascript-guide
+    - https://developer.matomo.org/api-reference/tracking-javascript
+    - https://matomo.org/faq/on-premise/installing-matomo/
+    - https://matomo.org/matomo-cloud/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.html:"matomo.js"
+  tags: tech,discovery,rum,matomo,piwik,analytics
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code >= 200 && status_code < 400"
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers), 'text/html') || contains(tolower(body), '<html')"
+
+      - type: regex
+        part: body
+        name: rum_indicators
+        regex:
+          - "window\\._paq"
+          - "_paq\\.push\\s*\\("
+          - "var\\s+_paq\\s*=\\s*window\\._paq"
+          - "MatomoTagManager"
+          - "window\\.MatomoTagManager"
+          - "_paq\\.push\\s*\\(\\s*\\[\\s*['\"]trackPageView['\"]"
+          - "_paq\\.push\\s*\\(\\s*\\[\\s*['\"]setSiteId['\"]"
+          - "_paq\\.push\\s*\\(\\s*\\[\\s*['\"]setTrackerUrl['\"]"
+          - "_paq\\.push\\s*\\(\\s*\\[\\s*['\"]enableLinkTracking['\"]"
+          - "(Matomo|Piwik)\\.getTracker\\s*\\("
+          - "src\\s*=\\s*['\"][^'\"]*(matomo|piwik)\\.js['\"]"
+          - "g\\.src\\s*=\\s*[^;]*(matomo|piwik)\\.js"
+          - "['\"]https?://[^'\"]+/(matomo|piwik)\\.php['\"]"
+          - "u\\s*\\+\\s*['\"](matomo|piwik)\\.php['\"]"
+          - "[a-z0-9-]+\\.matomo\\.cloud/"
+          - "<img[^>]+src\\s*=\\s*['\"][^'\"]*(matomo|piwik)\\.php\\?idsite="
+          - "name=['\"]generator['\"]\\s+content=['\"](Matomo|Piwik)"
+        condition: or
