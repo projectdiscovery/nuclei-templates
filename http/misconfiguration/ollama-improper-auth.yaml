@@ -1,0 +1,42 @@
+id: ollama-improper-auth
+
+info:
+  name: Ollama - Improper Authorization
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected an exposed Ollama API without proper authorization, allowing unauthorized access to AI models and operations.
+  reference:
+    - https://ollama.ai/
+    - https://github.com/ollama/ollama
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-862
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"Ollama" port:11434
+    fofa-query: body="Ollama" && port="11434"
+  tags: ollama,exposure,misconfig,ai,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/tags"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"models\"", "\"name\"", "\"digest\"")'
+          - 'contains_any(body, "\"gguf\"", "\"parameter_size\"", "\"quantization_level\"", "\"details\"")'
+        condition: and
+
+    extractors:
+      - type: json
+        name: models
+        part: body
+        json:
+          - '.models[].name'
