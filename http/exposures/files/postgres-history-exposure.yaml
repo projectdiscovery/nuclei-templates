@@ -1,0 +1,43 @@
+id: postgres-history-exposure
+
+info:
+  name: PostgreSQL History - Exposure
+  author: theamanrawat
+  severity: low
+  description: |
+    Exposed PostgreSQL history files (.psql_history) were detected. These files contain a record of executed SQL commands and may disclose sensitive information like passwords, database schemas, and query logic.
+  reference:
+    - https://www.postgresql.org/docs/current/app-psql.html#APP-PSQL-FILES
+  metadata:
+    verified: true
+    max-requests: 3
+  tags: postgres,exposure,config,history,database
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.psql_history"
+      - "{{BaseURL}}/psql_history"
+      - "{{BaseURL}}/.postgresql_history"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '(?m)^\\(q|h|\?|g|d|dt|du|l|c|connect|copy)'
+          - '(?i)(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+'
+
+      - type: word
+        part: body
+        words:
+          - "select"
+          - "from"
+          - "\\connect"
+          - "\\d"
+        condition: or
+
+      - type: status
+        status:
+          - 200
