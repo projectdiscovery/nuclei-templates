@@ -1,0 +1,47 @@
+id: stylelint-ignore-disclosure
+
+info:
+  name: Stylelint - Ignore File Disclosure
+  author: ritikchaddha
+  severity: info
+  description: |
+    The .stylelintignore file is publicly accessible, potentially revealing project structure, sensitive file paths, and internal directory organization.
+  reference:
+    - https://stylelint.io/user-guide/ignore-code
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:".stylelintignore"
+    fofa-query: body=".stylelintignore"
+  tags: stylelintignore,config,exposure,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.stylelintignore"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "len(body) > 30"
+          - "contains_any(content_type, 'application/octet-stream', 'text/plain')"
+        condition: and
+
+      - type: word
+        part: response
+        words:
+          - "MongoDB over HTTP on the native"
+          - "application/javascript"
+          - "application/x-javascript"
+          - "application/json"
+          - "application/xml"
+          - "text/xml"
+          - "<html"
+          - "<!doctype"
+          - "<script"
+          - "<meta"
+          - "image/"
+          - "Response xmlns"
+        negative: true
