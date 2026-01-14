@@ -1,0 +1,46 @@
+id: openreplay-rum-detect
+
+info:
+  name: OpenReplay RUM - Tech Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detects OpenReplay (formerly Asayer) Session Replay & RUM SDK implementation.
+  reference:
+    - https://github.com/openreplay/openreplay
+    - https://docs.openreplay.com/en/sdk/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.html:"static.openreplay.com"
+  tags: tech,discovery,rum,openreplay
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    redirects: true
+    max-redirects: 3
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code >= 200 && status_code < 400"
+          - "contains(tolower(all_headers), 'text/html')"
+        condition: and
+
+      - type: regex
+        part: body
+        name: sdk_implementation
+        regex:
+          - "static\\.openreplay\\.com/(?:latest|[0-9.]+)/openreplay\\.js"
+          - "projectKey[\"']?\\s*:\\s*[\"'][A-Za-z0-9]{10,}[\"']"
+          - "ingestPoint[\"']?\\s*:\\s*[\"']https?://[^\"']+/ingest[\"']"
+          - "[a-z0-9-]+\\.openreplay\\.cloud/ingest"
+          - "window\\.OpenReplay\\s*=\\s*\\["
+          - "openReplay\\s*:\\s*\\{\\s*projectKey"
+          - "window\\.asayer\\s*=\\s*\\["
+          - "asayer\\.io/ingest"
+        condition: or
