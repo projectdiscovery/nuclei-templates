@@ -2,9 +2,12 @@ id: dell-idrac7-detect
 
 info:
   name: Detect Dell iDRAC7
-  author: kophjager007
+  author: kophjager007,0x_Akoko
   severity: info
-  description: The Integrated Dell Remote Access Controller (iDRAC) is designed for secure local and remote server management and helps IT administrators deploy, update and monitor Dell EMC PowerEdge servers.
+  description: |
+    Detected The Integrated Dell Remote Access Controller, (iDRAC) is designed for secure local and remote server management and helps IT administrators deploy, update and monitor Dell EMC PowerEdge servers.
+  reference:
+    - https://www.dell.com/support/manuals/en-us/idrac7-8-with-lc-v2.40.40.40
   metadata:
     max-request: 1
   tags: tech,dell,discovery
@@ -14,20 +17,19 @@ http:
     path:
       - "{{BaseURL}}/data?get=prodServerGen"
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: body
-        words:
-          - "12G"
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/xml")'
+          - 'contains_all(body, "<prodServerGen>", "<Manufacturer>Dell", "<isDellBranded>1</isDellBranded>", "12G")'
+        condition: and
 
     extractors:
       - type: regex
+        name: server_generation
         part: body
+        group: 1
         regex:
-          - '[0-9]{2}G'
-# digest: 4a0a004730450220684090d2f6327b6e14e117378d225356e185f4d2218232d166abafee4be4ff12022100907719d221a72370c52cf9f073392b5396dfa23b700fe0b19b0f3366b65a362a:922c64590222798bb761d5b6d8e72950
+          - '<prodServerGen>([0-9]{2}G)</prodServerGen>'
+# digest: 490a004630440220156e3728837542271af7200cc5df58eb4e83142d8e467a23adbea84edfba8f1502203dbfe6de74dec7227377f340d9ae5419fd0ebd3c3d697b1caafd4c2dcd0eb52e:922c64590222798bb761d5b6d8e72950
