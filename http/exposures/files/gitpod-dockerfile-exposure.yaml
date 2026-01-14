@@ -1,0 +1,40 @@
+id: gitpod-dockerfile-exposure
+
+info:
+  name: Gitpod Dockerfile - Exposure
+  author: theamanrawat
+  severity: info
+  description: |
+    Detected exposed .gitpod.Dockerfile files. These files define the development environment and may disclose installed software versions, internal paths, or potentially hardcoded secrets.
+  reference:
+    - https://www.gitpod.io/docs/configure/docker
+  metadata:
+    verified: true
+    max-request: 2
+  tags: gitpod,docker,exposure,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.gitpod.Dockerfile"
+      - "{{BaseURL}}/.gitpod.dockerfile"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '^(?:FROM(?:CACHE)?|RUN|ADD|WORKDIR|ENV|EXPOSE|\#)\s+[ -~]+'
+          - 'gitpod'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
