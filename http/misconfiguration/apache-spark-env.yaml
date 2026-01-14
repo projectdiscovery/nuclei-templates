@@ -1,0 +1,35 @@
+id: apache-spark-env
+
+info:
+  name: Apache Spark Environment - Exposure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected Apache Spark Web UI exposed environment variables and application information without authentication, potentially revealing sensitive configuration details.
+  reference:
+    - https://spark.apache.org/docs/latest/monitoring.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"Spark" http.html:"Environment"
+  tags: apache,spark,missconfig,environment,bigdata
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/applications"
+      - "{{BaseURL}}/environment/"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Spark", "Java")'
+          - 'contains_any(body, "sparkProperties", "appSparkVersion", "Runtime Information", "Spark Properties", "spark.app.name", "sparkUser")'
+        condition: and
