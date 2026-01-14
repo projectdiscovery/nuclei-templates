@@ -1,0 +1,33 @@
+id: netlify-headers-config-exposure
+
+info:
+  name: Netlify Headers Configuration - Exporsure
+  author: theamanrawat
+  severity: low
+  description: |
+    Detected publicly accessible Netlify configuration files such as _headers, headers, or netlify.toml. Exposure of these files may disclose security header settings, routing rules, authentication mechanisms, or other sensitive deployment information.
+  reference:
+    - https://docs.netlify.com/routing/headers/
+    - https://docs.netlify.com/configure-builds/file-based-configuration/
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: 'header="netlify"'
+  tags: netlify,config,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_headers"
+      - "{{BaseURL}}/headers"
+      - "{{BaseURL}}/netlify.toml"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "[build]", "[[redirects]]") || contains_any(body, "X-Frame-Options", "X-XSS-Protection", "Content-Security-Policy", "X-Content-Type-Options", "Access-Control-Allow-Origin", "Strict-Transport-Security", "Cache-Control", "Basic-Auth")'
+          - '!(contains(to_lower(body), "<html") || contains(body, "<!doctype") || contains(body, "page not found"))'
+        condition: and
