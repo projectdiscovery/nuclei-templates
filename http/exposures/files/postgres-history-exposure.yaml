@@ -2,7 +2,7 @@ id: postgres-history-exposure
 
 info:
   name: PostgreSQL History - Exposure
-  author: theamanrawat
+  author: theamanrawat,0x_Akoko
   severity: low
   description: |
     Exposed PostgreSQL history files (.psql_history) were detected. These files contain a record of executed SQL commands and may disclose sensitive information like passwords, database schemas, and query logic.
@@ -21,24 +21,12 @@ http:
       - "{{BaseURL}}/.postgresql_history"
 
     stop-at-first-match: true
-    matchers-condition: and
     matchers:
-      - type: regex
-        part: body
-        regex:
-          - '(?m)^\\(q|h|\?|g|d|dt|du|l|c|connect|copy)'
-          - '(?i)(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s+'
-
-      - type: word
-        part: body
-        words:
-          - "select"
-          - "from"
-          - "\\connect"
-          - "\\d"
-        condition: or
-
-      - type: status
-        status:
-          - 200
-# digest: 490a00463044022007c85a7dc13df8edea4b338a5d21408d15d952eb6388d312c8acc9c6e3c4629d0220720781a08304301c247a898868a40da60417ade0d970d373ec84857255dddb11:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - '!contains(content_type, "text/html")'
+          - 'contains_all(to_lower(body), "select", "from", "where")'
+          - 'contains_any(body, "select * from", "SELECT * FROM", "insert into", "INSERT INTO", "update ", "UPDATE ")'
+          - 'regex("(?m)^\\\\(q|h|\\?|g|d|dt|du|l|c|connect|copy)", body)'
+        condition: and
