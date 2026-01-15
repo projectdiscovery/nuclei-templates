@@ -1,0 +1,29 @@
+id: wp-gravity-forms-log-disclosure
+
+info:
+  name: WordPress Gravity Forms - Log File Disclosure
+  author: ritikchaddha
+  severity: low
+  description: |
+    The Gravity Forms plugin for WordPress stores log files that may be accessible without authentication. When logging is enabled, debug and error logs are created in the wp-content/uploads/gravity_forms/logs/ directory. These logs can contain sensitive information including form submission data, file paths, database queries, PHP errors, API keys, and user information.
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: html:"/wp-content/plugins/gravityforms"
+    fofa-query: body="/wp-content/plugins/gravityforms"
+  tags: wordpress,wp,wp-plugin,gravityforms,log,disclosure,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/gravityforms/debug.log"
+      - "{{BaseURL}}/wp-content/plugins/gravityforms/tmp/debug.log"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'regex("[[0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3}] PHP", body)'
+          - 'contains_any(body, "PHP Warning:", "PHP Notice:", "Undefined array", "Undefined variable")'
+        condition: and
