@@ -1,0 +1,38 @@
+id: zipkin-config-exposure
+
+info:
+  name: Zipkin Configuration - Exposure
+  author: theamanrawat
+  severity: low
+  description: |
+    Detected the exposure of the Zipkin configuration endpoint (/config.json), which may reveal internal configuration details.
+  reference:
+    - https://zipkin.io/
+  tags: zipkin,exposure,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/config.json"
+      - "{{BaseURL}}/zipkin/config.json"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"queryLimit":'
+          - '"environment":'
+          - '"instrumented":'
+          - '"defaultLookback":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
