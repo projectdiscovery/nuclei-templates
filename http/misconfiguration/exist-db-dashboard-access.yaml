@@ -1,0 +1,44 @@
+id: exist-db-dashboard-access
+
+info:
+  name: eXist-DB Dashboard Access
+  author: ritikchaddha
+  severity: high
+  description: Detects eXist DB dashboard login endpoint access. eXist DB is a document-oriented database that allows you to store and query XML data. The dashboard is a web interface that allows you to manage the database and view the data.
+  reference:
+    - https://exist-db.org/
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"eXist db"
+    fofa-query: title="eXist db"
+  tags: misconfig,exist-db,dashboard,login,exposure
+
+variables:
+  username: "admin"
+
+http:
+  - raw:
+      - |
+        POST /exist/apps/dashboard/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&password=
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - 'user"\s*:\s*"admin"'
+          - 'dba"\s*:\s*"true"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/xml"
+
+      - type: status
+        status:
+          - 200
