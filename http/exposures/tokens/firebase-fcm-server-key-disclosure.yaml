@@ -1,0 +1,52 @@
+id: firebase-fcm-server-key-disclosure
+
+info:
+  name: Firebase Cloud Messaging - Server Key Disclosure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected Firebase Cloud Messaging (FCM) legacy server keys were identified in client-side files. These keys can be used to send push notifications to any device.
+  reference:
+    - https://firebase.google.com/docs/cloud-messaging
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 3
+  tags: firebase,google,fcm,server-key,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/firebase-messaging-sw.js"
+      - "{{BaseURL}}/manifest.json"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}'
+
+      - type: word
+        part: body
+        words:
+          - "firebaseConfig"
+          - "serverKey"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: fcm-server-key
+        part: body
+        regex:
+          - 'AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}'
