@@ -1,0 +1,47 @@
+id: ibm-cloud-bucket-exposure
+
+info:
+  name: IBM Cloud Object Storage - Bucket Exposure
+  author: 0x_Akoko
+  severity: unknown
+  description: |
+    IBM Cloud Object Storage bucket is publicly accessible, potentially exposing
+    sensitive files and data. Public bucket listing allows enumeration of stored objects.
+  reference:
+    - https://cloud.ibm.com/docs/cloud-object-storage
+    - https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-iam-bucket-permissions
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-284
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: ssl.cert.subject.cn:"cloud-object-storage.appdomain.cloud"
+    fofa-query: host="cloud-object-storage.appdomain.cloud"
+  tags: ibm,cloud,bucket,exposure,misconfig,s3
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/?list-type=2"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<ListBucketResult", "<Name>")'
+          - 'contains_any(tolower(header), "ibm-sse-kp-enabled", "ibm-sse-kp-customer-root-key-crn", "ibm-")'
+          - 'contains_any(tolower(content_type), "application/xml", "text/xml")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: bucket-name
+        part: body
+        regex:
+          - "<Name>([^<]+)</Name>"
+        group: 1
