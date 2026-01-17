@@ -21,18 +21,22 @@ http:
   - method: GET
     path:
       - "{{BaseURL}}/"
-    redirects: true
+
+    host-redirects: true
     max-redirects: 3
 
     matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - "status_code >= 200 && status_code < 400"
+      - type: status
+        status:
+          - 200
+          - 301
+          - 302
 
-      - type: dsl
-        dsl:
-          - "contains(tolower(all_headers), 'text/html') || contains(tolower(all_headers), 'application/xhtml') || contains(tolower(body), '<html') || contains(tolower(body), '<!doctype html')"
+      - type: word
+        part: header
+        words:
+          - "text/html"
 
       - type: regex
         part: body
@@ -40,10 +44,11 @@ http:
           - "posthog\\.init\\s*\\("
           - "posthog\\.capture\\s*\\("
           - "posthog\\.identify\\s*\\("
-          - "posthog\\.people\\.set\\s*\\("
           - "window\\.posthog"
           - "app\\.posthog\\.com"
           - "eu\\.posthog\\.com"
+          - "us\\.posthog\\.com"
           - "phc_[a-zA-Z0-9]{30,}"
-          - "api_host[\"']?\\s*:\\s*[\"'][^\"']+posthog"
+          - "api_host[\"']?\\s*:\\s*[\"'][^\"']*posthog"
+          - "posthog-js"
         condition: or
