@@ -1,0 +1,39 @@
+id: drupal-source-code-disclosure
+
+info:
+  name: Drupal - Source Code Disclosure
+  author: pussycat0x
+  severity: medium
+  description: |
+    Detected exposed Drupal source code, backup files, and sensitive configurations, potentially disclosing database credentials and API keys. This exposure revealed internal system paths and critical site metadata, increasing the risk of full system compromise.
+  reference:
+    - https://www.drupal.org/docs/security-in-drupal
+    - https://www.drupal.org/project/drupal/issues/3457781
+  metadata:
+    max-request: 8
+    verified: true
+    product: drupal
+    vendor: drupal
+    shodan-query: http.component:"drupal"
+  tags: drupal,exposure,disclosure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sites/default/settings.php"
+      - "{{BaseURL}}/sites/default/settings.php~"
+      - "{{BaseURL}}/sites/default/settings.php.bak"
+      - "{{BaseURL}}/sites/default/settings.php.old"
+      - "{{BaseURL}}/sites/default/settings.php.orig"
+      - "{{BaseURL}}/sites/default/settings.php.save"
+      - "{{BaseURL}}/sites/default/settings.php.swp"
+      - "{{BaseURL}}/sites/default/settings.local.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains_all(body, 'Drupal database driver', 'drupal_initialize_variables()', 'allow_authorize_operations')"
+        condition: and
