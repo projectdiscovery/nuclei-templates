@@ -1,0 +1,50 @@
+id: zen-cart-log-exposure
+
+info:
+  name: Zen Cart Log File Exposure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected exposed Zen Cart log files that may contain sensitive information including error messages, file paths, database queries, and customer data.
+  reference:
+    - https://www.zen-cart.com/
+    - https://docs.zen-cart.com/user/troubleshooting/debug_logs/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 5
+    shodan-query: http.html:"zen-cart" || http.html:"Zen Cart"
+    fofa-query: body="zen-cart" || body="Zen Cart"
+  tags: zencart,exposure,logs,ecommerce
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/logs/"
+      - "{{BaseURL}}/cache/"
+      - "{{BaseURL}}/includes/logs/"
+      - "{{BaseURL}}/admin/logs/"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Index of"
+          - "myDEBUG"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: log-files
+        part: body
+        regex:
+          - 'myDEBUG[a-zA-Z0-9_-]+\.log'
