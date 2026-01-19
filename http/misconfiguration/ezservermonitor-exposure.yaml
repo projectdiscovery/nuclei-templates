@@ -1,0 +1,55 @@
+id: ezservermonitor-exposure
+
+info:
+  name: eZ Server Monitor - Exposure
+  author: pussycat0x
+  severity: low
+  description: |
+    Detected exposed eZ Server Monitor instances that revealed sensitive server information, including hostname, OS, kernel version, CPU details, memory usage, disk space, network interfaces with IP addresses, service status, and user login history.
+  reference:
+    - https://github.com/shevabam/ezservermonitor-web
+    - https://www.ezservermonitor.com/esm-web/features
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: title:"eZ Server Monitor"
+    fofa-query: title="eZ Server Monitor"
+  tags: misconfig,exposure,ezservermonitor,monitoring
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/esm/"
+      - "{{BaseURL}}/monitoring/"
+      - "{{BaseURL}}/ezservermonitor/"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<title>eZ Server Monitor"
+          - "eZ Server Monitor - v"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "web/css/frontend.css"
+          - '<span class="icon-gauge"></span>eSM'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'eZ Server Monitor - v([0-9.]+)'
