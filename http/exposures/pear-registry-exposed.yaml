@@ -1,0 +1,34 @@
+id: pear-registry-exposed
+
+info:
+  name: PEAR Registry Files Exposed
+  author: pussycat0x
+  severity: low
+  description: |
+    Detected exposed PEAR registry files (.reg) containing serialized PHP metadata, including package versions and local paths. This exposure facilitated supply-chain reconnaissance by revealing installed dependencies and system mappings.
+  reference:
+    - https://pear.php.net/manual/en/core.pear.pear-registry.php
+    - https://github.com/pear/pear-core/blob/master/PEAR/Registry.php
+    - https://blog.sonarsource.com/php-supply-chain-attack-on-pear/
+  metadata:
+    max-request: 4
+    verified: false
+  tags: misconfig,pear,php,registry,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.registry/pear.reg.ber"
+      - "{{BaseURL}}/.registry/pear.reg"
+      - "{{BaseURL}}/PEAR/.registry/pear.reg.ber"
+      - "{{BaseURL}}/PEAR/.registry/pear.reg"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains_all(body, 'install-pear.php','PEAR_ErrorStack','install-pear-nozlib.phar')"
+        condition: and
+# digest: 4a0a00473045022100d496747f672c5d2d13a12e78162e7cc69b273a000d6808e70154492fdaf19434022011707da6f3c1a47a1bde592adbcaafc0fcdea462060ff7aa06877921a1a558dd:922c64590222798bb761d5b6d8e72950
