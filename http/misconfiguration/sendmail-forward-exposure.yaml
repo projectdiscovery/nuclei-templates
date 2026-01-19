@@ -1,0 +1,54 @@
+id: sendmail-forward-exposure
+
+info:
+  name: Sendmail .forward File - Exposure
+  author: ritikchaddha
+  severity: low
+  description: |
+    Sendmail .forward file is publicly accessible. This file is used to configure email forwarding and can expose sensitive information including email addresses, forwarding rules, and potentially executable commands (pipe to programs).
+  reference:
+    - https://www.sendmail.org/~ca/email/doc8.12/op-sh-4.html
+    - https://linux.die.net/man/5/forward
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 4
+    verified: true
+  tags: exposure,sendmail,config,mail,mta
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.forward"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"'
+          - "\\|[\\s]*/[a-zA-Z0-9/_.-]+"
+          - ":include:[\\s]*/[a-zA-Z0-9/_.-]+"
+          - "^/[a-zA-Z0-9/_.-]+/[a-zA-Z0-9/_.-]+$"
+        condition: or
+
+      - type: word
+        part: content_type
+        words:
+          - "text/plain"
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<!DOCTYPE"
+          - "<HTML"
+        negative: true
