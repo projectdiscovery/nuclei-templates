@@ -5,7 +5,7 @@ info:
   author: 0x_Akoko
   severity: info
   description: |
-    Detected cPanel backup exclusion configuration file (cpbackup-exclude.conf) was publicly accessible, potentially exposing directory structure and system paths.
+    cPanel backup exclusion configuration file (cpbackup-exclude.conf) was publicly accessible, potentially exposing directory structure and system paths.
   reference:
     - https://docs.cpanel.net/knowledge-base/backups/how-to-exclude-files-from-backups/
   classification:
@@ -25,10 +25,26 @@ http:
 
     stop-at-first-match: true
 
+    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200'
-          - 'contains_all(body, ".cpanel/caches", ".cpanel/datastore", "access-logs", ".sqmailattach")'
-          - '!contains_any(body, "<html", "<!DOCTYPE")'
+          - "status_code == 200"
+          - "len(body) > 10"
+          - "contains_any(content_type, 'application/octet-stream', 'text/plain', 'text/x-config')"
         condition: and
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<!doctype"
+          - "<script"
+          - "<meta"
+          - "<head"
+          - "<body"
+          - "application/json"
+          - "application/xml"
+          - "text/xml"
+          - "image/"
+        negative: true
