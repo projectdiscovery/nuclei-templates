@@ -1,0 +1,47 @@
+id: sqlite-history-exposure
+
+info:
+  name: SQLite History - Exposure
+  author: theamanrawat
+  severity: medium
+  description: |
+    Detects exposed .sqlite_history files. These files contain SQLite command history, including executed queries, table names, and potentially sensitive data that was queried or inserted.
+  impact: |
+    Exposed SQLite history can reveal database schema, table structures, sensitive SQL queries (with credentials or tokens), and business logic.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"CREATE TABLE" http.html:"SELECT"
+    fofa-query: body=".schema" && body="SELECT"
+    google-dork: intitle:"index of" ".sqlite_history"
+  tags: exposure,sqlite,history,database,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.sqlite_history"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(to_lower(body), "select", "insert", "create table", "update", "delete from", ".tables", ".schema",".databases")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(select|insert|update|delete|create|alter|drop|\.quit|\.schema|\.tables).*[\r\n]+(select|insert|update|delete|create|alter|drop|\.quit|\.schema|\.tables)'
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<!DOCTYPE"
+          - "<head"
+          - "<body"
+          - '{"'
+          - '"error"'
+          - '"message"'
+        negative: true
