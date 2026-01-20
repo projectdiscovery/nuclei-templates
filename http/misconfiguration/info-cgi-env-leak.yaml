@@ -1,0 +1,57 @@
+id: info-cgi-env-leak
+
+info:
+  name: info.cgi  Environment Variable - Disclosure
+  author: pussycat0x
+  severity: medium
+  description: |
+    Detected exposure of server environment variables through the info.cgi script. This can leak sensitive paths, internal IPs, software versions, credentials in env, etc.
+  reference:
+    - https://www.acunetix.com/vulnerabilities/web/test-cgi-script-leaking-environment-variables/
+    - https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/cgi
+  metadata:
+    verified: true
+    max-request: 5
+  tags: cgi,exposure,info,env,disclosure,generic
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/info.cgi"
+      - "{{BaseURL}}/cgi-bin/info.cgi"
+      - "{{BaseURL}}/cgi-sys/info.cgi"
+      - "{{BaseURL}}/scripts/info.cgi"
+      - "{{BaseURL}}/lite-scripts/info.cgi"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "SERVER_SOFTWARE"
+          - "SERVER_NAME"
+          - "GATEWAY_INTERFACE"
+          - "SERVER_PROTOCOL"
+          - "REQUEST_METHOD"
+          - "QUERY_STRING"
+          - "REMOTE_ADDR"
+          - "HTTP_USER_AGENT"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "PATH="
+          - "/bin:"
+          - "/usr/bin:"
+          - "LD_LIBRARY_PATH"
+          - "MYSQL_HOME"
+          - "OPENSSL_CONF"
+          - "DOCUMENT_ROOT"
+          - "SCRIPT_FILENAME"
+        condition: or
