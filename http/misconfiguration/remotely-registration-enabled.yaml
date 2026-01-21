@@ -1,0 +1,50 @@
+id: remotely-registration-enabled
+
+info:
+  name: Remotely Registration Enabled
+  author: ritikchaddha
+  severity: high
+  description: |
+    Checks if the Remotely self-hosted remote desktop and collaboration web application has its user registration endpoint enabled, potentially allowing anyone to register without invitation.
+  impact: |
+    Enabling open registration on Remotely instances may allow unauthorized users to register and gain access to the application, depending on configuration.
+  remediation: |
+    Disable open registration if not required by setting 'RequireInvitationCodeForRegistration' to true in the Remotely configuration.
+  reference:
+    - https://github.com/lucent-sea/Remotely
+    - https://github.com/lucent-sea/Remotely/blob/master/README.md
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: lucent-sea
+    product: remotely
+    framework: aspnetcore
+    shodan-query: title:"Remotely"
+  tags: remotely,registration,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/Identity/Account/Register'
+      - '{{BaseURL}}/Account/Register'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'Create a new account.'
+          - 'Remotely'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - 'Registration is disabled.'
+        negative: true
+
+      - type: status
+        status:
+          - 200
