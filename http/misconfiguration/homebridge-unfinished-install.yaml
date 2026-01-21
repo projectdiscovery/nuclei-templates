@@ -1,0 +1,56 @@
+id: homebridge-unfinished-install
+
+info:
+  name: Homebridge - Unfinished Installation
+  author: theamanrawat
+  severity: high
+  description: |
+    Homebridge instance with incomplete installation detected. The setup wizard is exposed, allowing anyone to create the first admin account and gain full control over the Homebridge instance. This can lead to unauthorized access to smart home devices and potential network compromise.
+  reference:
+    - https://homebridge.io/
+    - https://github.com/homebridge/homebridge-config-ui-x
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-284
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"Homebridge"
+    fofa-query: title="Homebridge"
+  tags: homebridge,misconfig,exposure,iot,smart-home,unauth
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Homebridge")'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/auth/settings"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"setupWizardComplete":false'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
