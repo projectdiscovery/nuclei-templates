@@ -1,0 +1,36 @@
+id: wordpress-wp-env-exposure
+
+info:
+  name: WordPress Configuration wp-env - Exposure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected the WordPress wp-env.json configuration file publicly accessible, potentially revealing the PHP version, installed plugins, themes, and development environment details.
+  reference:
+    - https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/
+  metadata:
+    verified: true
+    max-request: 1
+  tags: wp,wordpress,config,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.wp-env.json"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "len(body) > 10"
+          - "contains(content_type, 'application/json')"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"phpVersion"'
+          - '"plugins"'
+          - '"themes"'
+        condition: and
