@@ -1,0 +1,41 @@
+id: fastly-backend-info-disclosure
+
+info:
+  name: Fastly Backend Server Information Disclosure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected Fastly CDN misconfigured and exposing backend/origin server IP addresses or hostnames in HTTP response headers.
+  reference:
+    - https://developer.fastly.com/reference/http/http-headers/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+    shodan-query: "X-backend-server"
+    verified: true
+  tags: exposure,fastly,cdn,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(tolower(header), "x-served-by", "x-cache-hits", "fastly")'
+          - 'contains(tolower(header), "x-backend-server")'
+          - '!regex("(?i)x-backend-server:\\s*(nginx|apache|httpd|iis|tomcat)\\s*$", header)'
+        condition: and
+
+    extractors:
+      - type: kval
+        kval:
+          - x_backend_server
+# digest: 4a0a004730450220752b2a3ff9eb395a391038ad4f0f7896528f9e3731bef1df5075b8609d2fe80d022100bd856e7b41a2dcf49c9559e15be74612d7007f7c2b81b5b4bcee805fcc1e7a4d:922c64590222798bb761d5b6d8e72950
