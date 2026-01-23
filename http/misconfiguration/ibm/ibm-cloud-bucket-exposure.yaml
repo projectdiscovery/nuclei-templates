@@ -1,0 +1,43 @@
+id: ibm-cloud-bucket-exposure
+
+info:
+  name: IBM Cloud Object Storage - Bucket Exposure
+  author: 0x_Akoko
+  severity: unknown
+  description: |
+    IBM Cloud Object Storage bucket is publicly accessible, potentially exposing sensitive files and data. Public bucket listing allows enumeration of stored objects.
+  reference:
+    - https://cloud.ibm.com/docs/cloud-object-storage
+    - https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-iam-bucket-permissions
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: ssl.cert.subject.cn:"cloud-object-storage.appdomain.cloud"
+    fofa-query: host="cloud-object-storage.appdomain.cloud"
+  tags: ibm,cloud,bucket,exposure,misconfig,s3
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/?list-type=2"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<ListBucketResult", "<Name>")'
+          - 'contains_any(tolower(header), "ibm-sse-kp-enabled", "ibm-sse-kp-customer-root-key-crn", "ibm-")'
+          - 'contains_any(tolower(content_type), "application/xml", "text/xml")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: bucket-name
+        part: body
+        group: 1
+        regex:
+          - "<Name>([^<]+)</Name>"
+# digest: 490a0046304402201a2fe5d818e6b95e1a1aca2dc89ad3daf968c735d2cc743be2f3d6be5d164a6d0220655bcba9b22ee2838df0966d2887d3ffdeef9d81acdc688b24036b92bda5055c:922c64590222798bb761d5b6d8e72950
