@@ -1,0 +1,66 @@
+id: rustdesk-webclient-default-login
+
+info:
+  name: RustDesk Web Client - Default login
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected RustDesk Web Client Admin Console was using default credentials.
+  reference:
+    - https://rustdesk.com/docs/en/self-host/rustdesk-server-pro/console/
+    - https://github.com/rustdesk/rustdesk-server-pro
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"RustDesk API Admin"
+    fofa-query: title="RustDesk API Admin"
+  tags: default-login,rustdesk,remote-access
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /api/admin/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}","platform":"windows","captcha":"","captcha_id":""}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - test1234
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"code\":0", "\"message\":\"success\"", "\"token\":", "\"username\":\"admin\"")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        regex:
+          - '"token":"([a-f0-9]+)"'
+        group: 1
+        internal: true
+
+  - raw:
+      - |
+        GET /api/admin/config/admin HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{token}}
+        Accept: application/json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"code\":0", "\"message\":\"success\"", "RustDesk API Admin")'
+        condition: and
