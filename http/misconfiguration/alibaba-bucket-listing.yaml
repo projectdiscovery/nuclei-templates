@@ -1,0 +1,37 @@
+id: alibaba-bucket-listing
+
+info:
+  name: Alibaba Cloud OSS Bucket - Public Listing Enabled
+  author: 0x_Akoko
+  severity: unknown
+  description: |
+    Alibaba Cloud Object Storage Service (OSS) bucket is publicly accessible and allows anonymous listing of objects. This misconfiguration can expose sensitive data, lead to data breaches, and result in unexpected charges on the Alibaba Cloud bill.
+  reference:
+    - https://www.alibabacloud.com/help/en/oss/user-guide/block-public-access
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/publicly-accessible-oss-bucket.html
+  metadata:
+    verified: true
+    max-request: 1
+    google-query: site:aliyuncs.com "ListBucketResult" "<Contents>"
+  tags: alibaba,cloud,bucket,misconfig,exposure,devops,cicd
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/xml")'
+          - 'contains(header, "AliyunOSS")'
+          - 'contains_all(body, "<ListBucketResult", "<Name>", "<Contents>", "<Key>")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<Name>([^<]+)</Name>'
