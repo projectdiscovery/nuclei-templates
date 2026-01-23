@@ -1,0 +1,35 @@
+id: magento-debug-log-exposure
+
+info:
+  name: Magento Debug Log - Exposure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected Magento debug.log file was publicly accessible. This file contained sensitive debugging information including full server paths, stack traces, customer activity, internal code paths, cache data, and cron job details.
+  reference:
+    - https://devdocs.magento.com/guides/v2.4/config-guide/log/log-intro.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-538
+  metadata:
+    max-request: 1
+    verified: true
+  tags: magento,exposure,logs,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/var/log/debug.log"
+
+    max-size: 500000
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "main.DEBUG", "main.CRITICAL", "main.ERROR", "main.INFO")'
+          - 'contains_any(body, "Magento\\", "/vendor/magento/", "cache_invalidate", "Cron Job")'
+          - 'contains_any(content_type, "text/x-log")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a0046304402207073fb2b455e24d90e19b10dc4ebd1d60f11ab0ccf749083c11af051f44452f602207d49a7c812a31f52771cb45ea39ef97d3a978aa6e63b68015d00398a7b87c39a:922c64590222798bb761d5b6d8e72950

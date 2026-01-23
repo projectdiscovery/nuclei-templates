@@ -1,0 +1,51 @@
+id: google-calendar-exposure
+
+info:
+  name: Google Calendar - Exposure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    Detected publicly accessible Google Calendar embedded on the target that may expose sensitive information including meeting details, attendee names, event schedules, and internal organizational data.
+  reference:
+    - https://support.google.com/calendar/answer/37083
+  metadata:
+    verified: true
+    max-request: 1
+  tags: google,calendar,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "calendar.google.com/calendar/embed"
+          - "calendar.google.com/calendar/ical"
+          - "calendar.google.com/calendar/u/0/embed"
+          - "www.googleapis.com/calendar"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "reviewable_default_visibility"
+        negative: true
+
+    extractors:
+      - type: regex
+        name: calendar-url
+        part: body
+        regex:
+          - "(https?://calendar\\.google\\.com/calendar/(?:embed|ical|u/0/embed)[^\"'\\s>]+)"
+# digest: 490a0046304402200fd482adcf685b61c31ec5e5b403e3bddb5792d5804a8733e5df212075661bfd022054416d34967a71ccfca1da8f18cad52e31c80e1bd1f67bf48388f4536c4d3bf4:922c64590222798bb761d5b6d8e72950
