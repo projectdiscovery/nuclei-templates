@@ -1,0 +1,47 @@
+id: gerrit-account-enum
+
+info:
+  name: Gerrit Code Review - Account Enumeration
+  author: DhiyaneshDk
+  severity: medium
+  description: |
+    Gerrit Code Review exposes the /accounts/ REST API endpoint which can be used to enumerate user accounts.The endpoint allows querying for accounts by username, email, or name, potentially revealing sensitive user information including account IDs, names, emails, and usernames without authentication.
+  reference:
+    - https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html
+    - https://gerrit-documentation.storage.googleapis.com/Documentation/2.11/rest-api-accounts.html
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: title:"Gerrit Code Review"
+    fofa-query: title="Gerrit Code Review"
+  tags: gerrit,enum,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/accounts/?q=a&n=10"
+      - "{{BaseURL}}/accounts/?suggest&q=a&n=10"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "_account_id"
+          - "username"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: usernames
+        part: body
+        group: 1
+        regex:
+          - '"username":\s*"([^"]+)"'
+
