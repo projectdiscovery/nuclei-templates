@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| vuln      |  6552 | dhiyaneshdk   |  1967 | http       |  9725 | info     |  4451 | file |   445 |
-| cve       |  3799 | daffainfo     |   937 | cloud      |   662 | high     |  2666 | dns  |    28 |
-| discovery |  3278 | princechaddha |   863 | file       |   445 | medium   |  2575 |      |       |
-| vkev      |  1579 | dwisiswant0   |   806 | network    |   277 | critical |  1639 |      |       |
-| wordpress |  1434 | ritikchaddha  |   726 | code       |   276 | low      |   437 |      |       |
-| panel     |  1381 | pussycat0x    |   721 | dast       |   249 | unknown  |    56 |      |       |
-| xss       |  1324 | pikpikcu      |   352 | workflows  |   206 |          |       |      |       |
-| wp-plugin |  1256 | pdteam        |   316 | javascript |   103 |          |       |      |       |
-| exposure  |  1253 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
-| rce       |   874 | 0x_akoko      |   274 | dns        |    25 |          |       |      |       |
+| vuln      |  6560 | dhiyaneshdk   |  2018 | http       | 10180 | info     |  4762 | file |   446 |
+| cve       |  3842 | daffainfo     |   938 | cloud      |   662 | high     |  2704 | dns  |    28 |
+| discovery |  3574 | princechaddha |   863 | file       |   446 | medium   |  2623 |      |       |
+| vkev      |  1601 | dwisiswant0   |   806 | code       |   277 | critical |  1650 |      |       |
+| wordpress |  1461 | ritikchaddha  |   743 | network    |   277 | low      |   484 |      |       |
+| panel     |  1390 | pussycat0x    |   740 | dast       |   249 | unknown  |    58 |      |       |
+| exposure  |  1348 | rxerium       |   530 | workflows  |   206 |          |       |      |       |
+| xss       |  1332 | pikpikcu      |   352 | javascript |   103 |          |       |      |       |
+| wp-plugin |  1281 | pdteam        |   316 | ssl        |    38 |          |       |      |       |
+| osint     |  1130 | 0x_akoko      |   315 | dns        |    25 |          |       |      |       |
