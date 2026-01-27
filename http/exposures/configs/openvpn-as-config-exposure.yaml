@@ -1,0 +1,32 @@
+id: openvpn-as-config-exposure
+
+info:
+  name: OpenVPN Access Server - Configuration Exposure
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected OpenVPN Access Server with sensitive configuration data exposed, including VPN client profiles, certificates, private keys, and session tokens, without authentication.
+  reference:
+    - https://openvpn.net/vpn-server-resources/access-server-rest-api/
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: http.title:"OpenVPN Access Server"
+    fofa-query: title="OpenVPN Access Server"
+  tags: openvpn,config,exposure,misconfig,vpn
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/rest/GetUserlogin"
+      - "{{BaseURL}}/rest/GetAutologin"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/x-openvpn-profile")'
+          - 'contains_all(body, "-----BEGIN PRIVATE KEY-----", "-----BEGIN CERTIFICATE-----", "OVPN_ACCESS_SERVER")'
+        condition: and
