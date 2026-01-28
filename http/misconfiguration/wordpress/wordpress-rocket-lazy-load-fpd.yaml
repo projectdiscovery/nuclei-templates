@@ -1,0 +1,36 @@
+id: wordpress-rocket-lazy-load-fpd
+
+info:
+  name: WordPress LazyLoad Plugin - Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress Plugin LazyLoad files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/rocket-lazy-load/
+  metadata:
+    verified: true
+    max-request: 6
+    publicwww-query: "/plugins/rocket-lazy-load"
+  tags: wp,wordpress,wp-plugin,fpd,rocket-lazy-load,misconfig
+
+http:
+  - method: GET
+    path:
+
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/Subscriber/AdminPageSubscriber.php"
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/Subscriber/LazyloadSubscriber.php"
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/ServiceProvider/AdminServiceProvider.php"
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/ServiceProvider/ImagifyNoticeServiceProvider.php"
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/ServiceProvider/LazyloadServiceProvider.php"
+      - "{{BaseURL}}/wp-content/plugins/rocket-lazy-load/src/ServiceProvider/SubscribersServiceProvider.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 500'
+          - 'contains(body, "rocket-lazy-load")'
+          - 'contains_all(body, "Fatal error", "Uncaught Error") || contains_all(body, "Warning:","failed to open stream")'
+        condition: and
