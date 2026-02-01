@@ -16,8 +16,6 @@ info:
     fofa-query: title="RustDesk API Admin"
   tags: default-login,rustdesk,remote-access
 
-flow: http(1) && http(2)
-
 http:
   - raw:
       - |
@@ -38,29 +36,6 @@ http:
       - type: dsl
         dsl:
           - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
           - 'contains_all(body, "\"code\":0", "\"message\":\"success\"", "\"token\":", "\"username\":\"admin\"")'
-        condition: and
-        internal: true
-
-    extractors:
-      - type: regex
-        name: token
-        part: body
-        regex:
-          - '"token":"([a-f0-9]+)"'
-        group: 1
-        internal: true
-
-  - raw:
-      - |
-        GET /api/admin/config/admin HTTP/1.1
-        Host: {{Hostname}}
-        Authorization: Bearer {{token}}
-        Accept: application/json
-
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains_all(body, "\"code\":0", "\"message\":\"success\"", "RustDesk API Admin")'
         condition: and
