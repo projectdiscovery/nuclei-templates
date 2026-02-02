@@ -1,0 +1,41 @@
+id: wildcard-dns-detect
+
+info:
+  name: Wildcard DNS Configuration - Detection
+  author: rxerium
+  severity: info
+  description: |
+    A wildcard DNS configuration was detected. Wildcard DNS records can resolve all subdomains to the same IP address, which may indicate a catch-all configuration.
+  reference:
+    - https://en.wikipedia.org/wiki/Wildcard_DNS_record
+    - https://developers.cloudflare.com/dns/manage-dns-records/reference/wildcard-dns-records/
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 2
+  tags: dns,wildcard,discovery
+
+dns:
+  - name: "{{randstr}}.{{FQDN}}"
+    type: A
+
+  - name: "{{randstr}}-{{randstr}}.{{FQDN}}"
+    type: A
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "IN\tA\t"
+        part: answer
+
+      - type: regex
+        regex:
+          - "IN\tA\t([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})"
+        part: answer
+
+    extractors:
+      - type: regex
+        group: 1
+        regex:
+          - "IN\tA\t([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})"
