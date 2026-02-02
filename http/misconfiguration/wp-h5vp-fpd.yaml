@@ -1,0 +1,31 @@
+id: wp-h5vp-fpd
+
+info:
+  name: WordPress H5VP Plugin - Full Path Disclosure
+  author: theamanrawat
+  severity: low
+  description: |
+    The WordPress H5VP video plugin diclosed full server paths in stack traces when processing video requests.
+  reference:
+    - https://wordpress.org/plugins/html5-video-player/
+  tags: misconfig,wordpress,plugin,h5vp,disclosure,fpd
+
+variables:
+  name: '{{randstr}}'
+
+http:
+  - raw:
+      - |
+        POST /wp-json/h5vp/v1/video HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"title":"{{name}}","type":"youtube","src":"{{name}}","user_id":"1"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500'
+          - 'contains_all(body, "Uncaught Error", "html5-video-player", "VideoController.php")'
+          - 'contains(content_type, "application/json")'
+        condition: and
