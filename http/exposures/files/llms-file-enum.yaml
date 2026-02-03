@@ -1,0 +1,44 @@
+id: llms-file-enum
+
+info:
+  name: llms.txt - Enumeration
+  author: ritikchaddha
+  severity: info
+  description: |
+    Detects the presence of a /llms.txt file on the server. This file may be used for internal documentation, configuration, or as a placeholder for third-party integrations. Enumerating such files could reveal sensitive or valuable information if misconfigured or publicly exposed.
+  metadata:
+    verified: true
+    max-requests: 1
+    shodan-query: html:"/llms.txt"
+  tags: enum,llms,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/llms.txt"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "# ", "- ")'
+          - 'contains(content_type, "text/plain")'
+        condition: and
+
+      - type: word
+        part: response
+        words:
+          - "MongoDB over HTTP on the native"
+          - "application/javascript"
+          - "application/x-javascript"
+          - "application/json"
+          - "application/xml"
+          - "text/xml"
+          - "<html"
+          - "<!doctype"
+          - "<script"
+          - "<meta"
+          - "image/"
+          - "Response xmlns"
+        negative: true
