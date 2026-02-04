@@ -1,0 +1,96 @@
+id: apache-syncope-default-login
+
+info:
+  name: Apache Syncope - Default Login
+  author: icarot
+  severity: High
+  description: |
+    Apache Syncope server enables default admin credentials. An attacker can execute unauthorized operations. This template validates the username "admin" and password "password".
+  reference:
+    - https://github.com/apache/syncope
+  classification:
+    cpe: cpe:2.3:a:apache:syncope:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    vendor: apache
+    product: syncope
+    shodan-query:
+      - http.favicon.hash:1637373344
+      - http.html:"org.apache.syncope"
+  tags: apache,syncope,default-login
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/syncope-console/login"
+    headers:
+      Cookie: "JSESSIONID=333333444444AAAA555555556666;"
+
+    extractors:
+    - type: regex
+      name: jsessionid
+      group: 1
+      part: header
+      regex:
+        - 'Set-Cookie: (?<jsessionid>JSESSIONID=\w+);'
+      internal: true
+
+    - type: regex
+      name: location
+      group: 1
+      part: header
+      regex:
+        - 'Location: .(?<location>\/login\?\d+)'
+      internal: true
+
+  - raw:
+    - |
+      GET /syncope-console{{location}} HTTP/1.1
+      Host: {{Hostname}}
+      Accept-Language: en-US,en;q=0.9
+      Upgrade-Insecure-Requests: 1
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+      Accept-Encoding: gzip, deflate, br
+      Connection: keep-alive
+
+    extractors:
+    - type: regex
+      name: loginsubmit
+      group: 1
+      part: body
+      regex:
+        - '.(?<loginsubmit>\/login\?[0-9]-[0-9].[0-9]-login-submit)'
+      internal: true
+
+  - raw:
+    - |
+      POST /syncope-console{{loginsubmit}} HTTP/1.1
+      Host: {{Hostname}}
+      Accept-Language: en-US,en;q=0.9
+      Wicket-Ajax: true
+      Wicket-Ajax-BaseURL: {{location}}
+      X-Requested-With: XMLHttpRequest
+      Accept: application/xml, text/xml, */*; q=0.01
+      Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+      Wicket-FocusedElementId: password
+      Origin: {{BaseURL}}
+      Referer: {{BaseURL}}{{location}}
+      Accept-Encoding: gzip, deflate, br
+      Connection: keep-alive
+
+      username=admin&password=password&language=0&domain=0&p%3A%3Asubmit=1
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<ajax-response><redirect><![CDATA[.]]></redirect></ajax-response>'
+          - '<ajax-response><redirect><![CDATA[../]]></redirect></ajax-response>'
+        condition: or
+
+      - type: status
+        status:
+          - 200
