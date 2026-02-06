@@ -1,0 +1,52 @@
+id: sap-readlogfile-disclosure
+
+info:
+  name: SAPControl ReadDeveloperTrace Log - Disclosure
+  author: LRVT,l4rm4nd
+  severity: medium
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP interface exposes the ReadDeveloperTrace web method without authentication.
+  reference:
+    - https://github.com/rapid7/metasploit-framework/blob/master/modules/auxiliary/scanner/sap/sap_mgmt_con_getlogfiles.rb
+    - https://itsiti.com/csmon/
+    - https://sapbasisinfo.com/blog/2017/01/20/sapcontrol-command-funtions-for-sap-hana/
+    - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362959700.html
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,sapcontrol,soap,log,disclosure
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:ReadDeveloperTrace xmlns:ns1="urn:SAPControl">
+              <filename>sapstart.log</filename>
+            </ns1:ReadDeveloperTrace>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "ReadDeveloperTraceResponse"
+          - "<lines>"
+          - "<item>"
+        condition: and
