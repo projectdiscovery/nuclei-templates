@@ -21,44 +21,43 @@ http:
     path:
       - "{{BaseURL}}"
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
-      - type: word
-        part: header
-        words:
-          - "Content-Security-Policy"
-        case-insensitive: true
-
-      - type: dsl
-        condition: or
-        dsl:
-          - "!regex('(?i)\\bscript-src\\b', header)"
-          - "!regex('(?i)\\bobject-src\\b', header)"
-          - "regex('(?i)script-src[^;]*(?:\\x27unsafe-inline\\x27|\\x27unsafe-eval\\x27|\\x27unsafe-hashes\\x27|\\*|data:|blob:)[^;]*(?:;|$)', header)"
-          - "regex('(?i)default-src[^;]*(?:\\x27unsafe-inline\\x27|\\x27unsafe-eval\\x27|\\x27unsafe-hashes\\x27|\\*|data:|blob:)[^;]*(?:;|$)', header)"
-
-    extractors:
-      - type: regex
-        part: header
-        name: script-src-directive
-        group: 1
-        regex:
-          - '(?i)(script-src[^;]+)'
-
-      - type: regex
-        part: header
-        name: default-src-directive
-        group: 1
-        regex:
-          - '(?i)(default-src[^;]+)'
-
       - type: dsl
         name: missing-script-src
         dsl:
-          - "!regex('(?i)\\bscript-src\\b', header)"
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "!contains(to_lower(header), 'script-src')"
+          - "!contains(to_lower(header), 'default-src')"
+        condition: and
 
       - type: dsl
         name: missing-object-src
         dsl:
-          - "!regex('(?i)\\bobject-src\\b', header)"
-# digest: 4a0a00473045022056c9421a7105679da346301a5b4e87b69cbd5a000fb6145b70074f8fcc2373c3022100f11c39357107aa46cb31992db264e85ecb189066de4b1c9b30c187f1a72175b9:922c64590222798bb761d5b6d8e72950
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "!contains(to_lower(header), 'object-src')"
+          - "!contains(to_lower(header), 'default-src')"
+        condition: and
+
+      - type: dsl
+        name: unsafe-script-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "regex('(?i)script-src[^;]*(unsafe-inline|unsafe-eval|unsafe-hashes|\\\\*|data:|blob:)', header)"
+        condition: and
+
+      - type: dsl
+        name: unsafe-default-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "regex('(?i)default-src[^;]*(unsafe-inline|unsafe-eval|unsafe-hashes|\\\\*|data:|blob:)', header)"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        name: csp-header
+        group: 1
+        regex:
+          - "(?i)content-security-policy:\\s*([^\\r\\n]+)"
+# digest: 4a0a004730450221009fcc843493b5e8096607886505defff37def38fc1e9cb624e694c7f30cb65862022075e68369f5755bcfba03e2ea54351a97dad1e71be3a3202a0777acd79c08a58c:922c64590222798bb761d5b6d8e72950

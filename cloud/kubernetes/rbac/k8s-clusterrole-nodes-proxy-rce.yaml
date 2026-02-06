@@ -1,0 +1,70 @@
+id: k8s-clusterrole-nodes-proxy-rce
+
+info:
+  name: ClusterRoles with Risky nodes/proxy GET Permission
+  author: princechaddha
+  severity: high
+  description: |
+    Detects Kubernetes ClusterRoles that grant GET permission on nodes/proxy resource.
+    Due to an authorization inconsistency in Kubelet, the nodes/proxy GET permission allows
+    execution of commands in any container via WebSocket connections to the Kubelet API.
+    The Kubelet authorizes based on the initial HTTP GET method of WebSocket handshake
+    rather than the actual operation (exec/run/attach) which should require CREATE permission.
+  impact: |
+    Service accounts with nodes/proxy GET permission can potentially execute commands in any
+    container if they have network access to the Kubelet API (port 10250). This bypasses
+    expected RBAC controls and audit logging.
+  remediation: |
+    Remove nodes/proxy GET permissions from ClusterRoles unless absolutely necessary.
+    Restrict network access to Kubelet port 10250 and implement network policies.
+  reference:
+    - https://grahamhelton.com/blog/nodes-proxy-rce
+  tags: cloud,devops,kubernetes,devsecops,rbac,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let role of template.items) {
+    set("role", role)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get clusterrole --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        let role = JSON.parse(template.role);
+        let riskyRules = 0;
+        if (role.rules) {
+          role.rules.forEach(rule => {
+            let apiGroups = rule.apiGroups || [];
+            let resources = rule.resources || [];
+            let verbs = rule.verbs || [];
+            let isCoreApiGroup = apiGroups.includes("") || apiGroups.includes("*");
+            let hasNodesProxy = resources.includes("nodes/proxy") || resources.includes("*");
+            let hasGetVerb = verbs.includes("get") || verbs.includes("*");
+            if (isCoreApiGroup && hasNodesProxy && hasGetVerb) {
+              riskyRules++;
+            }
+          });
+        }
+        if (riskyRules > 0) {
+          let result = (`ClusterRole '${role.metadata.name}' has ${riskyRules} rule(s) granting 'nodes/proxy' GET permission in core API group, allowing potential RCE via Kubelet.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100cf472116d86502fb62d55139553bddb302af32a62f5d97a692534391ead1659f02207a776d50650ff39e152e39cc48109ff7963ec2db0d4ad2b03100258ea77dd32d:922c64590222798bb761d5b6d8e72950
