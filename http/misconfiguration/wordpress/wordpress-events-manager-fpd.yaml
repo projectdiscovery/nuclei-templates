@@ -1,0 +1,36 @@
+id: wordpress-events-manager-fpd
+
+info:
+  name: WordPress Events Manager - Full Path Disclosure
+  author: DhiyaneshDk
+  severity: low
+  description: |
+    WordPress WP Super Cache plugin files are publicly accessible without ABSPATH protection, exposing sensitive server path information through PHP error messages when accessed directly.
+  reference:
+    - https://wordpress.org/plugins/events-manager/
+  metadata:
+    verified: true
+    max-request: 1
+    publicwww-query: "/plugins/events-manager/"
+  tags: debug,wordpress,fpd,vuln,events-manager,wp-plugin
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/events-manager/classes/em-event.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/classes/em-booking.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/classes/em-location.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/classes/em-person.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/em-functions.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/widgets/em-events.php"
+      - "{{BaseURL}}/wp-content/plugins/events-manager/admin/em-admin.php"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 500'
+          - 'contains(body, "events-manager")'
+          - 'contains_any(body, "Fatal error", "Uncaught Error:") || contains_any(body, "Warning:","failed to open stream")'
+        condition: and
