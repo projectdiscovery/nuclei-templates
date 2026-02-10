@@ -1,0 +1,50 @@
+id: sap-abapreadsyslog-disclosure
+
+info:
+  name: SAPControl ABAPReadSyslog - Disclosure
+  author: LRVT,l4rm4nd
+  severity: medium
+  description: |
+    Detected SAP systems where the SAPControl SOAP web service exposes the ABAPReadSyslog operation without authentication. ABAPReadSyslog returns the ABAP system log (equivalent to transaction SM21) via SAPControl sapstartsrv and includes fields such as client, username, transaction code, message number, free-text message and severity.
+  reference:
+    - https://my-handshake.blogspot.com/2011/03/sapcontrol-webmethods-list.html
+    - https://gist.github.com/c6da760f57e062397e52400936ca5797
+    - https://exchange.icinga.com/kai_ks/check_sap_hostctrl
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,sapcontrol,soap,log,disclosure
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:ABAPReadSyslog xmlns:ns1="urn:SAPControl"></ns1:ABAPReadSyslog>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<item>"
+          - "<Time>"
+          - "<Text>"
+          - "ABAPReadSyslogResponse"
+        condition: and
+
+      - type: status
+        status:
+          - 200

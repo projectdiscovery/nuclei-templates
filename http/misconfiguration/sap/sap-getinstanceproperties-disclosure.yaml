@@ -1,0 +1,50 @@
+id: sap-getinstanceproperties-disclosure
+
+info:
+  name: SAPControl Webmethods - Disclosure
+  author: LRVT,l4rm4nd
+  severity: medium
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP interface exposes the GetInstanceProperties method without requiring authentication.
+  reference:
+    - https://community.sap.com/t5/technology-blog-posts-by-members/securing-the-sap-instance-agent-sap-start-service/ba-p/13486679
+    - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362958690.html
+    - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362959700.html
+    - https://www.neteye-blog.com/2017/03/sap-monitoring-experiences-with-sapcontrol-and-check_sap_health/
+    - https://redrays.io/blog/extended-security-settings-for-sapstartsrv-sap-security-note-1439348/
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,sapcontrol,soap,exposure
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:GetInstanceProperties xmlns:ns1="urn:SAPControl"/>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "GetInstancePropertiesResponse"
+          - "<property>Webmethods</property>"
+        condition: and
+
+      - type: status
+        status:
+          - 200

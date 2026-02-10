@@ -1,0 +1,53 @@
+id: sap-getversion-info
+
+info:
+  name: SAPControl GetVersionInfo - Detect
+  author: LRVT,l4rm4nd
+  severity: info
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP interface exposes the GetVersionInfo web method without authentication.
+  reference:
+    - https://github.com/rapid7/metasploit-framework/blob/master/modules/auxiliary/scanner/sap/sap_mgmt_con_version.rb
+    - https://gist.github.com/c6da760f57e062397e52400936ca5797
+    - https://www.neteye-blog.com/2017/03/sap-monitoring-experiences-with-sapcontrol-and-check_sap_health/
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,sapcontrol,soap,version
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:GetVersionInfo xmlns:ns1="urn:SAPControl"></ns1:GetVersionInfo>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "GetVersionInfoResponse"
+
+      - type: word
+        part: body
+        words:
+          - "<VersionInfo>"
+          - "<Filename>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
