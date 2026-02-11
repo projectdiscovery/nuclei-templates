@@ -1,0 +1,29 @@
+id: aspnet-appsettings-exposure
+
+info:
+  name: ASP.NET Core Appsettings - Exposure
+  author: tushar
+  severity: medium
+  description:
+    Detects publicly accessible appsettings.json files in ASP.NET applications that may expose sensitive configuration data such as connection strings, API keys, and secrets.
+  metadata:
+    verified: true
+  tags: config,exposure,aspnet
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/appsettings.json"
+      - "{{BaseURL}}/appsettings.Development.json"
+      - "{{BaseURL}}/appsettings.Production.json"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "ConnectionString","Logging",)'
+          - 'contains(header,"application/json")'
+        condition: and
