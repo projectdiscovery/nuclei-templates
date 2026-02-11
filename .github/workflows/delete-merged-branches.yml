@@ -3,11 +3,17 @@ name: Delete Merged Branches
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch name to delete'
+        required: true
+        type: string
 
 jobs:
   delete-branch:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
 
     steps:
       - name: Delete merged branch
@@ -15,7 +21,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const branch = context.payload.pull_request.head.ref;
+            // Get branch name from PR event or workflow input
+            const branch = context.eventName === 'workflow_dispatch'
+              ? '${{ inputs.branch }}'
+              : context.payload.pull_request.head.ref;
+
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
