@@ -1,0 +1,58 @@
+id: mcp-inspector-detect
+
+info:
+  name: MCP Inspector Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    MCP Inspector was a debugging tool used to inspect and test MCP servers, including their resources, prompts, and tools.
+  reference:
+    - https://github.com/modelcontextprotocol/inspector
+  metadata:
+    verified: true
+    fofa-query: title="MCP Inspector"
+  tags: tech,mcp,anthropic,discovery,ai
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body,"<title>MCP Inspector")
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        internal: true
+        name: js
+        group: 1
+        part: body
+        regex:
+          - 'src="([^"]+\.js)"'
+
+  - method: GET
+    path:
+      - "{{BaseURL}}{{js}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        part: body
+        regex:
+          - 'const\s+version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)'
+# digest: 4a0a00473045022100badd3a5ad781659ce643667d38860917b037f42719ec3b421349ae3e0cd0ff57022009c4a9dc40627073477b41e44c007ec4c12f9b4c70d3562c6e89fffc7945cffc:922c64590222798bb761d5b6d8e72950

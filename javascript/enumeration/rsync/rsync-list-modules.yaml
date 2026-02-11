@@ -12,27 +12,44 @@ info:
     verified: true
     max-request: 1
     shodan-query: port:873
-  tags: network,rsync,enum,js
+  tags: network,rsync,enum,js,discovery
 
 javascript:
   - pre-condition: |
       isPortOpen(Host,Port);
     code: |
-      const c = require("nuclei/net");
-      const data = "@RSYNCD: 31.0\n\n"
-      const conn = c.Open('tcp', `${Host}:${Port}`);
-      conn.Send(data);
-      response = conn.RecvFullString(1024)
-      const rsyncRegex = /@RSYNCD: EXIT|@RSYNCD: 31.0|@RSYNCD:|@RSYNCD: 30.0/g;
-      const resultString = response.replace(rsyncRegex, "");
-      const whitespaceRegex = /[\s\t\n]+/g;
-      const finalResult = resultString.replace(whitespaceRegex, "  ");
-      if (finalResult.trim() === "") {
-      exit();
+      let m = require('nuclei/rsync');
+      let response = m.IsRsync(Host,Port);
+      if (response && response.IsRsync === true) {
+        const bannerVersion = response.Banner;
+        const c = require("nuclei/net");
+        const data = "@RSYNCD: 31.0\n\n"
+        const conn = c.Open('tcp', `${Host}:${Port}`);
+        conn.Send(data);
+        response = conn.RecvFullString(1024)
+        const rsyncRegex = /@RSYNCD: EXIT|@RSYNCD: 31.0|@RSYNCD:|@RSYNCD: 30.0/g;
+        const resultString = response.replace(rsyncRegex, "");
+        const whitespaceRegex = /[\s\t\n]+/g;
+        const finalResult = resultString.replace(whitespaceRegex, "  ");
+        let cleanResult = finalResult;
+        if (Array.isArray(cleanResult)) {
+          cleanResult = cleanResult[0];
+        }
+        cleanResult = cleanResult
+          .replace(new RegExp(`^${bannerVersion}\\s+`, 'g'), '')
+          .replace(/^\d+\.\d+\s+/, '')
+          .replace(/^\d+\s+/, '')
+          .trim();
+        if (cleanResult === "") {
+          exit();
+        }
+        else {
+          response = cleanResult;
+        }
+      } else {
+        exit();
       }
-      else{
-      finalResult
-      }
+      response
 
     args:
       Host: "{{Host}}"
@@ -48,4 +65,4 @@ javascript:
       - type: dsl
         dsl:
           - response
-# digest: 4b0a00483046022100c7c5e3f5b5bc7807f0d2cf6bba8f5f7febf209343420257c0c60ee340d3d89c2022100e8424d02a49561383785914817b27688eec82e85b4c2348782cc875aace96694:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022022dbd6c3e7ccb4608941534933675f51e25abcf6779b1edd06e367e1b6e7ea3a02210089d2ad9f18d1180dbc88ede475a5671224a4b8c0a64fa803b1bdc965f489c7fe:922c64590222798bb761d5b6d8e72950

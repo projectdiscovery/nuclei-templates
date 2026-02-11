@@ -1,0 +1,51 @@
+id: asyncapi-inventory
+
+info:
+  name: AsyncAPI Spec Inventory
+  author: hamzasahin61
+  severity: info
+  description: |
+    Detected publicly accessible AsyncAPI specification files (YAML/JSON), which might have exposed message channels, server endpoints, and security schemes.
+  reference:
+    - https://www.asyncapi.com/docs/reference/specification
+    - https://raw.githubusercontent.com/asyncapi/spec/v2.6.0/examples/streetlights-kafka.yml
+  tags: exposure,asyncapi,api,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/asyncapi"
+      - "{{BaseURL}}/asyncapi.yaml"
+      - "{{BaseURL}}/asyncapi.yml"
+      - "{{BaseURL}}/asyncapi.json"
+      - "{{BaseURL}}/api/asyncapi"
+      - "{{BaseURL}}/api/docs/asyncapi"
+      - "{{BaseURL}}/docs/asyncapi"
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - (?i)\basyncapi\s*:\s*['"]?[0-9.]+
+          - (?i)"asyncapi"\s*:\s*"([0-9.]+)"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - (?i)\basyncapi\s*:\s*['"]?([0-9.]+)
+          - (?i)"asyncapi"\s*:\s*"([0-9.]+)"
+# digest: 490a0046304402206356c676a97900b5be09ad5fa480b1fc9ed5ac80af3d6030478c691ad02e4d9e022024ba0c072769840d52b810ed2a9950f1a72a40ff2e222ee833fc47cb224d1563:922c64590222798bb761d5b6d8e72950

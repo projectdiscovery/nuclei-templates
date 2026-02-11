@@ -1,0 +1,103 @@
+id: functions-php-disclosure
+
+info:
+  name: functions.php Full Path Disclosure
+  author: pussycat0x
+  severity: low
+  description: |
+    Detected a full server file path disclosure in the WordPress functions.php file. This exposure revealed sensitive directory information that could have aided attackers in further exploitation.
+  metadata:
+    verified: true
+    fofa-query: 'body="/wp-includes/functions.php"'
+    vendor: wordpress
+    product: wordpress
+    framework: wordpress
+  tags: wordpress,functions.php,disclosure
+
+variables:
+  path: "{{rand_base(4)}}.php"
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/wp-admin/install.php"
+      - "{{BaseURL}}/feed/"
+      - "{{BaseURL}}/?feed=rss2"
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        regex:
+          - '<generator>https?:\/\/wordpress\.org.*</generator>'
+          - 'wp-login.php'
+          - 'name="generator" content="wordpress'
+          - '<link[^>]+s\d+\.wp\.com'
+          - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin
+            v([\d.]+) -'
+          - '<!--[^>]+WP-Super-Cache'
+          - '/wp-content/uploads/(.*)'
+        condition: or
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{path}}"
+      - "{{BaseURL}}/wp-content/themes/twentytwentyfour/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentytwentythree/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentytwentytwo/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentytwentyone/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentytwenty/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentynineteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentyeighteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentyseventeen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentysixteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentyfifteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentyfourteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentythirteen/functions.php"
+      - "{{BaseURL}}/wp-content/themes/astra/functions.php"
+      - "{{BaseURL}}/wp-content/themes/oceanwp/functions.php"
+      - "{{BaseURL}}/wp-content/themes/generatepress/functions.php"
+      - "{{BaseURL}}/wp-content/themes/kadence/functions.php"
+      - "{{BaseURL}}/wp-content/themes/blocksy/functions.php"
+      - "{{BaseURL}}/wp-content/themes/neve/functions.php"
+      - "{{BaseURL}}/wp-content/themes/hello-elementor/functions.php"
+      - "{{BaseURL}}/wp-content/themes/storefront/functions.php"
+      - "{{BaseURL}}/wp-content/themes/divi/functions.php"
+      - "{{BaseURL}}/wp-content/themes/avada/functions.php"
+      - "{{BaseURL}}/wp-content/themes/twentytwenty-child/functions.php"
+      - "{{BaseURL}}/wp-content/themes/astra-child/functions.php"
+      - "{{BaseURL}}/wp-content/themes/generatepress-child/functions.php"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "_load_textdomain", "Fatal error", "Warning", "Parse error", "Uncaught Error", "Call to undefined function")'
+          - 'status_code == 404 || status_code == 200'
+          - 'contains(body, "functions.php")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: disclosed_path
+        group: 1
+        regex:
+          - '/([a-z/0-9_]+)/wp-includes/functions.php'
+          - "(?:in |at |file )([/a-zA-Z0-9_\\-\\.]+/wp-content/themes/[a-zA-Z0-9_\\-]+/functions\\.php)"
+          - "([A-Z]:\\\\[a-zA-Z0-9_\\-\\\\]+\\\\wp-content\\\\themes\\\\[a-zA-Z0-9_\\-]+\\\\functions\\.php)"
+
+      - type: regex
+        name: theme_name
+        part: body
+        group: 1
+        regex:
+          - "/wp-content/themes/([a-zA-Z0-9_\\-]+)/functions\\.php"
+# digest: 4a0a0047304502203b428c79913efbd16d63d4dd336e16c446faa7e3c8011e7df6c3a805f0430c62022100e3b816c4d1dca54b99f017e7567418932c57b1c424aeee78ade1cb96c8f37298:922c64590222798bb761d5b6d8e72950

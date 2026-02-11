@@ -1,0 +1,36 @@
+id: servicenow-threads-page
+
+info:
+  name: ServiceNow Threads Page - Detection
+  author: cham423
+  severity: info
+  description: |
+    Detects exposed ServiceNow thread information pages (threads.do) that reveal cluster and system details.
+  reference:
+    - https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB0517269
+    - https://www.servicenow.com/community/servicenow-ai-platform-forum/is-there-a-way-to-restrict-access-to-the-stats-do-page/m-p/1026919
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.component:"ServiceNow"
+  tags: servicenow,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/threads.do"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(tolower(body), "servlet thread information", "java.base")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: cluster_node
+        group: 1
+        regex:
+          - 'Connected to cluster node:\s*([^\s<]+)'
+# digest: 4b0a00483046022100a34ce89238c95049546e703fd2f0312c44e91d7f7d1330e5ae9433b1550b7184022100e134fdcdc94ae295d6c9e01615d492e6c6f6af87aa3dbe5c28b2c1b2c5c5aafe:922c64590222798bb761d5b6d8e72950

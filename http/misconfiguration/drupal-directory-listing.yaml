@@ -1,0 +1,55 @@
+id: drupal-directory-listing
+
+info:
+  name: Drupal Directory Listing
+  author: ritikchaddha
+  severity: low
+  description: Detects enabled directory listing on Drupal installations that may expose sensitive files and directory structures.
+  reference:
+    - https://www.drupal.org/
+    - https://www.drupal.org/docs/security-in-drupal
+  metadata:
+    shodan-query: http.component:"Drupal"
+  tags: drupal,directory-listing,exposure
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - '!contains_all(body, "Index of /", "PARENTDIR")'
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/sites/"
+      - "{{BaseURL}}/modules/"
+      - "{{BaseURL}}/themes/"
+      - "{{BaseURL}}/profiles/"
+      - "{{BaseURL}}/includes/"
+      - "{{BaseURL}}/misc/"
+      - "{{BaseURL}}/scripts/"
+      - "{{BaseURL}}/core/"
+      - "{{BaseURL}}/vendor/"
+      - "{{BaseURL}}/libraries/"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Index of /"
+          - "Last modified"
+          - "Parent Directory"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100fc347b997160ac593a13a1d988663eaaf6a6f6f1bf95e33e934aaf4feab1cbf2022100e4336c3fefff23776ebec96a31eb643b164eb477feb1b49521d3a32f952eca6a:922c64590222798bb761d5b6d8e72950

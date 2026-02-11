@@ -1,0 +1,45 @@
+id: jdwp-detect
+
+info:
+  name: Java Debug Wire Protocol - Detect
+  author: johnk3r
+  severity: info
+  description: |
+    JDWP, short for Java Debug Wire Protocol, is a standard feature in the Java platform, designed to help developers debug live applications. It allows remote inspection of threads, memory, and execution flow without restarting the application. To enable it, developers typically start the JVM with a flag like the one below. This setup tells the JVM to listen for debugger connections on port 5005 and accept incoming connections on all interfaces.
+  reference:
+    - https://www.wiz.io/blog/exposed-jdwp-exploited-in-the-wild
+  metadata:
+    verified: true
+    shodan-query: product:"Java Debug Wire Protocol"
+  tags: network,jdwp,tcp,detect,discovery
+
+tcp:
+  - host:
+      - "{{Hostname}}"
+
+    port: 5005
+
+    inputs:
+      - data: "4a4457502d48616e647368616b65"  # JDWP-Handshake
+        type: hex
+        read: 14                             # wait for handshake reply
+
+      - data: "0000000b00000001000101"        # JDWP command: VirtualMachine.Version
+        type: hex
+        read: 1024                            # wait for VM version response
+
+    matchers:
+      - type: word
+        part: raw
+        words:
+          - "JVM version"
+          - "VM"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: jdwp-version
+        part: raw
+        regex:
+          - "JVM version ([0-9\\.]+)"
+# digest: 490a0046304402205360c6dba8ca6226c1204d935d3e36ce1f0e9a6419ba3ecc3aa7c7d07837c0470220177d8857279112bf136d2c37b4398f645b3e856b65adb88f2a78268e335b4b1f:922c64590222798bb761d5b6d8e72950

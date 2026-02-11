@@ -6,7 +6,7 @@ info:
   severity: medium
   metadata:
     max-request: 1
-  tags: xss,rxss,dast
+  tags: xss,rxss,dast,vuln
 
 variables:
   first: "{{rand_int(10000, 99999)}}"
@@ -15,28 +15,35 @@ http:
   - pre-condition:
       - type: dsl
         dsl:
+          - 'method == "POST"'
           - 'method == "GET"'
+        condition: or
 
     payloads:
       reflection:
         - "'\"><{{first}}>"
-        - "'><{{first}}>"
-        - "\"><{{first}}>"
 
     fuzzing:
+      - part: body
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{url_encode(reflection)}}"
+
       - part: query
         type: postfix
         mode: single
         fuzz:
-          - "{{reflection}}"
+          - "{{url_encode(reflection)}}"
 
       - part: path
         type: postfix
         mode: single
         fuzz:
-          - "{{reflection}}"
+          - "{{url_encode(reflection)}}"
 
     stop-at-first-match: true
+
     matchers-condition: and
     matchers:
       - type: word
@@ -45,7 +52,7 @@ http:
           - "{{reflection}}"
 
       - type: word
-        part: header
+        part: content_type
         words:
           - "text/html"
-# digest: 4a0a00473045022100b946e6f2777bc795532ee437c3d501e3a0dda1c5bb31838576a7ae90d9862af102203bce6702443ca30f8c1fd96869c24c442f0d920e8b2db0bab68413c30b9756c9:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a0047304502201f71f4b45c2da5dee0ab62eb4154bc61e208d3d7c0809dd5a80d040b0f10392c022100b9431765649131e7908db1de1bf6012edf733a1422e0508b822cdc47244e6e76:922c64590222798bb761d5b6d8e72950

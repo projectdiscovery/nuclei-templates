@@ -1,0 +1,45 @@
+id: phoenix-contact-charx-api
+
+info:
+  name: Phoenix Contact CHARX SEC-3XXX AC Charging Controller REST API - Detect
+  author: inokii
+  severity: info
+  description: |
+    Phoenix Contact CHARX SEC-3XXX AC Charging Controller REST API was detected.
+  reference:
+    - https://www.phoenixcontact.com/en-us/products/ac-charging-controllers
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Phoenix Contact - CHARX"
+  tags: phoenix-contact,charx,ics,api,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1.0/web/retained-data"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "charging_controllers", "system")'
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '"OS Release: "+ .system.info._v_.os_release'
+          - '"OS Build: "+ .system.info._v_.os_build'
+          - '"OS INFO: "+ .system.info._v_.os_name'
+          - '"Firmware Version: "+ .charging_controllers | .[].info._v_.firmware_version | capture("V(?<version>\\d+(?:\\.\\d+)*)"; "i") | .version '
+          - '"Hardware Version: "+ .charging_controllers | .[].info._v_.hardware_version | capture("V(?<version>\\d+(?:\\.\\d+)*)"; "i") | .version'
+          - '"Device Name: "+ .charging_controllers | .[].info._v_.device_name'
+          - '"Machine Arch: "+ .system.info._v_.machine_arch'
+          - '"Machine ID: "+ .system.info._v_.machine_id'
+          - '"Kernel Release: "+ .system.info._v_.kernel_release'
+          - '"Kernel Version: "+ .system.info._v_.kernel_version'
+          - '"Hardware Name: "+ .system.info._v_.hardware_name'
+          - '"Device Type: "+ .charging_controllers | .[].info._v_.device_type'
+          - '"Device UID: "+ .charging_controllers | .[].info._v_.device_uid'
+# digest: 4a0a004730450221009e1c79962c99443a38e2639bf9a5932ef0bfe8a0c9ab5e74447d8e9cb96baf7802200b490c286ab3156b0ce2cbbf6cbbd1cefb9437f6f7c03ae4e6eb7e2018d175d6:922c64590222798bb761d5b6d8e72950

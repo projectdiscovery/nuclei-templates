@@ -2,42 +2,35 @@ id: dell-idrac8-detect
 
 info:
   name: Detect Dell iDRAC8
-  author: kophjager007,mr-pmillz
+  author: kophjager007,mr-pmillz,0x_Akoko
   severity: info
   description: |
-    The Integrated Dell Remote Access Controller (iDRAC) is designed for secure local and remote server management and helps IT administrators deploy, update and monitor Dell EMC PowerEdge servers.
+    Detected The Integrated Dell Remote Access Controller, (iDRAC) is designed for secure local and remote server management and helps IT administrators deploy, update and monitor Dell EMC PowerEdge servers.
+  reference:
+    - https://www.dell.com/support/manuals/en-us/idrac7-8-with-lc-v2.40.40.40
   metadata:
-    max-request: 1
+    max-request: 2
     verified: true
-  tags: tech,dell,idrac
+  tags: tech,dell,idrac,discovery
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/data?get=prodServerGen"
-      - "{{BaseURL}}/session?aimGetProp=fwVersionFull"
 
-    stop-at-first-match: true
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "13G"
-          - '"aimGetProp" :'
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/xml")'
+          - 'contains_all(body, "<prodServerGen>", "<Manufacturer>Dell", "<isDellBranded>1</isDellBranded>", "13G")'
+        condition: and
 
     extractors:
       - type: regex
+        name: server_generation
         part: body
+        group: 1
         regex:
-          - '[0-9]{2}G'
-
-      - type: json
-        name: fw_version
-        json:
-          - ".aimGetProp.fwVersionFull"
-# digest: 4b0a00483046022100a139d24a316dac3c573dd4697d352d6f69402774e7f4d18759783e2896df758d022100800473803c97f6cc870447f21cbbc9d136949f60f06227a2fbec545724d5f21f:922c64590222798bb761d5b6d8e72950
+          - '<prodServerGen>([0-9]{2}G)</prodServerGen>'
+# digest: 4a0a0047304502206c19c989c52d3aebe11e8e5611ee69bd87633254b374fda509d07a5913c6aa5d0221009a4e192a5f23ba1348d6fc2c4cf14689f83284dd3ff196df4b336cc325a425cd:922c64590222798bb761d5b6d8e72950

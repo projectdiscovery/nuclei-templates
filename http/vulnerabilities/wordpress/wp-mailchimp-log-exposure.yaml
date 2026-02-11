@@ -1,31 +1,37 @@
 id: wp-mailchimp-log-exposure
 
 info:
-  name: WordPress Mailchimp 4 Debug Log Exposure
-  author: aashiq
+  name: WordPress MC4WP - Debug Log Exposure
+  author: aashiq,0x_Akoko
   severity: medium
-  description: Searches for Mailchimp log exposure by attempting to query the debug log endpoint on wp-content
+  description: |
+    Detected WordPress Mailchimp for WordPress (MC4WP) debug log. The log file may contain email addresses, Mailchimp API keys, and error details.
+  reference:
+    - https://wordpress.org/plugins/mailchimp-for-wp/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
   metadata:
-    max-request: 1
-  tags: logs,wordpress,exposure,mailchimp
+    verified: true
+    max-request: 5
+  tags: wordpress,wp-plugin,mailchimp,mc4wp,exposure,logs
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/wp-content/uploads/mc4wp-debug.log"
+      - "{{BaseURL}}/wp-content/uploads/mc4wp-debug-log.php"
+      - "{{BaseURL}}/wp-content/uploads/mailchimp-for-wp/debug-log.php"
+      - "{{BaseURL}}/wp-content/uploads/sites/1/mc4wp-debug-log.php"
+      - "{{BaseURL}}/wp-content/uploads/sites/1/mailchimp-for-wp/debug-log.php"
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        words:
-          - "WARNING: Form"
-
-      - type: word
-        words:
-          - 'text/plain'
-        part: header
-# digest: 490a004630440220542b1f31b8fcca2878f4310dcdf17629ffc74dd8fbaeb837b1ebb458f30d1060022018111e368c8ea083ffc9be5e987b5727064a0706a0603eaa627f6a11e009f945:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<?php exit; ?>")'
+          - 'contains_any(body, "MailChimp API", "MailChimp lists", "mailchimp.com")'
+          - 'regex("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\] (ERROR|WARNING):", body)'
+        condition: and
+# digest: 4a0a0047304502201a195d6bd3c6b506760a5f8d5c5646762f5478b1393d4e2eb45b0f75c8b095080221008a42c9ed9f271b8a1557fbc2f9d001b5498368798294f1a90e66549d4adfef06:922c64590222798bb761d5b6d8e72950

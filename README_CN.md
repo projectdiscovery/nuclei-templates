@@ -20,11 +20,11 @@ Nuclei 模板
 </p>
 
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">文档</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">文档</a> •
   <a href="#-贡献">贡献</a> •
   <a href="#-交流">交流</a> •
   <a href="#-社区">社区</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">加入Discord</a>
 </p>
 
@@ -42,24 +42,38 @@ Nuclei 模板
 
 <table>
 <tr>
-<td> 
+<td>
 
-## Nuclei模板TOP10统计信息
+### 🚨 已知被利用漏洞 (KEV) 覆盖范围
+
+Nuclei 模板为野外被积极利用的漏洞提供覆盖:
+
+| **KEV 来源** | **模板数量** | **描述** |
+|----------------|---------------|-----------------|
+| 🔴 **CISA KEV** | **454** | [CISA 已知被利用漏洞目录](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) |
+| 🟠 **VulnCheck KEV** | **1449** | [VulnCheck KEV](https://vulncheck.com/kev) - 增强的漏洞情报 |
+| 🟢 **两个来源** | **407** | 覆盖两个目录中漏洞的模板 |
+
+> 💡 **唯一 KEV 模板总数: 1496** - 使用 `nuclei -tags kev,vkev` 扫描被积极利用的漏洞
+
+---
+
+## Nuclei Templates Top 10 statistics
 
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| cve       |  2877 | dhiyaneshdk   |  1477 | http       |  8219 | info     |  3948 | file |   404 |
-| panel     |  1246 | daffainfo     |   866 | file       |   404 | high     |  2135 | dns  |    25 |
-| wordpress |  1072 | dwisiswant0   |   803 | cloud      |   370 | medium   |  1840 |      |       |
-| exposure  |  1006 | princechaddha |   570 | workflows  |   192 | critical |  1197 |      |       |
-| xss       |   987 | ritikchaddha  |   496 | code       |   157 | low      |   287 |      |       |
-| wp-plugin |   936 | pussycat0x    |   453 | network    |   138 | unknown  |    43 |      |       |
-| osint     |   807 | pikpikcu      |   353 | javascript |    65 |          |       |      |       |
-| tech      |   745 | pdteam        |   302 | ssl        |    30 |          |       |      |       |
-| lfi       |   727 | ricardomaia   |   245 | dast       |    26 |          |       |      |       |
-| misconfig |   720 | geeknik       |   231 | dns        |    22 |          |       |      |       |
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
 
-**743 directories, 9960 files**.
+**873 directories, 11997 files**.
 
 </td>
 </tr>

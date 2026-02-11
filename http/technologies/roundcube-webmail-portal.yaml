@@ -11,7 +11,7 @@ info:
     vendor: roundcube
     product: webmail
     shodan-query: http.component:"RoundCube"
-  tags: roundcube,portal,tech
+  tags: roundcube,portal,tech,discovery
 
 http:
   - method: GET
@@ -25,12 +25,25 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "Roundcube Webmail"
+      - type: regex
+        regex:
+          - '"rcversion":\d\d\d\d'
+          - '(?i)roundcube'
+        condition: and
 
       - type: status
         status:
           - 200
-# digest: 4b0a00483046022100c8f2fedaba12c7c12107d5bfb2a95fc33bfc590a04537ec9c658e556bcce41af02210095303ad8770b38ccf4f5f3126bbc6cb2301a3c1f200ee51f5c9986b2f3b0905e:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"rcversion":(\d+)'
+        internal: true
+        name: raw_version
+
+      - type: dsl
+        dsl:
+          - 'concat(to_number(substr(raw_version, 0, 1)), ".", to_number(substr(raw_version, 1, 3)), ".", to_number(substr(raw_version, 3)))'
+# digest: 490a00463044022066849961672053f7fce8937eba82b6e99e45d2e758ce5f9e3c92ba6c25d01dcc02202eab4fbb615d17d49c060378478dca13c406419b8fa02231eb1d03f0d11668f1:922c64590222798bb761d5b6d8e72950

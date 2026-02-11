@@ -2,7 +2,7 @@ id: n8n-panel
 
 info:
   name: n8n Panel - Detect
-  author: userdehghani
+  author: userdehghani,rxerium
   severity: info
   description: |
     The worlds most popular workflow automation platform for technical teams
@@ -16,7 +16,7 @@ info:
     vendor: n8n
     product: n8n
     shodan-query: http.favicon.hash:-831756631
-  tags: panel,n8n,login,detect
+  tags: panel,n8n,login,detect,discovery,ai
 
 http:
   - method: GET
@@ -34,4 +34,22 @@ http:
       - type: status
         status:
           - 200
-# digest: 4b0a00483046022100e27a7e7007b1ed4c66cd8909a543177120983ce38699ce20ae4996c02c8a30d00221008aae451cfd055e9494faad26ab28123b8d77227f01967af3421ee714ce07d91f:922c64590222798bb761d5b6d8e72950
+
+    extractors:
+      - type: regex
+        name: base64_content
+        group: 1
+        regex:
+          - '<meta name="n8n:config:sentry" content="([A-Za-z0-9+/=]+)"'
+        internal: true
+
+      - type: dsl
+        name: version
+        dsl:
+          - 'replace_regex(base64_decode(base64_content), ".*n8n@([0-9]+\\.[0-9]+\\.[0-9]+).*", "$1")'
+        internal: true
+
+      - type: dsl
+        dsl:
+          - '"n8n Version: " + version'
+# digest: 4a0a004730450220663c9c73fc566b0fc482592237b4dd9cfee47c465cf35ded5a5778bbcf86dcc5022100e7d10ad664649b71f4af0d8153a68e3c0997e560d8f1a0eeedfdf8c5f32f663c:922c64590222798bb761d5b6d8e72950
