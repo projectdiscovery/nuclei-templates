@@ -1,0 +1,40 @@
+id: sweetrice-backup-disclosure
+
+info:
+  name: SweetRice CMS 1.5.1 - Backup Disclosure
+  author: mananispiwpiw
+  severity: medium
+  description: |
+    Detected SweetRice-specific backups and generic .sql files exposed via directory listing in the SweetRice mysql_backup directory.
+  reference:
+    - https://www.exploit-db.com/exploits/40718
+  tags: sweetrice,cms,exposure,backup,misconfig
+
+http:
+  - raw:
+      - |
+        GET /inc/mysql_backup/ HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /inc/mysql_backup/{{backup_file}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(body_1, 'Index of /inc/mysql_backup')
+          - contains_any(body_2, 'INSERT INTO', 'CREATE TABLE', 'Table structure for')
+          - status_code_1 == 200 && status_code_2 == 200
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body_1
+        name: backup_file
+        internal: true
+        group: 1
+        regex:
+          - "(mysql_bakup_[0-9]{14}-[0-9.]+\\.sql)"
+          - "href=\"([a-zA-Z0-9._-]+\\.sql)\""
+# digest: 490a0046304402203c4872702a9f0de670ee90640784c418a1234c35da68f239df47c8b0cbf7af76022033be91861af5aad60968494183d8c13eabbf80bf4b38fea79cb3ca6fa5b489e8:922c64590222798bb761d5b6d8e72950
