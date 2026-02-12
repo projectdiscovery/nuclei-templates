@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-This script fetches the top 1000 popular WordPress plugins using the WordPress.org Plugins API,
+This script fetches the top 200 popular WordPress plugins using the WordPress.org Plugins API,
 extracts each plugin's name, slug, and version, then generates a nuclei template and a payload
 file with the latest version number to be used during scans that compare the detected version
 with the payload version.
@@ -24,7 +24,7 @@ class WordPressPluginsUpdate:
 
     API_URL = "https://api.wordpress.org/plugins/info/1.2/"
     PER_PAGE = 100
-    TOTAL_PLUGINS = 1000
+    TOTAL_PLUGINS = 200
 
     def __init__(self, work_dir=None):
         self.work_dir = work_dir or os.getcwd()
