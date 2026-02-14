@@ -1,0 +1,118 @@
+id: email-spoofing
+
+info:
+  name: Email Spoofing - DMARC & SPF Weaknesses
+  author: thesubtlety
+  severity: low
+  description: |
+    Detected email spoofing vulnerabilities in SPF and DMARC configurations. Focuses on clear-cut misconfigurations that definitively allow spoofing. Logic derived from MattKeeley's Spoofy tool with empirically tested combinations against Microsoft 365, Gmail, and ProtonMail. Spoofability depends on receiving mail server behavior. This template identifies configuration weaknesses, but spoofing success varies by provider. Run Spoofy for comprehensive results.
+  reference:
+    - https://github.com/MattKeeley/Spoofy
+    - https://www.adversis.io/blogs/email-spoofing-checks-dmarc-into-nuclei-scans
+    - https://bishopfox.com/blog/spoofy-email-domain-spoofing
+  tags: dns,spf,dmarc,email,spoofing
+
+dns:
+  - name: "{{FQDN}}"
+    type: TXT
+
+    matchers:
+      # No SPF record at all
+      - type: regex
+        name: low-no-spf
+        part: raw
+        regex:
+          - "(?i)v=spf1"
+        negative: true
+
+      # SPF pass-all (accepts mail from anywhere)
+      - type: regex
+        name: low-spf-pass-all
+        part: raw
+        regex:
+          - '(?i)v=spf1.*\+all'
+
+      # SPF neutral (no policy enforcement)
+      - type: regex
+        name: low-spf-neutral
+        part: raw
+        regex:
+          - '(?i)v=spf1.*\?all'
+
+      # SPF with many includes (likely >5 DNS lookups)
+      - type: regex
+        name: info-spf-many-includes
+        part: raw
+        regex:
+          - '(?i)v=spf1.*(?:include:[^\s]+[\s]){5,}'
+
+    extractors:
+      - type: regex
+        name: spf_record
+        group: 1
+        regex:
+          - '(?i)(v=spf1[^"]*)'
+
+      - type: regex
+        name: spf_all_qualifier
+        group: 1
+        regex:
+          - '(?i)v=spf1.*?([-~+?]all)'
+
+  - name: "_dmarc.{{FQDN}}"
+    type: TXT
+
+    matchers:
+      # No DMARC record at all
+      - type: regex
+        name: low-no-dmarc
+        part: raw
+        regex:
+          - "(?i)v=DMARC1"
+        negative: true
+
+      # DMARC policy set to none (no enforcement)
+      - type: regex
+        name: low-dmarc-policy-none
+        part: raw
+        regex:
+          - '(?i)v=DMARC1[^;]*;\s*p=none'
+
+      # DMARC with low percentage (partial enforcement)
+      - type: regex
+        name: low-dmarc-low-percentage
+        part: raw
+        regex:
+          - '(?i)v=DMARC1.*;pct=([1-9]|[1-9][0-9])[;\s]'
+
+      # Weak subdomain policy
+      - type: regex
+        name: low-weak-subdomain-policy
+        part: raw
+        regex:
+          - '(?i)v=DMARC1.*;p=(reject|quarantine).*;sp=none'
+
+    extractors:
+      - type: regex
+        name: dmarc_record
+        group: 1
+        regex:
+          - '(?i)(v=DMARC1[^"]*)'
+
+      - type: regex
+        name: dmarc_policy
+        group: 1
+        regex:
+          - '(?i)p=(none|quarantine|reject)'
+
+      - type: regex
+        name: dmarc_subdomain_policy
+        group: 1
+        regex:
+          - '(?i)sp=(none|quarantine|reject)'
+
+      - type: regex
+        name: dmarc_percentage
+        group: 1
+        regex:
+          - '(?i)pct=(\d+)'
