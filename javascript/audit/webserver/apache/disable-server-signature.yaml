@@ -1,0 +1,58 @@
+id: disable-server-signature
+
+info:
+  name: Disable Server Signature in Apache
+  author: pussycat0x
+  severity: medium
+  description: |
+    Disabling the server signature prevents Apache from revealing version details in error pages.
+  remediation: |
+    Set 'ServerSignature Off' in the Apache configuration file and restart the service.
+  reference:
+    - https://wiki.devsecopsguides.com/docs/checklists/apache/
+    - https://httpd.apache.org/docs/2.4/mod/core.html#serversignature
+  metadata:
+    verified: true
+  tags: audit,config,auth,apache,hardening
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const ApacheConfig = c.Run(Code)
+      ApacheConfig
+      let result = "";
+      if (ApacheConfig.includes("<Directory") && !ApacheConfig.includes("ServerSignature Off")) {
+      result += "Disable Server Signature";
+      } else {
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+      Code: cat {{path}}
+
+    payloads:
+      path:
+        - /etc/apache2/apache2.conf
+        - /etc/httpd/conf/httpd.conf
+        - /etc/httpd/conf.d
+        - /usr/local/etc/httpd/httpd.conf
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022003257f6b7fde949b083a9557796e87a313aa7c77627c9a06cd73cbfba4deea58022100940e645b12a981e41060fac47d95ceb5e87748038e983ea63c2c09e4838a1c8b:922c64590222798bb761d5b6d8e72950
