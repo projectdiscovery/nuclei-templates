@@ -24,7 +24,7 @@ code:
     pattern: "*.ps1"
     source: |
       # Get services using WMI
-      $services = Get-WmiObject -class Win32_Service -Property Name, DisplayName, PathName, StartMode | Where {$_.PathName -notlike "C:\Windows*" -and $_.PathName -notlike '"*'} | select Name,DisplayName,StartMode,PathName
+      $services = Get-WmiObject -class Win32_Service -Property Name, DisplayName, PathName, StartMode, StartName | Where {$_.PathName -notlike "C:\Windows*" -and $_.PathName -notlike '"*'} | select Name,DisplayName,StartMode,StartName,PathName
 
       foreach ($service in $services) {
         $path = $service.PathName
@@ -32,7 +32,7 @@ code:
           $acl = Get-Acl "$path"
           foreach ($access in $acl.Access) {
             if ($access.FileSystemRights -match "Write|FullControl|Modify" -and $access.IdentityReference -notmatch "SYSTEM|Administrators|LOCAL SERVICE|NETWORK SERVICE") {
-              Write-Output "$($access.IdentityReference) can $($access.FileSystemRights) the service binary at $path for service '$($service.Name)'"
+              Write-Output "$($access.IdentityReference) can $($access.FileSystemRights) the service binary at $path for service '$($service.Name)' that runs as '$($service.StartName)' on '$($service.StartMode)' mode"
             }
           }
         }
