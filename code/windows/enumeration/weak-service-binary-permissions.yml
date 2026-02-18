@@ -1,0 +1,48 @@
+id: weak-service-binary-permissions
+
+info:
+  name: Weak Service Binary Permissions
+  author: domwhewell-sage
+  severity: high
+  description: |
+    Detects weak windows service binary permissions that could allow non-administrative users to modify the service binary, potentially leading to local privilege escalation.
+  tags: windows,services,code,windows-audit
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      # Get services using WMI
+      $services = Get-WmiObject -class Win32_Service -Property Name, DisplayName, PathName, StartMode | Where {$_.PathName -notlike "C:\Windows*" -and $_.PathName -notlike '"*'} | select Name,DisplayName,StartMode,PathName
+
+      foreach ($service in $services) {
+        $path = $service.PathName
+        if (Test-Path "$path") {
+          $acl = Get-Acl "$path"
+          foreach ($access in $acl.Access) {
+            if ($access.FileSystemRights -match "Write|FullControl|Modify" -and $access.IdentityReference -notmatch "SYSTEM|Administrators|LOCAL SERVICE|NETWORK SERVICE") {
+              Write-Output "$($access.IdentityReference) can $($access.FileSystemRights) the service binary at $path for service '$($service.Name)'"
+            }
+          }
+        }
+      }
+
+    matchers:
+      - type: word
+        words:
+          - " the service binary at "
+        part: response
+    
+    extractors:
+      - type: dsl
+        dsl:
+          - response
