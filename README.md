@@ -14,11 +14,11 @@ Nuclei Templates
 </p>
       
 <p align="center">
-  <a href="https://nuclei.projectdiscovery.io/templating-guide/">Documentation</a> •
+  <a href="https://docs.projectdiscovery.io/templates/introduction">Documentation</a> •
   <a href="#-contributions">Contributions</a> •
   <a href="#-discussion">Discussion</a> •
   <a href="#-community">Community</a> •
-  <a href="https://nuclei.projectdiscovery.io/faq/templates/">FAQs</a> •
+  <a href="https://docs.projectdiscovery.io/templates/faq">FAQs</a> •
   <a href="https://discord.gg/projectdiscovery">Join Discord</a>
 </p>
 
@@ -36,24 +36,38 @@ An overview of the nuclei template project, including statistics on unique tags,
 
 <table>
 <tr>
-<td> 
+<td>
+
+### 🚨 Known Exploited Vulnerabilities (KEV) Coverage
+
+Nuclei templates provide coverage for vulnerabilities actively exploited in the wild:
+
+| **KEV Source** | **Templates** | **Description** |
+|----------------|---------------|-----------------|
+| 🔴 **CISA KEV** | **454** | [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) |
+| 🟠 **VulnCheck KEV** | **1449** | [VulnCheck KEV](https://vulncheck.com/kev) - Enhanced vulnerability intelligence |
+| 🟢 **Both Sources** | **407** | Templates covering vulnerabilities in both catalogs |
+
+> 💡 **Total unique KEV templates: 1496** - Use `nuclei -tags kev,vkev` to scan for actively exploited vulnerabilities
+
+---
 
 ## Nuclei Templates Top 10 statistics
 
-|    TAG    | COUNT |    AUTHOR     | COUNT |    DIRECTORY     | COUNT | SEVERITY | COUNT |  TYPE   | COUNT |
-|-----------|-------|---------------|-------|------------------|-------|----------|-------|---------|-------|
-| cve       |  1552 | dhiyaneshdk   |   701 | cves             |  1529 | info     |  1671 | http    |  4330 |
-| panel     |   780 | daffainfo     |   662 | exposed-panels   |   782 | high     |  1152 | file    |    78 |
-| edb       |   582 | pikpikcu      |   344 | vulnerabilities  |   520 | medium   |   837 | network |    77 |
-| exposure  |   551 | pdteam        |   274 | misconfiguration |   361 | critical |   552 | dns     |    17 |
-| xss       |   543 | geeknik       |   206 | technologies     |   322 | low      |   281 |         |       |
-| lfi       |   519 | pussycat0x    |   172 | exposures        |   308 | unknown  |    25 |         |       |
-| wordpress |   471 | dwisiswant0   |   171 | token-spray      |   236 |          |       |         |       |
-| cve2021   |   370 | 0x_akoko      |   170 | workflows        |   190 |          |       |         |       |
-| wp-plugin |   366 | ritikchaddha  |   164 | default-logins   |   116 |          |       |         |       |
-| tech      |   360 | princechaddha |   153 | file             |    78 |          |       |         |       |
+|    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
+|-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
+| vuln      |  6468 | dhiyaneshdk   |  1894 | http       |  9281 | info     |  4353 | file |   436 |
+| cve       |  3587 | daffainfo     |   905 | cloud      |   659 | high     |  2552 | dns  |    26 |
+| discovery |  3265 | princechaddha |   854 | file       |   436 | medium   |  2457 |      |       |
+| vkev      |  1394 | dwisiswant0   |   805 | network    |   259 | critical |  1555 |      |       |
+| panel     |  1365 | ritikchaddha  |   678 | code       |   251 | low      |   330 |      |       |
+| xss       |  1269 | pussycat0x    |   675 | dast       |   240 | unknown  |    54 |      |       |
+| wordpress |  1261 | pikpikcu      |   353 | workflows  |   205 |          |       |      |       |
+| exposure  |  1141 | pdteam        |   314 | javascript |    92 |          |       |      |       |
+| wp-plugin |  1103 | pdresearch    |   275 | ssl        |    38 |          |       |      |       |
+| osint     |   848 | iamnoooob     |   263 | dns        |    23 |          |       |      |       |
 
-**335 directories, 5229 files**.
+**873 directories, 11997 files**.
 
 </td>
 </tr>

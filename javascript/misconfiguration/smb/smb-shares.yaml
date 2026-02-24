@@ -1,0 +1,58 @@
+id: smb-shares
+
+info:
+  name: SMB Shares - Enumeration
+  author: pussycat0x
+  severity: low
+  description: |
+    Attempts to list shares using the srvsvc.NetShareEnumAll MSRPC function and retrieve more information about them using srvsvc.NetShareGetInfo. If access to those functions is denied, a list of common share names are checked.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-enum-shares.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:445
+    product: dionaea
+    vendor: dionaea
+  tags: js,network,smb,enum,auth,vuln
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = m.SMBClient();
+      var response = c.ListShares(Host, Port, User, Pass);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - ' '
+        - 'admin'
+        - 'administrator'
+        - 'guest'
+      passwords:
+        - ' '
+        - 'admin'
+        - 'password'
+        - 'guest'
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'response != "[]"'
+          - 'success == true'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100e9e4a5c9835473be4c6e40c8da0fbe8c522ba1428691ce44c63fcad761c78f9b0221009a535574356fac2f5cc6bb75c01c9ad92e5c854c1589bade769044fd875fd70f:922c64590222798bb761d5b6d8e72950

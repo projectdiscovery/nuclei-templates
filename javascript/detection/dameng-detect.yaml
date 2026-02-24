@@ -1,0 +1,41 @@
+id: dameng-detect
+
+info:
+  name: Dameng Database - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    The Dameng (DMDB) Protocol Enumerator is a lightweight network reconnaissance tool designed to identify and fingerprint Dameng Database (DM/DM7/DM8) servers using their native wire-protocol.
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: protocol="dameng"
+  tags: network,dameng,detection,protocol
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      const c = require("nuclei/net");
+      const cmd = "00000000c8005100000000000000000000000099000000000000000001020000000000000000000000000000000000000000000000000000000000000000000008000000382e312e312e34390040000000068149bbe004a62fb45552831704c802d4d802b4579cb045b3c6100880725ececf148a7c9205047caccadfef5ff264460d11092a3b483bf9d24382dea1dc43e7"
+      packet.WriteString(cmd)
+      let conn = c.Open('tcp', `${Host}:${Port}`);
+      conn.SendHex(cmd);
+      const result = conn.RecvFullString()
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: 5236
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: regex
+        regex:
+          - (\d+\.\d+\.\d+\.\d+)
+# digest: 490a00463044022034a2c3e7c073df92244a63a7d197f1c6e7c7ef3264432c228f4090a82a45a73f0220743a3451fbc039dabfe972a85fff2435f103b43f3abd871f6685f66d5ec015c7:922c64590222798bb761d5b6d8e72950

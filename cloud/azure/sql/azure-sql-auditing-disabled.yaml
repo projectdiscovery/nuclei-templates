@@ -1,0 +1,56 @@
+id: azure-sql-auditing-disabled
+info:
+  name: Azure SQL Server Auditing Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "Auditing" feature is enabled within your Microsoft Azure SQL server configuration settings in order to monitor your SQL databases for security, compliance, and troubleshooting purposes. Microsoft Azure allows an SQL server to be created as a service. Enabling auditing at the server level ensures that all existing and newly created databases on that SQL server are audited.
+  impact: |
+    Failing to enable auditing for SQL servers can compromise security and compliance by missing critical monitoring on database activities.
+  remediation: |
+    Enable the "Auditing" feature in Azure SQL server settings to ensure comprehensive monitoring and compliance across all databases.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-sql/database/auditing-overview
+  tags: cloud,devops,azure,microsoft,sql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.ServerName);
+    set("resourceGroup", ServerData.ResourceGroupName);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql server list --query '[*].{"ServerName":name,"ResourceGroupName":resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql server audit-policy show --name "$name" --resource-group "$resourceGroup" --query '{"AuditState":state}' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Disabled"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have auditing enabled"'
+# digest: 4b0a0048304602210093b615990fddbb4a6e6f31a32819c3ca2f76aa5b45cadc0af55f3275c8bbd1480221008ac56666456c1e82d2a4aa22a8903b5f9b69f17ae7fbbe22e7507d4ae3dd1199:922c64590222798bb761d5b6d8e72950

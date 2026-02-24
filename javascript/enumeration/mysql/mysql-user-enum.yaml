@@ -1,0 +1,57 @@
+id: mysql-user-enum
+
+info:
+  name: MySQL - User Enumeration
+  author: pussycat0x
+  severity: high
+  description: |
+    Attempts to list all users on a MySQL server.
+  reference:
+    - https://nmap.org/nsedoc/scripts/mysql-users.html
+  metadata:
+    verified: true
+    max-request: 16
+    shodan-query: "port:3306"
+  tags: js,mysql,network,enum,discovery
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      let m = require('nuclei/mysql');
+      let c = m.MySQLClient();
+      let response = c.ExecuteQuery(Host,Port,User,Pass,Query);
+      Export(response);
+
+    args:
+      Host: "{{Host}}"
+      Port: "3306"
+      Query: "SELECT DISTINCT user FROM mysql.user;"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    payloads:
+      usernames:
+        - root
+        - admin
+        - mysql
+        - test
+      passwords:
+        - root
+        - admin
+        - mysql
+        - test
+    attack: clusterbomb
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: json
+        part: response
+        json:
+          - '.Rows[].user'
+# digest: 4a0a00473045022100c6007ccdb2caeee64dd1a47b386d8b30acf9066d1db249ddaf03d55118e00c7102200b41460832d38f1b45c25135d68973521495b5b5c1a74ab4d1560e888e0c15cc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,74 @@
+id: gcp-func-default-svc-acc
+
+info:
+  name: Google Cloud Functions Using Default Service Account
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud functions are configured to use user-managed service accounts instead of the default service account managed by Google Cloud in order to follow the Principle of Least Privilege (POLP) and enhance the security posture of your functions.
+  impact: |
+    Using default service accounts can grant more permissions than required to your functions, violating the Principle of Least Privilege and increasing security risks.
+  remediation: |
+    Configure your Google Cloud functions to use user-managed service accounts that have only the permissions necessary for the function to operate.
+  reference:
+    - https://cloud.google.com/functions/docs/securing/managing-access-iam
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="value(serviceConfig.serviceAccountEmail)"
+
+    matchers:
+      - type: word
+        words:
+          - '@appspot.gserviceaccount.com'
+          - '@developer.gserviceaccount.com'
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Default Service Account used in function: " + functionName + " in " + projectId + " project"'
+# digest: 4a0a0047304502207fc6a953b87cb78ff44c19096ded2962ce2b34b8f899da6e3c028c21ed62e080022100abe481b531bf4d078a50657118954d54ced272d83f731725c10a25d24b946975:922c64590222798bb761d5b6d8e72950

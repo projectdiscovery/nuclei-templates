@@ -1,0 +1,57 @@
+id: azure-apim-user-assigned-id-not-used
+info:
+  name: Azure API Management User-Assigned Managed Identity Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure API Management service instances are using user-assigned managed identities for fine-grained control over access permissions. This helps in maintaining proper security practices by providing specific identities for applications.
+  impact: |
+    Using system-assigned managed identities may result in broader than necessary permissions, potentially leading to security risks if the identity is compromised.
+  remediation: |
+    Configure user-assigned managed identities for your Azure API Management service instances to ensure only the necessary permissions are granted to each service.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/api-management/how-to-use-managed-service-identity
+  tags: cloud,devops,azure,microsoft,apim,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let APIMData of iterate(template.apimList)) {
+    APIMData = JSON.parse(APIMData);
+    set("name", APIMData.name);
+    set("resourceGroup", APIMData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: apimList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim show --name "$name" --resource-group "$resourceGroup" --query 'identity.type'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'SystemAssigned'
+          - 'none'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not use user-assigned managed identities"'
+# digest: 4b0a0048304602210081f31d7b995d98f950e5320e7cbcf587dd4462bfa4e8826855b421003894d4f402210094f5a1883da5313eb45d1cc05fa301c84ff71200e19d1a98669b591e9516fe1d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: azure-nsg-rdp-unrestricted
+info:
+  name: Unrestricted RDP Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted access on TCP port 3389, used for Remote Desktop Protocol (RDP), to prevent unauthorized remote access.
+  impact: |
+    Unrestricted RDP access can lead to unauthorized access and control over virtual machines, potentially resulting in data theft or malicious activities.
+  remediation: |
+    Configure NSG rules to restrict RDP access to only trusted IP addresses. Consider using VPNs or other secure methods for remote access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='3389')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP port 3389"'
+# digest: 490a00463044022005d9461f8e1b29e05becc55ffa4de18a2844fdc190505869da9208e8658e454c02201bb6f62d98e4d0d1b590759adecf0d23fc8a28a397627c05518a7d9934534c42:922c64590222798bb761d5b6d8e72950

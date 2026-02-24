@@ -1,0 +1,103 @@
+id: gcloud-unrestricted-oracle-db-access
+
+info:
+  name: Check for Unrestricted Oracle Database Access
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Google Cloud VPC network firewall rules do not allow unrestricted access (0.0.0.0/0 on TCP port 1521). Restrict Oracle Database traffic to trusted IP addresses or IP ranges to reduce the attack surface and enhance security.
+  impact: |
+    Allowing unrestricted access to TCP port 1521 exposes Oracle Database servers to potential brute-force or unauthorized access attacks.
+  remediation: |
+    Update your VPC firewall rules to allow Oracle Database traffic only from trusted IP addresses or ranges.
+  reference:
+    - https://cloud.google.com/vpc/docs/firewalls
+  tags: cloud,devops,gcp,gcloud,vpc,firewall,security,oracle,db,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let networkName of iterate(template.networks)){
+      set("networkName", networkName)
+      code(3)
+      set("firewallRules", template.firewallRules)
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute firewall-rules list --filter network=$networkName --sort-by priority --format="json(name,disabled,direction,sourceRanges,allowed[].ports)"
+
+    extractors:
+      - type: json
+        name: firewallRules
+        internal: true
+        json:
+          - '.[]'
+
+javascript:
+  - code: |
+      let firewallRules = template.firewallRules;
+      if (typeof firewallRules === "string") {
+        firewallRules = JSON.parse(firewallRules);
+      }
+
+      let insecureRules = [];
+      for (let rule of firewallRules) {
+        if (
+          rule.disabled === false &&
+          rule.direction === "INGRESS" &&
+          Array.isArray(rule.sourceRanges) && rule.sourceRanges.includes("0.0.0.0/0") &&
+          Array.isArray(rule.allowed) &&
+          rule.allowed.some(allowed =>
+            Array.isArray(allowed.ports) &&
+            allowed.ports.includes("1521")
+          )
+        ) {
+          insecureRules.push(rule.name);
+        }
+      }
+
+      if (insecureRules.length > 0) {
+        Export(`The firewall rules in network ${template.networkName} of project ${template.projectId} allow unrestricted Oracle Database access: ${insecureRules.join(", ")}`);
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100ae11e569dd92aa0889b8d4067959d5c3a69d0e3f4755cee246a4a2fb82a64ede022100c0d0c0a9effc3e139636144ad1f425d1d77554a4c9a0050fb914cb03707fbc3a:922c64590222798bb761d5b6d8e72950

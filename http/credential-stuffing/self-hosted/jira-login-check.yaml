@@ -1,0 +1,47 @@
+id: jira-login-check
+
+info:
+  name: Jira Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid login on self hosted Jira instance.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 1
+    shodan-query: http.component:"Atlassian Jira"
+    fofa-query: product="JIRA"
+  tags: creds-stuffing,login-check,self-hosted,jira,vuln
+variables:
+  username: "{{username}}"
+  password: "{{password}}"
+
+http:
+  - raw:
+      - |
+        POST /rest/gadget/1.0/login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        Connection: close
+
+        os_username={{username}}&os_password={{password}}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"loginSucceeded":true'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502202a36fa879dcdb9cc19362c0e60afa58dda466fdbbf434b5125606ec3bc234272022100a0e3c0ce41dcbebb839567ba2a45769f365d578417650fd1014de8110ceef738:922c64590222798bb761d5b6d8e72950

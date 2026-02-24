@@ -1,0 +1,103 @@
+id: gcloud-unrestricted-mysql-access
+
+info:
+  name: Check for Unrestricted MySQL Database Access
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Google Cloud VPC network firewall rules do not allow unrestricted access (0.0.0.0/0 on TCP port 3306). Restrict MySQL traffic to trusted IP addresses or IP ranges to reduce the attack surface and enhance security.
+  impact: |
+    Allowing unrestricted access to TCP port 3306 exposes MySQL database servers to potential brute-force or unauthorized access attacks.
+  remediation: |
+    Update your VPC firewall rules to allow MySQL traffic only from trusted IP addresses or ranges.
+  reference:
+    - https://cloud.google.com/vpc/docs/firewalls
+  tags: cloud,devops,gcp,gcloud,vpc,firewall,security,mysql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let networkName of iterate(template.networks)){
+      set("networkName", networkName)
+      code(3)
+      set("firewallRules", template.firewallRules)
+      javascript(1)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: networks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute firewall-rules list --filter network=$networkName --sort-by priority --format="json(name,disabled,direction,sourceRanges,allowed[].ports)"
+
+    extractors:
+      - type: json
+        name: firewallRules
+        internal: true
+        json:
+          - '.[]'
+
+javascript:
+  - code: |
+      let firewallRules = template.firewallRules;
+      if (typeof firewallRules === "string") {
+        firewallRules = JSON.parse(firewallRules);
+      }
+
+      let insecureRules = [];
+      for (let rule of firewallRules) {
+        if (
+          rule.disabled === false &&
+          rule.direction === "INGRESS" &&
+          Array.isArray(rule.sourceRanges) && rule.sourceRanges.includes("0.0.0.0/0") &&
+          Array.isArray(rule.allowed) &&
+          rule.allowed.some(allowed =>
+            Array.isArray(allowed.ports) &&
+            allowed.ports.includes("3306")
+          )
+        ) {
+          insecureRules.push(rule.name);
+        }
+      }
+
+      if (insecureRules.length > 0) {
+        Export(`The firewall rules in network ${template.networkName} of project ${template.projectId} allow unrestricted MySQL access: ${insecureRules.join(", ")}`);
+      }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 490a00463044022044f64c46483952cfe5484f70c196f33d7a1f0084ee0ea4e169f9f400ad8de1f202200df0ab360649ed6609e8df258ac4f3527d088ae68e16dea93cbfbe48fe7896f6:922c64590222798bb761d5b6d8e72950

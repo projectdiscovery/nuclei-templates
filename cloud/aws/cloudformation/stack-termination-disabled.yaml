@@ -1,0 +1,59 @@
+id: stack-termination-disabled
+
+info:
+  name: CloudFormation Termination Protection - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that Termination Protection safety feature is enabled for your Amazon CloudFormation stacks in order to protect them from being accidentally deleted.
+  impact: |
+    Disabled termination protection increases the risk of accidental deletion of critical CloudFormation stacks.
+  remediation: |
+    Enable termination protection for critical CloudFormation stacks by setting TerminationProtection to true in the stack settings, preventing accidental deletions.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFormation/stack-termination-protection.html
+    - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-protect-stacks.html
+  tags: cloud,devops,aws,amazon,cloudformation,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let StackSummaries of iterate(template.stacksummaries)){
+    set("stacksummary", StackSummaries)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudformation list-stacks --region $region --stack-status-filter CREATE_COMPLETE --output json --query 'StackSummaries[*].StackName'
+
+    extractors:
+      - type: json
+        name: stacksummaries
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws cloudformation describe-stacks --region $region --stack-name $stacksummary --query 'Stacks[*].EnableTerminationProtection' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFormation Termination Protection " + stacksummary + " is Disabled"'
+# digest: 4b0a004830460221008a2e3415182e202a607c9e30aa6cbac326038dd23f1209a7c133a713cc21b2730221009f32c2fb6c20a62e81094b8fbe1ad127c36237c9c6c813edf579d3c7ddc2983c:922c64590222798bb761d5b6d8e72950

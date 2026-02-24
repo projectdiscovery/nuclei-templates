@@ -1,0 +1,81 @@
+id: gcloud-gke-shielded-nodes-disabled
+
+info:
+  name: GKE Cluster Not Using Shielded Nodes
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Kubernetes Engine (GKE) clusters are configured to use Shielded GKE Nodes to protect against rootkits and bootkits. Shielded GKE Nodes provide verifiable node identity and integrity through the use of Secure Boot, virtual trusted platform module (vTPM)-enabled measured boot, and integrity monitoring.
+  impact: |
+    Without Shielded GKE Nodes, cluster nodes are more vulnerable to boot-level and kernel-level malware, rootkits, and other advanced threats that can compromise node integrity.
+  remediation: |
+    Enable Shielded GKE Nodes for your clusters using the 'gcloud container clusters update' command with --enable-shielded-nodes flag or through the console. For new clusters, use --enable-shielded-nodes flag during cluster creation.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/use-shielded-cluster-nodes.html
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/shielded-gke-nodes
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,shielded-nodes,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(shieldedNodes.enabled)"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "shieldedNodes"
+
+      - type: word
+        words:
+          - '"enabled": true'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have Shielded Nodes enabled"'
+# digest: 4b0a00483046022100b416836a56fbba80089a75e0f43936078213377af87fda46e14361eac9a15de002210090d4be65c1cdc8775a7688cfee11f71506396b1087ff9acb3a714d5aa74866ed:922c64590222798bb761d5b6d8e72950

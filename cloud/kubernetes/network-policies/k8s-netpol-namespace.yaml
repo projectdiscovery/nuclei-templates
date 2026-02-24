@@ -1,0 +1,48 @@
+id: k8s-netpol-namespace
+
+info:
+  name: Network Policies specify namespace
+  author: princechaddha
+  severity: medium
+  description: Checks for Kubernetes Network Policies that do not specify a namespace, which can lead to potential misconfigurations and security issues.
+  impact: |
+    Omitting the namespace in Network Policies can cause the policies to apply incorrectly, potentially exposing Kubernetes resources to unauthorized access. This poses a security risk by not isolating network traffic properly within the cluster.
+  remediation: |
+    Ensure that all Network Policies explicitly define a namespace to maintain proper network isolation and security boundaries.
+  reference:
+    - https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  tags: cloud,devops,kubernetes,devsecops,k8s,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let policy of template.items) {
+    set("policy", policy)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get netpol --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[] | {policy: .metadata.name, namespace: .metadata.namespace}'
+
+javascript:
+  - code: |
+        let policyData = JSON.parse(template.policy);
+        if (!policyData.namespace) {
+          let result = (`Network Policy '${policyData.policy}' does not specify a namespace.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a00473045022100c0203a10be2836dd6c5844ac06dbaecf898af5e6f32df09cf5a6032b415228840220759ec592dedbcd5f096e9524206633f430d84f66b0eeeee874967ca882b0fc31:922c64590222798bb761d5b6d8e72950

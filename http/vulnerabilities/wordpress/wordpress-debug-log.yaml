@@ -1,0 +1,41 @@
+id: wordpress-debug-log
+
+info:
+  name: WordPress Debug Log - Exposure
+  author: geraldino2,dwisiswant0,philippedelteil,FLX
+  severity: low
+  description: Exposed Wordpress debug log.
+  metadata:
+    max-request: 4
+  tags: wp,wordpress,log,exposure,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{paths}}/debug.log"
+
+    payloads:
+      paths:
+        - 'wp-content'
+        - 'wordpress'
+        - 'wp'
+        - 'blog'
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 3
+    max-size: 5000
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("[[0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3}] PHP", body)'
+          - 'contains_any(body, "PHP Warning:", "PHP Notice:", "Undefined array", "Undefined variable")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - to_string(content_length)+ " bytes"
+# digest: 4a0a00473045022069dce4335e03798de78ad04b77cb88b556f6d97dfefd4c5971e9e32657e2e373022100f882e6d7b607d53f86adc830ae0148f8d5579a772a82401a43621ea8be45a0c2:922c64590222798bb761d5b6d8e72950

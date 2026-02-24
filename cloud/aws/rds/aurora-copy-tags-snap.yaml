@@ -1,0 +1,57 @@
+id: aurora-copy-tags-snap
+info:
+  name: Aurora Snapshot Tag Copy
+  author: princechaddha
+  severity: high
+  description: |
+    Ensures Amazon Aurora clusters have Copy Tags to Snapshots feature enabled to automatically copy tags from clusters to snapshots.
+  impact: |
+    Without this, tags identifying ownership, purpose, or other critical information aren't propagated to snapshots, complicating management and compliance.
+  remediation: |
+    Enable Copy Tags to Snapshots for Aurora clusters via the AWS Management Console or modify the DB cluster to include this feature using AWS CLI.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_Tagging.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,aurora,rds,aws-cloud-config
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let clustername of iterate(template.clusters)){
+    set("cluster", clustername)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-clusters --region $region --output json --query 'DBClusters[?Engine==`aurora-mysql` || Engine==`aurora-postgresql`].DBClusterIdentifier | []'
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-clusters --region $region --db-cluster-identifier $cluster --query 'DBClusters[*].CopyTagsToSnapshot'
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Copy Tags To Snapshot is not enable for cluster " + cluster'
+# digest: 4b0a00483046022100adcc2aca4be6c79b741ac1016426e4cbe87627e6ad1136e2400b8d55995b5db5022100a8eaf1d0398572eda3b00ef1ccf2a83d897c90884d2e1cffb90954e03903cc93:922c64590222798bb761d5b6d8e72950

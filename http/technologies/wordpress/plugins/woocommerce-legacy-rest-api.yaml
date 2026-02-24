@@ -1,0 +1,49 @@
+id: wordpress-woocommerce-legacy-rest-api
+
+info:
+  name: WooCommerce Legacy REST API Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/woocommerce-legacy-rest-api/
+  metadata:
+    plugin_namespace: woocommerce-legacy-rest-api
+    wpscan: https://wpscan.com/plugin/woocommerce-legacy-rest-api
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/woocommerce-legacy-rest-api/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/woocommerce-legacy-rest-api.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a0048304602210081b59c66a12930550c402874c38c04948212eb2b02bd9ee2fffe6cbf9e5a4e26022100f68060fd4f0dc5ec2c1ea0efd65447d89633107101a704bb5f630e081870a694:922c64590222798bb761d5b6d8e72950

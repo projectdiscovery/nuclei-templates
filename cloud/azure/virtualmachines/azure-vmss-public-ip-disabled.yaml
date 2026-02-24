@@ -1,0 +1,56 @@
+id: azure-vmss-public-ip-disabled
+info:
+  name: Azure VMSS Public IP Not Assigned
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that instances running within your Microsoft Azure virtual machine scale set (VMSS) are not configured with public IP addresses. Assigning public IP addresses to individual VMSS instances increases attack surface, making it harder to manage and secure the environment.
+  impact: |
+    Instances with public IP addresses are more exposed to potential external attacks, increasing the security risks for the Azure environment.
+  remediation: |
+    Configure your VMSS to disable public IP address assignments to its instances. Ensure that all networking is handled through internal networking resources.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-networking
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let InstanceData of iterate(template.vmssList)) {
+    InstanceData = JSON.parse(InstanceData);
+    set("name", InstanceData.name);
+    set("resourceGroup", InstanceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmssList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list-instance-public-ips --name "$name" --resource-group "$resourceGroup" --query '[*].ipAddress'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has no public IP addresses assigned."'
+# digest: 490a0046304402206b96b21dc27c7dfe5eebf58b511350ae8d9c6d7c1091eb664c2526f3a2d3a999022057a9332686f5a9e5c27ad8493b860e866229e0d43c0898498e8912a9fd9ababc:922c64590222798bb761d5b6d8e72950

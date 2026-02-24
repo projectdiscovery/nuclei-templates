@@ -1,0 +1,75 @@
+id: gcloud-vm-preemptible-enabled
+
+info:
+  name: VM Instance Preemptibility Not Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Platform (GCP) projects are not using preemptible virtual machine instances for production and business-critical applications. A preemptible virtual machine (VM) is an instance that you can create and run at a much lower price than normal instances but it can be terminated sooner due to system demands.
+  impact: |
+    Preemptible VM instances can be terminated at any time to free up resources for standard VM instances, making them unsuitable for production workloads and potentially causing service disruptions.
+  remediation: |
+    Re-create your VM instances with preemptibility disabled. Note that you cannot disable preemptibility on an existing instance - you must create a new instance without the preemptible option.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/disable-preemptibility.html
+    - https://cloud.google.com/compute/docs/instances/preemptible
+  tags: cloud,devops,gcp,gcloud,compute,reliability,preemptible,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(scheduling.preemptible)"
+
+    matchers:
+      - type: word
+        words:
+          - "true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " is configured as preemptible and may not be suitable for production workloads"'
+# digest: 4b0a00483046022100c0513a93a39675e710105757b88a285b42cea4b10d0de21abba6615d3f335d1f022100c1672d6cacacd58532d77684125237e31f787befb25d5fa7d0d1d77a4cb7339d:922c64590222798bb761d5b6d8e72950

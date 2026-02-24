@@ -1,0 +1,75 @@
+id: gcloud-vm-ip-forwarding-enabled
+
+info:
+  name: IP Forwarding Not Disabled for VM Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that IP Forwarding feature is not enabled at the Google Compute Engine instance level for security and compliance reasons, as instances with IP Forwarding enabled act as routers/packet forwarders. Because IP forwarding is rarely required, except when the virtual machine (VM) is used as a network virtual appliance, each Google Cloud VM instance should be reviewed to decide whether IP forwarding is really needed.
+  impact: |
+    With IP forwarding enabled, VM instances can act as routers and receive traffic addressed to other destinations, potentially creating security risks if not properly configured and monitored.
+  remediation: |
+    Re-create your VM instances with IP forwarding disabled. Note that you cannot disable IP forwarding on an existing instance - you must create a new instance without the IP forwarding option.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/disable-ip-forwarding.html
+    - https://cloud.google.com/vpc/docs/using-routes
+  tags: cloud,devops,gcp,gcloud,compute,security,networking,ip-forwarding,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(canIpForward)"
+
+    matchers:
+      - type: word
+        words:
+          - '"canIpForward": true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " has IP forwarding enabled"'
+# digest: 4a0a00473045022018552b2c39c97674f9ea1def9c2e218bd5a11e55f6b92a483d9dfc474375f2890221008434dd3e48c93627232b1acdefbd19b76d8f6e853fd79250e487b0d5064ea362:922c64590222798bb761d5b6d8e72950

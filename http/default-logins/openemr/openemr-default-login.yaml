@@ -1,0 +1,51 @@
+id: openemr-default-login
+
+info:
+  name: OpenEMR - Default Admin Discovery
+  author: Geekby
+  severity: high
+  description: OpenEMR default admin credentials were discovered.
+  reference:
+    - https://github.com/openemr/openemr-devops/tree/master/docker/openemr/6.1.0/#openemr-official-docker-image
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:open-emr:openemr:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    shodan-query: http.html:"OpenEMR"
+    fofa-query: app="OpenEMR"
+    product: openemr
+    vendor: open-emr
+  tags: openemr,default-login,vuln
+
+http:
+  - raw:
+      - |
+        POST /interface/main/main_screen.php?auth=login&site=default HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        new_login_session_management=1&languageChoice=1&authUser={{user}}&clearPass={{pass}}&languageChoice=10
+
+    attack: pitchfork
+    payloads:
+      user:
+        - admin
+      pass:
+        - pass
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "main.php?token_main="
+          - "OpenEMR"
+        condition: and
+
+      - type: status
+        status:
+          - 302
+# digest: 490a00463044022017c24a8f5f79a18eed9c4af68dda830388763419f6abb9e6d136a341ec43e7be02205f52560de896a51371eceefeb75b95be466d5ca529816a679f2ce1916a606d83:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: azure-postgres-log-checkpoints-disabled
+info:
+  name: Azure PostgreSQL Flexible Server log_checkpoints Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "log_checkpoints" server parameter is enabled for all PostgreSQL flexible database servers available within your Microsoft Azure cloud account. The "log_checkpoints" parameter allows checkpoints and restart points to be logged in the Azure PostgreSQL server log.
+  impact: |
+    Disabling "log_checkpoints" can prevent logging of critical events such as checkpoints and restarts, which are important for troubleshooting and ensuring the reliability of the database service.
+  remediation: |
+    Enable the "log_checkpoints" parameter for your Azure PostgreSQL flexible servers to ensure critical operational events are logged.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-server-parameters
+  tags: cloud,devops,azure,microsoft,postgres,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.name);
+    set("resourceGroup", ServerData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres flexible-server list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres flexible-server parameter show --server-name "$name" --resource-group "$resourceGroup" --name log_checkpoints --query 'value'
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has log_checkpoints disabled"'
+# digest: 4b0a00483046022100ff51c0676036fed0241fc1148d1c7e11b1589a29d0954cacfd480a70110e4d29022100f84dedcbcfeadfeb67790ad852b71858152d915f3fdd2a3e512fe1fa74c88aa9:922c64590222798bb761d5b6d8e72950

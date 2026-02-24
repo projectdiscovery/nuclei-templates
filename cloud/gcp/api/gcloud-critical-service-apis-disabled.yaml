@@ -1,0 +1,54 @@
+id: gcloud-critical-service-apis-disabled
+
+info:
+  name: Critical Service APIs Not Enabled
+  author: princechaddha
+  severity: critical
+  description: |
+    Ensure that critical service APIs are enabled for your GCP projects to gain access to essential functionalities and services provided by Google Cloud Platform (GCP), manage your project resources efficiently, enhance the security of your cloud environment, and track your usage and billing. The critical service APIs include, but are not limited to, Identity and Access Management (IAM) API, Compute Engine API, Cloud Storage, Google Cloud Pub/Sub API, Cloud Key Management Service (KMS) API, and Cloud Logging API.
+  impact: |
+    Disabling critical service APIs can prevent the proper management and security of GCP resources, potentially leading to service disruptions or compromised security.
+  remediation: |
+    Enable the necessary service APIs via the GCP Console or the gcloud command-line tool for each project where they are found to be disabled.
+  reference:
+    - https://cloud.google.com/service-usage/docs/enable-disable
+  tags: cloud,devops,gcp,gcloud,api-management,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud services list --project $projectId --enabled --filter=name:iam.googleapis.com --format="json" | jq '.'
+
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Critical API not enabled: IAM API in Project: " + projectId'
+# digest: 4a0a004730450221008a33e85deb35cb7e682c6875bd120be993c3a552deaa4cd2831b5531d9efe550022013a2421e83defe9ea15eb71ffe62daaabb0dca6395e27b06449c3c81f7a43abe:922c64590222798bb761d5b6d8e72950

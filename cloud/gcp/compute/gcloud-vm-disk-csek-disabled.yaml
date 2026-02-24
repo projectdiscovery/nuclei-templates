@@ -1,0 +1,91 @@
+id: gcloud-vm-disk-csek-disabled
+
+info:
+  name: VM Disk Encryption with Customer-Supplied Keys Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the disks attached to your production Google Compute Engine instances are encrypted with Customer-Supplied Encryption Keys (CSEKs) in order to have complete control over the data-at-rest encryption and decryption process, and meet strict compliance requirements.
+  impact: |
+    Without CSEK encryption, you have limited control over the encryption process of your VM disk data, which may not meet strict compliance requirements for sensitive data protection.
+  remediation: |
+    Enable Customer-Supplied Encryption Keys (CSEKs) for your VM disks by providing a valid encryption key during disk creation or instance launch. The key must be a 256-bit string encoded in RFC 4648 base64 format.
+  reference:
+    - https://cloud.google.com/compute/docs/disks/customer-supplied-encryption
+  tags: cloud,devops,gcp,gcloud,compute,encryption,csek,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+      for(let disk of iterate(template.disks)){
+        set("diskName", disk)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json[](name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(disks[].deviceName)"
+
+    extractors:
+      - type: json
+        name: disks
+        internal: true
+        json:
+          - '.disks[].deviceName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute disks describe $diskName --zone $zone --project $projectId --format="json(diskEncryptionKey)" | jq '.sha256 // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Disk " + diskName + " attached to instance " + instanceName + " in zone " + zone + " of project " + projectId + " has Customer-Supplied Encryption Keys (CSEKs) disabled"'
+# digest: 4a0a00473045022100b1774214ffe546cbc3f15390fb79136ed54e41c9f30c6e8c63f4fc4dc28ec9c702205e495b43e7ab875bdc3bcb28febb063991bdb3f692b4d1f73644a87c946aec5b:922c64590222798bb761d5b6d8e72950

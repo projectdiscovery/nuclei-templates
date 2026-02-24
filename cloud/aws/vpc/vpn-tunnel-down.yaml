@@ -1,0 +1,57 @@
+id: vpn-tunnel-down
+info:
+  name: AWS VPN Tunnel Down
+  author: princechaddha
+  severity: high
+  description: |
+    Ensures AWS VPN tunnels are in an UP state, facilitating uninterrupted network traffic through the Virtual Private Network.
+  impact: |
+    If a VPN tunnel is DOWN, it could disrupt network connectivity and access to resources in your VPC, impacting business operations.
+  remediation: |
+    Monitor VPN tunnel status via the AWS Management Console or CLI. If a tunnel is DOWN, troubleshoot according to AWS documentation and ensure redundancy by configuring multiple tunnels.
+  reference:
+    - https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNConnections.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,vpn,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let VpnConnectionIds of iterate(template.vpnconnactions)){
+    set("vpnid", VpnConnectionIds)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-vpn-connections --region $region --filters "Name=state,Values=available" --query 'VpnConnections[*].VpnConnectionId' --output json
+
+    extractors:
+      - type: json
+        name: vpnconnactions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-vpn-connections --region $region --vpn-connection-ids $vpnid --query 'VpnConnections[*].VgwTelemetry[*].Status[]'
+
+    matchers:
+      - type: word
+        words:
+          - "DOWN"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vpnid + " VPN tunnel is down"'
+# digest: 490a0046304402205e94efebf0467b3bfb7a7aecf9fdad9b2951ebcee018f10d63cb117c4a91617902202504d982be5f870195bf3c5a8ace855d2c26eca25ea383c1a22d9e5fc63784cf:922c64590222798bb761d5b6d8e72950

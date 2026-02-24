@@ -1,0 +1,56 @@
+id: gcloud-vertexai-secure-boot
+
+info:
+  name: Secure Boot Not Enabled for Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Secure Boot security feature is enabled for your Vertex AI notebook instances in order to protect them against malware and rootkits. Secure Boot helps ensure that the system runs only authentic software by verifying the digital signature of all boot components, and halts the boot process if the signature verification fails. Secure Boot is disabled by default because of the third-party unsigned kernel modules that can't be loaded when the feature is enabled.
+  impact: |
+    Without Secure Boot enabled, notebook instances may be vulnerable to boot-level and kernel-level malware, including rootkits. This could allow unauthorized or malicious code to execute during the boot process.
+  remediation: |
+    Enable Secure Boot for Vertex AI notebook instances using the 'gcloud workbench instances update' command with --shielded-secure-boot flag set to true. Note that instances must be stopped before updating this configuration.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/enable-secure-boot.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,security,secure-boot,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.shieldedInstanceConfig.enableSecureBoot)"
+
+    matchers:
+      - type: word
+        words:
+          - "shieldedInstanceConfig: {}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances without Secure Boot enabled"'
+# digest: 4b0a0048304602210082e89eb94bc0d7ab464530e9adc73c736fa580813fb37e4c135b491da8598f13022100e361b6ec75ffff463f72c5ab9af82594fa3bac07639c3147ede1fa6c2374cb6c:922c64590222798bb761d5b6d8e72950

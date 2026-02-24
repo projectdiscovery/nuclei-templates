@@ -1,0 +1,59 @@
+id: sqs-deadletter-disabled
+
+info:
+  name: SQS Dead Letter Queue - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Identify any publicly accessible Amazon SQS queues and update their permissions in order to protect against unauthorized users.
+  impact: |
+    Disabling SQS Dead Letter Queue can lead to message loss or processing failures going unnoticed, impacting application reliability and error handling.
+  remediation: |
+    Enable and configure a Dead Letter Queue (DLQ) to capture and isolate undelivered messages for troubleshooting and retries.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/SQS/dead-letter-queue.html
+    - https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+  tags: cloud,devops,aws,amazon,sqs,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let QueueUrls of iterate(template.queueurls)){
+    set("queueurl", QueueUrls)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws sqs list-queues --region $region --query 'QueueUrls[*]' --output json
+
+    extractors:
+      - type: json
+        name: queueurls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws sqs get-queue-attributes --region $region --queue-url $queueurl --attribute-names RedrivePolicy --query 'Attributes.RedrivePolicy' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SQS Dead Letter Queue " + queueurl + " is Disabled"'
+# digest: 490a0046304402207e07ef8457577d7d2b255b53699794d8c141cebf5eac23f99bb82c02ad3b6f7202201f457f4174ef3e3fb16a99ba6046aaceca0c2cfd648e64e6e952238f4453fbd6:922c64590222798bb761d5b6d8e72950

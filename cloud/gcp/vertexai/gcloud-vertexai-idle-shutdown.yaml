@@ -1,0 +1,56 @@
+id: gcloud-vertexai-idle-shutdown
+
+info:
+  name: Idle Shutdown Not Enabled for Vertex AI Notebooks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Idle Shutdown feature is enabled for your Google Cloud Vertex AI notebook instances to optimize costs. Inactive notebook instances continue to incur charges, and Idle Shutdown automatically stops them after a period of inactivity (i.e., no running commands or UI connections), reducing unneeded spending. Vertex AI stops charging for CPUs/GPUs once the notebook instance is shut down.
+  impact: |
+    Without idle shutdown enabled, inactive notebook instances continue to run and incur unnecessary charges for compute resources. While disk storage charges may still apply, enabling idle shutdown helps optimize costs by automatically stopping unused instances.
+  remediation: |
+    Enable idle shutdown for Vertex AI notebook instances using the 'gcloud workbench instances update' command with metadata parameter 'idle-timeout-seconds'. Example: --metadata 'idle-timeout-seconds=10800' for 3-hour timeout.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VertexAI/enable-idle-shutdown.html
+    - https://cloud.google.com/vertex-ai/docs/workbench/user-managed/manage-instance
+  tags: cloud,devops,gcp,gcloud,vertexai,cost-optimization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud workbench instances describe tm-vertex-ai-notebook-instance --location=us-central1-a --project=$projectId --format="yaml(gceSetup.metadata.idle-timeout-seconds)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has Vertex AI notebook instances without idle shutdown enabled"'
+# digest: 4b0a004830460221009b5693adc0278a31a62b47630197300145b36b00d470c8893ef5d2f19430607e0221008385cf51bd01f9652405b3344f8326549d4abcc49d876d73eb136a14818582d0:922c64590222798bb761d5b6d8e72950

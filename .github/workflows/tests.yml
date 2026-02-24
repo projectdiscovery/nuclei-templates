@@ -1,0 +1,83 @@
+name: 🛠 Tests
+
+on:
+  pull_request:
+    paths:
+      - '**.yaml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: karancode/yamllint-github-action@v2.1.1
+        with:
+          yamllint_config_filepath: .yamllint
+          yamllint_strict: false
+          yamllint_comment: true
+
+  validate:
+    needs: lint
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: projectdiscovery/actions/setup/nuclei@v1
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+      - name: Validate templates
+        run: nuclei -duc -validate -lfa -ud $GITHUB_WORKSPACE -w workflows/ -et .github/ -ept code -et helpers/payloads/
+
+  weak-matcher-checks:
+    needs: lint
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    permissions:
+      issues: write
+      pull-requests: write
+    env:
+      HONEYPOT_URL: 'http://honey.scanme.sh'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            templates: &templates
+              - '**.yml'
+              - '**.yaml'
+              - '!.github/**'
+            changed:
+              - added|modified: *templates
+      - uses: projectdiscovery/actions/setup/nuclei@v1
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+      - run: bash weak-matcher-checks.sh
+        id: check
+        if: steps.filter.outputs.changed == 'true'
+        env:
+          CHANGED_FILES: '${{ steps.filter.outputs.changed_files }}'
+        working-directory: '.github/scripts/'
+      - uses: actions/github-script@v8
+        if: steps.check.outputs.weak == 'true'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: process.env.COMMENT
+            })
+
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['false-positive']
+            })
+        env:
+          COMMENT: '${{ steps.check.outputs.comment }}'
+          GITHUB_TOKEN: '${{ secrets.PDTEAMX_CLASSIC_PAT }}'

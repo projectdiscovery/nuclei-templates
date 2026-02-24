@@ -1,0 +1,59 @@
+id: azure-vm-delete-unalerted
+info:
+  name: Azure Virtual Machine Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that a Microsoft Azure activity log alert is fired whenever a "Delete Virtual Machine" event is triggered within your cloud account. An Azure activity log alert fires each time the action event that matches the condition specified in the alert configuration is triggered. The alert condition that this conformity rule searches for is `Whenever the Administrative Activity Log "Delete Virtual Machine (Microsoft.Compute/virtualMachines)" has "any" Event level, with "any" Status and Event initiated by "any"`.
+  impact: |
+    Not having alerts for "Delete Virtual Machine" events can allow unauthorized deletions to go unnoticed, posing significant risks to operational continuity and data integrity.
+  remediation: |
+    Configure activity log alerts to fire on "Delete Virtual Machine" events by setting the alert condition to "Microsoft.Compute/virtualMachines/delete" and ensure that notifications are managed by an attached action group.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,virtual-machines,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Compute/virtualMachines/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Virtual Machine events"'
+# digest: 4b0a00483046022100c98471571023cd89a76cbb25a87df7f400e07e89448385240e7db1f45acaaf1b022100cc6c11fec30faeb1cfc2e61f93f4d46cac0f74a3ac0902f8227dcc158ce8fa8c:922c64590222798bb761d5b6d8e72950

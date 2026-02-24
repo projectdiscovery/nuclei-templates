@@ -1,0 +1,72 @@
+id: gcloud-func-pubsub-dlt-missing
+
+info:
+  name: Configure Dead Lettering for Pub/Sub-Triggered Functions
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure that Google Cloud functions triggered by Pub/Sub have a Dead-Letter Topic (DLT) configured to handle undeliverable messages. To achieve this, configure your Pub/Sub subscriptions with a maximum number of delivery attempts. If a message cannot be delivered, it will be sent to the designated Dead-Letter Topic (DLT).
+  impact: |
+    Not having a Dead-Letter Topic for Pub/Sub-triggered functions can result in lost messages and unhandled failures, affecting the reliability of your application.
+  remediation: |
+    Configure a Dead-Letter Topic for each Pub/Sub-triggered function by setting up the necessary Pub/Sub subscription settings.
+  reference:
+    - https://cloud.google.com/functions/docs/calling/pubsub#retry
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name, region)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="json(eventTrigger.pubsubTopic)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Missing Dead Letter Topic for function: " + functionName + " in Project: " + projectId'
+# digest: 4a0a004730450220413fa19c6137c829d6f051961cdbf60971ca8b29c0a50244d60abd051dc20a1a022100ba1ad384103c418a748417d271f5e4cc1d236779ed5599770e04e08915dc0e3d:922c64590222798bb761d5b6d8e72950

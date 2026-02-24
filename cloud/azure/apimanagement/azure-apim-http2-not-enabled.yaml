@@ -1,0 +1,56 @@
+id: azure-apim-http2-not-enabled
+info:
+  name: Azure API Management HTTP/2 Support Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure API Management API gateways are configured to use HTTP/2 to increase API performance on the client-side. HTTP/2 is designed to reduce the impact of latency and connection load on servers by using features like full request and response multiplexing, minimizing protocol overhead, and supporting request prioritization and server push.
+  impact: |
+    Not enabling HTTP/2 in Azure API Management gateways can result in less efficient communication, increased latency, and higher load on the API gateways, which can degrade the performance of the API services.
+  remediation: |
+    Enable HTTP/2 support in Azure API Management gateways by setting the 'Microsoft.WindowsAzure.ApiManagement.Gateway.Protocols.Server.Http2' property to 'true'.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-http2
+  tags: cloud,devops,azure,microsoft,api-management,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let APIData of iterate(template.apiList)) {
+    APIData = JSON.parse(APIData);
+    set("name", APIData.name);
+    set("resourceGroup", APIData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: apiList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim show --name "$name" --resource-group "$resourceGroup" --output json --query 'customProperties'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"Microsoft.WindowsAzure.ApiManagement.Gateway.Protocols.Server.Http2": "False"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in resource group " + resourceGroup + " does not have HTTP/2 enabled"'
+# digest: 490a0046304402202ee8364e9be5af2359e9272bf0b0a70c80e3b3aa6eff62f0a6c49f15d4e6d356022070a0c58f10300ec555388397a869afa2b68f89e635d2447626d3f1cc4c230baa:922c64590222798bb761d5b6d8e72950

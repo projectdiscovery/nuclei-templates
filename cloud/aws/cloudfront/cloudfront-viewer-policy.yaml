@@ -1,0 +1,61 @@
+id: cloudfront-viewer-policy
+
+info:
+  name: CloudFront Viewer Protocol Policy
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that the communication between your Amazon CloudFront distribution and its viewers is encrypted using HTTPS in order to secure the delivery of your web content.
+  impact: |
+    Failing to enforce HTTPS for viewer connections in CloudFront can expose web content to interception and manipulation, compromising the security and integrity of sensitive data transmitted between users and the distribution
+  remediation: |
+    Configure your Amazon CloudFront distribution's viewer protocol policy to either redirect HTTP requests to HTTPS or require HTTPS connections exclusively, ensuring secure delivery of web content and protecting against potential data breaches.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/viewer-protocol-policy.html
+    - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution-config --id $distribution --query 'DistributionConfig.CacheBehaviors.Items[*].ViewerProtocolPolicy' --output json --region $region
+
+    matchers:
+      - type: word
+        words:
+          - '"allow-all"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFront Viewer Policy " + distribution + " allows all"'
+# digest: 490a004630440220768d2a4c15a0516365ef4fe8d25f47e5c0f96c483617c859a77548cfe800ff5202204ab9615b2800dec6a7b7118656bad06d1f33ec1a43040081e0fc53d622215b36:922c64590222798bb761d5b6d8e72950

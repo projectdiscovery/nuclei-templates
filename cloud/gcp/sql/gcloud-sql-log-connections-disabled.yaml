@@ -1,0 +1,72 @@
+id: gcloud-sql-log-connections-disabled
+
+info:
+  name: Log Connections Disabled for PostgreSQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "log_connections" database flag is enabled for your Google Cloud PostgreSQL database instances. The "log_connections" flag causes each attempted connection to the database instance to be logged, including successful client authentication requests. This flag helps with monitoring and auditing database access. Only PostgreSQL database administrators can change this parameter at session start, and it cannot be changed after the session starts.
+  impact: |
+    If "log_connections" is not enabled, you may lose critical information about database connections, impacting monitoring and security auditing capabilities.
+  remediation: |
+    Enable the "log_connections" database flag for your PostgreSQL instances in Google Cloud. This can be done by updating the instance settings and applying the change.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/configure-database-flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --format="json(settings.databaseFlags)" | jq '.[] | select(.name=="log_connections") | .value'
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Log Connections flag is disabled for PostgreSQL instance " + sqlInstance + " in project: " + projectId'
+# digest: 4b0a0048304602210098225a47fca34612b19b9cfe7699abd9bb62d6292510e790bd3bcf464f223a200221008c9489a0d0ee6feda8bc7517eec86ae3b94fafc42b815f6d6d558ce56ba3acce:922c64590222798bb761d5b6d8e72950

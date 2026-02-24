@@ -1,0 +1,49 @@
+id: k8s-scheduler-bind-address
+
+info:
+  name: Ensure kube-scheduler --bind-address is set to localhost
+  author: songyaeji
+  severity: high
+  description: |
+    Ensure kube-scheduler is bound to localhost (127.0.0.1 or ::1). If --bind-address is missing or set to
+    0.0.0.0 (::), the scheduler API may be reachable from all network interfaces, increasing exposure of the
+    control-plane component.
+  impact: |
+    If the kube-scheduler listens on all interfaces, an attacker with network access may be able to interact
+    with the scheduler API, causing potential information leakage or enabling further attacks against the cluster.
+  remediation: |
+    Set --bind-address=127.0.0.1 (or ::1) in the kube-scheduler startup arguments. For example, edit
+    /etc/kubernetes/manifests/kube-scheduler.yaml and add the argument to the command section.
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: cloud,devops,kubernetes,devsecops,kube-scheduler,bind-address,hardening,k8s,k8s-cluster-security
+
+variables:
+  component: "kube-scheduler"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-scheduler -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-scheduler'
+
+      - type: word
+        words:
+          - "--bind-address=127.0.0.1"
+          - "--bind-address=::1"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-scheduler configuration is missing --bind-address or set to unsafe value (expected: 127.0.0.1 or ::1)"'
+# digest: 490a00463044022006a49804407d0d9b937760383c56604a16a549d8c45cb57b0ee1f8868b9e80c002204a7fb3c2364c55968c93e78151ce7a23232c10360bd6ffdc4ccd3c0c8aede23e:922c64590222798bb761d5b6d8e72950

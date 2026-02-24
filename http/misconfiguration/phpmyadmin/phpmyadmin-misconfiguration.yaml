@@ -1,0 +1,72 @@
+id: phpmyadmin-misconfiguration
+
+info:
+  name: phpmyadmin Data Exposure
+  author: pussycat0x
+  severity: medium
+  description: |
+    An unauthenticated instance of phpmyadmin was discovered, which could be leveraged to access sensitive information.
+  reference:
+    - https://www.exploit-db.com/ghdb/6997
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 2
+    vendor: phpmyadmin
+    product: phpmyadmin
+    shodan-query:
+      - "http.title:phpMyAdmin"
+      - http.title:"phpmyadmin"
+      - http.component:"phpmyadmin"
+      - cpe:"cpe:2.3:a:phpmyadmin:phpmyadmin"
+    fofa-query:
+      - body="pma_servername" && body="4.8.4"
+      - title="phpmyadmin"
+  tags: phpmyadmin,misconfig,edb,vuln
+
+
+flow: http(1) || http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/phpmyadmin/index.php?db=information_schema"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - regex("var\\s+db\\s*=\\s*\'information_schema\'",body)
+          - regex("var\\s+opendb_url\\s*=\\s*\'db_structure\\.php\'",body)
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "name=\\\"login_form\\\"")'
+          - 'contains(body, "id=\\\"input_username\\\"")'
+        condition: and
+        negative: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/phpMyAdmin/index.php?db=information_schema"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - regex("var\\s+db\\s*=\\s*\'information_schema\'",body)
+          - regex("var\\s+opendb_url\\s*=\\s*\'db_structure\\.php\'",body)
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body, "name=\\\"login_form\\\"")'
+          - 'contains(body, "id=\\\"input_username\\\"")'
+        condition: and
+        negative: true
+# digest: 4b0a00483046022100f1b53a63b45f6e0473ce88215881b49f1f273298342c6024cc23126a476790020221009cec4671a15d248a4d9ec7028761b38a8c23336b9d7e23a170d27b62fbef56bd:922c64590222798bb761d5b6d8e72950

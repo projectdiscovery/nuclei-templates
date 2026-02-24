@@ -1,0 +1,89 @@
+id: gcloud-bigquery-cmk-not-enabled
+
+info:
+  name: BigQuery Datasets Not Encrypted with Customer-Managed Keys
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the tables created for your Google Cloud BigQuery datasets are encrypted with Customer-Managed Keys (CMKs) to have more granular control over the data encryption/decryption process. Using CMKs allows you to create, rotate, manage, and destroy your own encryption keys using Google Cloud Key Management Service (Cloud KMS).
+  impact: |
+    If BigQuery dataset tables are not encrypted using CMKs, it limits the control over data encryption and decryption, increasing the risk of unauthorized data access.
+  remediation: |
+    Configure BigQuery dataset tables to use Customer-Managed Keys (CMKs) for encryption. This can be done in the dataset settings where you specify the encryption key managed in Google Cloud KMS.
+  reference:
+    - https://cloud.google.com/bigquery/docs/encryption-customer-managed-keys
+  tags: cloud,devops,gcp,gcloud,bigquery,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let dataset of iterate(template.datasets)){
+      set("datasetId", dataset)
+      code(3)
+      for(let table of iterate(template.tables)){
+        set("tableName", table)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq ls --format=prettyjson --project_id $projectId
+
+    extractors:
+      - type: json
+        name: datasets
+        internal: true
+        json:
+          - '.[].datasetReference.datasetId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq ls --format=prettyjson --project_id $projectId --dataset_id $datasetId
+
+    extractors:
+      - type: json
+        name: tables
+        internal: true
+        json:
+          - '.[].tableId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq show --format=prettyjson $projectId:$datasetId.$tableName | jq '.encryptionConfiguration.encryptionType'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Table Not Encrypted with CMK: " + tableName + " in Dataset: " + datasetId + " of Project: " + projectId'
+# digest: 4a0a00473045022100d0aae04454fade0847368986e22e385a6cb6eb1103e6c80d2e46201c7272760e0220564730acd22e8d0e07db2ade095020b69593279d3a9e5ad5b9648251b4544499:922c64590222798bb761d5b6d8e72950

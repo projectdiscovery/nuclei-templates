@@ -1,0 +1,76 @@
+id: sse-cmk-disabled
+
+info:
+  name: Server-Side Encryption with Customer Managed Key - Disabled
+  author: ritikchaddha
+  severity: high
+  description: |
+    Ensure that Server-Side Encryption (SSE) is using customer-managed keys (CMKs) instead of service-managed keys to protect your OSS data at rest. SSE with customer-managed keys (also known as Bring Your Own Key - BYOK) enables you to have full control over the encryption and decryption process and meet strict compliance requirements.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/enable-sse-with-customer-managed-key.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ecs
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let BucketName of iterate(template.bucketname)) {
+    set("bucket", BucketName)
+    code(2)
+    for (let KMSMasterKeyID of iterate(template.KmsID)) {
+      set("KmsID", KMSMasterKeyID)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil ls -s --region $region
+
+    extractors:
+      - type: regex
+        name: bucketname
+        internal: true
+        regex:
+          - 'oss://([a-zA-Z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      ossutil bucket-encryption --method get $bucket --RegionId $region
+
+    extractors:
+      - type: regex
+        name: KmsID
+        internal: true
+        regex:
+          - 'KMSMasterKeyID: ([a-z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun kms DescribeKey --KeyId $KmsID --RegionId $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'Creator": "Rds'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'KmsID + " SSE with customer-managed keys Disable"'
+# digest: 4b0a00483046022100b066e8817becee38cb2b4857e6b84c939bb4cc9db6dae5efa90543d3c1becd57022100ecf71b3ad8d9d15f7eecc8f24441926de5d67b184ca58119e77fb12add36bfe2:922c64590222798bb761d5b6d8e72950

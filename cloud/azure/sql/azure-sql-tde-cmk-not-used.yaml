@@ -1,0 +1,55 @@
+id: azure-sql-tde-cmk-not-used
+info:
+  name: Azure SQL TDE Protector Not Using BYOK
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure SQL server's Transparent Data Encryption protector (i.e. TDE master key) is encrypted with BYOK (Bring Your Own Key), also known as Customer-Managed Key (CMK), in order to protect your SQL databases with a key from your own Azure key vault. Using service-managed keys instead of BYOK can reduce control over encryption keys and security compliance.
+  impact: |
+    Not using BYOK for TDE can limit control over data encryption and potentially fail to meet compliance requirements that mandate encryption key management.
+  remediation: |
+    Configure the Transparent Data Encryption (TDE) feature of your Azure SQL server to use a Customer-Managed Key (CMK) from your own Azure Key Vault.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-sql/database/transparent-data-encryption-byok-azure-sql-configure
+  tags: cloud,devops,azure,microsoft,sql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("id", ServerData.id);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql server list --query '[*].{"id":id}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql server tde-key show --ids "$id" --query 'serverKeyType'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"ServiceManaged"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " is not using a Customer-Managed Key (CMK)"'
+# digest: 490a004630440220628f9296d6de147072cc589c87907330b971c786b11d075298670042c915d7e9022024fb2b5b38ab3921a7ab63446a31ce02134339258c35287280d08480d247928c:922c64590222798bb761d5b6d8e72950

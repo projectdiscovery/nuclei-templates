@@ -1,0 +1,56 @@
+id: azure-aks-cni-not-configured
+info:
+  name: Azure AKS Not Using CNI Mode
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Azure Kubernetes Service (AKS) clusters are configured to use the Azure Container Networking Interface (CNI) mode instead of the default Kubenet networking mode to enhance the segregation of resources and controls in an enterprise environment.
+  impact: |
+    Using the default Kubenet networking mode instead of Azure CNI can lead to less efficient resource control and segregation, which might pose a risk to enterprise environments.
+  remediation: |
+    Configure AKS clusters to use Azure CNI by setting the networkProfile.networkPlugin to 'azure' during AKS cluster setup or update the existing AKS clusters to use Azure CNI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let clusterData of iterate(template.clusterList)) {
+    clusterData = JSON.parse(clusterData);
+    set("name", clusterData.name);
+    set("resourceGroup", clusterData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'networkProfile.networkPlugin'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "kubenet"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is using Kubenet instead of Azure CNI"'
+# digest: 4b0a00483046022100976ed26282af3bb3df2a13dd5709bfd2267d1ebaf17ac7e2effef69408e3e175022100d76978276f284fcd0e6f56c0baba82816f7dd847a9cdbd4f708a782c686f90ab:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: gitlab-personal-token
+
+info:
+  name: GitLab Personal Access Token
+  author: DhiyaneshDK
+  severity: high
+  reference:
+    - https://github.com/praetorian-inc/noseyparker/blob/main/crates/noseyparker/data/default/builtin/rules/gitlab.yml
+    - https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html
+  metadata:
+    verified: true
+    max-request: 1
+  tags: gitlab,token,exposure,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: regex
+        part: body
+        name: token
+        regex:
+          - '\b(glpat-[0-9a-zA-Z_-]{20})(?:\b|$)'
+        internal: true
+
+  - raw:
+      - |
+        @Host: https://gitlab.com:443
+        GET /api/v4/personal_access_tokens HTTP/1.1
+        Host: gitlab.com
+        PRIVATE-TOKEN: {{token}}
+
+    disable-path-automerge: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"id":'
+          - '"created_at":'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - token
+# digest: 4a0a00473045022009ba30b7e88f4415f1a0fb07f365b298505242e247b5d14ba5f6b9137e5a42e602210097dc28ee6d2d448332f12f3774d3efefd44a26dea56b5ae4911a0a2bf7ffcf9c:922c64590222798bb761d5b6d8e72950

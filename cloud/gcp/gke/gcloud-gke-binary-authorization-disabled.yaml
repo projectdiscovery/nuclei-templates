@@ -1,0 +1,78 @@
+id: gcloud-gke-binary-authorization-disabled
+
+info:
+  name: GKE Clusters Without Binary Authorization Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Binary Authorization is enabled for your Google Kubernetes Engine (GKE) clusters to enforce container image security policies. Binary Authorization enhances security by ensuring only trusted container images can be deployed, reducing the risk of deploying vulnerable or unauthorized software.
+  impact: |
+    Without Binary Authorization enabled, there is no policy enforcement to prevent the deployment of untrusted or unauthorized container images, increasing the risk of deploying vulnerable or malicious software.
+  remediation: |
+    Enable Binary Authorization for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --zone=ZONE --binauthz-evaluation-mode=project-singleton-policy-enforce
+  reference:
+    - https://cloud.google.com/binary-authorization/docs/overview
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-binary-authorization.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,container,authorization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(binaryAuthorization.evaluationMode)"
+
+    matchers:
+      - type: word
+        words:
+          - '"evaluationMode": "DISABLED"'
+          - "null"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have Binary Authorization enabled"'
+# digest: 4a0a0047304502207c0b2033ab71b019e749d4b57ba39a48f60d68d15487aef9f5eca8f2c096090a022100f121d847779291dcd5ed5e1bce1e5812aa0ad849c8447ca6d0c7b4ca18a90fe0:922c64590222798bb761d5b6d8e72950

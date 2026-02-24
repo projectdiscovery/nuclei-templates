@@ -1,0 +1,59 @@
+id: azure-security-policy-update-unalerted
+info:
+  name: Azure Update Security Policy Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is used to detect "Update Security Policy" events within your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the required alert condition is 'Whenever the Security Activity Log "Update security policy (Microsoft.Security/policies)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Without proper alert rules configured for monitoring "Update Security Policy" events, unauthorized or unanticipated policy changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Update Security Policy" events by setting the alert condition to "Microsoft.Security/policies/write" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,security,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Security/policies/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Update Security Policy events"'
+# digest: 4a0a0047304502207c789aba4d4ba1e85c5c83d88d5abe78a52eb3517ecbb337007aeddaacad75fb022100bdbcb9e2f3d35ce6d870d1a602c5c690366c1f6905e38a7bb2e248873483ea53:922c64590222798bb761d5b6d8e72950

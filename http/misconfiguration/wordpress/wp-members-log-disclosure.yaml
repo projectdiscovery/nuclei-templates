@@ -1,0 +1,46 @@
+id: wp-members-log-disclosure
+
+info:
+  name: WordPress Members Plugin - Debug/Error Log Disclosure
+  author: ritikchaddha
+  severity: low
+  description: |
+    The WordPress Members plugin exposes error/debug log files that may contain sensitive information.
+  reference:
+    - https://wordpress.org/plugins/members/
+    - https://pentest-tools.com/vulnerabilities-exploits/wordpress-members-membership-and-user-role-editor-plugin-error-log-disclosure_28354
+  metadata:
+    max-request: 1
+    vendor: wordpress
+    product: members
+    framework: wordpress
+    fofa-query: body="/wp-content/plugins/members"
+  tags: wordpress,wp-plugin,members,exposure,logs
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "/members"
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/debug.log"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'regex("[[0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3}] PHP", body)'
+          - 'contains_any(body, "PHP Warning:", "PHP Notice:", "Undefined array", "Undefined variable")'
+        condition: and
+# digest: 490a0046304402202843f741d08b23dcdbfacc5265327f41a18cbd1fad22d4b41660e5c6b5779add022072ec0e47635e84ea3ff0b33a2327091fe7b4a2258314e21361de990984545d86:922c64590222798bb761d5b6d8e72950

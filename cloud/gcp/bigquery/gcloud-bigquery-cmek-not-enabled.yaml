@@ -1,0 +1,71 @@
+id: gcloud-bigquery-cmek-not-enabled
+
+info:
+  name: BigQuery Dataset Encryption with Customer-Managed Encryption Keys Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all your Google Cloud BigQuery datasets are encrypted using Customer-Managed Encryption Keys (CMEKs) in order to have a more granular control over the dataset encryption/decryption process. Datasets not encrypted with CMEKs may expose sensitive data to higher risks.
+  impact: |
+    Using Google-managed keys for dataset encryption limits control over the encryption process and may not meet compliance requirements that specify encryption key management policies.
+  remediation: |
+    Update the encryption configuration of your BigQuery datasets to use Customer-Managed Encryption Keys. This can be done by setting the 'defaultEncryptionConfiguration' property of each dataset to use a 'kmsKeyName' that you manage.
+  reference:
+    - https://cloud.google.com/bigquery/docs/customer-managed-encryption
+  tags: cloud,devops,gcp,gcloud,bigquery,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let dataset of iterate(template.datasets)){
+      set("datasetId", dataset)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq ls --project_id $projectId --format="prettyjson"
+
+    extractors:
+      - type: json
+        name: datasets
+        internal: true
+        json:
+          - '.[] | .datasetReference.datasetId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      bq show --format=prettyjson $projectId:$datasetId | jq '.defaultEncryptionConfiguration.kmsKeyName'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Dataset without CMEK: " + datasetId + " in Project: " + projectId'
+# digest: 4a0a004730450221009a940bc0e74b624a666bd31616a1c6271401d731875ab33a0da908d016dc5805022053028b9e545d9edddb5d9c5323ce52dc26a2baf3b756ce0086c36036eb1ed54e:922c64590222798bb761d5b6d8e72950

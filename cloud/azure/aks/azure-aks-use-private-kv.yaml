@@ -1,0 +1,55 @@
+id: azure-aks-use-private-kv
+info:
+  name: Azure AKS Encryption at Rest Not Using Private Key Vault
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Azure Kubernetes Service (AKS) clusters are configured with encryption at rest for Kubernetes secrets in etcd using a private Azure Key Vault.
+  impact: |
+    If AKS clusters use a public key vault for secret data encryption, it may expose sensitive data to unauthorized access, leading to potential security risks.
+  remediation: |
+    Configure your AKS clusters to use private Azure Key Vaults for encryption at rest by setting the 'azureKeyVaultKms.keyVaultNetworkAccess' to 'Private'.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/developer-best-practices-resource-management
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterData of iterate(template.clusterList)) {
+    ClusterData = JSON.parse(ClusterData);
+    set("name", ClusterData.name);
+    set("resourceGroup", ClusterData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'securityProfile.azureKeyVaultKms.keyVaultNetworkAccess'
+
+    matchers:
+      - type: word
+        words:
+          - "Public"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not use a private Key Vault for encryption at rest"'
+# digest: 4a0a00473045022100f6d65dd9582c77691bbe625af7afaf033939644aa685ca02bb907d904a76af590220371a074db8cc4d1c557d7a19704212e29a67bfb42226955c917d5d5f13f09052:922c64590222798bb761d5b6d8e72950

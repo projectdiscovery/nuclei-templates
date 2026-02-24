@@ -1,0 +1,56 @@
+id: gcloud-org-auto-iam-grants
+
+info:
+  name: Automatic IAM Role Grants for Default Service Accounts Not Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Disable Automatic IAM Grants for Default Service Accounts" policy is enforced for your Google Cloud Platform (GCP) organizations and projects in order to deactivate the automatic IAM role grant for default service accounts. When a default service account is created, it is automatically granted the Editor role ("roles/editor") on your project.
+  impact: |
+    When automatic IAM grants are enabled, default service accounts automatically receive Editor role permissions, which violates the principle of least privilege and increases security risks.
+  remediation: |
+    Enable the "Disable Automatic IAM Grants for Default Service Accounts" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command or through the Google Cloud Console.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/disable-automatic-role-grants.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,iam,organization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe iam.automaticIamGrantsForDefaultServiceAccounts --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not disabled automatic IAM role grants for default service accounts"'
+# digest: 4a0a00473045022100bf86a20af78d15632ac4b348caacbc62594b6f1e9e8e5065cf7650abd402f447022030a248868002fc3912ea6eb493de37c6576f533cd21112a58924f6065241a31f:922c64590222798bb761d5b6d8e72950

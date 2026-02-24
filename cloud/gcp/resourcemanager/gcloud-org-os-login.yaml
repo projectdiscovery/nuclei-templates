@@ -1,0 +1,56 @@
+id: gcloud-org-os-login
+
+info:
+  name: OS Login Not Required
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Require OS Login" constraint policy is enforced at the GCP organization level in order to enable OS Login feature on all newly created Google Cloud projects within your organization. The OS Login provides you with centralized and automated SSH key pair management.
+  impact: |
+    By default, the OS Login feature is disabled for all GCP projects. Without enforced OS Login, SSH keys are not automatically mapped with Cloud IAM users, making it harder to manage access control and revoke compromised credentials.
+  remediation: |
+    Enable the "Require OS Login" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the compute.requireOsLogin constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/enquire-os-login.html
+    - https://cloud.google.com/compute/docs/oslogin
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,compute,ssh,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.requireOsLogin --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not enforced OS Login requirement for centralized SSH key management"'
+# digest: 4a0a00473045022100c78a5bb0c09fe46b16b4daf999cc8f524dd378a1f33a894ad819d6574094591a02207b28e25fe7e17483a4c60a34590e1b26bd7eedf8e0302337b599c4704900f835:922c64590222798bb761d5b6d8e72950

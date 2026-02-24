@@ -1,0 +1,56 @@
+id: azure-aks-managed-identity-unassigned
+info:
+  name: Use System-Assigned Managed Identities for AKS Clusters
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure Kubernetes Service (AKS) clusters are using system-assigned managed identities to allow secure application access to other Azure cloud resources such as load balancers, managed disks, and key vaults.
+  impact: |
+    Not using system-assigned managed identities for AKS clusters can lead to inadequate security control, making it difficult to manage permissions and access securely.
+  remediation: |
+    Ensure that all AKS clusters are configured to use system-assigned managed identities. This can be set during the AKS cluster creation or can be updated on existing clusters.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/use-managed-identity
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AKSData of iterate(template.clusterList)) {
+    AKSData = JSON.parse(AKSData);
+    set("name", AKSData.name);
+    set("resourceGroup", AKSData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'identity.type'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "UserAssigned"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"AKS cluster named " + name + " in resource group " + resourceGroup + " is not using a system-assigned managed identity"'
+# digest: 4a0a0047304502202a8498770b1349430e703670b866eb89b414a4d20277cef7cd331d188ec7d02b022100f95d9b384172b889576ea39eb55a7c5b75b1959ee998826888d041b9a52808e6:922c64590222798bb761d5b6d8e72950

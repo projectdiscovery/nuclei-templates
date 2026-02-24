@@ -1,0 +1,37 @@
+id: ec2-unrestricted-cifs
+info:
+  name: EC2 Unrestricted CIFS Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in Amazon EC2 security groups allowing unrestricted access (0.0.0.0/0 or ::/0) on TCP port 445, used for CIFS/SMB file sharing, posing a high security risk.
+  impact: |
+    Unrestricted CIFS access can expose EC2 instances to unwanted external access, increasing the risk of data breaches and unauthorized control over resources.
+  remediation: |
+    Restrict inbound access on TCP port 445 to known IPs or ranges. Regularly review security group configurations to ensure compliance with security policies.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=445 Name=ip-permission.to-port,Values=445 Name=ip-permission.cidr,Values='0.0.0.0/0' Name=ip-permission.ipv6-cidr,Values='::/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 445"'
+# digest: 4a0a0047304502210097f5bd76a88837f9b5e95e8e80f5995cd3c54f0a3469731fb144c5d69323f26a022007272036cbffa31f0e1fb4ecbc160686740a8a5f341656b6cc8189394a387690:922c64590222798bb761d5b6d8e72950

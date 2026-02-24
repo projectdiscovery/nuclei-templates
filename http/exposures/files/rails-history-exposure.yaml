@@ -1,0 +1,28 @@
+id: rails-history-exposure
+
+info:
+  name: Rails/Ruby Console History - Exposure
+  author: theamanrawat
+  severity: medium
+  description: |
+    Detects exposure of Ruby/Rails console history files (.irb_history and .pry_history) via HTTP. Leakage of these files may disclose sensitive code, credentials, or insight into application logic, increasing the risk of unauthorized access or exploitation.
+  reference:
+    - https://pry.github.io
+    - https://docs.ruby-lang.org/en/2.6.0/IRB.html
+  tags: exposure,rails,ruby,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.irb_history"
+      - "{{BaseURL}}/.pry_history"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "User.find", "Rails.application")'
+          - '!contains_any(body,"<!DOCTYPE","<html","<script>")'
+        condition: and
+# digest: 4a0a0047304502206b9c660910774715033ecfa801a8a6d0e9bf0f7a83f1008a6c2d192c75b965a3022100c75e2bd47e57d7bf9f63193538a91f3b1d7ace214f68ae142a1d7456a72a593f:922c64590222798bb761d5b6d8e72950

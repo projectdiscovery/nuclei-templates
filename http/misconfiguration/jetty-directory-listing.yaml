@@ -1,0 +1,42 @@
+id: jetty-directory-listing
+
+info:
+  name: Eclipse Jetty - Directory Listing Enabled
+  author: ritikchaddha
+  severity: low
+  description: |
+    Eclipse Jetty server has directory listing enabled, which exposes the directory structure and file names to unauthenticated users. This can reveal sensitive files, backup files, configuration files, and aid attackers in reconnaissance.
+  impact: |
+    Attackers can enumerate files and directories, discover hidden resources, backup files, configuration files, and potentially sensitive data that should not be publicly accessible.
+  remediation: |
+    Disable directory listing by setting dirAllowed to false in the DefaultServlet configuration or by setting allowDirectoryListing to false in WebAppContext. Add index files (index.html) to directories that should not list contents.
+  reference:
+    - https://www.eclipse.org/jetty/documentation/jetty-11/operations-guide/index.html
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information
+    - https://cwe.mitre.org/data/definitions/548.html
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: "Server: Jetty"
+    fofa-query: server="Jetty"
+  tags: jetty,misconfig,exposure,listing,eclipse
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/static/"
+      - "{{BaseURL}}/resources/"
+      - "{{BaseURL}}/assets/"
+      - "{{BaseURL}}/files/"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "Directory listing for", "Index of /", "[To Parent Directory]", "Directory: /")'
+          - 'contains_all(response, "Jetty", "jetty-dir.css")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a00463044022017025869e6124f0c6881b7d241388afbdb186e4c871c8baff2ebffcf7019888c0220521ce43da5e3dcef2b5a648482513a6af72e94ed3d796276f96a554497ce7482:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: gcloud-vpc-unattached-static-ips
+
+info:
+  name: Unattached Static External IP Addresses
+  author: princechaddha
+  severity: low
+  description: |
+    Identify and release any unattached (unused) static external IP addresses from your Google Cloud Platform (GCP) project in order to lower the cost of your cloud bill. A static external IP address is an IP address that is reserved for your GCP project until you decide to release it. Google Cloud considers a static external IP address as in use if it's associated with a virtual machine (VM) instance, whether the VM instance is running or stopped.
+  impact: |
+    Google Cloud charges for static IP addresses that are not attached to virtual machines (VM) instances or load balancers. If you reserve a static external IP address and do not assign it to a resource such as a VM instance or a forwarding rule, you will be charged at a higher rate than for static and ephemeral external IP addresses that are in use.
+  remediation: |
+    Release unused static external IP addresses using the 'gcloud compute addresses delete' command with the appropriate region and address name parameters. Example: gcloud compute addresses delete ADDRESS_NAME --region=REGION --project=PROJECT_ID
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/VPC/unattached-static-ip-address.html
+    - https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address
+  tags: cloud,devops,gcp,gcloud,vpc,networking,cost-optimization,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute addresses describe cc-production-instance-static-ip --region=us-central1 --project=$projectId --format="json(name,region,status)"
+
+    matchers:
+      - type: word
+        words:
+          - "RESERVED"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Project " + projectId + " has an unattached static IP address in region us-central1"'
+# digest: 4a0a00473045022100ced4bc0753baf3638cb94161ef75f4273e9b1b0bf1ab6ba17c206a3b23ba6ff502200c662e529a10ece7d05285439d68fa6cea42ba0dc22ba53145fbf1de3aa71ae8:922c64590222798bb761d5b6d8e72950

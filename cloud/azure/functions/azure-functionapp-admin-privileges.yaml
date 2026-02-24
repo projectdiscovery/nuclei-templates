@@ -1,0 +1,81 @@
+id: azure-functionapp-admin-privileges
+info:
+  name: Azure Functions with Admin Privileges
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your functions managed with Microsoft Azure Function App don't have privileged administrative permissions in order to promote the Principle of Least Privilege (POLP) and provide your functions the minimal amount of access required to perform their tasks.
+  impact: |
+    Having administrative privileges can expose Azure Function Apps to unnecessary risks and potential security breaches, violating the principle of least privilege.
+  remediation: |
+    Review and restrict the roles assigned to function apps to ensure they only have permissions necessary for their operation. Modify the roles through Azure portal or Azure CLI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let functionName of iterate(template.functionNames)) {
+    AppData = JSON.parse(functionName);
+    set("functionName", AppData.name)
+    set("resourceGroup", AppData.resourceGroup)
+    code(2);
+    for (let assignee of iterate(template.assignees)) {
+      set("assignee", assignee)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: functionNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp show --name $functionName --resource-group $resourceGroup --query 'identity.userAssignedIdentities' --output json
+
+    extractors:
+      - type: json
+        name: assignees
+        internal: true
+        json:
+          - '.[].principalId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role assignment list --assignee $assignee --all --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'Owner'
+          - 'Contributor'
+          - 'User Access Administrator'
+          - 'Role Based Access Control Administrator'
+
+    extractors:
+      - type: json
+        name: roleAssignments
+        internal: true
+        json:
+          - '.[].roleDefinitionName'
+
+      - type: dsl
+        dsl:
+          - 'functionName + " has admin privileges with role " + roleAssignment + " in resource group " + resourceGroup'
+# digest: 4b0a00483046022100fcd9e3c8d14e23762d7f4677552addd368c6cac75b99fba7c8e2e85a4822956a02210096be346b573975c30b2fd960f25b56eb66e98180205341d1cf28fe256c350268:922c64590222798bb761d5b6d8e72950

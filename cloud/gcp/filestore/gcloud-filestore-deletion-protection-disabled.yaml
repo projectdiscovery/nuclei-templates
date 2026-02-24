@@ -1,0 +1,73 @@
+id: gcloud-filestore-deletion-protection-disabled
+
+info:
+  name: Filestore Instance Deletion Protection Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud Filestore instances have Deletion Protection feature enabled in order to protect them from being accidentally deleted. With the Deletion Protection safety feature enabled, your Filestore instances are guaranteed to be protected from accidental deletion, ensuring your data remains safe.
+  impact: |
+    Without deletion protection, Filestore instances could be accidentally or maliciously deleted through the console, CLI, or API calls, leading to data loss and service disruption.
+  remediation: |
+    Enable deletion protection for your Filestore instances using the 'gcloud filestore instances update' command with the '--deletion-protection' flag or through the Google Cloud Console.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/enable-deletion-protection.html
+    - https://cloud.google.com/filestore/docs/prevent-deletion
+  tags: cloud,devops,gcp,gcloud,filestore,security,deletion-protection,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      set("instanceName", instance.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances describe $instanceName --format="json(deletionProtectionEnabled)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Filestore instance " + instanceName + " in project " + projectId + " does not have deletion protection enabled"'
+# digest: 490a0046304402201f1c070c1098bf7fa609ca22c7dc6a9f43fcbefc3927c4651db7b6d2ec0aef8602201e6e829d477893c68f25c7c8281a12c671e80f6d8f28f57c4d7b6436ac169d31:922c64590222798bb761d5b6d8e72950

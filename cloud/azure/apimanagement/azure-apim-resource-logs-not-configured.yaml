@@ -1,0 +1,56 @@
+id: azure-apim-resource-logs-not-configured
+info:
+  name: Azure API Management Service Resource Logs Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Azure API Management API services are configured to use resource logs to collect valuable information on API Management operations and errors. By enabling resource logs through a diagnostic setting, you can gather extensive information on the API requests received and handled by the Azure API Management service gateway.
+  impact: |
+    Failing to configure resource logs for Azure API Management services could result in a lack of visibility into API performance and errors, hindering effective management and troubleshooting.
+  remediation: |
+    Ensure that resource logs are enabled by setting up diagnostic settings for each Azure API Management service instance. This should include capturing all logs related to API operations and errors.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/api-management/api-management-howto-use-diagnostic-logs
+  tags: cloud,devops,azure,microsoft,api-management,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let Resource of iterate(template.resourceList)) {
+    Resource = JSON.parse(Resource);
+    set("resource", Resource.name);
+    set("resourceGroup", Resource.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az apim list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: resourceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor diagnostic-settings list --resource $resource --resource-group $resourceGroup --resource-type "Microsoft.ApiManagement/service" --query '[*].name'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'resource + " in " + resourceGroup + " does not have resource logs configured for Azure API Management services"'
+# digest: 490a00463044022064587c1db5646ff447c93cec44664b91f4fcf69052d429106bff5551686ccee002201087b7689aca0bc8edc129d9dc019199dd09d7554de773a8fb6e0b8ff80063e1:922c64590222798bb761d5b6d8e72950

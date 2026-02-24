@@ -1,0 +1,55 @@
+id: azure-vmss-auto-os-upgrade-missing
+info:
+  name: Azure VMSS Automatic OS Upgrade Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that operating system (OS) upgrades are automatically applied to your Microsoft Azure virtual machine scale sets when a newer version of the OS image is released by the image publishers. Automatic OS Upgrades feature supports both Windows and Linux images, and can be enabled for all virtual machine sizes. An automatic OS upgrade works by replacing the boot (OS) disk of a virtual machine instance running within a scale set with a new disk created using the latest image version available. Any configured extensions and custom data scripts are run on the OS disk, while persisted data disks are retained. To minimize the application downtime, the upgrades take place in multiple batches, with a maximum of 20% of the scale set upgrading at any time.
+  impact: |
+    Failure to enable automatic OS upgrades can lead to outdated OS versions in use, which may lack critical security updates and features, increasing the risk of security vulnerabilities and operational inefficiencies.
+  remediation: |
+    Enable automatic OS upgrades in Azure VMSS settings to ensure all instances are updated automatically with the latest OS image version, thereby improving security and reducing manual maintenance overhead.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-upgrade
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VmssData of iterate(template.vmssList)) {
+    VmssData = JSON.parse(VmssData);
+    set("name", VmssData.Name);
+    set("resourceGroup", VmssData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmssList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss show --name "$name" --resource-group "$resourceGroup" --query '{"AutomaticOsUpgrades": upgradePolicy.automaticOsUpgradePolicy.enableAutomaticOsUpgrade}'
+
+    matchers:
+      - type: word
+        words:
+          - '"AutomaticOsUpgrades": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have automatic OS upgrades enabled"'
+# digest: 4a0a00473045022100c5c3a5b62f31ac5b09be77f90088d3291586a67222aa8a98013b4655ed846984022006f60b0eb15933eb244044ca998402089b60454ebbe0ebeb8b1fdd8800af6dd2:922c64590222798bb761d5b6d8e72950

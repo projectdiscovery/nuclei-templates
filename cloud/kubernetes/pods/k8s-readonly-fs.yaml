@@ -1,0 +1,47 @@
+id: k8s-readonly-fs
+
+info:
+  name: Enforce Read-Only Filesystem for Containers
+  author: princechaddha
+  severity: critical
+  description: Checks for containers that do not use a read-only filesystem, which can prevent malicious write operations at runtime
+  impact: |
+    Not using a read-only filesystem can expose containers to risks of malicious modifications at runtime, compromising the container's integrity and security.
+  remediation: Configure containers to use read-only filesystems where possible to enhance security and minimize risk of unauthorized data modification
+  reference:
+    - https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
+  tags: cloud,devops,kubernetes,k8s,devsecops,pods,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let container of template.items) {
+    set("container", container)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[].spec.containers[]'
+
+javascript:
+  - code: |
+        container = JSON.parse(template.container);
+        if (!container.securityContext || container.securityContext.readOnlyRootFilesystem !== true) {
+          let result = (`Container '${container.name}' in pod '${container.metadata.name}' in namespace '${container.metadata.namespace}' does not use a read-only filesystem.`);
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100e3596893317c8a414533a2b8fb4ca04a05ea66062f6894c524d8a174ca4a74c9022100bee07744b2e1a3408a7edf68cc978da235bc8e54f0b5eac7e65d61186a809070:922c64590222798bb761d5b6d8e72950

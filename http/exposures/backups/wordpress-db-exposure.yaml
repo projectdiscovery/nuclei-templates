@@ -1,0 +1,49 @@
+id: wordpress-db-exposure
+
+info:
+  name: WordPress Database Backup File - Exposure
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected WordPress database backup files that were publicly accessible, exposing sensitive data including user credentials, email addresses, and site content.
+  reference:
+    - https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
+    - https://wordpress.org/support/article/backing-up-your-database/
+  classification:
+    cwe-id: CWE-200
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+  metadata:
+    verified: true
+    max-request: 12
+  tags: exposure,wordpress,backup,database,sql,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+
+    payloads:
+      paths:
+        - "/backup.sql"
+        - "/database.sql"
+        - "/db.sql"
+        - "/dump.sql"
+        - "/mysql.sql"
+        - "/{{Hostname}}.sql"
+        - "/wp-content/uploads/backup.sql"
+        - "/wp-content/uploads/database.sql"
+        - "/wp-content/uploads/dump.sql"
+        - "/wp-content/uploads/{{Hostname}}.sql"
+        - "/wp-content/database.sql"
+        - "/backups/database.sql"
+
+    max-size: 102400 # 100KB - Size in bytes - Max Size to read from server response
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(content_type, "application/x-sql")'
+          - 'contains_any(body, "CREATE TABLE", "INSERT INTO", "DROP TABLE", "MySQL", "phpMyAdmin")'
+        condition: and
+# digest: 4a0a00473045022100a98fa90405222dfba4b37c1e8b20bb97365a911737d69f9ca3ed9c3c963dcbe502200ec69276cfd3b366a7f19b0225d33f37037c84675dca667f7f12be67e43627e5:922c64590222798bb761d5b6d8e72950

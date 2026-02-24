@@ -1,0 +1,60 @@
+id: azure-storage-min-tls-version
+info:
+  name: Azure Storage Minimum TLS Version Not Set to TLS1_2
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all your Microsoft Azure Storage accounts are using the latest available version of the TLS protocol in order to enhance the security of the connection between your storage accounts and their clients/applications, and comply with the industry standards.
+  impact: |
+    Not using the latest version of the TLS protocol may expose data transfers to or from Azure Storage accounts to higher security risks.
+  remediation: |
+    Configure all Azure Storage accounts to use TLS version 1.2 as the minimum required version for connections to ensure compliance with industry standards and enhanced security.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-security-guide
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AccountData of iterate(template.accountList)) {
+    AccountData = JSON.parse(AccountData);
+    set("name", AccountData.Name);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].{"Name":name}'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --name "$name" --query 'minimumTlsVersion'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'TLS'
+
+      - type: word
+        words:
+          - 'TLS1_2'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " is not using TLS version 1.2"'
+# digest: 4a0a00473045022100e9023322e9ee80afad2c173008e3e0e15779f010125a9f47f77190f825278775022047ea42208779c19cb6b3d583dd579117369def5df4c2aa43949387c70a85f884:922c64590222798bb761d5b6d8e72950

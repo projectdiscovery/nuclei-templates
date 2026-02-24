@@ -1,0 +1,72 @@
+id: gcloud-postgresql-logtempfiles-disabled
+
+info:
+  name: Log Temporary Files Flag Disabled in PostgreSQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the "log_temp_files" database flag is set to 0 (enabled) for all your Google Cloud PostgreSQL database instances. PostgreSQL database engine can create temporary files for actions such as sorting, hashing, and temporary query results when these operations exceed the amount of memory specified for the "work_mem" setting. Setting "log_temp_files" flag to 0 causes all temporary file information to be logged, while positive configuration values log only files whose size is greater than or equal to the specified number of kilobytes.
+  impact: |
+    If the "log_temp_files" flag is not enabled, temporary file operations will not be logged, which may lead to challenges in diagnosing performance issues and compliance tracking.
+  remediation: |
+    Set the "log_temp_files" database flag to 0 for your PostgreSQL database instances to ensure temporary file operations are logged.
+  reference:
+    - https://cloud.google.com/sql/docs/postgres/configure-database-flags
+  tags: cloud,devops,gcp,google-cloud-sql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:POSTGRES*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format=json | jq '.settings.databaseFlags // [] | .[] | select(.name=="log_temp_files") | .value'
+
+    matchers:
+      - type: word
+        words:
+          - '-1'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"log_temp_files flag is disabled for PostgreSQL instance: " + sqlInstance + " in project: " + projectId'
+# digest: 4a0a00473045022100a0ffcec6ceff84578b419f14e98df9c2e73047cb57d5d1315af3acb8be22a90002201c788cb0f3b95b425c7fae823bd70dfadaed4364b82ef15e7b195f4aa5d732b3:922c64590222798bb761d5b6d8e72950

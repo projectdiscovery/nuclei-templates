@@ -1,0 +1,56 @@
+id: gcloud-org-sql-default-encryption
+
+info:
+  name: Default Google-Managed Encryption for Cloud SQL Not Restricted
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the use of Google-managed encryption keys for Cloud SQL database instances is disabled at the GCP organization level in order to enforce the use of Customer-Managed Keys (CMKs) and have full control over SQL database encryption/decryption process. Note: This organization policy is not retroactive, therefore any existing database instances using Google-managed encryption are not impacted unless they are updated or refreshed.
+  impact: |
+    By default, Google-managed encryption is allowed for all Cloud SQL instances. Without enforcing CMK usage, you have less control over the encryption keys that protect your SQL databases.
+  remediation: |
+    Enable the "Restrict Default Google-Managed Encryption for Cloud SQL Instances" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the sql.disableDefaultEncryptionCreation constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/restrict-default-encryption-for-sql-instances.html
+    - https://cloud.google.com/sql/docs/mysql/customer-managed-encryption-keys
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,sql,encryption,cmk,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe sql.disableDefaultEncryptionCreation --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not disabled default Google-managed encryption for Cloud SQL instances"'
+# digest: 490a004630440220760e07a25881e95d2eb87587533b0006f50a3852c3f5931147ccebc88903316d02200148c895cf90b515d22e6e9371ab75c1e71c3202615ed1c6b8b1589b175696d1:922c64590222798bb761d5b6d8e72950

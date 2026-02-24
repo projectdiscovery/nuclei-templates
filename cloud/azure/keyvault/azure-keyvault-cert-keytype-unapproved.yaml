@@ -1,0 +1,70 @@
+id: azure-keyvault-cert-keytype-unapproved
+info:
+  name: Unapproved Certificate Key Type in Azure Key Vaults
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure Key Vault SSL certificates are using the allowed key type(s) for security and compliance purposes. Prior to running this rule by the Cloud Conformity engine, the allowed certificate key type(s) must be configured within the rule settings, on the Cloud Conformity account dashboard.
+  impact: |
+    Using unapproved key types can violate compliance requirements and security policies, potentially exposing sensitive data.
+  remediation: |
+    Review and update the certificate key types for your Azure Key Vault SSL/TLS certificates to align with approved key types through the Azure portal or Azure CLI.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/certificates/about-certificates
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let KeyVaultName of iterate(template.keyVaultNames)) {
+    set("vaultName", KeyVaultName)
+    code(2);
+    for (let CertificateId of iterate(template.certificateIds)) {
+      set("certificateId", CertificateId)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: keyVaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate list --vault-name $vaultName --query '[?(attributes.enabled==`true`)].id' --output json
+
+    extractors:
+      - type: json
+        name: certificateIds
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault certificate show --id $certificateId --query 'policy.keyProperties.keyType' --output json
+
+    matchers:
+      - type: word
+        words:
+          - 'EC'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " SSL/TLS certificate " + certificateId + " uses an unapproved key type"'
+# digest: 4a0a00473045022100da34361252b4d784f89a3b03447b1173de4e91c790e5a9ff204918561f7a7d4802202e713445d5cbec0835c12646f4b9806baa5e4f3d8f4bf3b701ebb5ca46a7e5a9:922c64590222798bb761d5b6d8e72950

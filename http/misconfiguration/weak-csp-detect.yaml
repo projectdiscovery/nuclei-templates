@@ -1,0 +1,63 @@
+id: weak-csp-detect
+
+info:
+  name: Weak Content Security Policy - Detect
+  author: pussycat0x,celbahraoui
+  severity: info
+  description: |
+    Detected misconfigured CSP directives containing unsafe and overly permissive keywords that weakened resource loading restrictions. This configuration allowed high-risk script behaviors, resulting in reduced protection against XSS attacks.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/object-src
+    - https://content-security-policy.com/
+  metadata:
+    max-request: 1
+    verified: true
+  tags: csp,misconfig,headers
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: missing-script-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "!contains(to_lower(header), 'script-src')"
+          - "!contains(to_lower(header), 'default-src')"
+        condition: and
+
+      - type: dsl
+        name: missing-object-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "!contains(to_lower(header), 'object-src')"
+          - "!contains(to_lower(header), 'default-src')"
+        condition: and
+
+      - type: dsl
+        name: unsafe-script-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "regex('(?i)script-src[^;]*(unsafe-inline|unsafe-eval|unsafe-hashes|\\\\*|data:|blob:)', header)"
+        condition: and
+
+      - type: dsl
+        name: unsafe-default-src
+        dsl:
+          - "contains(to_lower(header), 'content-security-policy:')"
+          - "regex('(?i)default-src[^;]*(unsafe-inline|unsafe-eval|unsafe-hashes|\\\\*|data:|blob:)', header)"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        name: csp-header
+        group: 1
+        regex:
+          - "(?i)content-security-policy:\\s*([^\\r\\n]+)"
+# digest: 4a0a004730450221009fcc843493b5e8096607886505defff37def38fc1e9cb624e694c7f30cb65862022075e68369f5755bcfba03e2ea54351a97dad1e71be3a3202a0777acd79c08a58c:922c64590222798bb761d5b6d8e72950

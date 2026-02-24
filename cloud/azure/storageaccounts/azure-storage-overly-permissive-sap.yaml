@@ -1,0 +1,70 @@
+id: azure-storage-overly-permissive-sap
+info:
+  name: Azure Storage Overly Permissive Stored Access Policies
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Microsoft Azure Storage shared access signatures don't have full access to your storage account resources (i.e. blob objects, files, tables, and queues) via stored access policies. A stored access policy provides an additional level of control over service-level shared access signatures, enhancing security by managing constraints for one or more shared access signatures.
+  impact: |
+    Having overly permissive stored access policies can expose your storage resources to unnecessary risks, violating the principle of least privilege.
+  remediation: |
+    Review and restrict the permissions in your stored access policies to ensure they align with the principle of least privilege.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview
+  tags: cloud,devops,azure,microsoft,azure-storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let accountName of iterate(template.accountNames)) {
+    set("accountName", accountName);
+    code(2);
+    for (let containerName of iterate(template.containerNames)) {
+      set("containerName", containerName);
+      code(3);
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].name'
+
+    extractors:
+      - type: json
+        name: accountNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage container list --account-name "$accountName" --query '[*].name'
+
+    extractors:
+      - type: json
+        name: containerNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage container policy list --account-name "$accountName" --container-name "$containerName"
+
+    matchers:
+      - type: word
+        words:
+          - '{}'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'accountName + " with container " + containerName + " has overly permissive stored access policies"'
+# digest: 4a0a00473045022020b85fa261383d1cb66e81006adc0ea8c7b80a95a43d587d11f714d62c595fae022100f2967931390756c866029c46fc7f9732c8b2bd3cac5b6cbd43f763824c09a31f:922c64590222798bb761d5b6d8e72950

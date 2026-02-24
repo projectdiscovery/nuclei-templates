@@ -1,0 +1,59 @@
+id: firehose-server-side-encryption
+
+info:
+  name: Firehose Delivery Stream Server-Side Encryption - Disabled
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Ensure that your Amazon Kinesis Data Firehose delivery streams are encrypted using Server-Side Encryption.
+  impact: |
+    Disabling server-side encryption for Firehose delivery streams can result in unencrypted data being stored, exposing sensitive information to unauthorized access and increasing the risk of data breaches.
+  remediation: |
+    Enable server-side encryption for Firehose delivery streams to ensure that data is securely encrypted at rest, protecting sensitive information from unauthorized access.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/Firehose/delivery-stream-encrypted-with-kms-customer-master-keys.html
+    - https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingKMSEncryption.html
+  tags: cloud,devops,aws,amazon,firehose,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DeliveryStreamNames of iterate(template.deliverys)){
+    set("delivery", DeliveryStreamNames)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws firehose list-delivery-streams --region $region --query 'DeliveryStreamNames' --output json
+
+    extractors:
+      - type: json
+        name: deliverys
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws firehose describe-delivery-stream --region $region --delivery-stream-name $delivery --query 'DeliveryStreamDescription.DeliveryStreamEncryptionConfiguration.KeyType' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Firehose delivery stream " + delivery + " is not encrypted using SSE"'
+# digest: 4a0a00473045022100825ac43d6e8efea26cfe168b13e96f13a3740be4249fd74d052bb345993efc1702206bf26517661bb29b934396a24880567ee43a45cf3c91cc71a6e75bb08c2927ee:922c64590222798bb761d5b6d8e72950

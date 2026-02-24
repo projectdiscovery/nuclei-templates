@@ -1,0 +1,56 @@
+id: azure-appservice-backup-retention-missing
+info:
+  name: Azure App Service Backup Retention Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure App Services applications have a sufficient daily backup retention period configured for scheduled backups, in order to follow security and regulatory requirements. Prior to running this rule by the Cloud Conformity engine, the backup retention period must be configured in the rule settings, on the Cloud Conformity account dashboard. A retention value of 0 will keep backup files indefinitely.
+  impact: |
+    Lack of a backup retention configuration can lead to non-compliance with security and regulatory requirements and potential data loss.
+  remediation: |
+    Configure the daily backup retention period for Azure App Services applications in the Cloud Conformity account dashboard to meet security and compliance requirements.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/manage-backup
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppServiceData of iterate(template.appServiceList)) {
+    AppServiceData = JSON.parse(AppServiceData);
+    set("name", AppServiceData.name);
+    set("resourceGroup", AppServiceData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: appServiceList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config backup show --webapp-name $name --resource-group $resourceGroup --query 'backupSchedule.retentionPeriodInDays' --output json
+
+    matchers:
+      - type: word
+        part: stderr
+        words:
+          - "Backup configuration not found"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have a backup retention period configured"'
+# digest: 490a00463044022057d177778b77e8212e836670e2156b5330cd2608fc66aa850a7a0a48c98422620220450ed59da03206da06e6a4669ceaf29660fa18b49b8306287cbd7a5b186a7bbf:922c64590222798bb761d5b6d8e72950

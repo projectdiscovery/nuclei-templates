@@ -1,0 +1,39 @@
+id: glpi-directory-listing
+
+info:
+  name: GLPI - Directory Listing and Session Exposure
+  author: RedTeamBrasil,ImNightmaree,0x_Akoko
+  severity: medium
+  description: |
+    Detected GLPI directory listing exposed sensitive files and PHP session data, potentially allowing session hijacking or information disclosure.
+  reference:
+    - https://glpi-project.org/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-548
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: http.title:"Index of" http.html:"glpi"
+    fofa-query: body="Index of" && body="glpi"
+  tags: glpi,misconfig,exposure,session
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/glpi/files/"
+      - "{{BaseURL}}/glpi/files/_sessions/"
+      - "{{BaseURL}}/files/_sessions/"
+      - "{{BaseURL}}/glpi/"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Index of", "Parent Directory")'
+          - 'contains_any(body, "glpi", "sess_", "_sessions", "_cron", "_dumps")'
+        condition: and
+# digest: 4a0a0047304502201163db7c3b0b78427b3ba6c0c590fc7d6b6c6621f0dc588b0f162e2058919072022100f8f296a2d79dcb710d02e00959ed2ca966ba68e23e455a90e6657e2c6478433d:922c64590222798bb761d5b6d8e72950

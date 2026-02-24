@@ -1,0 +1,43 @@
+id: adcs-certificate
+
+info:
+  name: Microsoft AD CS Web Enrollment - Detect
+  author: pastaga,defte,atomiczsec
+  severity: info
+  description: |
+    Detects Microsoft Active Directory Certificate Services (AD CS) Web Enrollment and certificate download pages.
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: html:"/certenroll"
+  tags: ad,adcs,exposure,files,web-enrollment,detect,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/certenroll/"
+      - "{{BaseURL}}/CertEnroll/"
+      - "{{BaseURL}}/certsrv/"
+      - "{{BaseURL}}/certsrv"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: certenroll
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, ".crl", ".crt", ".cer", ".p7b")'
+          - 'contains_any(tolower(body), "certenroll", "locmscertsrv", "certificate services")'
+        condition: and
+
+      - type: dsl
+        name: certsrv
+        dsl:
+          - 'status_code == 200 || status_code == 401 || status_code == 403'
+          - 'contains_any(tolower(body), "locmscertsrv", "certificate services", "web enrollment")'
+        condition: and
+# digest: 4a0a004730450220722f728e0657003af9e7d941b0edabd587e94e83cf26a4372533c70cc37f7b0b022100aa3fab1ae0892828cb01bd96b2ae02f973dbabcdd9795b403fe3002a03d9fd75:922c64590222798bb761d5b6d8e72950

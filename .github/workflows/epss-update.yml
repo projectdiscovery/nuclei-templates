@@ -1,0 +1,53 @@
+name: 📊 EPSS Score Update
+
+on:
+  schedule:
+    # Run daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-epss:
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pyyaml
+
+      - name: Update EPSS scores
+        run: python .github/scripts/update-epss.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Git
+        if: steps.changes.outputs.changes == 'true'
+        uses: projectdiscovery/actions/setup/git@v1
+
+      - name: Commit changes
+        if: steps.changes.outputs.changes == 'true'
+        uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '**/cves/**/*.yaml'
+          message: 'chore: update EPSS scores 🤖'
+
+      - name: Push changes
+        if: steps.changes.outputs.changes == 'true'
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

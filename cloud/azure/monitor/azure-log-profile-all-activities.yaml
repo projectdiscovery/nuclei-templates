@@ -1,0 +1,56 @@
+id: azure-log-profile-all-activities
+info:
+  name: Azure Log Profile Missing Critical Activity Categories
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Log Profile created for your Azure cloud activity log is configured to collect logs for all the control and management activity categories, i.e. "Write", "Delete", and "Action", for security and compliance purposes. A Log Profile controls how the activity log is exported and retained within your Microsoft Azure cloud account.
+  impact: |
+    Failing to capture all activity categories can lead to incomplete logging information, which might hinder security audits and compliance checks, reducing the visibility into operations within the cloud environment.
+  remediation: |
+    Configure the Azure Log Profile to include all necessary activity categories such as "Write", "Delete", and "Action" to ensure comprehensive logging and compliance with security policies.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/activity-log-collect
+  tags: cloud,devops,azure,microsoft,log-profile,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let logProfileName of iterate(template.logProfileNames)) {
+    set("profileName", logProfileName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor log-profiles list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: logProfileNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor log-profiles show --name $profileName --query 'categories[]'
+
+    matchers:
+      - type: word
+        words:
+          - '"Write"'
+          - '"Delete"'
+          - '"Action"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'profileName + " missing critical activity categories in log-profile configuration"'
+# digest: 490a00463044022076ca735daf84599c2633e3df583bb74b8db63feb0c98be8a8e23c871bd6234df02205cd7680db161ced7aa753d92d870283675c7c506332e6a2166292e7db91836b6:922c64590222798bb761d5b6d8e72950

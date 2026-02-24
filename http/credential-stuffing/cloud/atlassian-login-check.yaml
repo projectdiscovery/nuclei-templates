@@ -1,0 +1,44 @@
+id: atlassian-login-check
+
+info:
+  name: Atlassian Login Check
+  author: parthmalhotra,pdresearch
+  severity: critical
+  description: Checks for a valid atlassian account.
+  reference:
+    - https://owasp.org/www-community/attacks/Credential_stuffing
+  metadata:
+    max-request: 1
+  tags: cloud,creds-stuffing,login-check,atlassian,vuln
+
+self-contained: true
+
+http:
+  - raw:
+      - |
+        POST https://auth.atlassian.com/co/authenticate HTTP/1.1
+        Host: auth.atlassian.com
+        Content-Type: application/json
+        Origin: https://id.atlassian.com
+        Referer: https://id.atlassian.com/
+
+        {"username":"{{username}}","password":"{{password}}","state":{"csrfToken":"{{rand_text_alpha(10, "")}}"}}
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username
+          - password
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"error_description":"Wrong email or password."'
+
+      - type: status
+        status:
+          - 403
+# digest: 4b0a00483046022100e7c3bec3e8c7d028b9b7d5fb84b048d3c73adab2b1759758e9c9d8ceab51e5a5022100a4277a8deb1ab1fabf5e60e61f176e2bf2c9ba52f47a042436db6c324716abab:922c64590222798bb761d5b6d8e72950

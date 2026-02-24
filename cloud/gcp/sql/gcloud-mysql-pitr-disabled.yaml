@@ -1,0 +1,72 @@
+id: gcloud-mysql-pitr-disabled
+
+info:
+  name: Point-in-Time Recovery Disabled for MySQL Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Point-in-Time Recovery (PITR) feature is enabled for all MySQL database instances deployed within your Google Cloud Platform (GCP) account. This feature allows you to recover data from a specific point in time at a minimal cost. Automated backups and binary logging must be enabled for your MySQL database instances to use PITR.
+  impact: |
+    If Point-in-Time Recovery is not enabled, you may lose critical data and have limited options for data recovery during incidents.
+  remediation: |
+    Enable binary logging and configure automated backups for your MySQL database instances to ensure that the PITR feature is enabled.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/backup-recovery/pitr
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter="DATABASE_VERSION:MYSQL*" --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format="value(settings.backupConfiguration.binaryLogEnabled)"
+
+    matchers:
+      - type: word
+        words:
+          - 'False'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Point-in-Time Recovery is not enabled for MySQL instance " + sqlInstance + " in project " + projectId'
+# digest: 490a0046304402200505f07be66b15ebbc8f72e56a15e3daa3e447c89934f44e6a42ac58b655d2e202202f66f3d1659586095ab50f90084d4c38d834fea05c02b1978129fe2f21a195bf:922c64590222798bb761d5b6d8e72950

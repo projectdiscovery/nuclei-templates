@@ -1,0 +1,59 @@
+id: azure-sql-fw-rule-unalerted
+info:
+  name: Azure SQL Server Firewall Rule Create/Update/Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever “Create”, “Update” or “Delete SQL Server Firewall Rule” events are triggered in your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the condition required for the alert is 'Whenever the Administrative Activity Log "Create/Update/Delete server firewall rule (Microsoft.Sql/servers/firewallRules)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Not having alerts for Create, Update, or Delete SQL Server Firewall Rule events can allow unauthorized changes to go unnoticed, leading to potential security vulnerabilities in database access management.
+  remediation: |
+    Configure activity log alerts to monitor "Create, Update, or Delete SQL Server Firewall Rule" events by setting the alert condition to "Microsoft.Sql/servers/firewallRules/write" and attaching an action group to handle notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,sql-server,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Sql/servers/firewallRules/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Create/Update/Delete SQL Server Firewall Rule events"'
+# digest: 4a0a00473045022036e57492028a4d27bddd6dee99a05a807c31c7fd468ac8f3bc4b88156674086b0221009812cbed501f180475f59147ff99aa4eb1e3e06a96d0dd095cab734cecc3c301:922c64590222798bb761d5b6d8e72950
