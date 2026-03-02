@@ -1,0 +1,40 @@
+id: plesk-eol
+
+info:
+  name: Plesk End-of-Life - Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detected Plesk versions that have reached End-of-Life (EOL) and no longer receive security updates.
+  reference:
+    - https://endoflife.date/plesk
+    - https://docs.plesk.com/release-notes/obsidian/change-log/
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: "Plesk"
+  tags: tech,plesk,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/login_up.php"
+
+    stop-at-first-match: true
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '(?i)<title>Plesk Obsidian ([0-9.]+)'
+          - '(?i)Plesk Obsidian ([0-9.]+)'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(version) > 0'
+          - 'compare_versions(version, "<18.0.75")'
+        condition: and
