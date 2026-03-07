@@ -1,0 +1,57 @@
+id: openplc-default-login-csrf
+
+info:
+  name: OpenPLC Webserver v3 - Default Login with CSRF Protection
+  author: shriyanss
+  severity: high
+  description: |
+    Identifies default credentials (openplc:openplc) on OpenPLC Webserver v3 with CSRF protection, allowing unauthorized access to the web interface.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"OpenPLC"
+  tags: openplc,default-login,iot,vuln
+
+variables:
+  username: "openplc"
+  password: "openplc"
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&csrf_token={{csrf}}
+
+    cookie-reuse: true
+    redirects: true
+    max-redirects: 3
+    matchers-condition: and
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - '(?i)<input[^>]+name=["'']csrf_token["''][^>]*value=["'']([^"'']+)["'']'
+          - '(?i)<input[^>]+value=["'']([^"'']+)["''][^>]*name=["'']csrf_token["'']'
+        internal: true
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Dashboard"
+          - "Runtime Logs"
+          - "Logout</p>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
