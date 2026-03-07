@@ -1,0 +1,196 @@
+id: csp-weakness-sink-correlation
+
+info:
+  name: CSP Weakness with DOM Sink Correlation
+  author: geeknik
+  severity: medium
+  description: |
+    Detects potentially exploitable client-side injection conditions by correlating
+    untrusted token flow into dangerous DOM/JS sinks with weak or missing CSP controls.
+  metadata:
+    max-request: 2
+    verified: true
+  tags: headless,csp,domxss,xss,vuln,misconfig
+
+variables:
+  token: "{{randstr_1}}"
+
+flow: |
+  headless() && http("csp-weakness-check")
+
+headless:
+  - steps:
+      - action: script
+        args:
+          hook: true
+          code: |
+            () => {
+              const token = "{{token}}";
+              window.__nucleiSinkFindings = [];
+
+              const log = (sink, value) => {
+                try {
+                  const content = String(value);
+                  if (content.includes(token)) {
+                    window.__nucleiSinkFindings.push({
+                      sink: sink,
+                      value: content.slice(0, 280)
+                    });
+                  }
+                } catch (e) {}
+              };
+
+              const hookSetter = (proto, property, sinkName) => {
+                try {
+                  const descriptor = Object.getOwnPropertyDescriptor(proto, property);
+                  if (!descriptor || !descriptor.set) return;
+
+                  Object.defineProperty(proto, property, {
+                    configurable: true,
+                    enumerable: descriptor.enumerable,
+                    get: descriptor.get,
+                    set: function(v) {
+                      log(sinkName, v);
+                      return descriptor.set.call(this, v);
+                    }
+                  });
+                } catch (e) {}
+              };
+
+              hookSetter(Element.prototype, "innerHTML", "Element.innerHTML");
+              hookSetter(Element.prototype, "outerHTML", "Element.outerHTML");
+
+              const oldInsertAdjacentHTML = Element.prototype.insertAdjacentHTML;
+              if (oldInsertAdjacentHTML) {
+                Element.prototype.insertAdjacentHTML = function(position, html) {
+                  log("Element.insertAdjacentHTML", html);
+                  return oldInsertAdjacentHTML.apply(this, arguments);
+                };
+              }
+
+              const oldDocumentWrite = document.write;
+              document.write = function(content) {
+                log("document.write", content);
+                return oldDocumentWrite.apply(document, arguments);
+              };
+
+              const oldEval = window.eval;
+              window.eval = function(content) {
+                log("eval", content);
+                return oldEval.apply(window, arguments);
+              };
+
+              const oldSetTimeout = window.setTimeout;
+              window.setTimeout = function(handler) {
+                if (typeof handler === "string") {
+                  log("setTimeout(string)", handler);
+                }
+                return oldSetTimeout.apply(window, arguments);
+              };
+
+              const oldSetInterval = window.setInterval;
+              window.setInterval = function(handler) {
+                if (typeof handler === "string") {
+                  log("setInterval(string)", handler);
+                }
+                return oldSetInterval.apply(window, arguments);
+              };
+
+              const OldFunction = window.Function;
+              window.Function = function() {
+                const args = Array.from(arguments);
+                log("Function", args.join(","));
+                return OldFunction.apply(this, args);
+              };
+              window.Function.prototype = OldFunction.prototype;
+
+              window.__nucleiSinkToken = token;
+            }
+
+      - action: navigate
+        args:
+          url: "{{BaseURL}}/?nuclei_csp_sink={{token}}#{{token}}"
+
+      - action: waitload
+
+      - action: waitdom
+
+      - action: script
+        args:
+          code: |
+            () => {
+              const token = window.__nucleiSinkToken || "{{token}}";
+              try {
+                window.postMessage(token, "*");
+              } catch (e) {}
+              try {
+                window.postMessage({token: token, payload: token}, "*");
+              } catch (e) {}
+              try {
+                window.dispatchEvent(new MessageEvent("message", {data: token, origin: window.origin}));
+              } catch (e) {}
+              return "ok";
+            }
+
+      - action: sleep
+        args:
+          duration: 2
+
+      - action: script
+        name: findings
+        args:
+          code: |
+            () => JSON.stringify(window.__nucleiSinkFindings || [])
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: findings
+        words:
+          - '"sink":'
+
+      - type: word
+        part: findings
+        words:
+          - "{{token}}"
+
+    extractors:
+      - type: regex
+        name: sink
+        part: findings
+        internal: true
+        group: 1
+        regex:
+          - '"sink":"([^"]+)"'
+
+      - type: kval
+        part: findings
+        kval:
+          - findings
+
+http:
+  - id: csp-weakness-check
+    method: GET
+    path:
+      - "{{BaseURL}}"
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "!contains(to_lower(header), 'content-security-policy:') && !regex('(?i)<meta[^>]+http-equiv=[\"\\'']content-security-policy[\"\\''][^>]*>', body)"
+          - "regex('(?i)content-security-policy\\s*:.*(script-src|default-src)[^\\n]*(unsafe-inline|unsafe-eval|\\*|data:|blob:|http:)', header)"
+          - "regex('(?i)<meta[^>]+http-equiv=[\"\\'']content-security-policy[\"\\''][^>]+content=[\"\\''][^\"\\'']*(script-src|default-src)[^\"\\'']*(unsafe-inline|unsafe-eval|\\*|data:|blob:|http:)', body)"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "'sink=' + sink"
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)content-security-policy:\\s*([^\\n]+)"
