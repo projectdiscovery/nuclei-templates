@@ -1,0 +1,48 @@
+id: user-registration
+
+info:
+  name: WordPress User Registration & Membership Plugin Detection
+  author: omarkurt
+  severity: info
+  description: |
+    Detects WordPress User Registration & Membership plugin and extracts version information.
+    This template identifies installations of the plugin regardless of version.
+  reference:
+    - https://wordpress.org/plugins/user-registration/
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.component:"WordPress"
+  tags: wordpress,wp-plugin,user-registration,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/user-registration/readme.txt"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "User Registration"
+        part: body
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable tag:\s*[\d.]+'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - '(?i)Stable tag:\s*([\d.]+)'
+
+      - type: dsl
+        dsl:
+          - '"[User Registration] detected on " + host + " (version: " + version + ")"'
