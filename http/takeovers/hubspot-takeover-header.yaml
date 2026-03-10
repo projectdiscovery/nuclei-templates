@@ -1,0 +1,107 @@
+id: hubspot-takeover-header
+
+info:
+  name: HubSpot Subdomain Takeover - Header Detection
+  author: srflipflop,projectdiscovery-neo
+  severity: high
+  description: |
+    Detects vulnerable HubSpot CNAME configurations that can be claimed by attackers.
+    
+    This improved template uses HTTP response headers (x-hs-cfworker-meta and 
+    x-hubspot-notfound) for detection, which are more reliable than body content
+    matching. The original templates may miss cases where HubSpot serves custom
+    error pages without the standard "404 Not Found" body text.
+    
+    EXPLOITATION THEORY:
+    1. Target has a CNAME record pointing to HubSpot (e.g., *.hs-sites.com, *.hubspot.net)
+    2. The HubSpot portal/page is no longer configured or was deleted
+    3. HubSpot returns OriginResolver headers indicating unclaimed subdomain
+    4. Attacker creates a HubSpot account and claims the subdomain
+    5. Attacker can now serve arbitrary content on the victim's subdomain
+    
+    ATTACK SCENARIO (hr.test.com example):
+    - DNS: hr.test.com → CNAME → *.hs-sites.com → HubSpot infrastructure
+    - HubSpot checks if any customer claimed "hr.test.com" as a custom domain
+    - If unclaimed: HubSpot serves OriginResolver response with specific headers
+    - Attacker signs up for HubSpot → Settings → Domains → Add "testlhr.com"
+    - HubSpot validates CNAME exists → Attacker now controls the subdomain content
+    
+  reference:
+    - https://github.com/EdOverflow/can-i-take-over-xyz
+    - https://www.hackerone.com/blog/guide-subdomain-takeovers
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+    - https://legacydocs.hubspot.com/docs/faq/how-do-i-connect-a-custom-domain
+    - https://knowledge.hubspot.com/domains-and-urls/connect-a-domain-to-hubspot
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-284
+  tags: dns,takeover,hubspot,cname,header-based
+  metadata:
+    max-request: 1
+    verified: true
+    detection-method: header-based
+    shodan-query: http.component:"HubSpot"
+    original-templates:
+      - hubspot-takeover.yaml
+    improvement-notes: |
+      Original templates relied on body content matching "404 Not Found" which 
+      can be bypassed or may not appear on all HubSpot NotFoundResolver pages.
+      This template uses the x-hs-cfworker-meta and x-hubspot-notfound headers
+      which are consistently present in HubSpot's infrastructure responses.
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    
+    host-redirects: true
+    max-redirects: 3
+    
+    matchers-condition: and
+    matchers:
+      # Primary indicator: x-hubspot-notfound header set to true
+      # This definitively indicates the domain is not claimed in HubSpot
+      - type: word
+        part: header
+        words:
+          - "x-hubspot-notfound"
+        case-insensitive: true
+
+      # Secondary confirmation: HubSpot infrastructure headers
+      # Confirms we're hitting HubSpot servers (not a different service)
+      - type: word
+        part: header
+        words:
+          - "x-hs-"
+        case-insensitive: true
+
+      # Tertiary: 404 status confirms page is not configured
+      - type: status
+        status:
+          - 404
+
+    extractors:
+      # Extract the cfworker-meta header for evidence
+      - type: kval
+        name: hubspot-cfworker-meta
+        kval:
+          - x_hs_cfworker_meta
+
+      # Extract portal ID if present
+      - type: kval
+        name: hubspot-portal-id
+        kval:
+          - x_hs_portal_id
+
+      # Extract the reason for 404
+      - type: kval
+        name: hubspot-reason
+        kval:
+          - x_hs_reason
+
+      # Extract server header
+      - type: kval
+        name: server
+        kval:
+          - server
