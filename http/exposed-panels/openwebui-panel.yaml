@@ -2,33 +2,41 @@ id: openwebui-panel
 
 info:
   name: Openweb UI Panel - Detect
-  author: rxerium
+  author: rxerium,righettod
   severity: info
   description: |
-    An OpenWebUI panel was detected
+    OpenWebUI was detected - a platform for running AI on your own terms
   reference:
     - https://openwebui.com/
   metadata:
     verified: true
     max-request: 1
-    shodan-query: http.favicon.hash:-286484075
-  tags: panel,openwebui,login,discovery
+    shodan-query: http.favicon.hash:-286484075 http.title:"Open WebUI"
+  tags: panel,openwebui,login,detect,discovery
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
+      - "{{BaseURL}}/api/config"
+      - "{{BaseURL}}/auth"
+      - "{{BaseURL}}/opensearch.xml"
 
     host-redirects: true
     max-redirects: 2
 
-    matchers-condition: and
+    stop-at-first-match: true
     matchers:
-      - type: word
-        words:
-          - '<title>Open WebUI</title>'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title>open webui</title>", "\"name\":\"open webui\"", "<shortname>open webui</shortname>")'
+        condition: and
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a00473045022014a9a3de7fa18591575425e6f8d57aed9ed40349d725c011da681ec8599d9591022100d646f491367d1ceb43b7addfdd41666eb26bf0c86e57e177e27bc5fa0445e290:922c64590222798bb761d5b6d8e72950
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9\.]+)"'
+# digest: 4a0a004730450220328f59d9746dd330aeb3f7b182f6588bf1394e14db521c6b14373b2714d55610022100a25382a8397b9ca9f189c89ce4d0d979fc06726d9cf76b12251ae672fc139b04:922c64590222798bb761d5b6d8e72950

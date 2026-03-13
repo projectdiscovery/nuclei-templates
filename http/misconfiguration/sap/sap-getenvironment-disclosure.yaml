@@ -1,0 +1,54 @@
+id: sap-getenvironment-disclosure
+
+info:
+  name: SAPControl GetEnvironment - Disclosure
+  author: LRVT,l4rm4nd
+  severity: medium
+  description: |
+    Detected SAP systems where the SAP Start Service (sapstartsrv) SAPControl SOAP web service exposes the GetEnvironment web method without authentication.
+  reference:
+    - https://help.sap.com/docs/SUPPORT_CONTENT/si/3362959700.html
+    - https://itsiti.com/csmon/
+    - https://docs.avantra.com/api/latest/js/sap-control.html
+  metadata:
+    max-request: 1
+  tags: misconfig,sap,soap,env,exposure
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml; charset=UTF-8
+        SOAPAction: '""'
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+          <SOAP-ENV:Header>
+            <sapsess:Session xmlns:sapsess="http://www.sap.com/webas/630/soap/features/session/">
+              <enableSession>true</enableSession>
+            </sapsess:Session>
+          </SOAP-ENV:Header>
+          <SOAP-ENV:Body>
+            <ns1:GetEnvironment xmlns:ns1="urn:SAPControl"/>
+          </SOAP-ENV:Body>
+        </SOAP-ENV:Envelope>
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "GetEnvironmentResponse"
+
+      - type: word
+        part: body
+        words:
+          - "LOGNAME="
+          - "USER="
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402204f35a2e8a02dfd581946eda7657354d33dcceb3c9dec113f8ee4025feac4254702202fa42b4eb550a189fe7c19bc577c6e947ddff516726ef572cc16b2d729b7b8cd:922c64590222798bb761d5b6d8e72950
