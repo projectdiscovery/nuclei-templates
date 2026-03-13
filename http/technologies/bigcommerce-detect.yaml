@@ -1,0 +1,57 @@
+id: bigcommerce-detect
+
+info:
+  name: BigCommerce Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running BigCommerce is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    verified: true
+    max-request: 8
+  tags: bigcommerce,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/bigcommerce.js"
+      - "{{BaseURL}}/stores"
+      - "{{BaseURL}}/cart"
+      - "{{BaseURL}}/admin"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by BigCommerce"
+          - "X-BigCommerce-Request-Id"
+          - "bigcommerce.com"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'BigCommerce ([0-9.]+)'
+          - 'Powered by BigCommerce ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: bigcommerce_id
+        regex:
+          - 'bigcommerce-site-id=([a-z0-9]+)'
+          - 'bc-site-id="([a-zA-Z0-9]+)"'
+          - 'bigcommerce\.com/([^/]+)'
+# digest: 4a0a004730450220614a20e365351dcf5119a08efd074f4ff1661c144f1a1acc1033d6776e505758022100d226c7f9f2e435e9ca9a2b711996c851d08d6bebc03a7d79e3c6fd1edc4b7961:922c64590222798bb761d5b6d8e72950
