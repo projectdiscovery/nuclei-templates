@@ -1,0 +1,50 @@
+id: h2-console-exposed
+
+info:
+  name: H2 Database Console - Exposed
+  author: PentesterTN
+  severity: critical
+  description: |
+    H2 Database web console is publicly accessible. The H2 console allows executing arbitrary SQL queries and, in certain configurations, can be leveraged for remote code execution via INIT=RUNSCRIPT or Java ALIAS functions.
+  impact: |
+    An attacker can access the database console with default credentials (sa/<blank>), execute SQL queries to read/modify data, and potentially achieve remote code execution through H2's SQL ALIAS feature or RUNSCRIPT initialization.
+  remediation: |
+    Disable the H2 web console in production by setting spring.h2.console.enabled=false. If required, restrict access to localhost only and enforce authentication.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/reference/html/
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-42392
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"H2 Console"
+  tags: misconfig,h2,database,rce,springboot
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/h2-console'
+      - '{{BaseURL}}/h2-console/'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "H2 Console"
+          - "Login"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "jdbc:h2:"
+
+      - type: status
+        status:
+          - 200
