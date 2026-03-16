@@ -1,0 +1,48 @@
+id: graphql-graphiql-exposure
+
+info:
+  name: GraphiQL Exposure
+  author: Vincent Olagbemide
+  severity: info
+  description: Detects publicly exposed GraphiQL consoles.
+  reference:
+    - https://github.com/graphql/graphiql
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: html:"GraphiQL"
+  tags: misconfig,graphql,graphiql,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/graphiql"
+      - "{{BaseURL}}/graphql"
+      - "{{BaseURL}}/api/graphql"
+      - "{{BaseURL}}/v1/graphql"
+      - "{{BaseURL}}/query"
+
+    redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "graphiql.createFetcher"
+          - "GraphiQL"
+          - "id=\"graphiql\""
+          - "id='graphiql'"
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
