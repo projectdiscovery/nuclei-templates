@@ -1,7 +1,7 @@
 id: remote-spark-gateway-config
 
 info:
-  name: Remote Spark Gateway Configuration - Detect
+  name: Remote Spark Gateway Configuration/Credentials - Exposure
   author: domwhewell-sage
   severity: medium
   description: Remote Spark Gateway config found via /gateway.conf.
@@ -14,9 +14,9 @@ info:
   metadata:
     verified: true
     max-request: 1
-    shodan-query: 'http.html:"SparkView"'
-    fofa-query: 'body="sparkview"'
-  tags: config,exposure,remote-spark,vuln
+    shodan-query: http.html:"SparkView"
+    fofa-query: body="sparkview"
+  tags: config,exposure,remote-spark
 
 http:
   - method: GET
@@ -25,13 +25,15 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: regex
-        condition: and
-        regex:
-          - 'credSSP\s*=\s*'
-          - 'html\s*=\s*'
-          - 'port\s*=\s*'
+      - type: dsl
+        dsl:
+          - 'regex("credSSP\s*=\s*", body) && regex("html\s*=\s*", body) && regex("port\s*=\s*", body)'
+          - 'regex("password\s*=\s*", body)'
+        condition: or
 
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "text/plain")'
+          - 'status_code == 200'
+          - '!contains_all(tolower(body), "<html", "<body")'
+        condition: and
