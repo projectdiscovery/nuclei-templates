@@ -1,0 +1,39 @@
+id: remote-spark-gateway-config
+
+info:
+  name: Remote Spark Gateway Configuration/Credentials - Exposure
+  author: domwhewell-sage
+  severity: medium
+  description: Remote Spark Gateway config found via /gateway.conf.
+  reference:
+    - https://docs.sparkview.info/books/sparkview-admin-manual/page/31-gateway
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"SparkView"
+    fofa-query: body="sparkview"
+  tags: config,exposure,remote-spark
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/gateway.conf"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("credSSP\s*=\s*", body) && regex("html\s*=\s*", body) && regex("port\s*=\s*", body)'
+          - 'regex("password\s*=\s*", body)'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "text/plain")'
+          - 'status_code == 200'
+          - '!contains_all(tolower(body), "<html", "<body")'
+        condition: and
