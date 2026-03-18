@@ -1,0 +1,39 @@
+id: brickcom-camera-default-login
+
+info:
+  name: Brickcom Camera - Default Login
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Brickcom IP cameras accessible using default credentials (admin/admin). Successful authentication exposed full camera configuration, live video streams, LED control, and network settings to remote attackers.
+  reference:
+    - https://www.brickcom.com/support/faq_contents.php?id=48
+    - https://cxsecurity.com/issue/WLB-2026020031
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: 'realm="Brickcom"'
+    fofa-query: 'title="Brickcom"'
+  tags: iot,camera,default-login
+
+http:
+  - raw:
+      - |
+        GET /index_mjpg.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic YWRtaW46YWRtaW4=
+        Connection: close
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        condition: and
+        words:
+          - "var viewer='admin'"
+          - "Brickcom Corporation"
+          - "wledctl.cgi"
