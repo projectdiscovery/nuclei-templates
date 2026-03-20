@@ -1,0 +1,37 @@
+id: ghost-cms-installer
+
+info:
+  name: Ghost CMS Installation Setup - Exposure
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Ghost CMS installation setup wizard accessible without authentication. An unauthenticated remote attacker can navigate to
+    /ghost/#/setup and complete the installation to gain full owner-level administrative control of the site.
+  reference:
+    - https://ghost.org/docs/install/
+    - https://ghost.org/docs/config/
+    - https://github.com/TryGhost/Ghost
+  metadata:
+    max-request: 1
+    verified: true
+    fofa-query: app="Ghost-CMS"
+    shodan-query: http.component:"Ghost"
+  tags: ghost,cms,exposure,setup,takeover,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/ghost/api/admin/authentication/setup/"
+      - "{{BaseURL}}/ghost/api/v3/admin/authentication/setup/"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"setup\"", "\"status\"", "false")'
+        condition: and
