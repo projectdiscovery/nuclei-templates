@@ -1,0 +1,104 @@
+id: favicon-extract
+
+info:
+  name: favicon-extract
+  author: p-l-
+  severity: info
+  description: |
+    Fetch favicon URL from the root page or try standard URLs. Extract content-type header and several hashes for comparison with Shodan, Censys, Nmap, etc.
+  metadata:
+    max-request: 10
+  tags: tech,favicon,discovery
+
+variables:
+  known_favicon_path:
+    - "favicon.ico"
+    - "favicon.png"
+    - "images/favicon.ico"
+    - "img/favicon.ico"
+    - "assets/favicon.ico"
+    - "static/favicon.ico"
+    - "public/favicon.ico"
+    - "apple-touch-icon.png"
+
+flow: |
+  http(1);
+  let found = false;
+  let favicon_url = []
+  if (! template["favicon_url"]) {
+    favicon_url = []
+  }
+  else {
+    favicon_url = [].concat(template["favicon_url"])
+  }
+  for (let url of favicon_url) {
+    set("current_favicon_url", url);
+    if(http(2)) {
+      found = true;
+      break;
+    }
+  }
+  if (! found) {
+    for (let url of template["known_favicon_path"]) {
+      set("current_favicon_url", url);
+      if(http(2)) {
+        break;
+      }
+    }
+  }
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        name: is-html
+        internal: true
+
+    extractors:
+      - type: xpath
+        name: favicon_url
+        part: body
+        xpath:
+          - '//link[contains(@rel, "icon")]/@href'
+        internal: true
+      - type: dsl
+        name: final_url
+        dsl:
+          - final_url
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{current_favicon_url}}"
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: content_type
+        words:
+          - "image/"
+          - "application/octet-stream"
+        condition: or
+
+    extractors:
+      - type: dsl
+        dsl:
+          - "content_type"
+          - "mmh3(base64_py(body))"
+          - "md5(body)"
+          - "sha1(body)"
+          - "sha256(body)"
