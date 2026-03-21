@@ -1,11 +1,11 @@
 id: synology-dsm-system-info
 
 info:
-  name: Synology DSM System Information Disclosure
+  name: Synology DSM System Info - Exposure
   author: DhiyaneshDk
   severity: info
   description: |
-    Synology DiskStation Manager (DSM) exposes system information through the SYNO.API.Info endpoint without authentication, revealing all available APIs,versions, and installed packages.
+    Synology DiskStation Manager (DSM) exposes system information through the SYNO.API.Info endpoint without authentication, revealing all available APIs, versions, and installed packages.
   reference:
     - https://www.synology.com/en-us/dsm
   metadata:
@@ -15,33 +15,18 @@ info:
     fofa-query: body="Synology&nbsp;DiskStation"
     product: diskstation_manager
     vendor: synology
-  tags: synology,dsm,misconfig,diskstation-manager,info-disclosure
+  tags: synology,dsm,misconfig,diskstation-manager,exposure
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/webapi/entry.cgi?api=SYNO.API.Info&version=1&method=query&query=all"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '"success":true'
-
-      - type: word
-        part: body
-        words:
-          - "SYNO.Core."
-          - "SYNO.FileStation."
-          - "SYNO.DSM."
-        condition: or
-
-      - type: word
-        part: header
-        words:
-          - "application/json"
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "SYNO.Core.", "SYNO.FileStation.", "SYNO.DSM.")'
+          - 'contains(header, "application/json")'
+          - 'contains(body, "success\":true")'
+          - 'status_code == 200'
+        condition: and
