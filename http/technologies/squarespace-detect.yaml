@@ -1,0 +1,58 @@
+id: squarespace-detect
+
+info:
+  name: Squarespace Detection
+  author: Chirag Mistry
+  severity: info
+  description: |
+    An instance running Squarespace is detected by looking for specific HTTP headers, HTML tags, and known endpoints.
+  metadata:
+    max-request: 8
+    shodan-query: http.component:"Squarespace"
+  tags: squarespace,detect,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/_static/"
+      - "{{BaseURL}}/squarespace.js"
+      - "{{BaseURL}}/config.json"
+      - "{{BaseURL}}/media-cache"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: response
+        words:
+          - "Powered by Squarespace"
+          - "X-Squarespace-Request-Id"
+          - "Squarespace Template"
+        condition: or
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200
+          - 403
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        regex:
+          - 'Squarespace ([0-9.]+)'
+          - 'Powered by Squarespace ([0-9.]+)'
+
+      - type: regex
+        part: body
+        name: squarespace_id
+        regex:
+          - 'squarespace-site-id=([a-z0-9]+)'
+          - 'siteid="([a-zA-Z0-9]+)"'
+          - 'squarespace\.com/([^/]+)'
+# digest: 4a0a00473045022058edf410f05264ca9d177a83f9898f89588201d130b01315617bf532d88df8a8022100af5c6bb6b05753351159273e8ff270c93636d2aa251244c5637d81b93a04fc71:922c64590222798bb761d5b6d8e72950
