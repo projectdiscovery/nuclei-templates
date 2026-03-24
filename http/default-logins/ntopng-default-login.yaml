@@ -1,0 +1,70 @@
+id: ntopng-default-login
+
+info:
+  name: ntopng - Default Login
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected the ntopng network traffic monitoring tool was found to be using default credentials (admin:admin). An attacker could have gained full administrative access to network traffic data, flow analysis, and system configuration.
+  reference:
+    - https://www.ntop.org/guides/ntopng/faq.html
+    - https://www.ntop.org/guides/ntopng/api/rest/api_v2.html
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: ntop
+    product: ntopng
+    shodan-query: 'http.title:"ntopng" port:3000'
+    fofa-query: 'title="ntopng" && port="3000"'
+  tags: ntopng,default-login,auth,vuln
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: ntopng_check
+        part: header
+        internal: true
+        regex:
+          - 'Location:.*login\.lua'
+
+  - raw:
+      - |
+        POST /authorize.html HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&password={{password}}&referer=%2F
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 302'
+          - '!contains(to_lower(header), "login.lua")'
+        condition: and
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 3
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "loggedUser = \"admin\"", "isAdministrator = true")'
+        condition: and
+# digest: 4b0a00483046022100f1f21efb132c8f53421f14998c11e5a415be7fbaf3d12c2aeb0caf814a63e77b02210080276cf0bc2f37d5b5dec1899d2d6676ea4d0ca36290ff5958adffb0c87c2b86:922c64590222798bb761d5b6d8e72950
