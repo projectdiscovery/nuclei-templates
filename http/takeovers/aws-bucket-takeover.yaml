@@ -1,7 +1,7 @@
 id: aws-bucket-takeover
 info:
   name: AWS Bucket Takeover Detection
-  author: pdteam,pwnhxl,zy9ard3, venjaku
+  author: pdteam,pwnhxl,zy9ard3,venjaku
   severity: high
   description: AWS Bucket takeover was detected.
   reference:
@@ -9,29 +9,30 @@ info:
   metadata:
     max-request: 1
   tags: takeover,aws,bucket,vuln
+
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
+
     matchers-condition: and
     matchers:
       - type: dsl
         dsl:
           - Host != ip
+
       - type: word
         words:
           - "The specified bucket does not exist"
           - "BucketName"
         condition: and
+
       - type: dsl
         dsl:
           - contains(tolower(header), 'x-guploader-uploadid')
           - contains(tolower(header), "aliyunoss")
         negative: true
 
-      # Exclude AWS S3 Account Regional Namespace buckets (introduced March 2026).
-      # These are account-bound (format: <name>-<12-digit-id>-<region>-an.s3...amazonaws.com)
-      # and cannot be registered by a different AWS account, so takeover is not directly possible.
       - type: regex
         part: host
         regex:
@@ -74,6 +75,7 @@ http:
           - "oss-eu-central-1.aliyuncs.com"
           - "oss-me-east-1.aliyuncs.com"
         negative: true
+
     extractors:
       - type: regex
         part: body
@@ -81,11 +83,3 @@ http:
         regex:
           - '<li>BucketName: (.*?)</li>'
           - '<BucketName>(.*?)</BucketName>'
-# digest: 490a004630440220316ab09e7977d660e576c657d45ec5141ffc7421df5352b23e926340c87f4860022007ac07ec4797b9668d58845b0383448da5031ce561f325a09fd5702097ef487d:922c64590222798bb761d5b6d8e72950
-```
-
-**What changed and why:**
-
-The new negative regex matcher added is:
-```
-^[a-z0-9][a-z0-9-]+-[0-9]{12}-[a-z]{2}-[a-z]+-[0-9]+-an\.s3[.\-]
