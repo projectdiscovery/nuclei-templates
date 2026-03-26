@@ -1,0 +1,46 @@
+id: mcp-unsigned-communication
+
+info:
+  name: MCP Server Accepts Unsigned Messages
+  author: razashariff
+  severity: high
+  description: |
+    The MCP server accepts unsigned JSON-RPC messages without requiring
+    cryptographic signatures. This allows man-in-the-middle modification
+    of tool calls and responses after TLS termination.
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html
+    - https://datatracker.ietf.org/doc/draft-sharif-mcps-secure-mcp/
+  classification:
+    cwe-id: CWE-345
+    cvss-score: 7.5
+  tags: mcp,ai-agent,security,owasp
+  metadata:
+    max-request: 1
+    owasp-mcp: MCP-002
+
+http:
+  - raw:
+      - |
+        POST {{BaseURL}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","method":"tools/list","id":1}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "jsonrpc"
+          - "result"
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '.result.tools | length'
