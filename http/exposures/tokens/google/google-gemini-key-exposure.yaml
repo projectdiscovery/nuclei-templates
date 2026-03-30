@@ -1,0 +1,37 @@
+id: google-gemini-key-exposure
+
+info:
+  name: Google Gemini API Key - Exposure
+  author: Mestizo
+  severity: high
+  description: |
+    Detects exposed Google API keys and verifies access to the Gemini Files API endpoint. Exploitation can result in unauthorized data exposure, quota exhaustion, and potential financial loss.
+  metadata:
+    max-request: 2
+    verified: true
+  tags: exposure,google,apikey,gemini
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        name: google_api_key
+        part: body
+        regex:
+          - 'AIza[0-9A-Za-z\-_]{35}'
+        internal: true
+
+  - method: GET
+    path:
+      - "https://generativelanguage.googleapis.com/v1beta/files?key={{google_api_key}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - '!contains(body, "error")'
+          - '!status_code == 403'
+        condition: and
