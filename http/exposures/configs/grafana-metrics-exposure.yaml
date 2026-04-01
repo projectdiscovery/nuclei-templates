@@ -1,0 +1,51 @@
+id: grafana-metrics-exposure
+
+info:
+  name: Grafana Metrics Endpoint - Information Disclosure
+  author: 0x_Akoko
+  severity: low
+  description: |
+    Detected Grafana metrics endpoint exposed without authentication revealed sensitive infrastructure information, including version, edition, user counts, dashboard statistics, datasources, and database connection details.
+  reference:
+    - https://grafana.com/docs/grafana/latest/setup-grafana/set-up-grafana-monitoring/
+    - https://hackerone.com/reports/1448218
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+  tags: grafana,exposure,metrics,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/metrics"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "grafana_build_info"
+          - "# TYPE grafana_"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'grafana_build_info\{[^}]*version="([0-9.]+)"'
+# digest: 4a0a0047304502203fcd5d467ed416927b72ed41f5b183db205206ce4a715af210d40606a6516c1b02210081b20d2aa0153ef9f7b81ec4f9adf61b94244d5e3edfbb716305a5cc3bbc2913:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,32 @@
+id: selenium-grid-exposure
+
+info:
+  name: Selenium Grid Exposure
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Selenium Grid console without authentication, exposing internal network IPs, container names, OS details, software versions, and browser node configurations. Attackers could abuse this for SSRF, internal reconnaissance, or resource hijacking.
+  reference:
+    - https://www.selenium.dev/documentation/grid/
+    - https://github.com/SeleniumHQ/selenium
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.html:"Selenium Grid" "ready"
+    fofa-query: body="Selenium Grid" && body="ready"
+  tags: selenium,grid,testing,exposure,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wd/hub/status"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"value\"", "\"ready\"", "\"message\"", "Selenium Grid ready")'
+          - 'contains_any(body, "\"browserName\"", "\"slots\"", "\"availability\"")'
+        condition: and
+# digest: 4a0a00473045022100d7139271c4e89a98ad0fffbad7f3128dc27873ffaff2d5f4381950c185b849e902203367b9f4aec9dc46545aedad64c59c9272b72b1058db3fcf3514dcd8327216d9:922c64590222798bb761d5b6d8e72950

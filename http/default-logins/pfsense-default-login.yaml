@@ -1,0 +1,75 @@
+id: pfsense-default-login
+
+info:
+  name: pfSense - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected pfSense firewall was found using default administrator credentials (admin:pfsense). An attacker could have gained full administrative access to manage firewall rules, routing, and network configuration.
+  reference:
+    - https://docs.netgate.com/pfsense/en/latest/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: netgate
+    product: pfsense
+    shodan-query: 'http.title:"pfSense"'
+    fofa-query: 'title="pfSense"'
+  tags: default-login,pfsense,firewall,network
+
+variables:
+  username: "admin"
+  password: "pfsense"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "pfSense", "__csrf_magic")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - 'var csrfMagicToken = "([^"]+)"'
+
+      - type: regex
+        name: phpsessid
+        part: header
+        group: 1
+        internal: true
+        regex:
+          - 'Set-Cookie: (PHPSESSID=[^;]+)'
+
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept: text/html
+        Cookie: {{phpsessid}}
+
+        __csrf_magic={{csrf}}&usernamefld={{username}}&passwordfld={{password}}&login=Sign+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'contains(to_lower(header), "location: /")'
+          - '!contains(to_lower(header), "index.php")'
+        condition: and
+# digest: 490a0046304402203c6788f7e0f27e9c5063a34bd5ec3af36f08ccbc7d6fe455a0461cdaafa3001d022004c636359d81ac9f1114e6484471a949523277acaf0b6abefb3694081151129d:922c64590222798bb761d5b6d8e72950

