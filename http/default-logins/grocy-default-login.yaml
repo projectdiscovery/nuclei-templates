@@ -1,0 +1,70 @@
+id: grocy-default-login
+
+info:
+  name: Grocy - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+   Detected Grocy was found using default credentials admin:admin.Successful authentication grants full access to the household management platform including all stock data, chores, recipes, and user settings.
+  reference:
+    - https://github.com/grocy/grocy
+    - https://docs.linuxserver.io/images/docker-grocy/
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: grocy
+    product: grocy
+    shodan-query: 'http.title:"grocy"'
+    fofa-query: 'title="grocy" || body="grocy-version"'
+  tags: default-login,grocy,auth
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(to_lower(body), "grocy", "username", "password")'
+        condition: and
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Accept: text/html
+
+        username={{username}}&password={{password}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 302'
+          - '!contains(to_lower(header), "/login")'
+        condition: and
+
+  - raw:
+      - |
+        GET /stockoverview HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(to_lower(body), "stock overview", "grocy")'
+        condition: and
