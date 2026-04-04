@@ -1,0 +1,67 @@
+id: graylog-default-login
+
+info:
+  name: Graylog - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected that Graylog was using the default credentials admin:admin. The VM/OVA appliance shipped with admin:admin out of the box.
+  reference:
+    - https://go2docs.graylog.org/current/setting_up_graylog/rest_api.html
+    - https://archivedocs.graylog.org/en/2.5/pages/installation/virtual_machine_appliances.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: graylog
+    product: graylog
+    shodan-query: 'title:"Graylog Web Interface"'
+    fofa-query: 'app="Graylog" || title="Graylog Web Interface"'
+  tags: default-login,graylog,auth
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"cluster_id\"", "\"node_id\"", "\"version\"")'
+        condition: and
+
+  - raw:
+      - |
+        POST /api/system/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+        X-Requested-By: nuclei
+
+        {"username":"{{username}}","password":"{{password}}","host":""}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"session_id\"", "\"valid_until\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: session_id
+        part: body
+        regex:
+          - '"session_id"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100e72fdd6a72fed4e63418a827d3f2f71fc440ec7db018260ae16f1559b328c0d90221008449134692b22d919b6236a99356dfca633d8373a3a4b5f86c646e78236f0b4c:922c64590222798bb761d5b6d8e72950

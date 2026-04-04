@@ -1,0 +1,65 @@
+id: netbox-default-login
+
+info:
+  name: NetBox - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected that NetBox was using the default credentials admin:admin. The official netbox-docker deployment set SUPERUSER_NAME=admin and SUPERUSER_PASSWORD=admin by default.
+  reference:
+    - https://github.com/netbox-community/netbox-docker
+    - https://docs.netbox.dev/en/stable/integrations/rest-api/#authenticating-to-the-api
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: netbox-community
+    product: netbox
+    shodan-query: 'http.title:"NetBox"'
+    fofa-query: 'title="NetBox" || body="netbox-community"'
+  tags: default-login,netbox,auth
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(to_lower(body), "netbox", "csrfmiddlewaretoken")'
+        condition: and
+
+  - raw:
+      - |
+        POST /api/users/tokens/provision/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 201'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"key\"", "\"user\"", "\"username\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: api_token
+        part: body
+        regex:
+          - '"key"\s*:\s*"([a-f0-9]{40})"'
+# digest: 4a0a0047304502205f727d9d56418421260097f5213ffb63af5b14514b46e7a673347055158e1443022100e49ae23b3cc7ff68916638f18e5a91bfd248e0cb96642c333cbee027c44cdda5:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,65 @@
+id: mirth-connect-default-login
+
+info:
+  name: Mirth Connect - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Mirth Connect was using default credentials admin:admin. Mirth Connect is a widely used healthcare integration engine for HL7, FHIR, and other medical data standards.
+  reference:
+    - https://www.nextgen.com/products-and-services/integration-engine
+    - https://docs.nextgen.com/bundle/Mirth_Connect_v4.4.1/page/connect/connect/topics/c_Getting_Started_mirth_connect_ug.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: nextgen
+    product: mirth-connect
+    shodan-query: 'http.title:"Mirth Connect"'
+    fofa-query: 'title="Mirth Connect"'
+  tags: mirth,default-login,misconfig,healthcare
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /api/users/_login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        X-Requested-With: XMLHttpRequest
+
+        username={{username}}&password={{password}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/xml")'
+          - 'contains_all(to_lower(body), "loginstatus", "success")'
+        condition: and
+
+    cookie-reuse: true
+
+  - raw:
+      - |
+        GET /api/users/current HTTP/1.1
+        Host: {{Hostname}}
+        X-Requested-With: XMLHttpRequest
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/xml")'
+          - 'contains_all(to_lower(body), "<username>", "admin")'
+        condition: and
+# digest: 4a0a0047304502207651fa5ec89eeb4ebd8e179f46b0a51656104ee20d148f7b46fc51859f0296c4022100932a44137b1d50bed9bfb2bd114ccb4156ab2e36362551dc7bfa3d234c7e7997:922c64590222798bb761d5b6d8e72950
