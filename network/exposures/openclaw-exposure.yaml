@@ -2,7 +2,7 @@ id: openclaw-exposure
 
 info:
   name: Openclaw (formerly Clawdbot / Moltbot) - Detect
-  author: rxerium
+  author: rxerium,fullstackpotato
   severity: info
   description: |
     Clawdbot Gateway service was detected exposing configuration information via mDNS including DNS settings, gateway details, and service configuration.
@@ -23,9 +23,9 @@ javascript:
       let c = require("nuclei/net");
       let conn = c.Open('udp', `${Host}:${Port}`);
       // mDNS query for _clawdbot-gw._tcp.local PTR record
-      let packet = "0000000000010000000000000c5f636c617764626f742d6777045f746370056c6f63616c00000c0001"
+      let packet = "000000000001000000000000095f7365727669636573075f646e732d7364045f756470056c6f63616c00000c0001"
       conn.SendHex(packet);
-      let resp = conn.RecvString();
+      let resp = conn.RecvString(2048);
       resp;
 
     args:
@@ -35,10 +35,9 @@ javascript:
     matchers:
       - type: dsl
         dsl:
-          - "success == true"
-          - "contains(response, 'clawdbot')"
-          - "contains(response, 'role=gateway')"
-        condition: and
+          - "contains(response, '_openclaw-gw') && success == true"
+          - "contains(response, 'clawdbot') && success == true"
+        condition: or
 
     extractors:
       - type: regex
@@ -47,4 +46,3 @@ javascript:
         group: 1
         regex:
           - 'displayName=([a-zA-Z0-9._-]+)'
-# digest: 490a00463044022047e01b3a0b152746c0da50e6c1250031f5b2e944e55355f6e8c41edd56ec75e20220059a599bf89d7075e4cd1a9dadc9e013be6bb218623f57f1ca12c32337153418:922c64590222798bb761d5b6d8e72950
