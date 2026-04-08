@@ -1,0 +1,47 @@
+id: laravel-debugbar-exposure
+
+info:
+  name: Laravel Debugbar - Sensitive Information Exposure
+  author: moamenbasel
+  severity: medium
+  description: |
+    Laravel Debugbar (barryvdh/laravel-debugbar) was detected as enabled and publicly accessible. When left active in production, it exposes SQL queries, request data, session variables, mail logs, and application internals to any visitor.
+  remediation: |
+    Disable Laravel Debugbar in production by setting DEBUGBAR_ENABLED=false in the .env file or removing the package from production dependencies.
+  reference:
+    - https://github.com/barryvdh/laravel-debugbar
+    - https://laravel.com/docs/10.x/configuration#environment-configuration
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+  tags: laravel,debugbar,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_debugbar/open"
+      - "{{BaseURL}}/__clockwork"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "debugbar"
+          - "__meta"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
