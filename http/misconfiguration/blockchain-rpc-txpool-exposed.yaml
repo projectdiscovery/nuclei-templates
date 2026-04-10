@@ -1,0 +1,54 @@
+id: blockchain-rpc-txpool-exposed
+
+info:
+  name: Blockchain RPC - txpool_content Exposed
+  author: PentesterTN
+  severity: high
+  description: |
+    The blockchain RPC endpoint exposes the txpool_content method, which returns all pending (unmined) transactions in the mempool including sender addresses, transaction data, gas prices, and values. This enables frontrunning attacks, sandwich attacks, and other MEV (Maximal Extractable Value) exploitation against users.
+  impact: |
+    An attacker can monitor pending transactions in real-time to perform frontrunning (executing trades before victims), sandwich attacks (placing buy/sell orders around a victim's swap), and general mempool surveillance. This directly impacts every user performing DeFi transactions on the chain.
+  remediation: |
+    Disable txpool_content, txpool_status, and txpool_inspect on public RPC endpoints. These should only be accessible to internal validator/sequencer nodes. If needed for tooling, expose them on a separate authenticated endpoint.
+  reference:
+    - https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool
+    - https://ethereum.org/en/developers/docs/mev/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "jsonrpc"
+  tags: misconfig,blockchain,rpc,txpool,mev,web3
+
+http:
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","method":"txpool_content","params":[],"id":1}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"result"'
+          - '"pending"'
+          - '"queued"'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402205cec91a2855a2190db2ebb07d94e97ffa67da478e5a492cf7a6062a69cd753eb0220244e3cf16f105f8dde22f324c45cee86a21e33ac4724dffaba5c18dd427594a8:922c64590222798bb761d5b6d8e72950
