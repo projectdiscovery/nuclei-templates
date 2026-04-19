@@ -1,0 +1,51 @@
+id: hacker-ai-nextjs-data-leak
+
+info:
+  name: Next.js SSR Props / Context Data Leak
+  author: Umut ÖZEN
+  severity: critical
+  description: Modern Next.js applications fetch server-side and static props which are hydrated onto the client side via JSON. Developers often send the entire database schema, user objects (including password hashes), session tokens or internal API keys to the frontend instead of filtering the required fields. This template dynamically extracts the application's unique build ID and scans the raw JSON data endpoints for critical leaks.
+  tags: exposure,nextjs,leak,secrets,ssr,custom
+
+requests:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /_next/data/{{build_id}}/index.json HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_2
+        regex:
+          - '(?i)"password_hash"\s*:'
+          - '(?i)"apikey"\s*:'
+          - '(?i)"secret[_\s]?key"\s*:'
+          - '(?i)"jwt_token"\s*:'
+          - '(?i)"bearer_token"\s*:'
+          - '(?i)"stripe_secret"\s*:'
+          - '(?i)ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' # Generic JWT detection
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: build_id
+        internal: true
+        part: body_1
+        group: 1
+        regex:
+          - '"buildId":"([a-zA-Z0-9_-]+)"'
+          - '_next/static/([a-zA-Z0-9_-]+)/_buildManifest.js'
+
+      - type: regex
+        part: body_2
+        name: leaked_secrets
+        regex:
+          - '(?i)"(password_hash|apikey|secret_key|jwt|bearer)[a-z0-9_]*"\s*:\s*"[^"]+"'
