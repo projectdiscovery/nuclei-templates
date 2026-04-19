@@ -1,0 +1,43 @@
+id: hacker-ai-postman-leak
+
+info:
+  name: Exposed Postman Collection & Environments Leak
+  author: Umut ÖZEN
+  severity: high
+  description: Testers and developers often leave Postman collections or environment JSON files in the webroot directory by accident during CI/CD deployments. These files usually contain highly sensitive API keys, Bearer tokens, passwords and hidden endpoint paths.
+  tags: config,exposure,postman,secrets,custom
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/postman_collection.json"
+      - "{{BaseURL}}/collection.json"
+      - "{{BaseURL}}/.postman/environment.json"
+      - "{{BaseURL}}/api.postman_collection.json"
+      - "{{BaseURL}}/test.postman_environment.json"
+      - "{{BaseURL}}/dump.json"
+      - "{{BaseURL}}/secrets.postman_environment.json"
+      - "{{BaseURL}}/admin.postman_collection.json"
+      - "{{BaseURL}}/prod.postman_environment.json"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"_postman_id":'
+          - '"info":'
+          - '"item":'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)bearer\s*[\w\.\-]+'
+          - '(?i)api[_-]?key[\"\'\s:]*[\w\-]+'
+          - '"value":\s*"[^"]+"'
