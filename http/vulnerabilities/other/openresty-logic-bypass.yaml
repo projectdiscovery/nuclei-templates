@@ -1,65 +1,48 @@
 id: openresty-lua-logic-bypass-final
 
 info:
-  name: OpenResty Lua Logic/Auth Bypass (Advanced Differential)
+  name: OpenResty Lua Logic/Auth Bypass
   author: Umut Ozen
   severity: high
   description: |
     Detects potential logic/authentication bypass vulnerabilities in OpenResty (Nginx + Lua)
     by comparing baseline and manipulated responses. Uses differential analysis (content-length
     delta + keyword appearance) and strict negative matching to reduce false positives.
+    Note: Generates approximately 30-50 HTTP requests per target. Use with caution on production systems.
   tags: openresty,lua,nginx,bypass,auth,logic,advanced
 
-flow: http(1) && http(2)
+flow: http(1) && http(2) && http(3)
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}{{path}}"
-
-    payloads:
-      path:
-        - "/"
-        - "/api"
-        - "/v1/user"
-        - "/login"
-        - "/admin"
-        - "/internal"
-        - "/backend"
-        - "/auth"
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/admin"
 
     attack: batteringram
+
+    threads: 5
 
   - method: GET
     path:
       - "{{BaseURL}}{{path}}?{{param}}={{bypass}}"
 
     payloads:
+      path:
+        - "/"
+        - "/admin"
       param:
         - user
-        - username
-        - uid
-        - account
-        - email
         - role
-        - access
-        - perm
-
       bypass:
         - admin%00
         - admin%2500
-        - admin%20
-        - admin%09
-        - admin%0a
-        - admin%00%20
         - admin[]
-        - true%00
-        - 1%00
-        - admin=true
-        - user[]=admin
         - user[role]=admin
 
     attack: clusterbomb
+    threads: 5
+    stop-at-first-match: true
 
     matchers-condition: and
     matchers:
@@ -104,20 +87,20 @@ http:
     body: "{{param}}={{bypass}}"
 
     payloads:
+      path:
+        - "/"
+        - "/login"
       param:
         - user
-        - username
         - role
-        - access
-
       bypass:
         - admin%00
         - admin%20
-        - true%00
-        - 1%00
         - user[]=admin
 
     attack: clusterbomb
+    threads: 5
+    stop-at-first-match: true
 
     matchers-condition: and
     matchers:
