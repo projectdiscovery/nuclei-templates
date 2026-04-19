@@ -1,0 +1,128 @@
+id: openresty-lua-logic-bypass-final
+
+info:
+  name: OpenResty Lua Logic/Auth Bypass (Advanced Differential)
+  author: Umut Ozen
+  severity: high
+  description: |
+    Detects potential logic/authentication bypass vulnerabilities in OpenResty (Nginx + Lua)
+    by comparing baseline and manipulated responses. Uses differential analysis (content-length
+    delta + keyword appearance) and strict negative matching to reduce false positives.
+  tags: openresty,lua,nginx,bypass,auth,logic,advanced
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path}}"
+
+    payloads:
+      path:
+        - "/"
+        - "/api"
+        - "/v1/user"
+        - "/login"
+        - "/admin"
+        - "/internal"
+        - "/backend"
+        - "/auth"
+
+    attack: batteringram
+
+  - method: GET
+    path:
+      - "{{BaseURL}}{{path}}?{{param}}={{bypass}}"
+
+    payloads:
+      param:
+        - user
+        - username
+        - uid
+        - account
+        - email
+        - role
+        - access
+        - perm
+
+      bypass:
+        - admin%00
+        - admin%2500
+        - admin%20
+        - admin%09
+        - admin%0a
+        - admin%00%20
+        - admin[]
+        - true%00
+        - 1%00
+        - admin=true
+        - user[]=admin
+        - user[role]=admin
+
+    attack: clusterbomb
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+
+      - type: dsl
+        dsl:
+          - "(len(body) - len(body_1)) > 40 || (len(body_1) - len(body)) > 40"
+
+      - type: dsl
+        dsl:
+          - "contains(body, 'admin') && !contains(body_1, 'admin')"
+
+      - type: word
+        part: body
+        words:
+          - "admin panel"
+          - "logout"
+          - "dashboard"
+          - "welcome admin"
+          - "profile"
+          - "settings"
+          - "api_key"
+          - "token"
+        condition: or
+
+      - type: regex
+        part: body
+        regex:
+          - "(?i)login|sign.?in|unauthorized|forbidden|access denied"
+        negative: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}{{path}}"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    body: "{{param}}={{bypass}}"
+
+    payloads:
+      param:
+        - user
+        - username
+        - role
+        - access
+
+      bypass:
+        - admin%00
+        - admin%20
+        - true%00
+        - 1%00
+        - user[]=admin
+
+    attack: clusterbomb
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "(len(body) - len(body_1)) > 40 || (len(body_1) - len(body)) > 40"
+          - "contains(body, 'admin') && !contains(body_1, 'admin')"
