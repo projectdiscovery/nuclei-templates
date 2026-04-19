@@ -1,0 +1,52 @@
+id: exposed-ai-ide-rules
+
+info:
+  name: Exposed AI IDE Rules & Copilot Instructions (.cursorrules)
+  author: Umut ÖZEN
+  severity: high
+  description: |
+    As the adoption of AI-assisted IDEs like Cursor and GitHub Copilot surges, developers often create hidden instructions files in the root of their projects (e.g., .cursorrules, copilot-instructions.md, .github/copilot-instructions.md). These files supply context to the LLM agent about the project.
+    Often, developers inadvertently hardcode sensitive database connection strings, architecture flow details, internal IP addresses, API secrets, or intellectual property into these files so the AI can "understand" how to write the code. 
+    This template checks for the exposure of such highly sensitive AI configuration files in production environments.
+  tags: exposure,config,ai,cursor,copilot,leak,secrets,custom
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.cursorrules"
+      - "{{BaseURL}}/.cursor/rules/project.md"
+      - "{{BaseURL}}/.github/copilot-instructions.md"
+      - "{{BaseURL}}/copilot-instructions.md"
+      - "{{BaseURL}}/.windsurfrules"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "you are an ai"
+          - "you are a coding assistant"
+          - "cursor"
+          - "copilot"
+          - "always"
+          - "never"
+          - "database"
+          - "secret"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: potential_secrets_in_rules
+        regex:
+          - '(?i)(?:password|secret|api[_-]?key|token|credentials)[\s:=]+["'']?([A-Za-z0-9_\-\.]{10,})["'']?'
+          
+      - type: regex
+        part: body
+        name: database_connection_string
+        regex:
+          - '(?i)(?:mysql|postgresql|postgres|mongodb|redis):\/\/[a-zA-Z0-9_\-\.]+:[^@]+@[a-zA-Z0-9_\-\.]+:[0-9]+\/[a-zA-Z0-9_]+'
