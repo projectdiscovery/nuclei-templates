@@ -1,0 +1,126 @@
+id: springboot-jolokia-rce-bypass
+
+info:
+  name: Spring Boot Jolokia RCE - WAF Bypass
+  author: shafranpackeer
+  severity: critical
+  description: |
+    Detects exposed Jolokia endpoints with RCE capabilities using WAF bypass techniques.
+    Jolokia can be exploited for remote code execution through JNDI injection,
+    MBean manipulation, and XXE attacks when misconfigured.
+  reference:
+    - https://jolokia.org/reference/html/security.html
+    - https://www.veracode.com/blog/research/exploiting-jmx-rmi
+  metadata:
+    verified: true
+    max-request: 25
+    shodan-query: title:"Jolokia"
+  tags: springboot,jolokia,rce,jndi,xxe,waf-bypass,intrusive
+
+http:
+  - method: POST
+    path:
+      # Standard paths
+      - "{{BaseURL}}/jolokia"
+      - "{{BaseURL}}/actuator/jolokia"
+      - "{{BaseURL}}/jolokia/exec"
+
+      # URL encoded variations
+      - "{{BaseURL}}/%6aolokia"
+      - "{{BaseURL}}/jolo%6bia"
+      - "{{BaseURL}}/%61ctuator/jolokia"
+      - "{{BaseURL}}/actuator/%6aolokia"
+
+      # Semicolon injection
+      - "{{BaseURL}}/jolokia;.js"
+      - "{{BaseURL}}/jolokia;jsessionid=test"
+      - "{{BaseURL}}/actuator;/jolokia"
+
+      # Path traversal
+      - "{{BaseURL}}/./jolokia"
+      - "{{BaseURL}}//jolokia"
+      - "{{BaseURL}}/jolokia/../jolokia"
+
+      # Alternate base paths
+      - "{{BaseURL}}/manage/jolokia"
+      - "{{BaseURL}}/management/jolokia"
+      - "{{BaseURL}}/admin/jolokia"
+      - "{{BaseURL}}/mgmt/jolokia"
+
+      # Case variations
+      - "{{BaseURL}}/JOLOKIA"
+      - "{{BaseURL}}/Jolokia"
+      - "{{BaseURL}}/ACTUATOR/jolokia"
+
+      # Extension bypass
+      - "{{BaseURL}}/jolokia.json"
+      - "{{BaseURL}}/jolokia.xml"
+      - "{{BaseURL}}/jolokia.do"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "type": "read",
+        "mbean": "java.lang:type=Runtime",
+        "attribute": "SystemProperties"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"java.version"'
+          - '"java.home"'
+          - 'java.lang:type=Runtime'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/json"
+        condition: or
+
+    extractors:
+      - type: json
+        name: java-version
+        json:
+          - '.value["java.version"]'
+
+      - type: json
+        name: java-home
+        json:
+          - '.value["java.home"]'
+
+  - method: POST
+    path:
+      - "{{BaseURL}}{{jpath}}"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "type": "exec",
+        "mbean": "com.sun.management:type=DiagnosticCommand",
+        "operation": "vmSystemProperties",
+        "arguments": []
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "java.class.path"
+          - "java.runtime.name"
+        condition: and
+
+      - type: status
+        status:
+          - 200

