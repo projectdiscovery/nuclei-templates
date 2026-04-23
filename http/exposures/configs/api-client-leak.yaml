@@ -1,0 +1,45 @@
+id: exposed-api-client-secrets
+
+info:
+  name: Exposed Bruno / Insomnia API Client Secrets
+  author: Umut ÖZEN
+  severity: high
+  description: As developers migrate away from Postman, modern open-source API clients like Bruno and Insomnia are frequently used. These tools often store environment variables and collections locally inside `.bruno` or `.insomnia` directories. Occasionally, these configuration folders are unintentionally deployed to production web server roots. This template identifies such exposures and attempts to extract sensitive Bearer tokens, API Keys, and internal endpoint URLs.
+  tags: exposure,bruno,insomnia,config,secrets,api,custom
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/bruno.json"
+      - "{{BaseURL}}/environments/local.bru"
+      - "{{BaseURL}}/environments/production.bru"
+      - "{{BaseURL}}/.bruno/bruno.json"
+      - "{{BaseURL}}/insomnia.json"
+      - "{{BaseURL}}/.insomnia/Environment/env.json"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"_type": "environment"'
+          - '"_type": "request"'
+          - '"_type": "workspace"'
+          - '"dataPropertyOrder"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - 'vars {'
+          - 'meta {'
+          - 'target:'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: extracted_secret_keys
+        regex:
+          - '(?i)(?:apiKey|secret|password|token)["\s:]+["'']?([A-Za-z0-9_\-\.]{15,})["'']?'
+          - '(?i)bearer\s+([A-Za-z0-9_\-\.]{20,})'
