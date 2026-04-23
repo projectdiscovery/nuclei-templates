@@ -1,0 +1,50 @@
+id: exposed-ai-config-leak
+
+info:
+  name: Exposed AI Prompts & API Key Leak
+  author: Umut ÖZEN
+  severity: critical
+  description: With the rapid integration of Large Language Models (LLMs), developers frequently misconfigure web servers to expose AI-related configuration files such as `prompts.json` or `ai-settings.json` containing OpenAI arrays. These files not only leak highly sensitive systemic prompts (intellectual property and jailbreak vectors) but often include live production API keys for OpenAI (sk-...), Anthropic, or HuggingFace.
+  tags: exposure,ai,llm,openai,leak,keys,custom
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/prompts.json"
+      - "{{BaseURL}}/ai_config.json"
+      - "{{BaseURL}}/ai-settings.yaml"
+      - "{{BaseURL}}/system_prompt.txt"
+      - "{{BaseURL}}/config/llm.json"
+      - "{{BaseURL}}/chatbot_config.json"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)sk-(proj|ant|sk)[a-zA-Z0-9_\-]{20,}' # OpenAI / Anthropic Key Regex
+          - '(?i)"role":\s*"system"'
+          - '(?i)"system_prompt"'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: open_ai_key
+        regex:
+          - '(?i)sk-(proj|sk)[a-zA-Z0-9_\-]{30,}'
+
+      - type: regex
+        part: body
+        name: anthropic_key
+        regex:
+          - '(?i)sk-ant-[a-zA-Z0-9_\-]{30,}'
+      - type: regex
+        part: body
+        name: system_prompt
+        regex:
+          - '(?i)"(?:system_prompt|content)"\s*:\s*"([^"]+)"'
