@@ -1,0 +1,59 @@
+id: generic-gambling-defacement
+
+info:
+  name: Generic Indonesian Gambling Defacement Detection
+  author: jakxx
+  severity: critical
+  description: Detects Indonesian slot/toto/LARISWD gambling defacement with clean output.
+  tags: defacement,hijack,gambling,slot-gacor,toto,lariswd,indonesian-spam
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+
+    matchers:
+      # Primary detection: Strong gambling terms
+      - type: word
+        name: strong-gambling-terms
+        words:
+          - "slot gacor"
+          - "toto slot"
+          - "situs toto"
+          - "LARISWD"
+          - "gacor maxwin"
+          - "rtp live"
+          - "bandar slot"
+          - "slot gacor hari ini"
+        condition: or
+        part: body
+        case-insensitive: true
+
+      # Filter out small legitimate pages
+      - type: dsl
+        dsl:
+          - "len(body) > 1200"
+
+    # Extractors
+    extractors:
+      - type: regex
+        name: page-title
+        regex:
+          - "(?i)<title>(.*?)</title>"
+        part: body
+
+      - type: regex
+        name: suspicious-domain
+        regex:
+          - "(?i)(https?://[^\"'\\s]*lariswd[^\"'\\s]*)"
+        part: body
+
+      - type: regex
+        name: matched-term
+        regex:
+          - "(?i)(slot gacor|LARISWD|toto slot|gacor maxwin|rtp live)"
+        part: body
