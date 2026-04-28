@@ -1,0 +1,80 @@
+id: langflow-unauth-flow-exposure
+
+info:
+  name: Langflow - Unauthenticated Flow Exposure
+  author: DevamShah
+  severity: high
+  description: |
+    Langflow was detected with anonymous access to the flow inventory API. Self-hosted
+    Langflow instances default to AUTO_LOGIN=true, which serves a public auto-login
+    token via /api/v1/auto_login and grants any unauthenticated visitor full access
+    to /api/v1/flows/ — exposing flow definitions, embedded API keys, vector store
+    credentials, and tool integrations.
+  impact: |
+    Anonymous attackers can enumerate every flow in the workspace, exfiltrate any
+    secrets stored inside flow nodes (OpenAI / Anthropic / Pinecone / database
+    credentials), execute arbitrary flows against internal data sources, and modify
+    or delete production AI pipelines.
+  remediation: |
+    Set LANGFLOW_AUTO_LOGIN=false and configure LANGFLOW_SUPERUSER /
+    LANGFLOW_SUPERUSER_PASSWORD before exposing the instance. Restrict
+    /api/v1/flows/ behind authentication or place the instance behind a
+    reverse proxy that enforces auth.
+  reference:
+    - https://docs.langflow.org/configuration-authentication
+    - https://github.com/langflow-ai/langflow/blob/main/docs/docs/Configuration/configuration-authentication.md
+    - https://github.com/langflow-ai/langflow
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L
+    cvss-score: 9.4
+    cwe-id: CWE-862
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: langflow-ai
+    product: langflow
+    shodan-query:
+      - 'http.title:"Langflow"'
+      - 'http.html:"\"package\":\"Langflow\""'
+    fofa-query: title="Langflow"
+  tags: langflow,llm,ai,misconfig,unauth,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/auto_login"
+      - "{{BaseURL}}/api/v1/flows/"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: auto-login-enabled
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "access_token", "token_type", "bearer")'
+        condition: and
+
+      - type: dsl
+        name: flows-enumerable
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"id\":", "\"data\":", "\"endpoint_name\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: flow_count
+        part: body
+        group: 0
+        regex:
+          - '"endpoint_name"'
+
+      - type: json
+        name: flows
+        part: body
+        json:
+          - '.[].name'
