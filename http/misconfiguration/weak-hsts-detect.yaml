@@ -1,0 +1,38 @@
+id: weak-hsts-detect
+
+info:
+  name: Weak HTTP Strict-Transport-Security - Detect
+  author: saint_orion
+  severity: info
+  description: |
+    Detected HTTP Strict-Transport-Security header with a weak max-age value (less than one year). A low max-age reduces the effectiveness of HSTS, leaving users vulnerable to protocol downgrade attacks and cookie hijacking during the gap period.
+  reference:
+    - https://owasp.org/www-project-secure-headers/
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misconfig,headers,hsts
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)strict-transport-security:\s*max-age=([0-9]{1,7}|[12][0-9]{7}|30[0-9]{6}|31[0-4][0-9]{5}|315[0-2][0-9]{4}|3153[0-5][0-9]{3})\b'
+
+    extractors:
+      - type: regex
+        part: header
+        name: hsts-header
+        group: 1
+        regex:
+          - "(?i)Strict-Transport-Security:\\s*([^\\r\\n]+)"
+# digest: 490a00463044022042e8b7ac5b4c1c3b15d455441286fdee0d22470e332ddd7ed3d25347e913059b02200732a1f4dadd18c81f3051dfeb58a58c119d4e9165e16445cdd43f1800516bac:922c64590222798bb761d5b6d8e72950

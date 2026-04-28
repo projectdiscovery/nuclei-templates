@@ -1,0 +1,45 @@
+id: opentext-filr-guest-access
+
+info:
+  name: OpenText Filr - Guest Access Enabled
+  author: pussycat0x
+  severity: medium
+  description: |
+    OpenText Filr (formerly Micro Focus/Novell Filr) had guest access enabled, allowing unauthenticated users to access the system as a Guest, exposing GuestUser: 'true' and an "Enter as Guest" option on the SSF login page.
+  impact: |
+    Anonymous users can access publicly shared files and folders without authentication, potentially exposing sensitive internal documents.
+  remediation: |
+    Disable guest access via Admin Console (Port 8443) > System > Web Application > uncheck "Allow Guest access".
+    Ensure Filr instances exposed to the internet do not have guest access enabled.
+  reference:
+    - https://www.microfocus.com/documentation/filr/filr-23.2/filr-admin/access.html
+    - https://www.microfocus.com/documentation/filr/filr-23.2/filr-inst/bjm9tb7.html
+    - https://opentext.com/products/filr
+  classification:
+    cwe-id: CWE-284
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: html:"OpenText Filr"
+    product: filr
+    vendor: opentext
+  tags: misconfig,opentext,filr,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/ssf/a/do?p_name=ss_forum&p_action=1&action=__login"
+
+    host-redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains_all(body, 'GuestUser','true')"
+          - "contains_any(body, 'Filr', 'filr', 'Vibe')"
+          - "status_code == 200"
+        condition: and
+# digest: 4b0a00483046022100f97c5c9179fa282512b846f6c67318e199039ef36b69ffea865273c8e8406b05022100d48acaa1b3c518842fedb6d953e96d0bb82f56b66ac98a5dd44883f76dcf5ed2:922c64590222798bb761d5b6d8e72950
