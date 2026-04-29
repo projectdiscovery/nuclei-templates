@@ -1,0 +1,78 @@
+id: contrastapi-domain-recon
+
+info:
+  name: ContrastAPI Domain Reconnaissance
+  author: UPinar
+  severity: info
+  description: |
+    Performs domain security reconnaissance using ContrastAPI. Retrieves WHOIS data, DNS records, SSL certificate details, security headers, and threat intelligence for the target domain.
+  reference:
+    - https://api.contrastcyber.com/docs
+    - https://github.com/UPinar/contrastapi
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misc,recon,domain,whois,dns,ssl,threat-intel
+
+variables:
+  hostname: "{{Host}}"
+
+http:
+  - method: GET
+    path:
+      - "https://api.contrastcyber.com/v1/domain/{{hostname}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "domain"
+          - "dns"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: registrar
+        json:
+          - '.whois.registrar'
+
+      - type: json
+        name: nameservers
+        json:
+          - '.dns.ns[]'
+
+      - type: json
+        name: ssl_issuer
+        json:
+          - '.ssl.issuer'
+
+      - type: json
+        name: ssl_expiry
+        json:
+          - '.ssl.not_after'
+
+      - type: json
+        name: ip_address
+        json:
+          - '.dns.a[]'
+
+      - type: json
+        name: mx_records
+        json:
+          - '.dns.mx[].host'
+
+      - type: json
+        name: waf_vendors
+        json:
+          - '.waf.detected[]'
+
+      - type: json
+        name: risk_score
+        json:
+          - '.risk_score'
+# digest: 4b0a00483046022100bd5776551442b7f8864ea90a8439009c54748dcbef8696f111ad5af0035bc342022100befb52794933a46b3a897e331a70b59ee20310742af0d55125ee5212e23a68d3:922c64590222798bb761d5b6d8e72950
