@@ -4,24 +4,18 @@ info:
   name: Apache Tomcat Manager Default Login
   author: pdteam,sinKettu,nybble04
   severity: high
-  description: Apache Tomcat Manager default login credentials were discovered. This template checks for multiple variations.
+  description: |
+    Apache Tomcat Manager default login credentials were discovered.
   reference:
     - https://www.rapid7.com/db/vulnerabilities/apache-tomcat-default-ovwebusr-password/
     - https://github.com/danielmiessler/SecLists/blob/master/Passwords/Default-Credentials/tomcat-betterdefaultpasslist.txt
   classification:
     cpe: cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*
   metadata:
-    max-request: 405
+    max-request: 25
     vendor: apache
     product: tomcat
     shodan-query: title:"Apache Tomcat"
-    note: |
-      Tomcat 7+ enables LockOutRealm by default — five failed attempts
-      against a single user lock that user out for five minutes.
-      Payload lists below are ordered with the highest-probability
-      credential pairs first so the most-common defaults are exercised
-      before LockOutRealm kicks in. Avoid raising thread count beyond
-      the default unless the target is known not to use LockOutRealm.
   tags: tomcat,apache,default-login,vuln
 
 http:
@@ -32,79 +26,52 @@ http:
         Authorization: Basic {{base64(username + ':' + password)}}
 
     payloads:
-      # Ordered: highest-probability credential pairs first.
-      # Tomcat LockOutRealm shuts a user out after 5 failed attempts (default),
-      # so common defaults must be exercised before lockout. See #15382.
       username:
         - tomcat
         - admin
         - manager
-        - root
         - role1
-        - role
+        - root
         - both
-        - server_admin
         - ADMIN
-        - QCC
-        - cxsdk
-        - demo
-        - j2deployer
         - ovwebusr
+        - j2deployer
+        - cxsdk
+        - QCC
         - xampp
+        - demo
+        - server_admin
+        - role
+        - vagrant
       password:
         - tomcat
         - admin
         - manager
-        - password
-        - s3cret
-        - root
-        - changethis
         - role1
-        - admanager
-        - adtomcat
-        - adrole1
-        - adroot
-        - ads3cret
-        - advagrant
-        - vagrant
-        - toor
-        - r00t
-        - password1
-        - Password1
-        - owaspbwa
-        - xampp
-        - kdsxc
-        - j2deployer
-        - demo
+        - root
         - ADMIN
-        - QLogic66
         - OvW*busr1
-    attack: clusterbomb # Available options: sniper, pitchfork and clusterbomb
+        - j2deployer
+        - kdsxc
+        - QLogic66
+        - xampp
+        - demo
+        - owaspbwa
+        - changethis
+        - r00t
+        - s3cret
+        - Password1
+        - vagrant
+        - password
+        - admin123
+    attack: clusterbomb
+    stop-at-first-match: true
     threads: 30
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "Apache Tomcat"
-          - "Server Information"
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "Apache Tomcat", "Server Information")
+          - contains_any(body, "Tomcat Version", "JVM Version", "JVM Vendor", "OS Name", "OS Version", "OS Architecture", "Hostname", "IP Address")
         condition: and
-
-      - type: word
-        part: body
-        words:
-          - "Tomcat Version"
-          - "JVM Version"
-          - "JVM Vendor"
-          - "OS Name"
-          - "OS Version"
-          - "OS Architecture"
-          - "Hostname"
-          - "IP Address"
-        condition: or
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a0047304502210087a2cf9ba1b91098afb27b6a048e3e5302a7ee589f41026d56747e61c9904ffb02203b940e873f079479c30415912b91edf8850fa5454a970874b92cb9e62e2cb7a6:922c64590222798bb761d5b6d8e72950
