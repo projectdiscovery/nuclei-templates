@@ -1,0 +1,108 @@
+id: contrastapi-ip-recon
+
+info:
+  name: ContrastAPI IP Reconnaissance
+  author: UPinar
+  severity: info
+  description: |
+    Performs IP address reconnaissance using ContrastAPI. Retrieves ASN, country, PTR, open ports, hostnames, CPEs, vulnerabilities (CVE list with severity), cloud provider attribution, Tor exit status, and a calibrated risk score (0-100) with a coarse severity label.
+  reference:
+    - https://api.contrastcyber.com/docs
+    - https://github.com/UPinar/contrastapi
+  metadata:
+    verified: true
+    max-request: 1
+  tags: misc,recon,ip,asn,osint,threat-intel
+
+variables:
+  hostname: "{{Host}}"
+
+http:
+  - method: GET
+    path:
+      - "https://api.contrastcyber.com/v1/ip/{{hostname}}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"ip"'
+          - '"asn"'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: asn
+        json:
+          - '.asn'
+
+      - type: json
+        name: asn_name
+        json:
+          - '.asn_name'
+
+      - type: json
+        name: country
+        json:
+          - '.country'
+
+      - type: json
+        name: ptr
+        json:
+          - '.ptr'
+
+      - type: json
+        name: ports
+        json:
+          - '.ports[]'
+
+      - type: json
+        name: hostnames
+        json:
+          - '.hostnames[]'
+
+      - type: json
+        name: cloud_provider
+        json:
+          - '.cloud_provider'
+
+      - type: json
+        name: is_datacenter
+        json:
+          - '.is_datacenter'
+
+      - type: json
+        name: firehol_listed
+        json:
+          - '.reputation.firehol.listed'
+
+      - type: json
+        name: tor_exit
+        json:
+          - '.tor_exit'
+
+      - type: json
+        name: risk_score
+        json:
+          - '.risk_score'
+
+      - type: json
+        name: severity_label
+        json:
+          - '.severity_label'
+
+      - type: json
+        name: vuln_ids
+        json:
+          - '.vulns[].cve_id'
+
+      - type: json
+        name: vuln_severities
+        json:
+          - '.vulns[].severity'
+# digest: 490a0046304402204971caf35165ce79924f1f7716c439bd1cfb3081cc0b204b2eb3639ec2ae939102206cc52915b416d40f1feb534e22e5dabed7b7a7a2321a7566ed3519c37b46d193:922c64590222798bb761d5b6d8e72950

