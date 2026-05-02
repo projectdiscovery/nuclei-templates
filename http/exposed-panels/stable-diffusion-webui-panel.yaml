@@ -1,0 +1,37 @@
+id: stable-diffusion-webui-panel
+
+info:
+  name: Stable Diffusion web UI (AUTOMATIC1111) - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    AUTOMATIC1111's Stable Diffusion web UI was detected. It is the dominant self-hosted UI for Stable Diffusion image generation, listening on TCP 7860 by default and shipping a Gradio frontend plus an unauthenticated REST API at /sdapi/v1/. Exposed instances let any caller enumerate models, samplers and queue arbitrary GPU jobs.
+  reference:
+    - https://github.com/AUTOMATIC1111/stable-diffusion-webui
+    - https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: automatic1111
+    product: stable-diffusion-webui
+    shodan-query: http.title:"Stable Diffusion"
+    fofa-query: title="Stable Diffusion"
+  tags: panel,stable-diffusion,sd-webui,automatic1111,gradio,ai,ml,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/sdapi/v1/sd-models"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(to_lower(body), "<title>stable diffusion</title>")'
+          - 'status_code == 200 && contains(body, "stable-diffusion-webui") && contains(body, "gradio")'
+          - 'status_code == 200 && contains(body, "\"model_name\"") && contains(body, "\"hash\"") && contains(body, "\"sha256\"")'
+        condition: or
