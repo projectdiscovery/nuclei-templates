@@ -1,0 +1,42 @@
+id: vllm-detect
+
+info:
+  name: vLLM OpenAI-Compatible Server - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    vLLM (github.com/vllm-project/vllm) is a high-throughput LLM serving engine. By default it exposes an OpenAI-compatible HTTP API on TCP 8000 with no authentication unless --api-key is set. Exposed instances allow any caller to enumerate loaded models and submit /v1/chat/completions requests, consuming GPU and incurring cost.
+  reference:
+    - https://github.com/vllm-project/vllm
+    - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: vllm-project
+    product: vllm
+    shodan-query: '"served-model-name"'
+    fofa-query: 'body="vllm"'
+  tags: vllm,llm,ai,ml,openai,detect,discovery,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/version"
+      - "{{BaseURL}}/v1/models"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(body, "\"version\"") && contains(to_lower(header), "application/json") && contains(path, "/version")'
+          - 'status_code == 200 && contains(body, "\"object\":\"list\"") && contains(body, "\"owned_by\":\"vllm\"")'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+          - '"id"\s*:\s*"([^"]+)"'
