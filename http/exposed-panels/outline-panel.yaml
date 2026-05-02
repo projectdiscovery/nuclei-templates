@@ -1,0 +1,43 @@
+id: outline-panel
+
+info:
+  name: Outline Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    Outline (getoutline.com / github.com/outline/outline) is a popular open-source team knowledge base / wiki, often self-hosted as a Notion alternative. Exposed self-hosted instances may reveal team documents and provide a path to login enumeration if SSO is misconfigured.
+  reference:
+    - https://github.com/outline/outline
+    - https://www.getoutline.com/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: outline
+    product: outline
+    shodan-query: http.title:"Outline"
+    fofa-query: title="Outline"
+  tags: panel,outline,wiki,knowledge-base,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>outline</title>") || contains(body, "data-outline-team")'
+          - 'contains(body, "outline")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<meta name="outline-version" content="([^"]+)"'
