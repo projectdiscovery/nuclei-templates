@@ -1,0 +1,43 @@
+id: mealie-panel
+
+info:
+  name: Mealie Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    Mealie (mealie.io / github.com/mealie-recipes/mealie) is a popular self-hosted recipe manager and meal-planner with a Vue/Nuxt frontend and a FastAPI backend, often run in homelab Docker stacks on TCP 9000 or 9925. Exposed instances may reveal household recipes/calendars and provide an authenticated path to upload arbitrary recipe images.
+  reference:
+    - https://github.com/mealie-recipes/mealie
+    - https://mealie.io/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: mealie-recipes
+    product: mealie
+    shodan-query: http.title:"Mealie"
+    fofa-query: title="Mealie"
+  tags: panel,mealie,recipe,selfhosted,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/api/app/about"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(to_lower(body), "<title>mealie</title>")'
+          - 'status_code == 200 && contains(body, "\"production\"") && contains(body, "\"versionLatest\"") && contains(to_lower(header), "application/json")'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
