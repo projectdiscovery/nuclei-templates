@@ -1,0 +1,32 @@
+id: springboot-sbom
+
+info:
+  name: Spring Boot Actuator SBOM Exposure
+  author: koungq
+  severity: low
+  description: The Spring Boot Actuator SBOM endpoint exposes software bill of materials information about the application.
+  reference:
+    - https://docs.spring.io/spring-boot/api/rest/actuator/sbom.html
+    - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.sbom
+  metadata:
+    verified: true
+    max-request: 4
+  tags: misconfig,springboot,actuator,sbom,exposure,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sbom"
+      - "{{BaseURL}}/actuator/sbom"
+      - "{{BaseURL}}/sbom/application"
+      - "{{BaseURL}}/actuator/sbom/application"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - 'contains_any(tolower(content_type), "application/vnd.spring-boot.actuator", "application/json", "application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json")'
+          - 'contains_all(body, "\"ids\"", "\"application\"") || contains_all(body, "\"bomFormat\"", "\"specVersion\"") || contains_all(body, "\"spdxVersion\"", "\"SPDXID\"") || contains_all(body, "\"artifacts\"", "\"source\"")'
+        condition: and
