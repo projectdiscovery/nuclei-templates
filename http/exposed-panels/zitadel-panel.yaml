@@ -1,0 +1,44 @@
+id: zitadel-panel
+
+info:
+  name: ZITADEL Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    ZITADEL (zitadel.com / github.com/zitadel/zitadel) is an open-source identity infrastructure platform — an Auth0/Keycloak alternative providing OIDC, OAuth 2.0, SAML and machine-user IAM. Exposed self-hosted instances may reveal organization/project layout via the unauthenticated discovery and login endpoints, and provide a starting point for credential or token attacks.
+  reference:
+    - https://github.com/zitadel/zitadel
+    - https://zitadel.com/docs
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: zitadel
+    product: zitadel
+    shodan-query: '"X-Zitadel"'
+    fofa-query: 'header="X-Zitadel"'
+  tags: panel,zitadel,iam,oidc,auth,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/ui/login"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(body, "issuer") && contains(to_lower(header), "x-zitadel-")'
+          - 'status_code == 200 && contains(to_lower(body), "<title>zitadel</title>")'
+          - 'status_code == 200 && contains(body, "zitadel") && contains(body, "oidc")'
+        condition: or
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'X-Zitadel-Trace-Id:\s*([a-f0-9]+)'
