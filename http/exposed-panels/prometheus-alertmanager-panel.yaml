@@ -1,0 +1,63 @@
+id: prometheus-alertmanager-panel
+
+info:
+  name: Prometheus Alertmanager - Panel
+  author: ChrisJr404
+  severity: info
+  description: |
+    Prometheus Alertmanager handles alerts sent by client applications such as the Prometheus server and is responsible for deduplicating, grouping, and routing them to the correct receiver integration. The default web UI listens on TCP/9093 and exposes a JSON status API at `/api/v2/status` that includes the build's version, revision, and Go runtime — useful for inventorying which Alertmanager instances need patching alongside the Prometheus stack they belong to.
+  reference:
+    - https://prometheus.io/docs/alerting/latest/alertmanager/
+    - https://github.com/prometheus/alertmanager
+  classification:
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:prometheus:alertmanager:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: prometheus
+    product: alertmanager
+    shodan-query:
+      - http.title:"Alertmanager"
+      - http.html:"versionInfo" "alertmanager"
+      - port:9093 http.title:"Alertmanager"
+    fofa-query:
+      - title="Alertmanager"
+      - body="versionInfo" && body="alertmanager"
+  tags: panel,alertmanager,prometheus,monitoring,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/api/v2/status"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "<title>Alertmanager</title>")'
+          - 'status_code_1 == 200'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(body_2, "versionInfo")'
+          - 'contains(body_2, "alertmanager") || contains(to_lower(body_2), "buildtime") || contains(body_2, "uptime")'
+          - 'status_code_2 == 200'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body_2
+        name: version
+        json:
+          - .versionInfo.version
+
+      - type: json
+        part: body_2
+        name: revision
+        json:
+          - .versionInfo.revision
