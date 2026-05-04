@@ -5,7 +5,7 @@ info:
   author: ChrisJr404
   severity: info
   description: |
-    Mealie (mealie.io / github.com/mealie-recipes/mealie) is a popular self-hosted recipe manager and meal-planner with a Vue/Nuxt frontend and a FastAPI backend, often run in homelab Docker stacks on TCP 9000 or 9925. Exposed instances may reveal household recipes/calendars and provide an authenticated path to upload arbitrary recipe images.
+    Detected Mealie was a self-hosted recipe manager and meal planner with a Vue/Nuxt frontend and FastAPI backend.
   reference:
     - https://github.com/mealie-recipes/mealie
     - https://mealie.io/
@@ -18,22 +18,35 @@ info:
     fofa-query: title="Mealie"
   tags: panel,mealie,recipe,selfhosted,detect,discovery
 
+flow: http(1) && http(2)
+
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
-      - "{{BaseURL}}/api/app/about"
 
     host-redirects: true
     max-redirects: 2
-    stop-at-first-match: true
 
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200 && contains(to_lower(body), "<title>mealie</title>")'
-          - 'status_code == 200 && contains(body, "\"production\"") && contains(body, "\"versionLatest\"") && contains(to_lower(header), "application/json")'
-        condition: or
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>mealie</title>")'
+        internal: true
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/app/about"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"production\"", "\"version\"", "\"demoStatus\"", "\"allowSignup\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
 
     extractors:
       - type: regex
