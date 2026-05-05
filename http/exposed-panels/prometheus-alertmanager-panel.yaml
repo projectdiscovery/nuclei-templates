@@ -26,38 +26,36 @@ info:
       - body="versionInfo" && body="alertmanager"
   tags: panel,alertmanager,prometheus,monitoring,detect,discovery
 
+flow: http(1) && http(2)
+
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/"
-      - "{{BaseURL}}/api/v2/status"
+      - "{{BaseURL}}"
 
-    stop-at-first-match: true
-
-    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
-          - 'contains(body_1, "<title>Alertmanager</title>")'
-          - 'status_code_1 == 200'
+          - 'contains(body, "<title>Alertmanager</title>")'
+          - 'status_code == 200'
         condition: and
+        internal: true
 
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v2/status"
+
+    matchers:
       - type: dsl
         dsl:
-          - 'contains(body_2, "versionInfo")'
-          - 'contains(body_2, "alertmanager") || contains(to_lower(body_2), "buildtime") || contains(body_2, "uptime")'
-          - 'status_code_2 == 200'
+          - 'contains(body, "versionInfo")'
+          - 'contains(body, "alertmanager") || contains(to_lower(body), "buildtime") || contains(body, "uptime")'
+          - 'status_code == 200'
         condition: and
 
     extractors:
       - type: json
-        part: body_2
+        part: body
         name: version
         json:
           - .versionInfo.version
-
-      - type: json
-        part: body_2
-        name: revision
-        json:
-          - .versionInfo.revision
