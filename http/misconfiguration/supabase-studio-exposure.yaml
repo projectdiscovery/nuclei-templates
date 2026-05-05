@@ -1,0 +1,46 @@
+id: supabase-studio-exposure
+
+info:
+  name: Supabase Studio - Exposure
+  author: theamanrawat
+  severity: high
+  description: |
+    Supabase Studio (the official self-hosted Supabase admin dashboard) was detected exposed without authentication.
+  reference:
+    - https://supabase.com/docs/guides/self-hosting/docker
+    - https://supabase.com/docs/guides/self-hosting#securing-your-services
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: supabase
+    product: supabase-studio
+    shodan-query: http.html:"Supabase Studio"
+    fofa-query: body="Supabase Studio"
+  tags: misconfig,supabase,supabase-studio,exposure,panel,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/project/default"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "<title>Supabase", "Supabase Studio")'
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/platform/profile"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "primary_email", "organizations", "projects")'
+        condition: and
