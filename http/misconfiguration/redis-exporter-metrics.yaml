@@ -14,31 +14,18 @@ info:
   metadata:
     verified: true
     max-request: 1
-  tags: redis,exporter,metrics,exposure,misconfig,vuln
+  tags: redis,exporter,metrics,exposure,misconfig
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/metrics"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - "# HELP"
-          - "redis_exporter_build_info"
-          - "redis_up"
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "redis_connected_clients", "redis_memory_used_bytes", "redis_instance_info")'
+          - 'contains_all(body, "# HELP", "redis_exporter_build_info", "redis_up")'
+          - 'contains(content_type, "text/plain")'
+          - 'status_code == 200'
         condition: and
-
-      - type: word
-        part: body
-        words:
-          - "redis_connected_clients"
-          - "redis_memory_used_bytes"
-          - "redis_instance_info"
-        condition: or
-
-      - type: status
-        status:
-          - 200
