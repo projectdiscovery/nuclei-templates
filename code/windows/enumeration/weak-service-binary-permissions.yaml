@@ -5,10 +5,10 @@ info:
   author: domwhewell-sage
   severity: high
   description: |
-    Detects weak windows service binary permissions that could allow non-administrative users to modify the service binary, potentially leading to local privilege escalation.
+    Detects weak Windows service binary permissions that could allow non-administrative users to modify the service binary, potentially leading to local privilege escalation.
   reference:
     - https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#modify-service-binary-path
-  tags: windows,services,code,windows-audit
+  tags: windows,services,code,windows-audit,privesc
 
 self-contained: true
 
@@ -23,20 +23,42 @@ code:
       - Bypass
     pattern: "*.ps1"
     source: |
-      # Get services using WMI
-      $services = Get-WmiObject -class Win32_Service -Property Name, DisplayName, PathName, StartMode, StartName | Where {$_.PathName -notlike "C:\Windows*" -and $_.PathName -notlike '"*'} | select Name,DisplayName,StartMode,StartName,PathName
+      $services = Get-WmiObject -Class Win32_Service -Property Name, DisplayName, PathName, StartMode, StartName |
+        Where-Object { $_.PathName -and $_.PathName -notlike 'C:\Windows\*' }
 
       foreach ($service in $services) {
-        $path = $service.PathName
-        if (Test-Path "$path") {
-          $acl = Get-Acl "$path"
-          foreach ($access in $acl.Access) {
-            if ($access.FileSystemRights -match "Write|FullControl|Modify" -and $access.IdentityReference -notmatch "SYSTEM|Administrators|LOCAL SERVICE|NETWORK SERVICE") {
-              Write-Output "$($access.IdentityReference) can $($access.FileSystemRights) the service binary at $path for service '$($service.Name)' that runs as '$($service.StartName)' on '$($service.StartMode)' mode"
-            }
+        $rawPath = $service.PathName.Trim()
+
+        # Extract binary path: handle quoted and unquoted paths with arguments
+        if ($rawPath.StartsWith('"')) {
+          $binaryPath = ($rawPath -split '"')[1]
+        } else {
+          $binaryPath = ($rawPath -split ' (?=-)')[0].Trim()
+          if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue)) {
+            $binaryPath = ($rawPath -split '\.exe')[0] + '.exe'
+          }
+        }
+
+        if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue)) { continue }
+
+        $acl = Get-Acl $binaryPath -ErrorAction SilentlyContinue
+        if (-not $acl) { continue }
+
+        foreach ($access in $acl.Access) {
+          $rights = $access.FileSystemRights.ToString()
+          $identity = $access.IdentityReference.ToString()
+
+          if ($rights -match "Write|FullControl|Modify" -and
+              $identity -notmatch "NT AUTHORITY\\SYSTEM|BUILTIN\\Administrators|NT AUTHORITY\\LOCAL SERVICE|NT AUTHORITY\\NETWORK SERVICE|TrustedInstaller") {
+            Write-Output "$identity can $rights the service binary at $binaryPath for service '$($service.Name)' running as '$($service.StartName)' on '$($service.StartMode)' mode"
           }
         }
       }
+
+    matchers:
+      - type: word
+        words:
+          - "the service binary at"
 
     extractors:
       - type: regex
