@@ -1,0 +1,118 @@
+id: ibm-mfp-default-login
+
+info:
+  name: IBM MobileFirst Foundation - Default Credentials
+  author: Vishal Vishwakarma
+  severity: critical
+  description: |
+    IBM MobileFirst Foundation Operations Console was found using default credentials (admin:admin).
+    The administration REST API exposes full control over mobile application backends including
+    adapter management, push notification infrastructure (FCM/APNs), OAuth security configuration,
+    and application authenticity enforcement.
+  impact: |
+    An attacker can deploy malicious adapters, disable application authenticity checks,
+    access push notification credentials, enumerate deployed mobile apps, and gain
+    full administrative control over the mobile backend.
+  remediation: Change the default admin credentials immediately and restrict access to the
+    Operations Console to trusted network ranges.
+  reference:
+    - https://www.ibm.com/docs/en/mfp/8.0?topic=console-mobilefirst-operations
+    - https://mobilefirstplatform.ibmcloud.com/tutorials/en/foundation/8.0/installation-configuration/production/server-configuration/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-798
+  metadata:
+    max-request: 2
+    verified: true
+    product: IBM MobileFirst Foundation
+    vendor: IBM
+    category: default-logins
+    shodan-query: http.title:"MobileFirst Operations Console"
+    fofa-query: title="MobileFirst Operations Console"
+  tags: ibm,mobilefirst,worklight,default-login,auth
+
+http:
+  # MobileFirst Foundation 8.0 — management-apis endpoint
+  - raw:
+      - |
+        GET /mfpadmin/management-apis/2.0/runtimes HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept: application/json
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "productVersion"
+
+      # synchronizationStatus is unique to IBM MFP runtime responses
+      - type: word
+        part: body
+        words:
+          - "synchronizationStatus"
+          - "runtimes"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '"productVersion"\s*:\s*"([^"]+)"'
+
+  # Fallback: MobileFirst Foundation 7.x and deployments without management-apis path
+  - raw:
+      - |
+        GET /mfpadmin/ HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept: application/json
+
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "productVersion"
+
+      - type: word
+        part: body
+        words:
+          - "runtimes"
+          - "adapters"
+          - "MobileFirst"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '"productVersion"\s*:\s*"([^"]+)"'
