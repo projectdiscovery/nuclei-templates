@@ -1,0 +1,55 @@
+id: sysreptor-detect
+
+info:
+  name: Sysreptor - Detection
+  author: icarot
+  severity: info
+  description: |
+    Detects a Sysreptor server, a customizable and powerful penetration testing reporting platform for offensive security professionals.
+  reference:
+    - https://github.com/Syslifters/sysreptor
+  metadata:
+    max-request: 2
+    vendor: syslifters
+    product: sysreptor
+  tags: tech,syslifters,sysreptor,detect
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+
+    host-redirects: true
+    max-redirects: 2
+
+    extractors:
+      - type: regex
+        name: nuxjs
+        group: 1
+        part: body
+        regex:
+          - '(?<nuxjs>\/static\/_nuxt\/\w+.js)'
+        internal: true
+
+  - raw:
+      - |
+        GET {{nuxjs}} HTTP/1.1
+        Host: {{BaseURL}}
+        Content-type: text/javascript; charset="utf-8"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "SysReptor"
+          - "sysreptor"
+          - "Syslifters"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502202389dc8ff8dc76c72426452bfe26ed6e1b1e326cdc865bb6527d795a7be3b9c402210097c51ff896998dc4641081bab46b12f019604489031da9f6ad79f0a6a6a3ef62:922c64590222798bb761d5b6d8e72950
