@@ -1,0 +1,48 @@
+id: chromadb-detect
+
+info:
+  name: ChromaDB Vector Database - Detect
+  author: rxerium
+  severity: info
+  description: |
+    Detected ChromaDB vector database instance publicly exposed. ChromaDB is an open-source AI-native vector database. Unauthenticated instances expose stored embeddings, collections, and metadata to unauthorized access.
+  reference:
+    - https://docs.trychroma.com/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: chroma-core
+    product: chromadb
+    shodan-query: 'http.html:"nanosecond heartbeat"'
+    fofa-query: 'body="nanosecond heartbeat"'
+  tags: chromadb,vector-database,ai,exposure,detect,discovery
+
+http:
+  - raw:
+      - |
+        GET /api/v1/heartbeat HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "nanosecond heartbeat"
+
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "application/json")
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        regex:
+          - '"nanosecond heartbeat":\s*([0-9]+)'
+# digest: 4b0a00483046022100e929978728ed79d89b1d47fa1be189661e36a29120c770f13cc2286ad93a5ad4022100ea57e7fbe74802550652ab75de68bd4cc378e19892c25676c12f2748eee545d9:922c64590222798bb761d5b6d8e72950
