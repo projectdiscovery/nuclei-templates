@@ -1,0 +1,31 @@
+id: phpmyfaq-412-account-takeover
+
+info:
+  name: PHPMyFAQ 4.1.2 - Account Takeover
+  author: kazet
+  severity: critical
+  description: |
+    An authentication bypass vulnerability in phpMyFAQ allows any unauthenticated attacker to reset the password of any user account, including SuperAdmin accounts. By sending a PUT request with just a valid username and associated email address to /api/user/password/update, an attacker receives a new plaintext password via email without any token verification, rate limiting, or email confirmation. This enables complete account takeover of any user, including full administrative access.
+  reference:
+    - https://github.com/thorsten/phpMyFAQ/security/advisories/GHSA-w9xh-5f39-vq89
+  tags: takeover,vuln
+
+http:
+  - method: GET
+    path:
+    - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+        - '<meta content="phpMyFAQ ([0-9.*]*)([^"]*)"\s*name="application-name"'
+        internal: false
+
+    matchers:
+      - type: dsl
+        name: vulnerable
+        dsl:
+          - compare_versions(trim_space(version), '<= 4.1.2')
