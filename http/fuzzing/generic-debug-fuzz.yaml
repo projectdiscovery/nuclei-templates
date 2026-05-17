@@ -1,0 +1,64 @@
+id: generic-debug-parameters-fuzz
+
+info:
+  name: Generic Hidden Debug Parameters Fuzzing
+  author: mohamedfekry # اكتب اسمك هنا
+  severity: medium
+  description: |
+    Fuzzing for hidden debug and development parameters across endpoints. 
+    Enabling these parameters can lead to sensitive information disclosure, stack traces, or bypassing access controls.
+  reference:
+    - https://twitter.com/ # 
+  tags: fuzzing, misconfig, debug, exposure, generic
+
+http:
+  - method: GET
+    path:
+      
+      - "{{BaseURL}}?{{parameter}}={{value}}"
+      - "{{BaseURL}}/api/?{{parameter}}={{value}}"
+      - "{{BaseURL}}/api/ConfigurationReport?{{parameter}}={{value}}"
+
+    payloads:
+      parameter:
+        - debug
+        - _debug
+        - debug_mode
+        - dev
+        - test
+        - trace
+        - verbose
+        - env
+        - show_errors
+      value:
+        - "true"
+        - "1"
+        - "yes"
+        - "on"
+        - "enable"
+
+    attack: clusterbomb 
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+     
+      - type: word
+        words:
+          - "Stack Trace:"
+          - "Application Trace:"
+          - "Environment Variables:"
+          - "Exception in thread"
+          - "java.lang.NullPointerException"
+          - "Fatal error:"
+          - "SQL syntax"
+          - "werkzeug.debug"
+          - "Whoops, looks like something went wrong."
+          - "Symfony Exception"
+        part: body
+        condition: or
+        
+      - type: word
+        words:
+          - "application/json"
+        part: header
