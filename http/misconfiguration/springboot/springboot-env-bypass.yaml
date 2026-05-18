@@ -1,0 +1,137 @@
+id: springboot-env-bypass
+
+info:
+  name: Spring Boot Actuator /env - WAF Bypass & Secret Exposure
+  author: Shafranpackeer
+  severity: high
+  description: |
+    Detects exposed Spring Boot Actuator /env endpoint using multiple bypass techniques.
+    Even when values are masked (shown as ******), the endpoint confirms the presence
+    of secrets which can then be extracted via heapdump or other exploitation chains.
+
+    Exposed data may include:
+    - Database connection strings
+    - API keys (AWS_ACCESS_KEY_ID, AZURE_CLIENT_SECRET, etc.)
+    - OAuth credentials
+    - JWT signing secrets
+    - SMTP credentials
+    - Third-party service keys
+
+    Can be chained with /actuator/refresh to modify properties and achieve RCE.
+  reference:
+    - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+    - https://www.trendmicro.com/en/research/26/c/from-misconfigured-spring-boot-actuator-to-sharepoint-exfiltrati.html
+  metadata:
+    max-request: 35
+    verified: true
+  tags: springboot,env,exposure,secrets,bypass,waf-bypass
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200,CWE-215
+
+http:
+  - method: GET
+    path:
+      # ============================================
+      # STANDARD PATHS
+      # ============================================
+      - "{{BaseURL}}/actuator/env"
+      - "{{BaseURL}}/env"
+      - "{{BaseURL}}/actuator/env.json"
+
+      # ============================================
+      # WAF BYPASS - URL ENCODING
+      # ============================================
+      - "{{BaseURL}}/actuator/env%23"
+      - "{{BaseURL}}/%61ctuator/env"
+      - "{{BaseURL}}/a%63tuator/env"
+      - "{{BaseURL}}/ac%74uator/env"
+      - "{{BaseURL}}/act%75ator/env"
+      - "{{BaseURL}}/actu%61tor/env"
+      - "{{BaseURL}}/actua%74or/env"
+      - "{{BaseURL}}/actuat%6Fr/env"
+      - "{{BaseURL}}/actuato%72/env"
+      - "{{BaseURL}}/%61%63%74%75%61%74%6F%72/env"
+      - "{{BaseURL}}/actuator/%65nv"
+      - "{{BaseURL}}/actuator/e%6Ev"
+      - "{{BaseURL}}/actuator/en%76"
+
+      # ============================================
+      # SEMICOLON BYPASS
+      # ============================================
+      - "{{BaseURL}}/actuator;/env"
+      - "{{BaseURL}}/actuator;/env;"
+      - "{{BaseURL}}/;/actuator/env"
+      - "{{BaseURL}}/actuator;.json/env"
+
+      # ============================================
+      # ALTERNATE BASE PATHS
+      # ============================================
+      - "{{BaseURL}}/manage/env"
+      - "{{BaseURL}}/management/env"
+      - "{{BaseURL}}/admin/env"
+      - "{{BaseURL}}/monitor/env"
+      - "{{BaseURL}}/mgmt/env"
+      - "{{BaseURL}}/api/actuator/env"
+      - "{{BaseURL}}/internal/actuator/env"
+      - "{{BaseURL}}/system/actuator/env"
+      - "{{BaseURL}}/message-api/actuator/env"
+
+      # ============================================
+      # PATH VARIATIONS
+      # ============================================
+      - "{{BaseURL}}//actuator/env"
+      - "{{BaseURL}}/./actuator/env"
+      - "{{BaseURL}}/actuator//env"
+      - "{{BaseURL}}/actuator/./env"
+      - "{{BaseURL}}/actuator/env/"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "activeProfiles"
+          - "propertySources"
+          - "systemProperties"
+          - "systemEnvironment"
+          - "applicationConfig"
+          - "server.port"
+          - "spring.datasource"
+          - "spring.security"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+          - "application/vnd.spring-boot.actuator.v2+json"
+          - "application/vnd.spring-boot.actuator.v3+json"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      # Extract key names that might contain secrets
+      - type: regex
+        part: body
+        name: sensitive-keys
+        regex:
+          - '"((?:password|secret|key|token|credential|api[_-]?key|access[_-]?key|auth)[^"]*)"'
+        group: 1
+
+      # Extract property source names
+      - type: regex
+        part: body
+        name: property-sources
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+        group: 1

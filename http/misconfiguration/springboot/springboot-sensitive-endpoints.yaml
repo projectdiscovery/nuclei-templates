@@ -1,0 +1,359 @@
+id: springboot-sensitive-endpoints-bypass
+
+info:
+  name: Spring Boot Actuator - All Sensitive Endpoints with Bypasses
+  author: Shafranpackeer
+  severity: high
+  description: |
+    Comprehensive detection of all sensitive Spring Boot Actuator endpoints
+    with WAF bypass techniques. Includes endpoints that expose:
+    - Application internals (/mappings, /beans, /configprops)
+    - Request traces (/httptrace, /trace) - May contain auth tokens
+    - Thread dumps (/threaddump, /dump) - May expose sensitive state
+    - Logfiles (/logfile) - May contain credentials in debug logs
+    - Sessions (/sessions) - Session hijacking potential
+    - Scheduled tasks (/scheduledtasks) - Internal operations
+    - Database migrations (/flyway, /liquibase)
+    - Caches (/caches) - Cached secrets
+    - Shutdown (/shutdown) - DoS potential
+  reference:
+    - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html
+    - https://www.innoq.com/en/articles/2025/04/spring-boot-actuator-endpoints/
+    - https://0xn3va.gitbook.io/cheat-sheets/framework/spring/spring-boot-actuators
+  metadata:
+    max-request: 80
+    verified: true
+  tags: springboot,actuator,exposure,misconfig,bypass
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:L
+    cvss-score: 8.6
+    cwe-id: CWE-200,CWE-532
+
+http:
+  - method: GET
+    path:
+      # ============================================
+      # MAPPINGS - Exposes all @RequestMapping paths
+      # ============================================
+      - "{{BaseURL}}/actuator/mappings"
+      - "{{BaseURL}}/mappings"
+      - "{{BaseURL}}/actuator;/mappings"
+      - "{{BaseURL}}/%61ctuator/mappings"
+      - "{{BaseURL}}/actuator/mappings%23"
+
+      # ============================================
+      # BEANS - All Spring beans and dependencies
+      # ============================================
+      - "{{BaseURL}}/actuator/beans"
+      - "{{BaseURL}}/beans"
+      - "{{BaseURL}}/actuator;/beans"
+      - "{{BaseURL}}/%61ctuator/beans"
+      - "{{BaseURL}}/actuator/beans%23"
+
+      # ============================================
+      # CONFIGPROPS - All @ConfigurationProperties
+      # ============================================
+      - "{{BaseURL}}/actuator/configprops"
+      - "{{BaseURL}}/configprops"
+      - "{{BaseURL}}/actuator;/configprops"
+      - "{{BaseURL}}/%61ctuator/configprops"
+      - "{{BaseURL}}/actuator/configprops%23"
+
+      # ============================================
+      # HTTPTRACE / TRACE - Last 100 HTTP exchanges
+      # May contain Authorization headers, cookies, tokens
+      # ============================================
+      - "{{BaseURL}}/actuator/httptrace"
+      - "{{BaseURL}}/actuator/httpexchanges"
+      - "{{BaseURL}}/trace"
+      - "{{BaseURL}}/httptrace"
+      - "{{BaseURL}}/actuator;/httptrace"
+      - "{{BaseURL}}/%61ctuator/httptrace"
+      - "{{BaseURL}}/actuator/httptrace%23"
+
+      # ============================================
+      # THREADDUMP / DUMP - JVM thread information
+      # ============================================
+      - "{{BaseURL}}/actuator/threaddump"
+      - "{{BaseURL}}/threaddump"
+      - "{{BaseURL}}/dump"
+      - "{{BaseURL}}/actuator/dump"
+      - "{{BaseURL}}/actuator;/threaddump"
+      - "{{BaseURL}}/%61ctuator/threaddump"
+
+      # ============================================
+      # LOGFILE - Application log contents
+      # May contain debug credentials, stack traces
+      # ============================================
+      - "{{BaseURL}}/actuator/logfile"
+      - "{{BaseURL}}/logfile"
+      - "{{BaseURL}}/actuator;/logfile"
+      - "{{BaseURL}}/%61ctuator/logfile"
+      - "{{BaseURL}}/actuator/logfile%23"
+
+      # ============================================
+      # LOGGERS - Logger configuration
+      # Can be modified to enable DEBUG/TRACE
+      # ============================================
+      - "{{BaseURL}}/actuator/loggers"
+      - "{{BaseURL}}/loggers"
+      - "{{BaseURL}}/actuator;/loggers"
+      - "{{BaseURL}}/%61ctuator/loggers"
+
+      # ============================================
+      # SESSIONS - Active HTTP sessions
+      # Potential session hijacking
+      # ============================================
+      - "{{BaseURL}}/actuator/sessions"
+      - "{{BaseURL}}/sessions"
+      - "{{BaseURL}}/actuator;/sessions"
+      - "{{BaseURL}}/%61ctuator/sessions"
+
+      # ============================================
+      # METRICS - Application metrics
+      # May reveal internal naming, counts
+      # ============================================
+      - "{{BaseURL}}/actuator/metrics"
+      - "{{BaseURL}}/metrics"
+      - "{{BaseURL}}/actuator;/metrics"
+      - "{{BaseURL}}/%61ctuator/metrics"
+
+      # ============================================
+      # SCHEDULEDTASKS - Internal scheduled jobs
+      # ============================================
+      - "{{BaseURL}}/actuator/scheduledtasks"
+      - "{{BaseURL}}/scheduledtasks"
+      - "{{BaseURL}}/actuator;/scheduledtasks"
+
+      # ============================================
+      # CACHES - Application caches (may contain secrets)
+      # ============================================
+      - "{{BaseURL}}/actuator/caches"
+      - "{{BaseURL}}/caches"
+      - "{{BaseURL}}/actuator;/caches"
+
+      # ============================================
+      # FLYWAY / LIQUIBASE - Database migrations
+      # ============================================
+      - "{{BaseURL}}/actuator/flyway"
+      - "{{BaseURL}}/flyway"
+      - "{{BaseURL}}/actuator/liquibase"
+      - "{{BaseURL}}/liquibase"
+
+      # ============================================
+      # CONDITIONS / AUTOCONFIG - Autoconfiguration report
+      # ============================================
+      - "{{BaseURL}}/actuator/conditions"
+      - "{{BaseURL}}/conditions"
+      - "{{BaseURL}}/autoconfig"
+      - "{{BaseURL}}/actuator/autoconfig"
+
+      # ============================================
+      # AUDITEVENTS - Security audit events
+      # ============================================
+      - "{{BaseURL}}/actuator/auditevents"
+      - "{{BaseURL}}/auditevents"
+      - "{{BaseURL}}/actuator;/auditevents"
+
+      # ============================================
+      # SHUTDOWN - Graceful app termination (DoS)
+      # Usually requires POST but check if misconfigured
+      # ============================================
+      - "{{BaseURL}}/actuator/shutdown"
+      - "{{BaseURL}}/shutdown"
+      - "{{BaseURL}}/actuator;/shutdown"
+
+      # ============================================
+      # REFRESH / RESTART - Config reload / App restart
+      # Can be used in exploitation chains
+      # ============================================
+      - "{{BaseURL}}/actuator/refresh"
+      - "{{BaseURL}}/refresh"
+      - "{{BaseURL}}/actuator/restart"
+      - "{{BaseURL}}/restart"
+
+      # ============================================
+      # PROMETHEUS - Metrics in Prometheus format
+      # ============================================
+      - "{{BaseURL}}/actuator/prometheus"
+      - "{{BaseURL}}/prometheus"
+
+      # ============================================
+      # QUARTZ - Scheduler jobs info
+      # ============================================
+      - "{{BaseURL}}/actuator/quartz"
+      - "{{BaseURL}}/quartz"
+
+      # ============================================
+      # INTEGRATIONGRAPH - Spring Integration graph
+      # ============================================
+      - "{{BaseURL}}/actuator/integrationgraph"
+      - "{{BaseURL}}/integrationgraph"
+
+    stop-at-first-match: false  # Find ALL exposed endpoints
+
+    matchers-condition: or
+    matchers:
+      # Mappings endpoint
+      - type: word
+        part: body
+        name: mappings
+        words:
+          - "dispatcherServlet"
+          - "requestMappingConditions"
+          - "@RequestMapping"
+        condition: or
+
+      # Beans endpoint
+      - type: word
+        part: body
+        name: beans
+        words:
+          - '"beans"'
+          - '"dependencies"'
+          - '"scope"'
+          - "singleton"
+        condition: or
+
+      # Configprops endpoint
+      - type: word
+        part: body
+        name: configprops
+        words:
+          - '"prefix"'
+          - '"properties"'
+          - "spring.datasource"
+        condition: or
+
+      # Trace/httptrace endpoint
+      - type: word
+        part: body
+        name: httptrace
+        words:
+          - '"traces"'
+          - '"timestamp"'
+          - '"principal"'
+          - '"request"'
+          - '"response"'
+        condition: or
+
+      # Threaddump endpoint
+      - type: word
+        part: body
+        name: threaddump
+        words:
+          - '"threads"'
+          - '"threadState"'
+          - '"stackTrace"'
+          - "RUNNABLE"
+          - "WAITING"
+        condition: or
+
+      # Logfile endpoint
+      - type: word
+        part: body
+        name: logfile
+        words:
+          - "INFO"
+          - "DEBUG"
+          - "ERROR"
+          - "WARN"
+          - "springframework"
+        condition: or
+
+      # Loggers endpoint
+      - type: word
+        part: body
+        name: loggers
+        words:
+          - '"loggers"'
+          - '"configuredLevel"'
+          - '"effectiveLevel"'
+        condition: or
+
+      # Sessions endpoint
+      - type: word
+        part: body
+        name: sessions
+        words:
+          - '"sessions"'
+          - '"sessionId"'
+          - '"attributeNames"'
+        condition: or
+
+      # Metrics endpoint
+      - type: word
+        part: body
+        name: metrics
+        words:
+          - '"names"'
+          - "jvm.memory"
+          - "http.server"
+          - "system.cpu"
+        condition: or
+
+      # Scheduledtasks endpoint
+      - type: word
+        part: body
+        name: scheduledtasks
+        words:
+          - '"cron"'
+          - '"fixedDelay"'
+          - '"fixedRate"'
+        condition: or
+
+      # Caches endpoint
+      - type: word
+        part: body
+        name: caches
+        words:
+          - '"cacheManagers"'
+          - '"caches"'
+        condition: or
+
+      # Flyway/Liquibase endpoint
+      - type: word
+        part: body
+        name: migrations
+        words:
+          - '"installedRank"'
+          - '"changeSet"'
+          - '"checksum"'
+        condition: or
+
+      # Auditevents endpoint
+      - type: word
+        part: body
+        name: auditevents
+        words:
+          - '"events"'
+          - '"principal"'
+          - '"type"'
+        condition: or
+
+      # Shutdown endpoint (if GET returns info)
+      - type: word
+        part: body
+        name: shutdown
+        words:
+          - '"message"'
+          - "shutdown"
+        condition: and
+
+      # Prometheus metrics
+      - type: word
+        part: body
+        name: prometheus
+        words:
+          - "# HELP"
+          - "# TYPE"
+          - "_total"
+          - "_seconds"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: body
+        name: endpoints-found
+        regex:
+          - '/actuator/[a-zA-Z]+'
