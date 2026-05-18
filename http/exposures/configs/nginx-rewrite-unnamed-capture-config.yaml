@@ -1,0 +1,71 @@
+id: nginx-rewrite-unnamed-capture-config
+
+info:
+  name: NGINX Rewrite Configuration with Unnamed Capture Exposure
+  author: ydking0911
+  severity: medium
+  description: |
+    Publicly exposed NGINX configuration content was detected containing a rewrite directive with query-string replacement and an unnamed capture reference such as $1 or $2 in a set, rewrite, or if directive. This does not confirm CVE-2026-42945 exploitability; it only identifies exposed configuration patterns that may indicate risk when combined with affected NGINX versions and runtime configuration.
+  impact: |
+    Exposed NGINX configuration files can disclose routing logic, upstream paths, and rewrite behavior. Query-string replacement combined with unnamed capture references may require review for CVE-2026-42945 / NGINX Rift risk conditions on affected NGINX versions.
+  remediation: |
+    Remove NGINX configuration files from public web roots, restrict direct access to backup and editor swap files, and review rewrite directives that combine query-string replacement with unnamed capture references. Confirm risk using the deployed NGINX version and full runtime configuration.
+  reference:
+    - https://depthfirst.com/research/nginx-rift-achieving-nginx-rce-via-an-18-year-old-vulnerability
+    - https://github.com/depthfirstdisclosures/nginx-rift
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    verified: false
+    max-request: 10
+  tags: exposure,config,nginx,rewrite
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nginx.conf"
+      - "{{BaseURL}}/nginx.conf.bak"
+      - "{{BaseURL}}/default.conf"
+      - "{{BaseURL}}/default.conf.bak"
+      - "{{BaseURL}}/conf/nginx.conf"
+      - "{{BaseURL}}/sites-enabled/default"
+      - "{{BaseURL}}/sites-available/default"
+      - "{{BaseURL}}/nginx.conf.old"
+      - "{{BaseURL}}/default.conf.old"
+      - "{{BaseURL}}/.nginx.conf.swp"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "<html"
+          - "<!DOCTYPE html"
+
+      - type: regex
+        part: body
+        regex:
+          - '(?m)^\s*server\s*\{'
+
+      - type: word
+        part: body
+        condition: and
+        words:
+          - "location"
+          - "rewrite"
+
+      - type: regex
+        part: body
+        regex:
+          - '(?m)^\s*rewrite\s+[^\r\n;]*\?[^\r\n;]*;'
+
+      - type: regex
+        part: body
+        regex:
+          - '(?m)^\s*(?:set|rewrite|if)\b[^\r\n;{}]*\$\d{1,2}\b[^\r\n;{}]*(?:;|\{)'
