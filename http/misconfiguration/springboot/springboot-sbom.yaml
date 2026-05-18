@@ -1,0 +1,61 @@
+id: springboot-sbom
+
+info:
+  name: Spring Boot Actuator SBOM - Exposure
+  author: koungq
+  severity: low
+  description: |
+    Spring Boot Actuator SBOM endpoint was detected and is exposed without authentication. The endpoint returns a Software Bill of Materials (typically CycloneDX or SPDX JSON) listing every dependency and version shipped with the application, which lets an attacker enumerate the exact library inventory and trivially map it to known CVEs for targeted exploitation.
+  reference:
+    - https://docs.spring.io/spring-boot/api/rest/actuator/sbom.html
+    - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.sbom
+    - https://cyclonedx.org/specification/overview/
+    - https://spdx.github.io/spdx-spec/
+  classification:
+    cwe-id: CWE-200
+  remediation: |
+    Disable the SBOM actuator endpoint in production or restrict it to internal use only. In application.properties set `management.endpoint.sbom.enabled=false`, or scope actuator exposure with `management.endpoints.web.exposure.include` to only the endpoints you actually need. Place all actuator endpoints behind authentication using Spring Security (e.g. require `ROLE_ACTUATOR`) and bind them to a separate, non-public management port via `management.server.port` / `management.server.address`.
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: vmware
+    product: spring_boot
+    framework: spring-boot
+    shodan-query: http.favicon.hash:116323821
+  tags: misconfig,exposure,springboot,actuator,sbom
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/sbom"
+      - "{{BaseURL}}/actuator/sbom"
+      - "{{BaseURL}}/sbom/application"
+      - "{{BaseURL}}/actuator/sbom/application"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "application/vnd.spring-boot.actuator"
+          - "application/vnd.spring-boot.actuator.v1+json"
+          - "application/vnd.spring-boot.actuator.v2+json"
+          - "application/vnd.spring-boot.actuator.v3+json"
+          - "application/vnd.cyclonedx+json"
+          - "application/spdx+json"
+          - "application/vnd.syft+json"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"ids\"", "\"application\"") || contains_all(body, "\"bomFormat\"", "\"specVersion\"") || contains_all(body, "\"spdxVersion\"", "\"SPDXID\"") || contains_all(body, "\"artifacts\"", "\"source\"")'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502205949fef575f726c0215b3b18e1feb021b05cc783de5f4a08562ac73e00ed8468022100aa3eae28f2ffe59da7e62f82d45bb3f533ba444274352bad8e59adbf7fc9868b:922c64590222798bb761d5b6d8e72950
