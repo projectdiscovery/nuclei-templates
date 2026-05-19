@@ -3,7 +3,7 @@ id: nginx-rewrite-unnamed-capture-config
 info:
   name: NGINX Rewrite Configuration with Unnamed Capture Exposure
   author: ydking0911
-  severity: medium
+  severity: low
   description: |
     Publicly exposed NGINX configuration content was detected containing a rewrite directive with query-string replacement and an unnamed capture reference such as $1 or $2 in a set, rewrite, or if directive. This does not confirm CVE-2026-42945 exploitability; it only identifies exposed configuration patterns that may indicate risk when combined with affected NGINX versions and runtime configuration.
   impact: |
@@ -16,8 +16,8 @@ info:
   classification:
     cwe-id: CWE-200
   metadata:
-    verified: false
-    max-request: 10
+    verified: true
+    max-request: 11
   tags: exposure,config,nginx,rewrite
 
 http:
@@ -33,6 +33,7 @@ http:
       - "{{BaseURL}}/nginx.conf.old"
       - "{{BaseURL}}/default.conf.old"
       - "{{BaseURL}}/.nginx.conf.swp"
+      - "{{BaseURL}}/project/nginx.conf"
 
     stop-at-first-match: true
     matchers-condition: and
@@ -47,6 +48,13 @@ http:
         words:
           - "<html"
           - "<!DOCTYPE html"
+          - "<?xml"
+          - "<rss"
+          - "<feed"
+          - "<head>"
+          - "<body"
+          - "<title>"
+          - "<script"
 
       - type: regex
         part: body
@@ -63,9 +71,4 @@ http:
       - type: regex
         part: body
         regex:
-          - '(?m)^\s*rewrite\s+[^\r\n;]*\?[^\r\n;]*;'
-
-      - type: regex
-        part: body
-        regex:
-          - '(?m)^\s*(?:set|rewrite|if)\b[^\r\n;{}]*\$\d{1,2}\b[^\r\n;{}]*(?:;|\{)'
+          - '(?m)^\s*rewrite\s+\S+\s+[^\r\n;]*(?:\?[^\r\n;]*\$\d{1,2}|\$\d{1,2}[^\r\n;]*\?)[^\r\n;]*;'
