@@ -1,0 +1,31 @@
+id: exposed-git-commit-msg
+
+info:
+ name: Exposed Git Commit Message
+ author: joel6948
+ severity: medium
+ description: Detects publicly accessible .git/COMMIT_EDITMSG that may expose sensitive commit messages
+ tags: git,exposure,misconfiguration
+
+http:
+ - method: GET
+   path:
+     - "{{BaseURL}}/.git/COMMIT_EDITMSG"
+   matchers-condition: and
+   matchers:
+     - type: status
+       status:
+         - 200
+     - type: word
+       part: body
+       words:
+         - "application/octet-stream"
+         - "text/plain"
+       condition: or
+     - type: dsl
+       dsl:
+         - "len(body) > 0"
+         - "!contains(tolower(body), '<html')"
+         - "!contains(tolower(body), '<body')"
+       condition: and
+      
