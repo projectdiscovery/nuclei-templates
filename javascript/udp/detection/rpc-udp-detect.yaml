@@ -1,0 +1,69 @@
+id: rpc-udp-detect
+
+info:
+  name: RPC Portmapper (UDP) - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects Sun RPC Portmapper service on UDP port 111. The RPC Portmapper (rpcbind) maps RPC program
+    numbers to network addresses. An exposed RPC Portmapper can reveal running RPC services (NFS, NIS, etc.)
+    and facilitate further enumeration and attacks against those services. Uses both the amap RPC probe
+    and the nmap RPCCheck probe for robust detection.
+  reference:
+    - https://github.com/CiscoCXSecurity/udp-proto-scanner
+    - https://www.rfc-editor.org/rfc/rfc1833
+    - https://nmap.org/nsedoc/scripts/rpcinfo.html
+    - https://book.hacktricks.xyz/pentesting/pentesting-rpcbind
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:111
+  tags: rpc,portmapper,rpcbind,nfs,network,js,udp,detection
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      const c = require("nuclei/net");
+      let results = [];
+
+      // Probe 1: amap RPC portmapper probe (40 bytes)
+      const amapPayload = "039b65420000000000000002000f4243000000000000000000000000000000000000000000000000";
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(amapPayload);
+      let amapResp = conn.RecvHex(4096);
+      conn.Close();
+      if (amapResp && amapResp.length > 16) {
+        results.push("RPC Portmapper responded to amap probe");
+      }
+
+      // Probe 2: nmap RPCCheck probe (40 bytes)
+      const nmapPayload = "72FE1D130000000000000002000186A00001977C0000000000000000000000000000000000000000";
+      conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(nmapPayload);
+      let nmapResp = conn.RecvHex(4096);
+      conn.Close();
+      if (nmapResp && nmapResp.length > 16) {
+        results.push("RPC Portmapper responded to nmap RPCCheck probe");
+      }
+
+      results.join("\n");
+
+    args:
+      Host: "{{Host}}"
+      Port: 111
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 0"
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"RPC Portmapper UDP Detected"'
