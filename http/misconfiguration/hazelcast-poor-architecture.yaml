@@ -1,0 +1,95 @@
+id: hazelcast-poor-architecture
+
+info:
+  name: Hazelcast - Poor Architectural Configuration
+  author: S3R4PH
+  severity: medium
+  description: Detects poor architectural configurations or unsecured REST API endpoints in Hazelcast.
+  remediation: Disable the Hazelcast REST API if not required. If its use is necessary, restrict network exposure, enable authentication mechanisms, limit access through firewall rules, and allow only trusted hosts to access the service.
+  reference:
+    - https://docs.hazelcast.com/imdg/latest/management-center/rest-api
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+  tags: config,exposure,hazelcast,sensitive-data
+
+http:
+  - method: GET
+    path:
+      - "http://{{Hostname}}:5701/hazelcast/rest/cluster"
+      - "http://{{Hostname}}:5701/hazelcast/health/cluster-state"
+      - "http://{{Hostname}}:5701/hazelcast/rest/log-level"
+      - "http://{{Hostname}}:5701/hazelcast/rest/instance"
+      - "http://{{Hostname}}:5701/hazelcast/rest/cp-subsystem/groups"
+      - "http://{{Hostname}}:5701/hazelcast/rest/cp-subsystem/members"
+
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          # Para /hazelcast/rest/cluster que expõe os IPs internos, UUIDs e versão dos membros do cluster
+          - 'status_code == 200 && contains(content_type, "json") && contains(body, "memberVersion") && contains(body, "members")'
+          # Para /hazelcast/health/cluster-state que retorna "ACTIVE" ou "PASSIVE"
+          - 'status_code == 200 && contains(content_type, "json") && (body == "\"ACTIVE\"" || body == "\"PASSIVE\"")'
+          # Para /hazelcast/rest/log-level que retorna {"logLevel":...}
+          - 'status_code == 200 && contains(content_type, "json") && contains(body, "logLevel")'
+          # Para /hazelcast/rest/instance que retorna o nome da instância do nó
+          - 'status_code == 200 && contains(content_type, "json") && contains(body, "\"name\":")'
+          # Para CP Subsystem se estiver exposto e habilitado/desabilitado
+          - 'status_code == 200 && contains(content_type, "json") && (contains(body, "members") || contains(body, "groups"))'
+          - 'status_code == 500 && contains(content_type, "json") && contains(body, "CP Subsystem is not enabled")'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"memberVersion":"([0-9.]+)"'
+
+      - type: regex
+        name: log-level
+        part: body
+        group: 1
+        regex:
+          - '"logLevel":\s*([^}\s]+)'
+
+      - type: regex
+        name: cluster-members
+        part: body
+        group: 1
+        regex:
+          - '"address":"([^"]+)"'
+
+      - type: regex
+        name: cluster-uuids
+        part: body
+        group: 1
+        regex:
+          - '"uuid":"([^"]+)"'
+
+      - type: regex
+        name: cluster-state
+        part: body
+        group: 1
+        regex:
+          - '"(ACTIVE|PASSIVE)"'
+
+      - type: regex
+        name: instance-name
+        part: body
+        group: 1
+        regex:
+          - '"name":"([^"]+)"'
+
+      - type: regex
+        name: cp-status
+        part: body
+        group: 1
+        regex:
+          - '"message":"([^"]+)"'
