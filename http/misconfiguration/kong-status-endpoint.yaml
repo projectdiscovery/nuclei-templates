@@ -1,0 +1,161 @@
+id: kong-status-endpoint
+
+info:
+  name: Kong API Gateway - Internal Status Endpoint
+  author: Amjad Ali
+  severity: info
+  description: |
+    Kong API Gateway's internal /status endpoint is accessible either directly or via
+    IP restriction bypass using spoofed IP headers. The endpoint leaks sensitive server
+    metrics (connections, requests), database reachability, worker Lua VM memory usage,
+    and shared dictionary allocation details.
+  reference:
+    - https://docs.konghq.com/gateway/latest/production/monitoring/status-api/
+  metadata:
+    verified: true
+    max-request: 14
+  tags: kong,misconfig,exposure,api-gateway,information-disclosure
+
+http:
+  # Block 1: Direct access — no bypass headers
+  - method: GET
+    path:
+      - "{{BaseURL}}/status"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"connections_reading":'
+          - '"workers_lua_vms":'
+          - '"lua_shared_dicts":'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Direct Access (No Bypass Required)"'
+
+  # Block 2: IP restriction bypass via spoofed headers
+  # Uses multiple raw requests instead of payloads to avoid Nuclei adding
+  # [varname="value"] payload noise in the output.
+  # Regex extractor on part:request captures the exact bypass header cleanly.
+  - raw:
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded-For: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Real-IP: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Originating-IP: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Remote-IP: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Remote-Addr: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Client-IP: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        True-Client-IP: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Custom-IP-Authorization: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-ProxyUser-Ip: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Original-Forwarded-For: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Forwarded: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        Forwarded-For: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        X-Host: 127.0.0.1
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        Accept: application/json, */*
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"connections_reading":'
+          - '"workers_lua_vms":'
+          - '"lua_shared_dicts":'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: request
+        regex:
+          - '((?:X-Forwarded-For|X-Real-IP|X-Originating-IP|X-Remote-IP|X-Remote-Addr|X-Client-IP|True-Client-IP|X-Custom-IP-Authorization|X-ProxyUser-Ip|X-Original-Forwarded-For|X-Forwarded|Forwarded-For|X-Host): 127\.0\.0\.1)'
+        group: 1
