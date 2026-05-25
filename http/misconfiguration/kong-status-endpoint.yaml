@@ -5,157 +5,120 @@ info:
   author: Amjad Ali
   severity: info
   description: |
-    Kong API Gateway's internal /status endpoint is accessible either directly or via
-    IP restriction bypass using spoofed IP headers. The endpoint leaks sensitive server
-    metrics (connections, requests), database reachability, worker Lua VM memory usage,
-    and shared dictionary allocation details.
+    Kong API Gateway's internal /status endpoint is publicly accessible either directly or via IP restriction bypass using spoofed headers. The endpoint exposes server metrics including active connections, request counts, database reachability, worker Lua VM memory usage, and shared dictionary allocation details.
   reference:
     - https://docs.konghq.com/gateway/latest/production/monitoring/status-api/
   metadata:
     verified: true
-    max-request: 14
-  tags: kong,misconfig,exposure,api-gateway,information-disclosure
+    max-request: 5
+    vendor: konghq
+    product: kong-gateway
+    shodan-query: 'http.title:"Kong" || "Server: kong"'
+    fofa-query: 'header="Server: kong"'
+  tags: kong,misconfig,exposure,api-gateway,konghq
+
+flow: http(1) || http(2) || http(3) || http(4) || http(5)
 
 http:
-  # Block 1: Direct access — no bypass headers
   - method: GET
     path:
       - "{{BaseURL}}/status"
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '"connections_reading":'
-          - '"workers_lua_vms":'
-          - '"lua_shared_dicts":'
-        condition: and
-
-      - type: status
-        status:
-          - 200
-
-    extractors:
       - type: dsl
         dsl:
-          - '"Direct Access (No Bypass Required)"'
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
 
-  # Block 2: IP restriction bypass via spoofed headers
-  # Uses multiple raw requests instead of payloads to avoid Nuclei adding
-  # [varname="value"] payload noise in the output.
-  # Regex extractor on part:request captures the exact bypass header cleanly.
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
+
   - raw:
       - |
         GET /status HTTP/1.1
         Host: {{Hostname}}
         X-Forwarded-For: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
 
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
+
+  - raw:
       - |
         GET /status HTTP/1.1
         Host: {{Hostname}}
         X-Real-IP: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
 
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Originating-IP: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
 
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Remote-IP: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
 
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Remote-Addr: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
+  - raw:
       - |
         GET /status HTTP/1.1
         Host: {{Hostname}}
         X-Client-IP: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
 
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
+
+  - raw:
       - |
         GET /status HTTP/1.1
         Host: {{Hostname}}
         True-Client-IP: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
 
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Custom-IP-Authorization: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-ProxyUser-Ip: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Original-Forwarded-For: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Forwarded: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        Forwarded-For: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Host: 127.0.0.1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
-        Accept: application/json, */*
-
-    stop-at-first-match: true
-
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '"connections_reading":'
-          - '"workers_lua_vms":'
-          - '"lua_shared_dicts":'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
         condition: and
-
-      - type: status
-        status:
-          - 200
 
     extractors:
       - type: regex
-        part: request
-        regex:
-          - '((?:X-Forwarded-For|X-Real-IP|X-Originating-IP|X-Remote-IP|X-Remote-Addr|X-Client-IP|True-Client-IP|X-Custom-IP-Authorization|X-ProxyUser-Ip|X-Original-Forwarded-For|X-Forwarded|Forwarded-For|X-Host): 127\.0\.0\.1)'
+        part: header
         group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
