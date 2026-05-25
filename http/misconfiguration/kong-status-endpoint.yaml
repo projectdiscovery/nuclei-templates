@@ -17,7 +17,7 @@ info:
     fofa-query: 'header="Server: kong"'
   tags: kong,misconfig,exposure,api-gateway,konghq
 
-flow: http(1) || http(2) || http(3) || http(4) || http(5)
+flow: http(1) || http(2)
 
 http:
   - method: GET
@@ -43,71 +43,17 @@ http:
       - |
         GET /status HTTP/1.1
         Host: {{Hostname}}
-        X-Forwarded-For: 127.0.0.1
+        {{header}}: 127.0.0.1
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
-          - 'contains(content_type, "application/json")'
-        condition: and
+    attack: clusterbomb
+    payloads:
+      header:
+        - "X-Forwarded-For"
+        - "X-Real-IP"
+        - "X-Client-IP"
+        - "True-Client-IP"
 
-    extractors:
-      - type: regex
-        part: header
-        group: 1
-        regex:
-          - 'Server: kong/([0-9.]+)'
-
-  - raw:
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Real-IP: 127.0.0.1
-
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
-          - 'contains(content_type, "application/json")'
-        condition: and
-
-    extractors:
-      - type: regex
-        part: header
-        group: 1
-        regex:
-          - 'Server: kong/([0-9.]+)'
-
-  - raw:
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        X-Client-IP: 127.0.0.1
-
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 200'
-          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
-          - 'contains(content_type, "application/json")'
-        condition: and
-
-    extractors:
-      - type: regex
-        part: header
-        group: 1
-        regex:
-          - 'Server: kong/([0-9.]+)'
-
-  - raw:
-      - |
-        GET /status HTTP/1.1
-        Host: {{Hostname}}
-        True-Client-IP: 127.0.0.1
-
+    stop-at-first-match: true
     matchers:
       - type: dsl
         dsl:
