@@ -1,0 +1,53 @@
+id: bubble-detect
+
+info:
+  name: Bubble - Detection
+  author: johnk3r
+  severity: info
+  description: |
+    Detect the presence of Bubble, an AI app platform.
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: bubble
+    product: bubble
+    shodan-query: X-Bubble-Perf
+  tags: tech,bubble
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+
+      - type: status
+        status:
+          - 200
+
+      # Bubble Indicators
+      - type: dsl
+        dsl:
+          - 'contains_any(tolower(all_headers), "x-bubble-")'
+          - 'regex("(?i)set-cookie:.*bubble", all_headers)'
+          - 'regex("(?i)set-cookie:.*__bubble", all_headers)'
+          - 'contains(body, "bubble.io")'
+          - 'contains(body, "bubbleapps.io")'
+        condition: or
+
+    extractors:
+      - type: kval
+        part: header
+        kval:
+          - x_bubble_performance
+          - x_bubble_capexposure
+
+      - type: regex
+        part: body
+        regex:
+          - 'https://[^"]+\.bubbleapps\.io'
+          - 'https://[^"]+\.bubble\.io'
