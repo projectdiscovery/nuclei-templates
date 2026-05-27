@@ -1,0 +1,153 @@
+id: rabbitmq-amqp-default-login
+
+info:
+  name: RabbitMQ AMQP - Default Login
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    RabbitMQ server accepts connections with weak or default credentials over the AMQP 0-9-1 protocol (port 5672).Default credentials (guest/guest) or commonly used weak passwords were found, allowing unauthorized access to the message broker, its queues, exchanges, and all data flowing through them.
+  impact: |
+    An attacker with valid AMQP credentials can connect to the broker, consume or publish messages,create/delete queues and exchanges, and potentially access sensitive application data.
+  remediation: |
+    Change default credentials immediately. Enforce strong password policies. Restrict the guest account to localhost connections only (RabbitMQ default behavior). Enable TLS for AMQP connections. Use vhosts for access isolation.
+  reference:
+    - https://www.rabbitmq.com/docs/access-control
+    - https://www.rabbitmq.com/docs/passwords
+    - https://www.rabbitmq.com/docs/amqp-0-9-1-reference
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-521
+  metadata:
+    verified: true
+    max-request: 6
+    shodan-query: product:"RabbitMQ" port:5672
+    fofa-query: protocol="amqp"
+  tags: js,network,rabbitmq,amqp,default-login
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host, Port);
+    code: |
+      let m = require("nuclei/net");
+      let conn = m.Open('tcp', `${Host}:${Port}`);
+
+      conn.SendHex("414d515000000901");
+      let serverStart = conn.RecvString(4096);
+
+      if (serverStart.indexOf("RabbitMQ") === -1) {
+        conn.Close();
+        throw "Not a RabbitMQ server";
+      }
+
+      function strToHex(s) {
+        let h = '';
+        for (let i = 0; i < s.length; i++) {
+          let c = s.charCodeAt(i).toString(16);
+          if (c.length < 2) c = '0' + c;
+          h += c;
+        }
+        return h;
+      }
+      function numToHex4(n) {
+        let h = n.toString(16);
+        while (h.length < 8) h = '0' + h;
+        return h;
+      }
+
+      let saslLen = 1 + Username.length + 1 + Password.length;
+
+      let methodPayload = "";
+      methodPayload += "000a000b";
+      methodPayload += "00000000";
+      methodPayload += "05504c41494e";
+      methodPayload += numToHex4(saslLen);
+      methodPayload += "00" + strToHex(Username) + "00" + strToHex(Password);
+      methodPayload += "05656e5f5553";
+
+      let payloadBytes = methodPayload.length / 2;
+
+      let frame = "01" + "0000" + numToHex4(payloadBytes) + methodPayload + "ce";
+
+      conn.SendHex(frame);
+      let authResponse = conn.RecvString(4096);
+      conn.Close();
+
+      // Negative checks — known failure indicators
+      if (authResponse.indexOf("ACCESS_REFUSED") !== -1 || authResponse.indexOf("access_refused") !== -1 || authResponse.indexOf("NOT_ALLOWED") !== -1 || authResponse.length < 8) {
+        throw "Authentication failed for " + Username;
+      }
+
+      // Positive check — verify Connection.Tune frame (class=10, method=30)
+      // Convert response to hex to check for specific AMQP frame bytes
+      function respToHex(s) {
+        let h = '';
+        for (let i = 0; i < s.length; i++) {
+          let c = s.charCodeAt(i).toString(16);
+          if (c.length < 2) c = '0' + c;
+          h += c;
+        }
+        return h;
+      }
+
+      let responseHex = respToHex(authResponse);
+
+      // Connection.Tune frame MUST contain class=10(0x000a) method=30(0x001e)
+      if (responseHex.indexOf("000a001e") === -1) {
+        throw "No Connection.Tune frame in response - not a confirmed auth success";
+      }
+
+      // Verify first byte is 0x01 (method frame type)
+      if (authResponse.charCodeAt(0) !== 1) {
+        throw "Unexpected AMQP frame type: " + authResponse.charCodeAt(0);
+      }
+
+      // Auth confirmed — export credentials and verification data
+      Export("username", Username);
+      Export("password", Password);
+      Export("amqp_frame", "connection.tune");
+
+    args:
+      Host: "{{Host}}"
+      Port: "5672"
+      Username: "{{username}}"
+      Password: "{{password}}"
+
+    payloads:
+      username:
+        - guest
+        - admin
+        - rabbitmq
+        - user
+        - test
+        - amqp
+
+      password:
+        - guest
+        - admin
+        - rabbitmq
+        - user
+        - test
+        - amqp
+
+    attack: pitchfork
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+      - type: word
+        part: response
+        words:
+          - "connection.tune"
+
+    extractors:
+      - type: kval
+        kval:
+          - username
+          - password
+# digest: 490a0046304402207d07660876a39b2d3f295ad4f9318e8fa656dc4c2e0f1a519db68d9f32e93b9b022033500ddb01b111f67ae3b773450df853181af066ebaa878f941260f2187d86c1:922c64590222798bb761d5b6d8e72950
