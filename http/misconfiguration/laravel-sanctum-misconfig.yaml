@@ -1,0 +1,48 @@
+id: laravel-sanctum-misconfig
+
+info:
+  name: Laravel Sanctum - Stateful Domain CSRF Misconfiguration
+  author: moamenbasel
+  severity: medium
+  description: |
+    Laravel Sanctum's SPA authentication uses cookie-based session authentication for first-party single-page applications. The /sanctum/csrf-cookie endpoint issues XSRF-TOKEN cookies to requesting origins. When SANCTUM_STATEFUL_DOMAINS is misconfigured with wildcard or overly permissive values, the application responds with CORS headers that permit arbitrary external origins to make credentialed cross-origin requests.
+  impact: |
+    An attacker can host a malicious page that performs authenticated actions on behalf of any logged-in user who visits it. Exploitable actions include reading sensitive user data, modifying account settings, changing email or password, initiating transactions, or any other operation exposed by Sanctum-protected API endpoints. The attack requires no prior authentication and only needs the victim to visit an attacker-controlled URL while logged in.
+  remediation: |
+    Restrict SANCTUM_STATEFUL_DOMAINS and SESSION_DOMAIN to only trusted application domains, and configure session cookies with SameSite=Lax or SameSite=Strict to reduce unauthorized cross-site requests. Additionally, ensure config/cors.php does not use wildcard (*) origins when supports_credentials is enabled, allowing only trusted origins for credentialed requests.
+  reference:
+    - https://laravel.com/docs/11.x/sanctum#spa-authentication
+    - https://laravel.com/docs/11.x/sanctum#cors-and-cookies
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:"sanctum.csrf-cookie"
+  tags: laravel,sanctum,csrf,misconfig,cors
+
+http:
+  - raw:
+      - |
+        GET /sanctum/csrf-cookie HTTP/1.1
+        Host: {{Hostname}}
+        Origin: https://evil.oast.pro
+        Referer: https://evil.oast.pro
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "XSRF-TOKEN"
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)access-control-allow-origin:\\s*https?://evil\\.oast\\.pro"
+          - "(?i)access-control-allow-credentials:\\s*true"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+          - 204
+# digest: 490a00463044022043113c9efa1921108351fc23edcad54d502fa728a2a148bef54c3790fffe7c8902201ee98c9a5556bb13567eb50234c97fdcc93390103b9a5ca82daed24cd59bfe89:922c64590222798bb761d5b6d8e72950

