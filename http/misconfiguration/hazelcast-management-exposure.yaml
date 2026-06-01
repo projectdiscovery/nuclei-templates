@@ -1,0 +1,47 @@
+id: hazelcast-management-exposure
+
+info:
+  name: Hazelcast Management Center - Configuration Exposure
+  author: S3R4PH
+  severity: medium
+  description: |
+    Detected poor architectural configurations or unsecured REST API endpoints in Hazelcast by checking the cluster endpoint, which exposes internal member IPs, UUIDs, and version information.
+  remediation: |
+    Disable the Hazelcast REST API if not required. If its use is necessary, restrict network exposure, enable authentication mechanisms, limit access through firewall rules, and allow only trusted hosts to access the service.
+  reference:
+    - https://docs.hazelcast.com/imdg/latest/management-center/rest-api
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    shodan-query: html:"hazelcast"
+  tags: config,exposure,hazelcast
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/hazelcast/rest/cluster"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "memberVersion"
+          - "members"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: cluster-uuids
+        part: body
+        group: 1
+        regex:
+          - '"uuid":"([^"]+)"'
+# digest: 490a004630440220328a830b556b256953890bbc98825af3616fbfba1a7c244c341c39717d4b9e9d022025e7f11a4de00b58f7756f51078ac9b666cdd44723770851f05125a55c5e5bb8:922c64590222798bb761d5b6d8e72950

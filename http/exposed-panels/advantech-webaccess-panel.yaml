@@ -1,0 +1,43 @@
+id: advantech-webaccess-panel
+
+info:
+  name: Advantech WebAccess/SCADA - Panel
+  author: 0x_Akoko
+  severity: info
+  description: |
+   Detected Advantech WebAccess/SCADA login panel, a web-browser-based HMI/SCADA software used in critical manufacturing, energy, and water systems.
+  reference:
+    - https://www.advantech.com/en-us/products/webaccess-scada/sub_a7b4308c-a3d0-446c-8f03-0d098d4b2c31
+    - https://www.cisa.gov/news-events/ics-advisories/icsa-23-150-01
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: advantech
+    product: webaccess_scada
+    shodan-query: http.title:"Advantech WebAccess"
+    fofa-query: title="Advantech WebAccess" || body="broadWeb"
+  tags: panel,ics,scada,hmi,advantech,webaccess,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/broadWeb/bwRoot.asp"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "broadWeb", "WebAccess")'
+          - 'contains_any(body, "Advantech", "bw_templete1.dwt", "WebAccessClientSetup")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?:Software Build|版本號)\s*:\s*([0-9]+\.[0-9]+[^\s<"]*)'
+# digest: 490a00463044022047f9bc609d210dca53c08abe47ec3232eaa670f9f12804665e5ad1b28ab3378602202e028fa05c13c0949c55defb1d4806abc1edc07c7050c998a184a1a44ba50e9d:922c64590222798bb761d5b6d8e72950
