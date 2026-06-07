@@ -1,0 +1,53 @@
+id: owncast-default-login
+
+info:
+  name: Owncast - Default Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Owncast using default admin credentials admin:abc123. The admin API was accessible via HTTP Basic authentication, allowing full server configuration access.
+  reference:
+    - https://owncast.online/docs/configuration/
+    - https://owncast.online/quickstart/configure/
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: http.title:"Owncast"
+    fofa-query: app="Owncast"
+  tags: default-login,owncast,streaming,admin,vuln
+
+variables:
+  username: admin
+  password: abc123
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "versionNumber", "online")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+  - raw:
+      - |
+        GET /api/admin/serverconfig HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ":" + password)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "instanceDetails", "ffmpegPath")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+# digest: 490a0046304402206df23179e55e671cf907cf48f873ec2562ee83a233f9bc772b39632b3da5c93d022064a9bca13ad3577539ec6dfb500e3dac150899795ca1c1e9504c17e92d8e4896:922c64590222798bb761d5b6d8e72950

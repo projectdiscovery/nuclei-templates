@@ -1,0 +1,59 @@
+id: eks-logging-kubes-api-calls
+
+info:
+  name: Enable CloudTrail Logging for Kubernetes API Calls
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that CloudTrail logging is enabled for Amazon Elastic Kubernetes Service (EKS) clusters in order to record all Kubernetes API calls. Amazon CloudTrail records and documents all activities performed on EKS clusters.
+  impact: |
+    Without CloudTrail logging enabled, there is no audit trail of API calls made to EKS clusters, making it difficult to track unauthorized access, investigate security incidents, and maintain compliance.
+  remediation: |
+    Enable CloudTrail logging for your EKS clusters by either starting logging on existing trails or creating a new multi-region trail if none exists.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/eks-logging-kubes-api-calls.html
+    - https://docs.aws.amazon.com/eks/latest/userguide/logging-using-cloudtrail.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let trailName of iterate(template.trails)){
+    set("trail", trailName)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: trails
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail get-trail-status --name $trail --region $region --query 'IsLogging' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail " + trail + " is not logging EKS API calls"'
+# digest: 4a0a00473045022100f391ee451c3a69cb5835b4b0a2c35886c5905ac8d91adf05ea56546b3e4109ff02201fd66caa2a782620e962cecbdf4ff60f957dcecac3f8d53006d44b60d08d7672:922c64590222798bb761d5b6d8e72950

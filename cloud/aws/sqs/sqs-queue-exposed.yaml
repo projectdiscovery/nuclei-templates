@@ -1,0 +1,59 @@
+id: sqs-queue-exposed
+
+info:
+  name: SQS Queue Exposed
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Identify any publicly accessible Amazon SQS queues and update their permissions in order to protect against unauthorized users.
+  impact: |
+    Exposing an SQS Queue can lead to unauthorized access, allowing attackers to intercept, delete, or manipulate messages, disrupting application workflows.
+  remediation: |
+    Restrict access to the SQS Queue using IAM policies, ensuring only authorized users and services have necessary permissions, and enable server-side encryption for data protection.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/SQS/sqs-queue-exposed.html
+    - https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingKMSEncryption.html
+  tags: cloud,devops,aws,amazon,sqs,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let QueueUrls of iterate(template.queueurls)){
+    set("queueurl", QueueUrls)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws sqs list-queues --region $region --query 'QueueUrls[*]' --output json
+
+    extractors:
+      - type: json
+        name: queueurls
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+        aws sqs get-queue-attributes --region $region --queue-url $queueurl --attribute-names "Policy" --query 'Attributes.Policy' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"AWS": "*"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SQS Queue " + queueurl + " is Exposed"'
+# digest: 4b0a00483046022100a38adb8365e2b1af5657b39475128387e45e8e7fe459e01c4dd6e38151ff209f022100f30d99e73587bfb138921cef53734d1921d682b29ba858353dc5ed8bf9693be0:922c64590222798bb761d5b6d8e72950

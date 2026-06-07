@@ -1,0 +1,50 @@
+id: k8s-controller-manager-bind-address
+
+info:
+  name: Ensure kube-controller-manager --bind-address is set to localhost
+  author: songyaeji
+  severity: high
+  description: |
+    Ensure kube-controller-manager is bound to localhost (127.0.0.1 or ::1). If --bind-address is missing or
+    set to 0.0.0.0 (::), the controller-manager API may be reachable from all network interfaces, increasing
+    exposure of the control-plane component.
+  impact: |
+    If the kube-controller-manager listens on all interfaces, an attacker with network access may be able to
+    interact with the controller-manager API, causing potential information leakage or enabling further attacks
+    against the cluster.
+  remediation: |
+    Set --bind-address=127.0.0.1 (or ::1) in the kube-controller-manager startup arguments. For example, edit
+    /etc/kubernetes/manifests/kube-controller-manager.yaml and add the argument to the command section.
+  reference:
+    - https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+    - Cloud Vulnerability Assessment Guide(2024) by KISA
+  tags: cloud,devops,kubernetes,devsecops,kube-controller-manager,bind-address,hardening,k8s,k8s-cluster-security
+
+variables:
+  component: "kube-controller-manager"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-controller-manager -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-controller-manager'
+
+      - type: word
+        words:
+          - "--bind-address=127.0.0.1"
+          - "--bind-address=::1"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"kube-controller-manager configuration is missing --bind-address or set to unsafe value (expected: 127.0.0.1 or ::1)"'
+# digest: 490a0046304402202913db41a43350176fa630504391e5399d252294710b1bad1c50cd162a8defcb02205cb4ec1d6e05dd2b5fa493bf0668f0c0bf4fa5f521759e4f84f95927e4e465d9:922c64590222798bb761d5b6d8e72950

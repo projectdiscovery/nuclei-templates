@@ -1,0 +1,56 @@
+id: azure-aks-api-unrestricted
+info:
+  name: Azure AKS API Server Access Unrestricted
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Azure Kubernetes Service (AKS) clusters are configured to use the API Server Authorized IP Address Ranges feature in order to limit which IP addresses and CIDRs can access the Kubernetes control plane.
+  impact: |
+    Without API Server Authorized IP Address Ranges configured, unauthorized IP addresses may access the Kubernetes API Server, leading to potential security vulnerabilities.
+  remediation: |
+    Configure the AKS clusters to use API Server Authorized IP Address Ranges by setting the appropriate IP ranges in the AKS configuration to ensure that only authorized IPs have access to the Kubernetes control plane.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/api-server-authorized-ip-ranges
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterData of iterate(template.clusterList)) {
+    ClusterData = JSON.parse(ClusterData);
+    set("name", ClusterData.name);
+    set("resourceGroup", ClusterData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'apiServerAccessProfile.authorizedIpRanges'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have authorized IP ranges configured for AKS API server access"'
+# digest: 490a0046304402203425f609630423dfe823025a59f934a3dfff8f6048c274f9a6f3eb1fc46a1cc602204fa325bb994ee112939c54c963e5203540d6ce3d3cc3362ca192d169f124d0cf:922c64590222798bb761d5b6d8e72950

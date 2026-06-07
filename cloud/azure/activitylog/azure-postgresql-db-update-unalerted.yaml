@@ -1,0 +1,59 @@
+id: azure-postgresql-db-update-unalerted
+info:
+  name: Azure PostgreSQL Database Create/Update Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever “Create/Update PostgreSQL Database” events are triggered within your Microsoft Azure cloud account. The log alerts get triggered when a new activity log event that matches the condition specified in the alert configuration occurs. For this conformity rule, the matched condition is "Whenever the Activity Log has an event with Category='Administrative', Signal name='Create/Update PostgreSQL Database (servers/databases)'"
+  impact: |
+    Without proper alert rules configured for monitoring "Create or Update PostgreSQL Database" events, unauthorized or unwanted changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Create or Update PostgreSQL Database" events by setting the alert condition to "Microsoft.DBforPostgreSQL/servers/databases/write" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.DBforPostgreSQL/servers/databases/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Create/Update PostgreSQL Database events"'
+# digest: 4b0a00483046022100c6cbb098f7e45b09a7699980f3be1095996805532ea482cd4cd92efa81ee993d022100f1fe6f4623a8ff48c92dad51be8f085bacae595a4eee7b6234737e38fa8c1c7e:922c64590222798bb761d5b6d8e72950

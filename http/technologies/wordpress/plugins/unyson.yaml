@@ -1,0 +1,50 @@
+id: wordpress-unyson
+
+info:
+  name: Unyson Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/unyson/
+  metadata:
+    max-request: 1
+    plugin_namespace: unyson
+    wpscan: https://wpscan.com/plugin/unyson
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/unyson/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/unyson.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100fbcde56fc35802c106ec8bc24c486ccaea68b2173b3bf438f66b96c1a2ec32b0022070d710c33193f1be44f81956aaebac208dc5143f1f0395a26bdad6e04eda36f9:922c64590222798bb761d5b6d8e72950

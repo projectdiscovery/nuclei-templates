@@ -1,0 +1,78 @@
+id: azure-aks-network-contrib-unassigned
+info:
+  name: Azure AKS Network Contributor Role Unassigned
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Azure Kubernetes Service (AKS) clusters are using the Network Contributor role for managing networking resources and accessing other Azure services within an Azure Virtual Network (VNet). The Network Contributor role enables seamless network management, facilitates service integration, and enhances overall security.
+  impact: |
+    If AKS clusters are not using the Network Contributor role, this may restrict their capabilities in managing network resources effectively, potentially leading to suboptimal service integration and security posture.
+  remediation: |
+    Ensure that the Network Contributor role is assigned to your AKS clusters within Azure to enable proper management of networking resources. This can be configured in the IAM settings of the Azure portal.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/manage-azure-rbac
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterData of iterate(template.clusterList)) {
+    ClusterData = JSON.parse(ClusterData);
+    set("name", ClusterData.name);
+    set("resourceGroup", ClusterData.resourceGroup);
+    code(2);
+    for(let subscriptionNames of iterate(template.subscription)){
+      set("subscription", subscriptionNames)
+      code(3);
+      }
+    }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'id'
+
+    extractors:
+      - type: json
+        name: subscription
+        internal: true
+        json:
+          - '.'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az role assignment list --scope "$subscription" --output json --query '[*].roleDefinitionName'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "Network Contributor"
+        negative: true
+
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in resource group " + resourceGroup + " does not have Network Contributor role assigned"'
+# digest: 4b0a00483046022100dbf142975bc26a76671718c1276d4036e34d387dfab23f3f4a8f985e0159a9fc022100fc42fe9ee71f7aed0228b4fd605ed597b31885330e229b82b86854889e996b2b:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,53 @@
+id: azure-keyvault-trusted-ms-unrestricted
+info:
+  name: Key Vault Trusted Microsoft Services Access Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Allow trusted Microsoft services to bypass this firewall" exception is enabled within your Azure Key Vault network firewall configuration settings in order to grant vault access to trusted Azure cloud services. The trusted Microsoft services must also be given explicit permissions within the access policies associated with the Key Vault.
+  impact: |
+    If trusted Microsoft services cannot bypass the firewall, it could prevent essential services from accessing Key Vault, impacting functionality and integration within Azure.
+  remediation: |
+    Enable the "Allow trusted Microsoft services to bypass this firewall" setting in your Key Vault network configuration to allow trusted services access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/key-vault/general/network-security
+  tags: cloud,devops,azure,microsoft,keyvault,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VaultData of iterate(template.vaultNames)) {
+    set("vaultName", VaultData)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault list --query '[*].name' --output json
+
+    extractors:
+      - type: json
+        name: vaultNames
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az keyvault show --name $vaultName --query 'properties.networkAcls.bypass' --output json
+
+    matchers:
+      - type: word
+        words:
+          - '"None"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vaultName + " does not allow trusted Microsoft services to bypass the firewall"'
+# digest: 4a0a00473045022100be9bafb76fe2fdbe8a3f75560809d6660b194208a7244b5d28e77a80c3eb6daa02200116a892799d1463defc884c12c32916ccab8dccfae2d52b512582e4af067daa:922c64590222798bb761d5b6d8e72950

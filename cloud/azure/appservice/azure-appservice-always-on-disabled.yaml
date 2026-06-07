@@ -1,0 +1,53 @@
+id: azure-appservice-always-on-disabled
+info:
+  name: Azure App Service Always On Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure App Services web applications have Always On feature enabled in order to prevent applications from being idled out due to inactivity. Always On keeps your websites/web applications loaded even when there's no traffic.
+  impact: |
+    Disabling Always On may lead to your web applications being unloaded during periods of inactivity, potentially causing delayed responses to incoming traffic and impacting user experience.
+  remediation: |
+    Enable the Always On feature for your Azure App Services web applications to ensure they remain active and responsive at all times.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/app-service/configure-common
+  tags: cloud,devops,azure,microsoft,appservice,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let WebAppData of iterate(template.webAppList)) {
+    set("ids", WebAppData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp list --output json --query '[*].{id:id}'
+
+    extractors:
+      - type: json
+        name: webAppList
+        internal: true
+        json:
+          - '.[].[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az webapp config show --ids "$ids" --query 'alwaysOn' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Always On feature is disabled for WebApp with ID: " + id'
+# digest: 4b0a00483046022100ae78e0d6095d0c5f7f6ed6a4f7abe036e19d5466fb2524933b3edcaf118f3ffd022100f5af07e2147df64274b7ac7f000a32d8bd432d8eda2efad6db5ab432beeabbcf:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: coveralls-configuration-file-exposure
+
+info:
+  name: Coveralls Configuration File Exposure
+  author: 0x_Akoko
+  severity: medium
+  description: |
+   Detected a Coveralls configuration file (.coveralls.yml) on the target. This file could have exposed a sensitive repo_token, allowing an attacker to submit fake data, view private coverage details, or impersonate the project.
+  reference:
+    - https://docs.coveralls.io/ci-services
+    - https://coveralls-python.readthedocs.io/en/latest/usage/configuration.html
+  classification:
+    cwe-id: CWE-538
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: html:".coveralls.yml"
+  tags: exposure,config,coveralls,token,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.coveralls.yml"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "len(body) > 30"
+          - "contains_any(content_type, 'application/octet-stream', 'text/plain')"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "repo_token"
+          - "service_name"
+        condition: or
+
+      - type: word
+        part: response
+        words:
+          - "MongoDB over HTTP on the native"
+          - "application/javascript"
+          - "application/x-javascript"
+          - "application/json"
+          - "application/xml"
+          - "text/xml"
+          - "<html"
+          - "<!doctype"
+          - "<script"
+          - "<meta"
+          - "image/"
+          - "Response xmlns"
+        negative: true
+# digest: 490a0046304402201311ebe9d74b819eb829078585ada0a0c51360d45a73b240c2215a4baba0142d02205bda2a8ff291c59f602d1b044e732eda9bc6a471b5bfa3ef43a2b11436bf257f:922c64590222798bb761d5b6d8e72950

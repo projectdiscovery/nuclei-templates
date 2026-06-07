@@ -1,0 +1,76 @@
+id: gcloud-gke-security-posture-disabled
+
+info:
+  name: GKE Security Posture Dashboard Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Security Posture dashboard is enabled for your Google Kubernetes Engine (GKE) clusters. This feature integrates with other cloud services such as Cloud Logging, Policy Controller, and Binary Authorization to provide visibility into vulnerabilities, misconfigurations, and compliance risks, helping to enhance cluster security and maintain regulatory compliance.
+  impact: |
+    Without Security Posture enabled, you lack centralized visibility into potential security vulnerabilities within your GKE clusters, making it harder to identify and address security concerns before they escalate into critical issues.
+  remediation: |
+    Enable Security Posture for your GKE clusters using:
+    gcloud container clusters update CLUSTER_NAME --region=REGION --security-posture=enterprise
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/security-posture
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-and-configure-security-posture.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,monitoring,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="value(securityPostureConfig.mode)"
+
+    matchers:
+      - type: word
+        words:
+          - "DISABLED"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have Security Posture dashboard enabled"'
+# digest: 4a0a0047304502200ecd01cac154a61b1888a619045d25849cc0e01c80359303d22875bf6d759516022100fa810ba67e64f4890f82d54603897fca4017f2c76330feef822753b81ee1c131:922c64590222798bb761d5b6d8e72950

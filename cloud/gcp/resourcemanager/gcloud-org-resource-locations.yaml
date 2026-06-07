@@ -1,0 +1,56 @@
+id: gcloud-org-resource-locations
+
+info:
+  name: Resource Location Restrictions Not Configured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the locations where location-based cloud resources can be created within your GCP organization are defined using the "Google Cloud Platform - Resource Location Restriction" organization policy. This constraint policy helps you achieve regulatory compliance by explicitly defining the locations allowed to deploy Google Cloud resources for your organization. You can specify multi-regions such as "asia" and "europe" and individual regions such as "us-east1" or "europe-west2" as allowed locations.
+  impact: |
+    Without location restrictions, cloud resources can be deployed to any location, potentially violating data residency requirements and regulatory compliance standards. This could lead to data being stored in unauthorized regions.
+  remediation: |
+    Configure the "Google Cloud Platform - Resource Location Restriction" policy at the organization level to explicitly specify allowed locations. Use the 'in:' prefix followed by location strings (e.g., in:us-locations, in:us-west1-locations) to define allowed regions.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/resource-location-restriction.html
+    - https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,compliance,location,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe gcp.resourceLocations --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted resource locations, allowing resources to be created in any region"'
+# digest: 4a0a0047304502203df4e983746be2c4097d0e0621d93433a40450ed1b97938e5257847de50ae425022100f6c3553c3b64818bb61179140254c145104f8edca65345cca1ccf5a905f322e4:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,49 @@
+id: wordpress-disable-gutenberg
+
+info:
+  name: Disable Gutenberg Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/disable-gutenberg/
+  metadata:
+    plugin_namespace: disable-gutenberg
+    wpscan: https://wpscan.com/plugin/disable-gutenberg
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/disable-gutenberg/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/disable-gutenberg.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a004730450221009397b78a7ce5712345b17536585a81ed200b65d75eeb490e919a3a7f1d332cde0220384603ccb873b77d60ae9b36085f898a78c65cf8493fbc8236f0f199da5c9b9d:922c64590222798bb761d5b6d8e72950

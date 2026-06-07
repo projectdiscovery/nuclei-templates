@@ -1,0 +1,47 @@
+id: matrix-homeserver-detect
+
+info:
+  name: Matrix Homeserver - Version Detection
+  author: davidegirardi
+  severity: info
+  description: |
+    Extract the Matrix homeserver name and version
+  classification:
+    cpe: cpe:2.3:a:matrix:synapse:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: matrix
+    product: synapse
+    shodan-query: title:"Synapse is running"
+  tags: tech,matrix,synapse,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_matrix/federation/v1/version"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"server":'
+          - '"name":'
+          - '"version":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.server | select((.name != null) and (.version != null)) | .name, .version'
+# digest: 4b0a00483046022100f990227f84edeef2fd8264e4d1e2f8fd90f52c4c9fd73839e0be4caa56f549cf02210083b4651aa652e0af30ee6430de422dda3bea31e8dd9ffede4b6d6ac05538b6bd:922c64590222798bb761d5b6d8e72950

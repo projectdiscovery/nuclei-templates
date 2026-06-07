@@ -1,0 +1,61 @@
+id: log-disconnections-disabled
+
+info:
+  name: PostgreSQL "log_disconnections" Parameter - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    The log_disconnections parameter in Alibaba Cloud RDS for PostgreSQL is disabled, meaning the database does not log session disconnections. This can hinder the ability to audit and analyze database connection activities effectively.
+  reference:
+    - https://www.alibabacloud.com/help/en/rds/apsaradb-rds-for-postgresql/use-a-parameter-template-to-configure-the-parameters-of-apsaradb-rds-for-postgresql-instances
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-RDS/enable-log-disconnections-for-postgresql.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,alibaba-rds
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for(let DBInstanceId of iterate(template.dbinstanceid)){
+    set("instance", DBInstanceId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun rds DescribeDBInstances --region $region
+
+    extractors:
+      - type: json
+        name: dbinstanceid
+        internal: true
+        json:
+          - '.Items.DBInstance[].DBInstanceId'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun rds DescribeParameters --DBInstanceId $dbinstanceid --region $region | jq -r '.RunningParameters.DBInstanceParameter[] | select(.ParameterName == "log_disconnections") | {ParameterName, ParameterValue}'
+
+    matchers:
+      - type: word
+        words:
+          - '"ParameterValue": "off"'
+          - '"ParameterName": "log_disconnections"'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'instance + " RDS log_disconnections Parameter for PostgreSQL Database Instances "'
+# digest: 490a0046304402204e59b359a41fbd61fcff314b9f6c690ff24cd3dcfae57b0a9d6231bfb926f572022073e6ada8dae4a9d5c47cd0a64190ab068743738eed07939af2963d0dab4498f7:922c64590222798bb761d5b6d8e72950

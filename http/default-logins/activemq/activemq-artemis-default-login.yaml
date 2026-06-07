@@ -1,0 +1,61 @@
+id: activemq-artemis-default-login
+
+info:
+  name: Apache ActiveMQ Artemis Console Default Login
+  author: pdteam
+  severity: high
+  description: |
+   Detected Apache ActiveMQ Artemis console default login credentials were discovered.
+  reference:
+    - https://activemq.apache.org/components/artemis/documentation/latest/management-console.html
+  metadata:
+    max-request: 2
+    vendor: apache
+    product: activemq
+    shodan-query: title:"ActiveMQ Artemis Console"
+  tags: apache,activemq,artemis,default-login,vuln
+
+http:
+  - method: POST
+    path:
+      - '{{BaseURL}}/console/auth/login'
+    headers:
+      Content-Type: application/json
+      X-Requested-With: XMLHttpRequest
+    body: |-
+      {"username":"{{username}}","password":"{{password}}"}
+
+    stop-at-first-match: true
+    payloads:
+      username:
+        - artemis
+      password:
+        - artemis
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+
+      - type: word
+        part: body
+        words:
+          - '{"credentials"'
+          - '"principals":['
+          - 'org.apache.activemq'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: credential
+        part: body
+        group: 0
+        regex:
+          - '{"credentials":.*}'
+# digest: 4a0a0047304502202bcfb2355b7ea94bfb42f9a22a6ced3db19ebb131375dfd6339d8f3a51b5cb79022100cfa9d6955d6f51948e3d2488be44e0bf112ac9017cd056688f8a8aea10ba7b4a:922c64590222798bb761d5b6d8e72950

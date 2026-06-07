@@ -1,0 +1,42 @@
+id: k8s-enc-prov-conf
+
+info:
+  name: Ensure that encryption providers are configured
+  author: princechaddha
+  severity: medium
+  description: Checks if encryption providers are appropriately configured in Kubernetes, ensuring that data at rest is secured.
+  impact: |
+    Misconfigured encryption providers can lead to unsecured data at rest, potentially exposing sensitive information to unauthorized access.
+  remediation: |
+    Ensure that the encryption provider configuration file is set up correctly and referenced properly in the API server configuration. Encryption should be enabled and configured according to the security best practices.
+  reference:
+    - https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+  tags: cloud,devops,kubernetes,devsecops,encryption,k8s,k8s-cluster-security
+
+variables:
+  argument: "encryption-provider-config"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+
+      - type: word
+        words:
+          - "encryption-provider-config"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"API server configuration is missing the " + argument + " argument"'
+# digest: 4a0a0047304502205ab93eb0e4f6e7d6b0405d50ba19f684eb6fbbeb812f0c0961c325a1aecc4606022100b81ba15df48e22dbd390af168cfdfb1c075831c841a09a01098dd0043f5f12bb:922c64590222798bb761d5b6d8e72950

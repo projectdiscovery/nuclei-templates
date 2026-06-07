@@ -1,0 +1,54 @@
+id: azure-storage-blob-public-access
+info:
+  name: Azure Storage Blob Public Access Not Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that public (anonymous) access is disabled for all the blob containers available within your Microsoft Azure storage accounts in order to protect your data against unauthorized access. Disabling public access at the storage account level overrides the public access setting configured for the individual blob containers in that storage account.
+  impact: |
+    If public access is not disabled, blob containers can be accessed by anyone, potentially exposing sensitive data to unauthorized users.
+  remediation: |
+    Disable public access to all storage accounts containing blob containers to prevent unauthorized data access.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/storage/common/storage-disallow-access
+  tags: cloud,devops,azure,microsoft,storage,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AccountData of iterate(template.accountList)) {
+    set("ids", AccountData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account list --query '[*].id'
+
+    extractors:
+      - type: json
+        name: accountList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az storage account show --ids "$ids" --query 'allowBlobPublicAccess'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'ids + " has public access enabled"'
+# digest: 490a0046304402200a4647bd2fcbf10578588b6759a03e7c950b6dd1097956c795e10ed117bdc765022051b5ccfe57bd9dbe49c43aba85f04b56ed99c6b7e1636cac6faeb80ba691dc7d:922c64590222798bb761d5b6d8e72950

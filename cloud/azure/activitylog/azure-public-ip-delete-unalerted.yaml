@@ -1,0 +1,59 @@
+id: azure-public-ip-delete-unalerted
+info:
+  name: Azure Public IP Delete Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that activity log alerts are used to detect "Delete Public IP Address" events within your Microsoft Azure cloud account. An activity log alert gets activated when a new activity log event that matches the condition specified in the alert occurs.
+  impact: |
+    Without proper alert rules configured for monitoring "Delete Public IP Address" events, unauthorized or unwanted changes might go unnoticed, leading to potential security risks.
+  remediation: |
+    Ensure alert rules are properly configured to monitor and notify on "Delete Public IP Address" events by setting the alert condition to "Microsoft.Network/publicIPAddresses/delete" and ensuring that an action group is attached to manage notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,public-ip,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("id", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$id"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - '"equals": "Microsoft.Network/publicIPAddresses/delete"'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'id + " does not have the correct alert configuration for Delete Public IP Address events"'
+# digest: 4a0a0047304502200e112f7f8d29987e133243244bd0bc9c6f45879315e587bf3bacd22804f5f4cb022100d92460d59143fd725fdfaf3d33d34b9f8845ab877ac626acadd3ff14333f45ff:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,55 @@
+id: azure-postgres-log-connections-disabled
+info:
+  name: Azure PostgreSQL Log Connections Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "log_connections" server parameter is enabled for all PostgreSQL database servers available in your Microsoft Azure cloud account. The "log_connections" parameter allows each attempted connection to the database server to be logged, including successful client authentication requests. Only Azure users with administrative privileges can change this parameter at session start, and it cannot be changed during an access session.
+  impact: |
+    Disabling "log_connections" prevents logging of connection attempts to the PostgreSQL servers, which can hinder security monitoring and compliance.
+  remediation: |
+    Enable the "log_connections" server parameter for all Azure PostgreSQL servers to ensure that all connection attempts are logged, enhancing security monitoring capabilities.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-server-logs
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.name);
+    set("resourceGroup", ServerData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server configuration show --server-name "$name" --resource-group "$resourceGroup" --name log_connections --query 'value'
+
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have log_connections enabled"'
+# digest: 4a0a00473045022100d279ce1eb469c19b0af3d317ea8d951041fd2dbbb67ae9da4152f5040553970c02203c3931d153d646c665fcce2eebba7213e8f2b7c19fda479ba4daa697562cc38c:922c64590222798bb761d5b6d8e72950

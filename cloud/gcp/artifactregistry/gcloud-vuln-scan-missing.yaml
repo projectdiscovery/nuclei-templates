@@ -1,0 +1,59 @@
+id: gcloud-vuln-scan-missing
+
+info:
+  name: Artifact Registry Vulnerability Scanning Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that vulnerability scanning for Google Cloud Artifact Registry repositories is enabled in order to find security weaknesses in your container images before deploying them and help prevent security breaches.
+  impact: |
+    Disabling vulnerability scanning on Artifact Registry repositories can expose your deployment to undiscovered security vulnerabilities, increasing the risk of security breaches.
+  remediation: |
+    Enable the Container Scanning API for each Artifact Registry by visiting the API & services page in the Google Cloud Console and enabling `containerscanning.googleapis.com`.
+  reference:
+    - https://cloud.google.com/artifact-registry/docs/vulnerability-scanning
+  tags: cloud,devops,gcp,gcloud,artifact-registry,container-scanning,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud services list --enabled --project $projectId --format="json(config.name)"
+
+    matchers:
+      - type: word
+        words:
+          - 'containerscanning.googleapis.com'
+        negative: true
+
+      - type: word
+        words:
+          - '"config":'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Vulnerability Scanning not enabled for Artifact Registry in Project: " + projectId'
+# digest: 4a0a004730450221009fddff36e3531876ec8020199fd3d82830417f005b705281b2382f4415a1a2750220507b9a58b4acc754e098c9bfad7d61ec238a0e4d4069632fb08eea3891c320ab:922c64590222798bb761d5b6d8e72950

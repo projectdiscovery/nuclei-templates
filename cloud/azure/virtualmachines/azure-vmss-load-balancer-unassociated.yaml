@@ -1,0 +1,56 @@
+id: azure-vmss-load-balancer-unassociated
+info:
+  name: Azure VMSS Load Balancer Unassociated
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that each Microsoft Azure virtual machine scale set is integrated with a load balancer in order to distribute incoming traffic among healthy virtual machine instances running within the scale set. Azure load balancer is a layer 4 load balancer that provides low latency, high throughput, and scales up to millions of flows for all TCP and UDP web applications.
+  impact: |
+    Virtual machine scale sets without associated load balancers may experience uneven traffic distribution and potential bottlenecks, affecting performance and reliability.
+  remediation: |
+    Ensure each Azure virtual machine scale set is integrated with a load balancer to distribute incoming traffic effectively among instances.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-load-balancer
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let VmssData of iterate(template.vmssList)) {
+    VmssData = JSON.parse(VmssData);
+    set("name", VmssData.Name);
+    set("resourceGroup", VmssData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmssList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss show --name "$name" --resource-group "$resourceGroup" --query 'virtualMachineProfile.networkProfile.networkInterfaceConfigurations[*].ipConfigurations[*].loadBalancerBackendAddressPools[*].id | []'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is not associated with a load balancer"'
+# digest: 4a0a00473045022031dff48a4dbd5c8b7b82ff855de9935b3af7a25fb08c79596f2b4b56f2d17a11022100d24fc1f6a399b268e3b6366990210974afe8c287781e2ae5dd97717f000d13f2:922c64590222798bb761d5b6d8e72950

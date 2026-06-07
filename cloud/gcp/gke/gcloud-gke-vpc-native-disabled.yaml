@@ -1,0 +1,76 @@
+id: gcloud-gke-vpc-native-disabled
+
+info:
+  name: GKE Clusters Without VPC-Native Traffic Routing
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that VPC-native traffic routing is enabled for your Google Kubernetes Engine (GKE) clusters. This feature enhances integration with Google Cloud's VPC, improving network performance, scalability, and security through the use of alias IP address ranges.
+  impact: |
+    Without VPC-native traffic routing enabled, clusters lack enhanced network-level anti-spoofing checks, granular firewall controls for pods, and efficient direct access to hosted services. This can lead to reduced network performance and security capabilities.
+  remediation: |
+    Re-create your GKE clusters with VPC-native traffic routing using:
+    gcloud container clusters create CLUSTER_NAME --enable-ip-alias
+  reference:
+    - https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/GKE/enable-vpc-native-traffic-routing.html
+  tags: cloud,devops,gcp,gcloud,gke,kubernetes,security,networking,vpc,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let cluster of iterate(template.clusters)){
+      cluster = JSON.parse(cluster)
+      set("clusterName", cluster.name)
+      set("location", cluster.location)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud container clusters describe $clusterName --location $location --project $projectId --format="json(ipAllocationPolicy.useIpAliases)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"GKE cluster " + clusterName + " in " + location + " of project " + projectId + " does not have VPC-native traffic routing enabled"'
+# digest: 490a0046304402205241159cc4be909f69168ee2dc573e09c1bc00d54a7001effc121a2b7df45c65022058dcaa215c6bf0509b0c691af32cd8e382773ecac82d02f22cc5cd1c3fa59e64:922c64590222798bb761d5b6d8e72950

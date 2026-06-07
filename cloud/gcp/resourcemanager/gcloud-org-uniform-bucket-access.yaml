@@ -1,0 +1,56 @@
+id: gcloud-org-uniform-bucket-access
+
+info:
+  name: Uniform Bucket-Level Access Not Enforced
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "Enforce uniform bucket-level access" policy is enabled for your Google Cloud Platform (GCP) organization in order to enforce uniform bucket-level access for all Google Cloud Storage buckets available in your organization. Enforcing uniform bucket-level access disables Access Control Lists (ACLs) for all Cloud Storage resources (buckets and objects) so that access is granted exclusively through Cloud IAM service.
+  impact: |
+    Without enforced uniform bucket-level access, buckets may use legacy ACLs which are less secure and more complex to manage than Cloud IAM permissions, potentially leading to misconfigured access controls.
+  remediation: |
+    Enable the "Enforce uniform bucket-level access" policy at the organization level using the 'gcloud alpha resource-manager org-policies enable-enforce' command with the storage.uniformBucketLevelAccess constraint.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/enforce-uniform-bucket-level-access-constraint.html
+    - https://cloud.google.com/storage/docs/uniform-bucket-level-access
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,storage,bucket,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe storage.uniformBucketLevelAccess --organization=$orgId --effective --format="json(booleanPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not enforced uniform bucket-level access for Cloud Storage buckets"'
+# digest: 4a0a004730450220226a887a6d10ad64e45d6a72909b0fccb4bb7c08397c15b7427ae9d4dff47c7b022100e57ea92a4ed2f9691299cd42378268b5436c6cd6230069f6a67066d6b2ee14b9:922c64590222798bb761d5b6d8e72950

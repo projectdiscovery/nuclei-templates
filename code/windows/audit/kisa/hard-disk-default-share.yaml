@@ -1,0 +1,75 @@
+id: hard-disk-default-share
+
+info:
+  name: Hard Disk Default Share Removal Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure default administrative shares (e.g., C$, D$, Admin$) are disabled by verifying that the AutoShareServer registry value is set to 0.
+    Leaving these shares enabled can expose system resources to unauthorized access.
+  impact: |
+   If the AutoShareServer registry value is set to 1 or default administrative shares (excluding IPC$) are present, attackers may exploit them to gain unauthorized access to system resources.
+  remediation: |
+    Permanently disable default administrative shares by setting the AutoShareServer registry value to 0 at:
+    - HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\lanmanserver\parameters
+    - Additionally, remove any non-essential default shares using the appropriate system management tools.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: ftp,iis,code,windows-audit,kisa,share-permissions
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $vulnerable = $false
+      # Check the AutoShareServer registry value
+      $regPath = 'HKLM:\SYSTEM\CurrentControlSet\Services\lanmanserver\parameters'
+      $autoShare = (Get-ItemProperty -Path $regPath -Name AutoShareServer -ErrorAction SilentlyContinue).AutoShareServer
+      if ($autoShare -eq 1) {
+          $vulnerable = $true
+      }
+      # Retrieve list of shared folders using 'net share'
+      $netShares = net share | Out-String
+      $lines = $netShares -split "`n"
+      $shareNames = @()
+      $startParsing = $false
+      foreach ($line in $lines) {
+          if ($line -match "^-+") {
+              $startParsing = $true
+              continue
+          }
+          if ($startParsing -and $line.Trim() -ne "" -and $line -notmatch "The command completed successfully") {
+              $tokens = $line.Trim() -split "\s+"
+              if ($tokens.Count -gt 0) {
+                  $shareNames += $tokens[0]
+              }
+          }
+      }
+      # Define default shares to check (excluding IPC$)
+      $defaultShares = @("C$", "D$", "Admin$")
+      foreach ($share in $shareNames) {
+          if ($defaultShares -contains $share) {
+              $vulnerable = $true
+              break
+          }
+      }
+      if ($vulnerable) {
+          "DEFAULT_SHARE_VULNERABLE"
+      } else {
+          "DEFAULT_SHARE_COMPLIANT"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "DEFAULT_SHARE_VULNERABLE"
+# digest: 4a0a004730450221009ebdc7c1aef05392bad7dfec19455d19a49841b9c5450289066663f12f7cf7b702205fc2205ef3699f0479d05c18f6ba580269db8bfb3265cd700a7084fbe01794e2:922c64590222798bb761d5b6d8e72950

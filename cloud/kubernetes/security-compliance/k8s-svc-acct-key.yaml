@@ -1,0 +1,42 @@
+id: k8s-svc-acct-key
+
+info:
+  name: Ensure service-account-key-file set
+  author: princechaddha
+  severity: medium
+  description: Checks if the service-account-key-file argument is properly set in the API server configuration, which is critical for validating service account tokens.
+  impact: |
+    The absence of the service-account-key-file argument means that the API server might not perform robust authentication checks for service accounts, potentially allowing unauthorized access.
+  remediation: |
+    Configure the API server to use a service-account-key-file that points to a valid private key used to sign service account tokens. This setting should be part of the API server startup arguments or in its configuration file.
+  reference:
+    - https://kubernetes.io/docs/admin/kube-apiserver/
+  tags: cloud,devops,kubernetes,security,devsecops,api-server,k8s,k8s-cluster-security
+
+variables:
+  argument: "service-account-key-file"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      kubectl get pods -n kube-system -l component=kube-apiserver -o jsonpath="{.items[*].spec.containers[*].command}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'kube-apiserver'
+
+      - type: word
+        words:
+          - "service-account-key-file"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"API server configuration is missing the " + argument + " argument."'
+# digest: 490a0046304402205ad5cf2ea51311668b71b3ba9acff690115a3f9b15e997406d41351a3244d7fe022019182b0be129f25cea061265dfca2908064de2c5b0c7bcb7dae19411250573c7:922c64590222798bb761d5b6d8e72950

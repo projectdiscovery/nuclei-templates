@@ -1,0 +1,59 @@
+id: azure-nsg-create-update-unalerted
+info:
+  name: Azure Network Security Group Create/Update Alert Not Configured
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that an Azure activity log alert is fired whenever "Create" or "Update Network Security Group" events are triggered within your Microsoft Azure cloud account. Activity log alerts get activated when a new activity log event that matches the condition specified in the alert occurs. In this case, the alert condition that we search for is 'Whenever the Administrative Activity Log "Create or Update Network Security Group (Microsoft.Network/networkSecurityGroups)" has "any" level, with "any" status and event is initiated by "any"'.
+  impact: |
+    Without appropriate alert rules for "Create" or "Update Network Security Group" events, unauthorized or unintended changes might go unnoticed, leading to potential security vulnerabilities.
+  remediation: |
+    Configure alert rules to monitor "Create" or "Update Network Security Group" events by setting the alert condition to "Microsoft.Network/networkSecurityGroups/write" and attaching an action group to handle notifications.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/platform/alerts-activity-log
+  tags: cloud,devops,azure,microsoft,network-security-group,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AlertData of iterate(template.alertList)) {
+    set("nsg", AlertData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert list --output json --query '[?(enabled==`true`)].id'
+
+    extractors:
+      - type: json
+        name: alertList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az monitor activity-log alert show --ids "$nsg" --query 'condition'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"field": "operationName"'
+
+      - type: word
+        words:
+          - "Microsoft.Network/networkSecurityGroups/write"
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " does not have the correct alert configuration for Create/Update Network Security Group events"'
+# digest: 4a0a00473045022100ec0edbdcc686653410cfbfc7d27975b5a8807ab88444e91a31d37ea8b1afed7302204ab73bbc72fa33818101e045d76aadeba2279cd5e885bf515507b7ba5d9d041a:922c64590222798bb761d5b6d8e72950

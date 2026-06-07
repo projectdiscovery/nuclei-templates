@@ -1,0 +1,90 @@
+id: openplc-default-login
+
+info:
+  name: OpenPLC Webserver v3 - Default Login
+  author: machevalia,shriyanss
+  severity: high
+  description: |
+    Identifies default credentials (openplc:openplc) on OpenPLC Webserver v3, allowing unauthorized access to the web interface.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"OpenPLC"
+  tags: openplc,default-login,iot,vuln
+
+variables:
+  username: "openplc"
+  password: "openplc"
+
+flow: http(1) || http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}&csrf_token={{csrf}}
+
+      - |
+        GET /dashboard HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 3
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - '(?i)<input[^>]+name=["'']csrf_token["''][^>]*value=["'']([^"'']+)["'']'
+          - '(?i)<input[^>]+value=["'']([^"'']+)["''][^>]*name=["'']csrf_token["'']'
+        internal: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_3
+        words:
+          - "Dashboard"
+          - "Runtime Logs"
+          - "Logout</p>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+      - |
+        GET /dashboard HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "Dashboard"
+          - "Runtime Logs"
+          - "Logout</p>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100f0ddad8436e9aa9bf889a4dd2e5c22f0d4899086e99c14613bfad07172fffe9902206a97b36bb9a44de01a2fa686779ab77cdbc7fc6ecd9306d2624e62874746f071:922c64590222798bb761d5b6d8e72950

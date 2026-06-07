@@ -1,0 +1,74 @@
+id: gcloud-filestore-unrestricted-access
+
+info:
+  name: Filestore Instance Client Access Not Restricted by IP
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that client access to your Google Cloud Filestore instances is limited to specific (trusted) IP addresses or IP address ranges in order to protect your data against unauthorized access. By default, Filestore instances provide full (root-level read/write) access to all clients within the same Google Cloud project and VPC network.
+  impact: |
+    Granting untrusted clients access exposes Filestore instance data to unapproved access, modification, or deletion. Without IP-based access rules, any client in the same project and VPC can access the instance.
+  remediation: |
+    Configure IP-based access rules for your Filestore instances to restrict access to specific IP addresses or ranges. Once configured, any IP address or range not explicitly allowed will be denied access.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/Filestore/restrict-client-access.html
+    - https://cloud.google.com/filestore/docs/access-control
+  tags: cloud,devops,gcp,gcloud,filestore,security,networking,access-control,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances list --project $projectId --format="json"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud filestore instances describe $instanceName --format="json(fileShares[].nfsExportOptions)"
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Filestore instance " + instanceName + " in project " + projectId + " has unrestricted client access and is not limited to specific IP addresses"'
+# digest: 4a0a00473045022015227977ae287e23e7ff3a7fe02ab1e22cb3f9452e7270651f2dba02685071890221009812ea9204d9da21ef99f129a3426fa9b6f8cb6dd1a5a1743f2b64f1fcb4d7fb:922c64590222798bb761d5b6d8e72950

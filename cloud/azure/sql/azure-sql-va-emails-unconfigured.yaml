@@ -1,0 +1,56 @@
+id: azure-sql-va-emails-unconfigured
+info:
+  name: Azure SQL Classic VA Emails Unconfigured
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Amazon SQL database servers are configured with the email addresses of the concerned data owners, admins or stakeholders in order to receive Vulnerability Assessment (VA) scan reports and alerts for critical events. This setting is only available for SQL servers using the classic SQL Vulnerability Assessment configuration. For new, express configuration, email notifications are enabled by default and cannot be customized.
+  impact: |
+    Lack of email notifications for VA scans means critical alerts and reports are not reaching the responsible parties, potentially delaying the response to vulnerabilities.
+  remediation: |
+    Configure the email addresses for vulnerability assessment notifications in your SQL server settings to ensure alerts and reports are received by the appropriate stakeholders.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-sql/database/security-overview
+  tags: cloud,devops,azure,microsoft,sql-server,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.ServerName);
+    set("resourceGroup", ServerData.ResourceGroupName);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql server list --query "[].{ServerName:name, ResourceGroupName:resourceGroup}" --output json
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az sql va config show --server "$name" --resource-group "$resourceGroup" --query "{StorageAccountName: storageAccount, NotificationEmails: emailAdmins}" --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"emails": []'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has no emails configured for VA notifications"'
+# digest: 490a00463044022031c797b7b6cadb848835cf794ed8fa6309b15f78dc09618cd83da7674e119b7c022049d66bffa70746b9e8938d5ff50786531d0e4bf0a9438eda9571eaf86bc250e0:922c64590222798bb761d5b6d8e72950

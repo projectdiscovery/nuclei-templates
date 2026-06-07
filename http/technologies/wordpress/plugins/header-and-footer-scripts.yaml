@@ -1,0 +1,50 @@
+id: wordpress-header-and-footer-scripts
+
+info:
+  name: Header and Footer Scripts Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/header-and-footer-scripts/
+  metadata:
+    max-request: 1
+    plugin_namespace: header-and-footer-scripts
+    wpscan: https://wpscan.com/plugin/header-and-footer-scripts
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/header-and-footer-scripts/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/header-and-footer-scripts.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100fce41c2225daa6d4318a4aaa342e28bd9d6eaa9bdbddae6f3fad550b850b5793022100ee4a153403e8637ce6f65ec4a974133dfa0b69bf0a1b8dc35f1c125d2c575433:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,89 @@
+id: gcloud-https-lb-logging-disabled
+
+info:
+  name: Logging Disabled on HTTP(S) Load Balancers
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud HTTP(S) load balancers are configured to log all network traffic. Enabling logging on HTTP(S) load balancers is crucial for diagnosing issues and ensuring transparency in traffic management.
+  impact: |
+    Not having logging enabled on HTTP(S) load balancers can obscure the visibility into traffic patterns and potential security threats, making it difficult to perform accurate diagnostics and incident response.
+  remediation: |
+    Enable logging on all Google Cloud HTTP(S) load balancers by configuring the logConfig.enable setting to true in the backend services settings.
+  reference:
+    - https://cloud.google.com/load-balancing/docs/https
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancing,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let urlMapName of iterate(template.urlMaps)){
+      set("urlMapName", urlMapName)
+      code(3)
+      for(let backendServiceName of iterate(template.backendServices)){
+        set("backendServiceName", backendServiceName)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: urlMaps
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps describe $urlMapName --project $projectId --format="json(defaultService)"
+
+    extractors:
+      - type: json
+        name: backendServices
+        internal: true
+        json:
+          - '.defaultService'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute backend-services describe $backendServiceName --project $projectId --format="json(logConfig.enable)"
+
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Logging is disabled on load balancer " + urlMapName + " on backend service " + backendServiceName + " in project " + projectId'
+# digest: 490a0046304402201ecd1421a73c7a728574863b437ad515bff8ac5d2d5b935556daa8249f0a2b92022053bc1337276338c17d007ae66fad43f32c0d9ad2f970322a1ba0bc96676555ee:922c64590222798bb761d5b6d8e72950

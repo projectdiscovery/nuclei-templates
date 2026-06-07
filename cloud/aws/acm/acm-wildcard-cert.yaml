@@ -1,0 +1,57 @@
+id: acm-wildcard-cert
+info:
+  name: Wildcard ACM Certificate Usage
+  author: princechaddha
+  severity: low
+  description: |
+    Ensure ACM certificates for specific domain names are used over wildcard certificates to adhere to best security practices, providing unique private keys for each domain/subdomain.
+  impact: |
+    Using wildcard certificates can expose your AWS environment to increased risk by potentially allowing unauthorized subdomains to be protected under the same certificate, reducing the granularity of access control and increasing the blast radius in the event of a key compromise.
+  remediation: |
+    Replace wildcard ACM certificates with single domain name certificates for each domain/subdomain within your AWS account. This enhances security by ensuring each domain/subdomain has its own unique private key and certificate.
+  reference:
+    - https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,acm,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let arns of iterate(template.certificatearns)){
+    set("certificatearn", arns)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws acm list-certificates --region $region --certificate-statuses ISSUED --query 'CertificateSummaryList[*].CertificateArn' --output json
+
+    extractors:
+      - type: json
+        name: certificatearns
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws acm describe-certificate --region $region --certificate-arn $certificatearn --query 'Certificate.DomainName'
+
+    matchers:
+      - type: word
+        words:
+          - "*."
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'certificatearn + " AWS ACM certificate is a wildcard certificate"'
+# digest: 4b0a00483046022100dbca7d2794c441a99df146a95cbce9fbdab400e333759e871cc37e8a268dd285022100f1d219c3674cb0992bbbbdd52439f972c0673e313ac4923ef82b226077cbc405:922c64590222798bb761d5b6d8e72950

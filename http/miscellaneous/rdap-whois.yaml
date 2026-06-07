@@ -1,0 +1,141 @@
+id: rdap-whois
+
+info:
+  name: RDAP WHOIS
+  author: ricardomaia,sttlr
+  severity: info
+  description: |
+    RDAP (Registration Data Access Protocol) is a standard defined by the IETF to replace the whois protocol
+    in queries for information about Internet resource records such as domain names, IP addresses, and ASNs.
+  reference:
+    - https://about.rdap.org/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+  tags: miscellaneous,whois,rdap,osint,misc,vuln
+
+http:
+  - method: GET
+    path:
+      - "https://www.rdap.net/domain/{{Host}}"
+
+    redirects: true
+    max-redirects: 3
+    matchers:
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        name: status
+        json:
+          - '.status[]'
+
+      - type: json
+        part: body
+        name: registrationDate
+        json:
+          - '.events[] | select(.eventAction == "registration").eventDate'
+
+      - type: json
+        part: body
+        name: lastChangeDate
+        json:
+          - '.events[] | select(.eventAction == "last changed").eventDate'
+
+      - type: json
+        part: body
+        name: expirationDate
+        json:
+          - '.events[] | select(.eventAction == "expiration").eventDate'
+
+      - type: json
+        part: body
+        name: registrantName
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "fn") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantOrg
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "org") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantEmail
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "email") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantPhone
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "tel") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrantAddress
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][] | select(. != "")'
+
+      - type: json
+        part: body
+        name: registrantCountry
+        json:
+          - '.entities[] | select(.roles[] | contains("registrant")) | .vcardArray[1].[] | select(.[0] == "adr") | .[-1][-1]'
+
+      - type: json
+        part: body
+        name: registrarIANAId
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .publicIds[] | select(.type == "IANA Registrar ID") | .identifier'
+
+      - type: json
+        part: body
+        name: registrarName
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .vcardArray[1].[] | select(.[0] == "fn") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrarOrg
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .vcardArray[1].[] | select(.[0] == "org") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrarUrl
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .links[] | select(.rel == "about") | .href'
+
+      - type: json
+        part: body
+        name: registrarEmail
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .entities[] | select(.roles[] | contains("abuse")) | .vcardArray[1].[] | select(.[0] == "email") | .[-1]'
+
+      - type: json
+        part: body
+        name: registrarPhone
+        json:
+          - '.entities[] | select(.roles[] | contains("registrar")) | .entities[] | select(.roles[] | contains("abuse")) | .vcardArray[1].[] | select(.[0] == "tel") | .[-1]'
+
+      - type: json
+        part: body
+        name: nameServers
+        json:
+          - '.nameservers[] | .ldhName'
+
+      - type: json
+        part: body
+        name: secureDNS
+        json:
+          - '.secureDNS.delegationSigned // false'
+# digest: 4a0a004730450220787061b7c200cca80f91bab07e4a357af4868c42434bf0db5d6c8d8309f65dfb022100ef38f107e5c933ef1d727558f691764eb6a1b8bdacca866523a02a249c9e2622:922c64590222798bb761d5b6d8e72950

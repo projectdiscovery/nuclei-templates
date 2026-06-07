@@ -1,0 +1,92 @@
+id: gcloud-vm-disk-csek-not-enabled
+
+info:
+  name: Virtual Machine Disk Encryption with Customer-Supplied Keys Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the disks attached to your production Google Compute Engine instances are encrypted with Customer-Supplied Encryption Keys (CSEKs) in order to have complete control over the data-at-rest encryption and decryption process. CSEKs allow you to provide your own encryption keys that Google Compute Engine uses to protect the Google-generated keys used to encrypt and decrypt your instance data.
+  impact: |
+    Without CSEK encryption, you have limited control over the encryption process of your VM disk data. Google Compute Engine service manages the encryption keys, which may not meet strict compliance requirements for sensitive data.
+  remediation: |
+    Re-create your VM instances with Customer-Supplied Encryption Keys (CSEKs) by providing a 256-bit string encoded in RFC 4648 standard base64 during instance creation. Note that Compute Engine does not store your CSEKs on its servers and cannot access your protected data unless you provide the required key.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/enable-encryption-with-csek.html
+    - https://cloud.google.com/compute/docs/disks/customer-supplied-encryption
+  tags: cloud,devops,gcp,gcloud,compute,encryption,csek,security,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+      for(let disk of iterate(template.disks)){
+        set("diskName", disk)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(disks[].deviceName)"
+
+    extractors:
+      - type: json
+        name: disks
+        internal: true
+        json:
+          - '.disks[].deviceName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute disks describe $diskName --zone $zone --project $projectId --format="json(diskEncryptionKey.sha256)" | jq '. // "null"'
+
+    matchers:
+      - type: word
+        words:
+          - "null"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Disk " + diskName + " attached to instance " + instanceName + " in zone " + zone + " of project " + projectId + " is not encrypted with a Customer-Supplied Encryption Key (CSEK)"'
+# digest: 4b0a00483046022100c2ddf98deb81b73823578ad0f0b7a5cdcb19b78a9b724b0a8fda299bff5a09b2022100aa01c142410c386168a489b065a27d1e0b089bde93147ac022b6bbb88de194a5:922c64590222798bb761d5b6d8e72950

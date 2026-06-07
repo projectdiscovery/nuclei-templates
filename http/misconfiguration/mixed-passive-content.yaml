@@ -1,0 +1,53 @@
+id: mixed-passive-content
+
+info:
+  name: Mixed Passive Content
+  author: Liwermor
+  severity: info
+  description: |
+    This check detects if there are any passive content being loaded over HTTP instead of HTTPS.
+  reference:
+    - https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content
+    - https://portswigger.net/kb/issues/01000400_mixed-content
+    - https://resources.infosecinstitute.com/topics/vulnerabilities/https-mixed-content-vulnerability/
+    - https://docs.gitlab.com/ee/user/application_security/dast/checks/319.1.html
+  metadata:
+    max-request: 1
+  tags: misconfig,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        name: img
+        regex:
+          - "<img[^>]*src=['\"]http://[^'\">]+['\"]"
+
+      - type: regex
+        part: body
+        name: audio
+        regex:
+          - "<audio[^>]*src=['\"]http://[^'\">]+['\"]"
+
+      - type: regex
+        part: body
+        name: video
+        regex:
+          - "<video[^>]*src=['\"]http://[^'\">]+['\"]"
+
+    extractors:
+      - type: regex
+        group: 1
+        part: body
+        regex:
+          - "<img[^>]*src=['\"](http[^s'\">][^'\">]*)['\"]"
+          - "<audio[^>]*src=['\"](http[^s'\">][^'\">]*)['\"]"
+          - "<video[^>]*src=['\"](http[^s'\">][^'\">]*)['\"]"
+# digest: 490a0046304402204efab5bf89f3562116a48ad178c3397e771e85a8d809e95a2ae71c469ea613c202202197b25ffe06eeedefd3f382b56a5e2251f11847e6717c43b129ed5258930549:922c64590222798bb761d5b6d8e72950

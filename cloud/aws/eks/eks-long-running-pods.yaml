@@ -1,0 +1,64 @@
+id: eks-long-running-pods
+
+info:
+  name: EKS Long Running Pods
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Amazon Elastic Kubernetes Service (EKS) clusters do not have pods running for more than 30 days. Long-running pods may indicate stale deployments, potential security risks, or resource inefficiencies.
+  impact: |
+    Long-running pods can lead to security vulnerabilities, outdated software versions, and inefficient resource utilization. They may also indicate a lack of proper deployment practices and maintenance.
+  remediation: |
+    Review and update long-running pods. Consider implementing proper deployment strategies, regular updates, and automated pod rotation policies.
+  reference:
+    - https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    - https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+  days: "30"
+
+flow: |
+  code(1)
+  for(let cluster of iterate(template.clusters)){
+    set("cluster", cluster)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks update-kubeconfig --name $cluster --region $region
+      kubectl get pods --all-namespaces --field-selector=status.phase=Running --output=json | \
+      jq -r --argjson days "$days" '.items[] |
+      select((now - (.metadata.creationTimestamp | fromdate)) > ($days * 24 * 3600)) |
+      .metadata.namespace + "/" + .metadata.name'
+
+    matchers:
+      - type: word
+        words:
+          - "/"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS cluster " + cluster + " has pods running for more than " + days + " days"'
+# digest: 4a0a00473045022078e484dde6ab14a2c60f99ac9498ceac9733bddc7c21db406a696cf49974d53d022100b8fde680e4403da4247605f652a492812f19e6559cfd949652e11e22dadbf28e:922c64590222798bb761d5b6d8e72950

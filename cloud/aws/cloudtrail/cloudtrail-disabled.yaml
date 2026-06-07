@@ -1,0 +1,57 @@
+id: cloudtrail-disabled
+info:
+  name: CloudTrail Disabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensures AWS CloudTrail is enabled in all regions to monitor and record account activity across your AWS infrastructure, enhancing security and compliance.
+  impact: |
+    Lack of region-wide CloudTrail logging can lead to insufficient visibility into account activities, hindering anomaly detection and forensic analysis.
+  remediation: |
+    Enable CloudTrail in all AWS regions through the AWS Management Console or CLI to ensure comprehensive activity logging and monitoring.
+  reference:
+    - https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,cloudtrail,aws-cloud-config
+variables:
+  region: "ap-south-1"
+
+flow: |
+  code(1)
+  for(let CloudTrail of iterate(template.cloudtrailname)){
+    set("trail", CloudTrail)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws cloudtrail list-trails --region $region --query 'Trails[*].Name' --output json
+
+    extractors:
+      - type: json
+        name: cloudtrailname
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws cloudtrail describe-trails --region $region --trail-name-list $trail --query 'trailList[*].IsMultiRegionTrail'
+
+    matchers:
+      - type: word
+        words:
+          - "false"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudTrail trail" + trail + " is not configured to receive log files from all the AWS cloud regions"'
+# digest: 4b0a00483046022100fca761ce5c95eeb781ebd2afec0ffa1659a8ea317ac44814ba9f866e086e0836022100c1eb1a17e68513ab1dea8246ee974a9ccfbfa55b77be8f0f9d2434a5f927c6cb:922c64590222798bb761d5b6d8e72950

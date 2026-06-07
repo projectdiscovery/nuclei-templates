@@ -1,0 +1,73 @@
+id: gcloud-pubsub-crossproject-access
+
+info:
+  name: Pub/Sub Subscription Cross-Project Access
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Pub/Sub subscriptions are configured to allow access only to trusted GCP projects to protect against unauthorized cross-project access. The list with the trusted GCP projects must be defined in the conformity rule settings, in the Trend Cloud One™ – Conformity account console.
+  impact: |
+    Allowing access to Pub/Sub subscriptions from untrusted GCP projects can lead to unauthorized data access, privilege escalation, and potential data exfiltration.
+  remediation: |
+    Restrict access to Pub/Sub subscriptions by configuring IAM policies to include only trusted service accounts or users. Ensure roles such as "roles/pubsub.subscriber", "roles/pubsub.editor", or "roles/pubsub.admin" are only assigned to trusted principals.
+  reference:
+    - https://cloud.google.com/pubsub/docs/access-control
+    - https://cloudone.trendmicro.com/docs/conformity
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let pubsubSubscription of iterate(template.subscriptions)){
+      set("subscriptionName", pubsubSubscription)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub subscriptions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: subscriptions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub subscriptions get-iam-policy $subscriptionName --format=json | jq '.bindings[]'
+
+    matchers:
+      - type: word
+        words:
+          - '@'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Pub/Sub subscription " + subscriptionName + " in project " + projectId + " has cross-project access configured with one or more untrusted members."'
+# digest: 4a0a00473045022100cf5daef669d70a8709759d4df7a2cf30496f9f83e0c47c4c04ff56351037ef40022057077361e1e73dd4aed5ca8f9a26a61abb15729f1b6b7df3394b5df852cdf74e:922c64590222798bb761d5b6d8e72950

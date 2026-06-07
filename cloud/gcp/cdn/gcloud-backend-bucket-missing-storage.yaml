@@ -1,0 +1,89 @@
+id: gcloud-backend-bucket-missing-storage
+
+info:
+  name: Backend Buckets Referencing Missing Storage Buckets
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Cloud CDN backend buckets are referencing existing storage buckets in order to be able to deliver static content efficiently from the nearest edge location to users, reducing latency and improving performance.
+  impact: |
+    Referencing missing storage buckets can lead to a failure in content delivery, increased latency, and a poor user experience.
+  remediation: |
+    Verify that each backend bucket is referencing an existing storage bucket. Update the Cloud CDN backend bucket configuration to point to valid and existing storage buckets.
+  reference:
+    - https://cloud.google.com/cdn/docs/backends
+  tags: cloud,devops,gcp,gcloud,cdn,cloud-cdn,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let urlMap of iterate(template.urlMaps)){
+      set("urlMapName", urlMap)
+      code(3)
+      for(let backendBucket of iterate(template.backendBuckets)){
+        set("backendBucketName", backendBucket)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    extractors:
+      - type: json
+        name: urlMaps
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute backend-buckets describe $backendBucket --project $projectId --format="json(bucketName)"
+
+    extractors:
+      - type: json
+        name: backendBuckets
+        internal: true
+        json:
+          - '.bucketName'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud storage buckets describe gs://$backendBucket --project $projectId
+
+    matchers:
+      - type: word
+        words:
+          - "404"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Missing Storage Bucket for Backend Bucket: " + backendBucketName + " in URL Map: " + urlMapName + " of Project: " + projectId'
+# digest: 490a0046304402200355352b429e76a66451d939e03a1c0176ce597104577c63526d81f01df76f9d022020fdd9dd953445d97ee9c8bd8261109a157494c1e29cce407fb36af3d30856da:922c64590222798bb761d5b6d8e72950

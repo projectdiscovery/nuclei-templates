@@ -1,0 +1,85 @@
+id: joomla-fpd
+
+info:
+  name: Joomla! - Full Path Disclosure
+  author: pussycat0x
+  severity: low
+  description: |
+    Detects full path disclosure in Joomla! sending requests to specific paths and identifying fatal error stack traces that leaked absolute filesystem paths.
+  reference:
+    - https://developer.joomla.org/security-centre/884-20220801-core-multiple-full-path-disclosures-because-of-missing-jexec-or-die-check.html
+  metadata:
+    verified: true
+    shodan-query: http.component:"joomla"
+  tags: joomla,misconfiguration,fpd,disclosure
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/administrator/manifests/files/joomla.xml" # >= 1.6.0
+      - "{{BaseURL}}/language/en-GB/en-GB.xml" # >= 1.5.0 and <= 1.5.26
+      - "{{BaseURL}}/README.txt"
+      - "{{BaseURL}}/modules/custom.xml" # < 1.5.0
+      - "{{BaseURL}}" # >= 1.5.0 and <= 1.5.26
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<version>"
+          - "<creationDate>"
+          - "</metafile>"
+        condition: and
+        internal: true
+
+      - type: regex
+        part: body
+        regex:
+          - "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)"
+          - "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*"
+          - "(?i)Joomla_([\\d.|\\d]+)_version_history"
+          - "FILES_JOOMLA_XML_DESCRIPTION"
+        condition: or
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/libraries/phputf8/utils/bad.php"
+      - "{{BaseURL}}/libraries/php-inputfilter/inputfilter.php"
+      - "{{BaseURL}}/libraries/php-fileupload/fileupload.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/archive.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/tar.php"
+      - "{{BaseURL}}/libraries/joomla/filesystem/archive/zip.php"
+      - "{{BaseURL}}/libraries/phpmailer/phpmailer.php"
+      - "{{BaseURL}}/libraries/phputf8/utils/unicode.php"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+"
+          - "(?i)fatal\\s+error"
+          - "(?i)warning"
+          - "(?i)notice"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+      - type: regex
+        part: body
+        regex:
+          - "(/[^\\s:]+/joomla[^\\s:]*)"
+          - "(/[^\\s:]+/libraries[^\\s:]*)"
+# digest: 4a0a0047304502202c25c7d22b153a9a70f16c78d021a9d11727f84e2e72568e4f6b96e73fc4df88022100cf73155d2decc017ecba6b97e9fe337d935729c1868dc0a4b7401f10bdb20e27:922c64590222798bb761d5b6d8e72950

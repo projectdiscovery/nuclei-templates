@@ -1,0 +1,63 @@
+id: azure-nsg-restricted-port-range
+info:
+  name: Restricted Port Range in Azure NSGs
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Azure network security groups (NSGs) do not have ranges of ports configured to allow inbound traffic, which can expose associated virtual machines to Denial-of-Service (DoS) or brute-force attacks. Only specific ports required by your application should be open following cloud security best practices.
+  impact: |
+    Having a range of ports open can increase the vulnerability to DoS and brute-force attacks, compromising the security of your Azure virtual machine instances.
+  remediation: |
+    Modify the NSG rules to only allow inbound traffic on necessary ports specific to your application requirements. This practice minimizes potential attack vectors.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData);
+    set("nsg", NsgData.name);
+    set("resourcegroup", NsgData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow'].{PortRange:destinationPortRanges, Rule: name, Priority: priority}"
+
+    matchers:
+      - type: word
+        words:
+          - "0-65535"
+          - "80-8080"
+          - "111-32800"
+
+    extractors:
+      - type: json
+        name: destinationPortRange
+        internal: true
+        json:
+          - '.[].destinationPortRange'
+
+      - type: dsl
+        dsl:
+          - 'nsg + " allows a range of ports " + destinationPortRange + " which may be vulnerable to attacks"'
+# digest: 490a0046304402204617d5f1cdcd447933ed4fefb60af7211589234768be976c568df62a7317af99022005bf624a6ee84d2cd1b0a593af63782600012ccc5746e9f1f53fb963ecd81557:922c64590222798bb761d5b6d8e72950

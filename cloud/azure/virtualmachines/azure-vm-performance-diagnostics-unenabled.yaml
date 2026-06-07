@@ -1,0 +1,63 @@
+id: azure-vm-performance-diagnostics-unenabled
+info:
+  name: Azure VM Performance Diagnostics Feature Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Performance Diagnostics feature is enabled for your Microsoft Azure virtual machine instances to help mitigate VM performance issues. Performance Diagnostics installs a VM extension that runs PerfInsights, available for both Windows and Linux operating systems. PerfInsights collects and analyzes diagnostic information to provide findings and recommendations for performance issues.
+  impact: |
+    Not enabling Performance Diagnostics may lead to unresolved VM performance issues due to lack of insights into VM's operational state.
+  remediation: |
+    Enable the Performance Diagnostics feature by installing the AzurePerformanceDiagnostics extension through Azure Portal or Azure CLI commands to mitigate performance issues and ensure optimal VM operation.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machines/performance-diagnostics
+  tags: cloud,devops,azure,microsoft,virtual-machine,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let vmData of iterate(template.vmList)) {
+    vmData = JSON.parse(vmData);
+    set("name", vmData.Name);
+    set("resourceGroup", vmData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: vmList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vm extension list --vm-name "$name" --resource-group "$resourceGroup" --output json --query '[*].{"ExtensionName": name, "ProvisioningState": provisioningState}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'AzurePerformanceDiagnosticsLinux'
+
+      - type: word
+        part: body
+        words:
+          - 'Succeeded'
+        negative: true
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Performance Diagnostics is not enabled for " + name + " in " + resourceGroup'
+# digest: 490a00463044022068ed209265a61be97f31a902fcaf6553624744fe3c1a07521ec05b17bd44101c02205166473072045aa0f5212e5351da074f931517153c7e32df38a4f0d4210b0138:922c64590222798bb761d5b6d8e72950

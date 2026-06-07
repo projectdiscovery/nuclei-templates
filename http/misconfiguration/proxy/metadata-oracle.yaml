@@ -1,0 +1,45 @@
+id: metadata-service-oracle
+
+# This attack abuses a misconfigured proxy that allows access to the metadata
+# IP or a name which resolves to the IP. A standard proxy request is made to
+# the proxy using the full metadata URL, which the proxy will fulfill to its
+# own metadata service.
+#
+# The proxy may also be vulnerable to host/port enumeration on localhost or
+# inside the private network.
+info:
+  name: Oracle Cloud Metadata Service Check
+  author: sullo
+  severity: critical
+  description: The Oracle cloud host is configured as a proxy which allows access to the instance metadata IMDSv1 service. This could allow significant access to the host/infrastructure.
+  remediation: Disable the proxy or restrict configuration to only allow access to approved hosts/ports. Upgrade to IMDSv2 if possible.
+  reference:
+    - https://docs.oracle.com/en-us/iaas/Content/Compute/Tasks/gettingmetadata.htm
+    - https://blog.projectdiscovery.io/abusing-reverse-proxies-metadata/
+    - https://www.mcafee.com/blogs/enterprise/cloud-security/how-an-attacker-could-use-instance-metadata-to-breach-your-app-in-aws/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:L/A:N
+    cvss-score: 9.3
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+  tags: exposure,config,oracle,proxy,misconfig,metadata,vuln
+
+http:
+  - raw:
+      - |+
+        GET http://{{hostval}}/opc/v1/instance HTTP/1.1
+        Host: {{hostval}}
+        Metadata: true
+
+    payloads:
+      hostval:
+        - aws.oast.online
+        - 169.254.169.254
+    unsafe: true
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "availabilityDomain"
+# digest: 4b0a004830460221009082a1fae56b01c5e6ab3f0b685bf6de7a6e424dc0b556b670d10256ce02032902210098fd181e019c54d86b711e8eb768393c23b21cc66bd66aab07eaaf8d457cf89f:922c64590222798bb761d5b6d8e72950

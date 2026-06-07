@@ -1,0 +1,41 @@
+id: nexus-repository-anonymous-access
+
+info:
+  name: Nexus Repository Manager - Anonymous Access Enabled
+  author: 0x_Akoko
+  severity: medium
+  description: |
+    Detected Nexus Repository Manager instance with anonymous access enabled, allowing unauthenticated users to list and browse repositories containing private artifacts including source code, packages, and Docker images.
+  reference:
+    - https://help.sonatype.com/en/anonymous-access.html
+    - https://help.sonatype.com/en/access-control.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 6.5
+    cwe-id: CWE-276
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: title:"Nexus Repository Manager"
+    fofa-query: title="Nexus Repository Manager"
+  tags: misconfig,nexus,sonatype,exposure,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/service/rest/v1/repositories"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"name\"", "\"format\"", "\"type\"")'
+          - 'contains_any(body, "maven", "npm", "docker", "nuget", "pypi", "raw", "apt", "yum")'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.[].name'
+# digest: 470a00443042022000a3e782fea23e5d7dfe698e8b90b1af1157e782eb8e5126e3fe49eb576967d4021e1e72552826a2d77d48b207dec12d244455a8f0896581bead563ac6d7d885:922c64590222798bb761d5b6d8e72950

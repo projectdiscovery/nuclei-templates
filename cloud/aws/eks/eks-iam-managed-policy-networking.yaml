@@ -1,0 +1,96 @@
+id: eks-iam-managed-policy-networking
+
+info:
+  name: Use AWS-managed policy to Manage Networking Resources
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all Amazon EKS cluster node groups use the "AmazonEKS_CNI_Policy" managed policy to manage cloud networking resources effectively. This policy provides the necessary permissions to the Amazon VPC CNI Plugin for managing network interfaces.
+  impact: |
+    Without the AmazonEKS_CNI_Policy, the VPC CNI plugin cannot properly manage network interfaces, which will affect pod networking and communication within the EKS cluster.
+  remediation: |
+    Attach the AmazonEKS_CNI_Policy to the IAM role associated with your EKS node groups using either the AWS Console or AWS CLI.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/aws/EKS/eks-iam-managed-policy-networking.html
+    - https://docs.aws.amazon.com/eks/latest/userguide/cni-iam-role.html
+  tags: cloud,devops,aws,amazon,eks,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let cluster of iterate(template.clusters)){
+    set("cluster", cluster)
+    code(2)
+    for(let nodegroup of iterate(template.nodegroups)){
+      set("nodegroup", nodegroup)
+      code(3)
+      code(4)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-clusters --region $region --query 'clusters' --output json
+
+    extractors:
+      - type: json
+        name: clusters
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks list-nodegroups --region $region --cluster-name $cluster --query 'nodegroups' --output json
+
+    extractors:
+      - type: json
+        name: nodegroups
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws eks describe-nodegroup --region $region --cluster-name $cluster --nodegroup-name $nodegroup --query 'nodegroup.nodeRole' --output json
+
+    extractors:
+      - type: json
+        name: rolearn
+        internal: true
+        json:
+          - '.'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-attached-role-policies --role-name $(echo $rolearn | cut -d'/' -f2) --query 'AttachedPolicies[*].PolicyArn' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+        negative: true
+
+      - type: word
+        words:
+          - "["
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"EKS node group " + nodegroup + " in cluster " + cluster + " does not have AmazonEKS_CNI_Policy attached to its IAM role"'
+# digest: 4a0a00473045022023f8808874109fe7ecbba46a483828ba13f43be27154f5616fe50dc71b12cc43022100af8c38a314e3e68589d0d8fc67814595d173bc29827cdee00c0fcf3189049701:922c64590222798bb761d5b6d8e72950

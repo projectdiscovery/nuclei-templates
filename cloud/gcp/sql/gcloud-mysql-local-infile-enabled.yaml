@@ -1,0 +1,72 @@
+id: gcloud-mysql-local-infile-enabled
+
+info:
+  name: Local Infile Enabled in MySQL Database Instances
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the local_infile database flag is disabled for your Google Cloud MySQL database instances in order to follow data security best practices. The local_infile flag allows loading data from a local file to a database table, which could pose a security risk if misused.
+  impact: |
+    Enabling the local_infile flag may lead to potential security vulnerabilities, such as unauthorized access to local files or data exfiltration.
+  remediation: |
+    Disable the local_infile flag in your MySQL database instance configuration to enhance security and prevent potential misuse of the feature.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/flags
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,mysql,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --filter='DATABASE_VERSION:MYSQL*' --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe asass --project gcp-templates-442409 --format=json | jq '.settings.databaseFlags // [] | map(select(.name=="local_infile")) | .[].value'
+
+    matchers:
+      - type: word
+        words:
+          - 'on'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The local_infile flag is enabled for MySQL instance " + sqlInstance + " in project " + projectId'
+# digest: 490a00463044022051b9bfb75603d2af1c69627d3c591e30557d46292d12c39ef9fef62d958b7a7f02205af1a83963fca683cd0c376702709492311e3ff99c8e05a7aeaa18c31f389a01:922c64590222798bb761d5b6d8e72950

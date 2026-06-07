@@ -1,0 +1,46 @@
+id: testignore-disclosure
+
+info:
+  name: Testignore - File Disclosure
+  author: 0x_Akoko
+  severity: info
+  description: |
+    Detected that the .testignore file was publicly accessible, potentially revealing the project structure, sensitive file paths, and internal directory organization.
+  metadata:
+    verified: true
+    max-request: 1
+  tags: files,exposure,disclosure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.testignore"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "len(body) > 5"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - "(?m)^[/#\\*\\.]"
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<!doctype"
+          - "<script"
+          - "<meta"
+          - "<head"
+          - "<body"
+          - "application/json"
+          - "application/xml"
+          - "text/xml"
+          - "image/"
+        negative: true
+# digest: 4a0a00473045022100a1b9c187962c9956e41d74971fdad7d0af36bc25cf004dca6ada9d277793fed0022048f2ab0c525dc7808e692a8527c3c1535170326f977c8fde11635ef3d6aed9d1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,51 @@
+id: minimize-added-capabilities
+
+info:
+  name: Minimize container added capabilities
+  author: princechaddha
+  severity: high
+  description: Checks for containers in Kubernetes Deployments with added capabilities beyond the default set, increasing security risks.
+  impact: |
+    Containers with additional capabilities are granted more privileges than necessary, potentially allowing them to bypass intended security restrictions. This increases the risk of exploitation and unauthorized access.
+  remediation: |
+    Ensure that no unnecessary capabilities are added to containers within Kubernetes Deployments. Use security contexts to define the minimum necessary privileges.
+  reference:
+    - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+  tags: cloud,devops,kubernetes,k8s,devsecops,deployments,k8s-cluster-security
+
+flow: |
+  code(1);
+  for (let deployment of template.items) {
+    set("deployment", deployment)
+    javascript(1);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get deployments --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+javascript:
+  - code: |
+        deployment = JSON.parse(template.deployment);
+        for (const container of deployment.spec.template.spec.containers) {
+          if (container.securityContext && container.securityContext.capabilities && container.securityContext.capabilities.add && container.securityContext.capabilities.add.length > 0) {
+            let addedCaps = container.securityContext.capabilities.add.join(', ');
+            let result = (`Deployment '${deployment.metadata.name}' in namespace '${deployment.metadata.namespace}' has added capabilities: ${addedCaps}.`);
+            Export(result);
+          }
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a004730450220124114af021a11a80719774956bdf248b9fe97cbdd61e61433f28a48ee96a92f022100a5e1f40ae680a3d7ea7f2933bbb23962fbc28fe442ddcae9688f6c6137e31dc8:922c64590222798bb761d5b6d8e72950

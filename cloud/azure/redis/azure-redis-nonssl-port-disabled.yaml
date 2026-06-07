@@ -1,0 +1,54 @@
+id: azure-redis-nonssl-port-disabled
+info:
+  name: Azure Redis Cache In-Transit Encryption Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that the SSL connection to your Azure Redis Cache servers is enabled in order to meet cloud security and compliance requirements. Enforcing an SSL connection helps prevent unauthorized users from reading sensitive data that is intercepted as it travels through the network, between clients/applications and cache servers, known as data in transit.
+  impact: |
+    Not enabling SSL connections on Redis Cache servers allows sensitive data to be intercepted during transmission, increasing the risk of data breaches and non-compliance with regulatory standards.
+  remediation: |
+    Enable SSL on your Azure Redis Cache servers and ensure the non-SSL port (6379) is disabled to enforce encryption in transit.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-configure#ssl-ports
+  tags: cloud,devops,azure,microsoft,redis,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let CacheData of iterate(template.redisList)) {
+    set("name", CacheData);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az redis list --query '[*].id'
+
+    extractors:
+      - type: json
+        name: redisList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az redis show --ids "$name" --query 'enableNonSslPort'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " has non-SSL port enabled, therefore encryption in transit is not enforced."'
+# digest: 4a0a0047304502202ff82996f5d0e4e131be37183610837e3b567fa2234c8f736fce2026656c134d022100bd889738a6c8a8499523b9a8deab5dbdfda568a2172763d200c02f6a8da22d30:922c64590222798bb761d5b6d8e72950

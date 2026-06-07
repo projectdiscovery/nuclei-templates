@@ -1,0 +1,72 @@
+id: gcloud-cdn-origin-auth-unconfigured
+
+info:
+  name: Unconfigured Cloud CDN Origin Authentication
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Cloud CDN origins are configured to authenticate access to the content available at backend (backend buckets or backend services) using signed cookies and signed URLs. Signed cookies and URLs are designed to prevent unauthorized users from bypassing the authentication process and accessing sensitive information.
+  impact: |
+    If Cloud CDN origins are not properly configured with signed cookies and signed URLs, it could lead to unauthorized access and potential exposure of sensitive information. This configuration is essential for maintaining the security and integrity of content delivery.
+  remediation: |
+    Configure your Cloud CDN origins to use signed cookies and URLs by adding signed request keys to your backend services. This will enforce authentication on CDN-cached content, preventing unauthorized access.
+  reference:
+    - https://cloud.google.com/cdn/docs/using-signed-urls
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let backendService of iterate(template.backendServices)){
+      set("backendServiceName", backendService)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute backend-services list --global --project $projectId --format="json(name,enableCDN)"
+
+    extractors:
+      - type: json
+        name: backendServices
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute backend-services describe $backendServiceName --global --format="json(cdnPolicy.signedUrlKeyNames)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Unconfigured Cloud CDN Origin Authentication: " + backendServiceName + " in Project: " + projectId'
+# digest: 4a0a00473045022019bda07807eb922316b8d39af34b048276477aa10516e5f33bdd63513d0283ab022100add40bcc817cd9335b7b92320421beb717427a50977069b0b7411e8ae3afdd8b:922c64590222798bb761d5b6d8e72950

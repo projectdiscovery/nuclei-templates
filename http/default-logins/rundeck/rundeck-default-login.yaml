@@ -1,0 +1,49 @@
+id: rundeck-default-login
+
+info:
+  name: Rundeck - Default Login
+  author: karkis3c
+  severity: high
+  description: |
+    Rundeck default login was discovered.
+  reference:
+    - https://raw.githubusercontent.com/karkis3c/bugbounty/main/nuclei-templates/default-login/rundeck-default-login.yaml
+    - https://docs.rundeck.com/docs/learning/
+  classification:
+    cpe: cpe:2.3:a:pagerduty:rundeck:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: pagerduty
+    product: rundeck
+    fofa-query: app="Rundeck-Login"
+  tags: default-login,rundeck,vuln
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /j_security_check HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+
+        j_username={{username}}&j_password={{password}}
+      - |
+        GET /menu/home HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "/user/logout"
+          - "Hi admin"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022079e9aa06e1aa9a61f093c339749cb4179c8620c1e6f79ff239704ba7755665130221008312d183887bb5bd94368ec1538303bed63358f1dd6a0bcf6493f936f0e0a143:922c64590222798bb761d5b6d8e72950

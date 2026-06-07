@@ -1,0 +1,37 @@
+id: ec2-unrestricted-ssh
+info:
+  name: Unrestricted SSH Access in EC2
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for inbound rules in Amazon EC2 security groups that allow unrestricted SSH access (0.0.0.0/0 or ::/0) on TCP port 22, indicating a security risk by exposing the SSH server to the internet.
+  impact: |
+    Unrestricted SSH access increases the risk of unauthorized access and potential brute force attacks against the SSH server, compromising the security of the EC2 instances.
+  remediation: |
+    Restrict SSH access in EC2 security groups to trusted IP addresses or ranges, adhering to the Principle of Least Privilege (POLP) and mitigating the risk of unauthorized access.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules-reference.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=22 Name=ip-permission.to-port,Values=22 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 22"'
+# digest: 4b0a00483046022100e8074eceea770759e675b6129efa00627dced989dcc885eb2be386f01e6e6f20022100ef26f24ef231e9d10f9f1e8309f5fa0e24068ba4560570a071c1e82b36c2bd28:922c64590222798bb761d5b6d8e72950

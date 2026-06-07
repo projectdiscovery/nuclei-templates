@@ -1,0 +1,49 @@
+id: wordpress-header-footer
+
+info:
+  name: Head, Footer and Post Injections Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/header-footer/
+  metadata:
+    plugin_namespace: header-footer
+    wpscan: https://wpscan.com/plugin/header-footer
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/header-footer/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/header-footer.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022054e45c8e2260d497a33e51c77dfe119fb9ef84d0bce29b69deadbc73122392080220050c3a23edb9565ad6ceb2fcc8d365ecdca2eaeb87ff9af8d3d73adac3562821:922c64590222798bb761d5b6d8e72950

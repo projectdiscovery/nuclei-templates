@@ -1,0 +1,83 @@
+id: checkmk-default-login
+
+info:
+  name: Checkmk - Default Login
+  author: 0xBassia
+  severity: high
+  description: |
+    Checkmk monitoring instance is accessible with default credentials (cmkadmin/cmkadmin). This provides full administrative access to the monitoring platform, including the ability to view all monitored hosts, execute commands on agents, and access stored credentials.
+  impact: |
+    An attacker with admin access to Checkmk can view the entire monitored infrastructure, access stored SNMP community strings and SSH credentials, execute commands on monitored hosts via the agent, and gain visibility into the organization's network topology.
+  remediation: |
+    Change the default cmkadmin password immediately after installation using 'cmk-passwd cmkadmin' or through the web interface.
+  reference:
+    - https://docs.checkmk.com/latest/en/intro_setup.html
+    - https://docs.checkmk.com/latest/en/wato_user.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"Check_MK"
+  tags: default-login,checkmk,monitoring
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 5
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        name: endpoint
+        regex:
+          - 'Location:\s(.*)\?'
+        internal: true
+
+  - raw:
+      - |
+        POST {{endpoint}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----WebKitFormBoundary0FYqMzKWywSgTEcE
+
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="filled_in"
+
+        login
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="_login"
+
+        1
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="_origtarget"
+
+        index.py
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="_username"
+
+        cmkadmin
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="_password"
+
+        cmkadmin
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE
+        Content-Disposition: form-data; name="_login"
+
+        Login
+        ------WebKitFormBoundary0FYqMzKWywSgTEcE--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'contains_all(to_lower(header), "set-cookie", "auth_", "index.py")'
+        condition: and
+# digest: 4a0a00473045022100e1180e8ec5da32883655719ec9b6c8fdcd5f8726028fc7d6512cb116dfe8c471022056625e9916b248931bd7a69623fe6e4720f9719d85525e173b9dc0cb3534d800:922c64590222798bb761d5b6d8e72950

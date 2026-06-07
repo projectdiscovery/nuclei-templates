@@ -1,0 +1,37 @@
+id: symfony-lock-exposure
+
+info:
+  name: Symfony Lock File - Exposure
+  author: ritikchaddha
+  severity: low
+  description: |
+    symfony.lock was found accessible, exposing a full list of installed Composer packages, library versions, and metadata for a Symfony-based PHP application. Disclosure of this file can provide insight into the application's attack surface, potentially revealing vulnerable or outdated dependencies and aiding an attacker in choosing their exploit strategy.
+  impact: |
+    Attackers can enumerate all installed Composer packages and versions, increasing the risk of targeted attacks (e.g., against known CVEs in dependencies) or application fingerprinting.
+  remediation: |
+    Restrict direct access to internal and sensitive files such as symfony.lock via proper web server configuration (e.g., .htaccess, nginx directives) and consider excluding such files from the web root in deployment.
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/Information_Leakage.html
+    - https://symfony.com/doc/current/deployment.html
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: symfony
+    product: symfony
+    shodan-query: http.component:"symfony"
+    fofa-query: body="symfony.lock"
+  tags: symfony,exposure,composer,php,config
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/symfony.lock"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "version\":", ": {", "branch\":")'
+          - 'contains_any(body, "symfony/", "php\":")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4a0a00473045022100b7e2548ba634154c3b4aa94d832a451b9cfc512de3c73ec6c24204729c06f6a9022065adc546aa8bdc8eb997fd374f922f0d35817ca4219cee3145df5cf0b7cb3f14:922c64590222798bb761d5b6d8e72950

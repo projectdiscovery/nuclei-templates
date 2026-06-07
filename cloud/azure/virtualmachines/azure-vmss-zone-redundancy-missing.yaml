@@ -1,0 +1,62 @@
+id: azure-vmss-zone-redundancy-missing
+info:
+  name: Azure VMSS Zone-Redundant Configuration Not Enabled
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that all your Microsoft Azure virtual machine scale sets are using zone-redundant availability configurations instead of single-zone (zonal) configurations, to deploy and load balance virtual machines (VMs) across multiple Availability Zones (AZs) in order to protect the scale sets from datacenter-level failures.
+  impact: |
+    Using single-zone configurations can lead to potential datacenter-level outages affecting your services' availability and reliability.
+  remediation: |
+    Configure your VMSS to use zone-redundant availability configurations to ensure high availability and fault tolerance across multiple data centers.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-design-overview
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ScaleSetData of iterate(template.scaleSetList)) {
+    ScaleSetData = JSON.parse(ScaleSetData);
+    set("name", ScaleSetData.name);
+    set("resourceGroup", ScaleSetData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: scaleSetList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss show --name "$name" --resource-group "$resourceGroup" --query 'zones' --output json
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '[]'
+
+      - type: word
+        negative: true
+        words:
+          - "1"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is not using a zone-redundant configuration"'
+# digest: 4a0a00473045022100c8eb9d4ccbc1f710589e2a6b684d83d0a14bbdd4fb4306bb57b7717ce595c672022000bd27a2dbc18d1df9303350208bd424040e64c4f854bb9647fd885efd09e78f:922c64590222798bb761d5b6d8e72950

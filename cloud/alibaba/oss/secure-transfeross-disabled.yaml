@@ -1,0 +1,68 @@
+id: secure-transfeross-disabled
+
+info:
+  name: Secure Transfer for OSS Buckets - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Disabling secure transfer (HTTPS) for OSS buckets exposes data to potential interception. It is recommended to enable HTTPS to ensure encrypted communication and data security.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-OSS/enable-secure-transfer.html
+    - https://www.alibabacloud.com/help/en/oss/user-guide/use-bucket-policy-to-grant-permission-to-access-oss/
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,alibaba-oss
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let BucketName of iterate(template.bucketname)) {
+    set("bucket", BucketName)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun oss ls --region $region
+
+    extractors:
+      - type: regex
+        name: bucketname
+        internal: true
+        regex:
+          - 'oss://([a-zA-Z0-9-]+)'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun oss bucket-policy --method get $bucket --region $region
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"acs:SecureTransport":'
+        negative: true
+
+      - type: word
+        words:
+          - '"Resource":'
+          - '"Principal":'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'bucket + " Secure Transfer for OSS Buckets "'
+# digest: 490a0046304402205263fc71592240b51cc863e754efcf1a93e92cc10fa959cceb7c060facf15380022062ca3fc3027d327ed1902e208f39a88b57e8023b1869dcad5588940663145872:922c64590222798bb761d5b6d8e72950

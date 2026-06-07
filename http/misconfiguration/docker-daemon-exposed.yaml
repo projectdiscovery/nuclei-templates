@@ -1,0 +1,41 @@
+id: docker-daemon-exposed
+
+info:
+  name: Docker Daemon Exposed
+  author: Arm!tage
+  severity: critical
+  description: |
+    Docker Daemon exposed on the network map can help remote attacker to gain access to the Docker containers and potentially the host system.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: port:2375 product:"docker"
+    fofa-query: app="docker-Daemon" && port="2375"
+  tags: docker,exposure,misconfig,vuln
+
+http:
+  - raw:
+      - |
+        GET /version HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /v{{version}}/containers/json HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(body_1, "ApiVersion") && contains(body_1, "GitCommit") && contains(body_1, "GoVersion")  && contains(body_1, "KernelVersion")'
+          - 'contains(body_2, "Id") && contains(body_2, "Names") && contains(body_2, "Image") && contains(body_2, "Command") && contains(body_2, "PrivatePort") && contains(body_2, "PublicPort") || contains(body_2, "[]")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        group: 1
+        regex:
+          - '"ApiVersion":"(.*?)"'
+        internal: true
+# digest: 490a00463044022024b13df2e7b28154442ac2bf7ac123ea41d7aa1fe2d341745524634eb3ff216e0220716c3af7be2c2e2a24fefcb3e74d90d9432953fe92759a8a04416f986e192eba:922c64590222798bb761d5b6d8e72950

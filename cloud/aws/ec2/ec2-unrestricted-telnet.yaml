@@ -1,0 +1,37 @@
+id: ec2-unrestricted-telnet
+info:
+  name: Restrict EC2 Telnet Access
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for unrestricted inbound Telnet access (TCP port 23) in Amazon EC2 security groups, highlighting potential security risks.
+  impact: |
+    Unrestricted Telnet access can expose EC2 instances to unauthorized access and potential security breaches.
+  remediation: |
+    Restrict inbound Telnet access by updating EC2 security group rules to allow only trusted IP ranges or disabling Telnet if not required.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=23 Name=ip-permission.to-port,Values=23 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on TCP port 23"'
+# digest: 4a0a00473045022100ef17451433471bd35263e1eb314c2a1c6e85ed124c2e62659576272b21ecd78e02206b57de436186c1d141bd7d5bf3479fdbcc8a7273b0057d9349f9f3f3e4b6f5be:922c64590222798bb761d5b6d8e72950

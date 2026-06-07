@@ -1,0 +1,47 @@
+id: confluence-eol
+
+info:
+  name: Atlassian Confluence End-of-Life - Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detected Atlassian Confluence instances versions that have reached End-of-Life (EOL) and no longer receive security updates.
+  reference:
+    - https://endoflife.date/confluence
+    - https://confluence.atlassian.com/support/atlassian-support-end-of-life-policy-201851003.html
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.component:"Atlassian Confluence"
+  tags: tech,confluence,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login.action"
+      - "{{BaseURL}}"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Atlassian Confluence'
+          - 'id=["\'']footer-build-information["\'']'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'compare_versions(version, "<= 8.8.99")'
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'Atlassian Confluence</a>.*?<span[^>]*id=["\'']footer-build-information["\''][^>]*>([0-9.]+)'
+          - '<meta[^>]*name=["\'']ajs-version-number["\''][^>]*content=["\'']([0-9.]+)["\'']'
+# digest: 490a0046304402207be450feddc17d611c45b0341b439a1dffc458c510a166e11218c609dde0e7e2022047cc7abb480b95642458d8505a72fb3162e6e7d1d9ccad157989c730b55ea66a:922c64590222798bb761d5b6d8e72950

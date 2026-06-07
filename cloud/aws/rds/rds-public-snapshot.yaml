@@ -1,0 +1,57 @@
+id: rds-public-snapshot
+info:
+  name: RDS Public Snapshot Exposure
+  author: princechaddha
+  severity: high
+  description: |
+    Checks if AWS RDS database snapshots are publicly accessible, risking exposure of sensitive data.
+  impact: |
+    Public snapshots can expose sensitive data to unauthorized users, leading to potential data breaches.
+  remediation: |
+    Modify the snapshot's visibility settings to ensure it is not public, only shared with specific AWS accounts.
+  reference:
+    - https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ShareSnapshot.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,rds,aws-cloud-config
+variables:
+  region: "ap-northeast-1"
+
+flow: |
+  code(1)
+  for(let RDPsnaps of iterate(template.snapshots)){
+    set("snapshot", RDPsnaps)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws rds describe-db-snapshots  --region $region  --snapshot-type manual  --output json  --query 'DBSnapshots[*].DBSnapshotIdentifier'
+
+    extractors:
+      - type: json
+        name: snapshots
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws rds describe-db-snapshot-attributes --region $region --db-snapshot-identifier $snapshot  --query 'DBSnapshotAttributesResult.DBSnapshotAttributes'
+
+    matchers:
+      - type: word
+        words:
+          - '"all"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"RDS snapshot " + snapshot + " is public"'
+# digest: 4a0a0047304502210095c4d7f8b1d8ccd88d2d2dc7419439aec85ffdfb81f22f0d0ab8f323b8683858022032a09c09060b762b583feccfecfa559177fac2e307cf4eb04873f8601cfc443c:922c64590222798bb761d5b6d8e72950

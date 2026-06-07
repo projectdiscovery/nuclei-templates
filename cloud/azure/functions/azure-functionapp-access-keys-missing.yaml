@@ -1,0 +1,55 @@
+id: azure-functionapp-access-keys-missing
+info:
+  name: Azure Function Access Keys Configuration
+  author: princechaddha
+  severity: high
+  description: |
+    To follow Azure cloud security best practices and prevent anonymous access, ensure that all the HTTP-triggered Azure functions managed with Microsoft Azure Function App are configured to use access keys to securely invoke functions via URLs. Access keys with a HOST scope (i.e., function keys) can be used to access all HTTP-triggered functions within the Azure Function App.
+  impact: |
+    If HTTP-triggered functions do not utilize access keys, they may be vulnerable to unauthorized access and security breaches.
+  remediation: |
+    Configure access keys for HTTP-triggered functions in Azure Function App to enforce secure and authorized function invocations.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=csharp
+  tags: cloud,devops,azure,microsoft,functionapp,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let AppData of iterate(template.functionApps)) {
+    AppData = JSON.parse(AppData);
+    set("name", AppData.name);
+    set("resourceGroup", AppData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: functionApps
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az functionapp keys list --name $name --resource-group $resourceGroup --query 'functionKeys' --output json
+
+    matchers:
+      - type: word
+        words:
+          - "{}"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " has no function keys configured for HTTP-triggered functions"'
+# digest: 4a0a0047304502201ebe081184f364481e8c2700dd2195192b73e279e9f19512a3ce194e8f69e9a7022100f5214ea3ca1c28c79b0c88edd3d247adeb24a4ce250e5d3ae1dd3cd9fba74439:922c64590222798bb761d5b6d8e72950

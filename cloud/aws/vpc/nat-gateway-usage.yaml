@@ -1,0 +1,57 @@
+id: nat-gateway-use
+info:
+  name: Managed NAT Gateway Usage
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure the use of Amazon Managed NAT Gateway for better availability and bandwidth in VPC networks instead of self-managed NAT instances.
+  impact: |
+    Using self-managed NAT instances can lead to single points of failure and potential bandwidth bottlenecks.
+  remediation: |
+    Replace NAT instances with Amazon Managed NAT Gateway to ensure high availability and scalability in your VPC network.
+  reference:
+    - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,vpc,aws-cloud-config
+variables:
+  region: "us-east-1"
+
+flow: |
+  code(1)
+  for(let VPCIds of iterate(template.vpcid)){
+    set("vpc", VPCIds)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-vpcs --region $region --query 'Vpcs[*].VpcId' --output json
+
+    extractors:
+      - type: json
+        name: vpcid
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws ec2 describe-nat-gateways --region $region --filter "Name=vpc-id,Values=$vpc" "Name=state,Values=available" --query 'NatGateways'
+
+    matchers:
+      - type: word
+        words:
+          - "[]"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vpc + " VPC is not using Managed NAT Gateways"'
+# digest: 4a0a00473045022033924463ca3a49819ef3a786daa7e1529d24ad878c48b4282bf78a07c0dfd8d9022100caad07d20ef7d1885a9a3c3b06ab5472afb05d075bda5dde5371c879a9633f46:922c64590222798bb761d5b6d8e72950

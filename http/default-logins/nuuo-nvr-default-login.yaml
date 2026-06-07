@@ -1,0 +1,45 @@
+id: nuuo-nvr-default-login
+
+info:
+  name: NUUO NVR - Default Login
+  author: ritikchaddha
+  severity: high
+  description: |
+    NUUO NVR systems are often deployed with default credentials (admin:admin).This template detects systems using these default credentials.
+  reference:
+    - http://www.nuuo.com/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"NUUO"
+    fofa-query: title="NUUO"
+  tags: nuuo,nvr,default-login,misconfig,vuln
+
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        GET /login.php HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        language=en&user={{username}}&pass={{password}}&submit=Login
+
+      - |
+        GET /setting.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains_all(body_3, 'cmd=logout', 'v_settings')"
+          - "status_code_3 == 200 && status_code_2 == 302"
+        condition: and
+# digest: 4b0a00483046022100f4f17c6fcae7769f27f3fa34aa840719d80d9205040550eeacfa44ed7399412c02210097a9cb318791553b8fc9e846c73f40cf5df839dbe1c3df1e9b427dc2a462530d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,42 @@
+id: tftp-detect
+
+info:
+  name: TFTP Service - Detection
+  author: pussycat0x,matejsmycka
+  severity: info
+  description: |
+    Detect TFTP Service.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:69"
+  tags: js,tftp,udp,network,discovery
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+    code: |
+      let packet = bytes.NewBuffer();
+      let message = "1.txt"
+      let data = message;
+      packet.WriteString(data)
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(packet.Hex());
+      let resp = conn.RecvString(256);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 69
+
+    matchers:
+      - type: word
+        words:
+          - "Unknown transfer ID"
+          - "File not found"
+          - "illegal operation"
+          - "illegal (unrecognized) tftp operation"
+          - "permission denied!"
+        condition: or
+        case-insensitive: true
+# digest: 4a0a0047304502201feb336fe38e9c5561f1a946517b29d1d22d8375e567b778c6f37a8880e29c79022100fa03f049170fa72d91ffed3dbf0bd5e774f198de38520128a5f68372ac4c7294:922c64590222798bb761d5b6d8e72950

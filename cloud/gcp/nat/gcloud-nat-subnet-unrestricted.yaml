@@ -1,0 +1,106 @@
+id: gcloud-nat-subnet-unrestricted
+
+info:
+  name: NAT Gateway Subnets Not Restricted to Specific VPCs
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Google Cloud NAT gateways are mapped only to specific VPC subnets to maintain controlled and secure outbound Internet access, minimize unintended traffic exposure, and optimize resource usage within your network design. This promotes network isolation and ensures adherence to your organization's stringent compliance requirements.
+  impact: |
+    NAT gateways associated with unrestricted subnets can result in unauthorized network access, unintended traffic exposure, and compliance violations.
+  remediation: |
+    Restrict your Cloud NAT gateways to specific VPC subnets by defining subnet mappings in the NAT configuration settings. Review and update your network configurations to ensure adherence to your organization's security policies.
+  reference:
+    - https://cloud.google.com/nat/docs/using-nat
+  tags: cloud,devops,gcp,gcloud,google-cloud-nat,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let vpcNetwork of iterate(template.vpcNetworks)){
+      set("vpcNetwork", vpcNetwork)
+      code(3)
+      for(let router of iterate(template.routers)){
+        set("router", router)
+        code(4)
+        for(let natGateway of iterate(template.natGateways)){
+          set("natGateway", natGateway)
+          code(5)
+        }
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute networks list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: vpcNetworks
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers list --project $projectId --filter="network:($vpcNetwork)" --format="json(name)"
+
+    extractors:
+      - type: json
+        name: routers
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats list --router=$router --project=$projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: natGateways
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute routers nats describe $natGateway --router=$router --project=$projectId --format="json(subnetworks)"
+
+    matchers:
+      - type: word
+        words:
+          - 'ALL_IP_RANGES'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"NAT gateway " + natGateway + " under router " + router + " in project " + projectId + " is associated with unrestricted subnets."'
+# digest: 4a0a00473045022100cddb3cb260e0c1f1d822256516ffcc003ade1d434dec764153b36a3f91d203a6022023ba7a20ed97b605db98f37b3f1eb6f5b37363bdbd7521879b9e2f8e8e8e2b80:922c64590222798bb761d5b6d8e72950

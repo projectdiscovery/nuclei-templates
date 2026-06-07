@@ -1,0 +1,46 @@
+id: security-notification-disabled
+
+info:
+  name: Security Center Notifications - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Notifications for Alibaba Security Center are disabled, which may result in missed alerts for critical security events.
+  reference:
+    - https://www.alibabacloud.com/help/en/security-center/user-guide/use-the-notification-feature
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-SecurityCenter/enable-high-risk-item-notifications.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,security-center
+
+variables:
+  region: "cn-hangzhou"
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun sas DescribeNoticeConfig --region $region
+
+    matchers:
+      - type: word
+        words:
+          - '"Route": 0'
+          - '"Project":'
+        condition: and
+
+    extractors:
+      - type: json
+        name: noticeconfiglist
+        internal: true
+        json:
+          - '.NoticeConfigList | map(select(.Route == 0) | .Project)'
+
+      - type: dsl
+        dsl:
+          - '"Project: " + noticeconfiglist + " Security Center Notifications are Disabled"'
+# digest: 4b0a00483046022100827955f622c0bbf7651c3c6b3431aff9f25ede363c0cac2721eda13d5726a5a4022100d2a8d1e0a7c64807f03223acd88f50250a91ee5437866f68ed7a6731a291712c:922c64590222798bb761d5b6d8e72950

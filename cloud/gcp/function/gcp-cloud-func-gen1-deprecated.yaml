@@ -1,0 +1,72 @@
+id: gcp-cloud-func-gen1-deprecated
+
+info:
+  name: Deprecated 1st Generation Google Cloud Functions
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that none of your Google Cloud functions are 1st (first) generation functions. 1st generation Google Cloud functions are considered deprecated and no longer receive updates or support, making them less secure, less performant, and lacking in new features compared to newer generations.
+  impact: |
+    Using deprecated 1st generation functions can expose your applications to security vulnerabilities, degrade performance, and miss out on new features provided by newer generations.
+  remediation: |
+    Migrate all 1st generation Google Cloud functions to newer generation runtimes as recommended by Google to ensure continued support and access to the latest features and security enhancements.
+  reference:
+    - https://cloud.google.com/functions/docs/migrating
+  tags: cloud,devops,gcp,gcloud,google-cloud-functions,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let functionDetail of iterate(template.functions)){
+      set("functionName", functionDetail)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: functions
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud functions describe $functionName --format="json(environment)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Deprecated 1st Generation function: " + functionName + " in Project: " + projectId'
+# digest: 4a0a0047304502210086da9298c287a6dad8e2e2435bc1c7d31f691ccbf2169e471d878ac20baf04d5022036776312a4e1594caa72525f396fd8a7e755c2ac84bc5ea99238256f2c6a2162:922c64590222798bb761d5b6d8e72950

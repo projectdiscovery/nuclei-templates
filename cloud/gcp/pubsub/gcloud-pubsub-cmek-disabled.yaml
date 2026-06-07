@@ -1,0 +1,72 @@
+id: gcloud-pubsub-cmek-disabled
+
+info:
+  name: Pub/Sub Topics Not Encrypted with Customer-Managed Encryption Keys
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that your Google Cloud Pub/Sub topics are encrypted using Customer-Managed Encryption Keys (CMEKs) to have full control over the data encryption and decryption process. Customer-Managed Encryption Keys (CMEKs) allow you to create and manage your own encryption keys with Cloud Key Management Service (Cloud KMS).
+  impact: |
+    Not using CMEKs for Pub/Sub topics can result in less control over data encryption and potential exposure to unauthorized access.
+  remediation: |
+    Configure your Pub/Sub topics to use Customer-Managed Encryption Keys (CMEKs) by specifying a Cloud KMS key during the topic creation or update process.
+  reference:
+    - https://cloud.google.com/pubsub/docs/encryption
+  tags: cloud,devops,gcp,gcloud,google-cloud-pubsub,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let pubsubTopic of iterate(template.topics)){
+      set("pubsubTopic", pubsubTopic)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub topics list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: topics
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud pubsub topics describe $pubsubTopic --format="json(kmsKeyName)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Pub/Sub Topic " + pubsubTopic + " in project " + projectId + " is not encrypted with Customer-Managed Encryption Key (CMEK)"'
+# digest: 4b0a00483046022100f2496beaf38e13932578c6da9f3f3374d0276e060879452a8b3c3a8ca2ef7821022100de6502bce0556b10d1d677c2aec29432b4793b79853ad0dd18ac4c682f7dc9c9:922c64590222798bb761d5b6d8e72950

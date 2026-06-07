@@ -1,0 +1,57 @@
+id: azure-nsg-mongodb-unrestricted
+info:
+  name: Unrestricted MongoDB Access in Azure NSGs
+  author: princechaddha
+  severity: high
+  description: |
+    Ensure that Microsoft Azure network security groups (NSGs) do not allow unrestricted inbound access on TCP ports 27017, 27018, and 27019, used by MongoDB, to prevent unauthorized database access.
+  impact: |
+    Allowing unrestricted access to MongoDB ports can expose databases to risks such as unauthorized data access, data manipulation, or data theft.
+  remediation: |
+    Modify NSG rules to restrict access on TCP ports 27017, 27018, and 27019. Only allow known IPs and implement database encryption and other security measures.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  tags: cloud,devops,azure,microsoft,nsg,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let NsgData of iterate(template.nsgdata)) {
+    NsgData = JSON.parse(NsgData)
+    set("nsg", NsgData.name)
+    set("resourcegroup", NsgData.resourceGroup)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg list --query '[*].{name:name, resourceGroup:resourceGroup}' --output json
+
+    extractors:
+      - type: json
+        name: nsgdata
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az network nsg rule list --nsg-name $nsg --resource-group $resourcegroup --query "[?direction=='Inbound' && access=='Allow' && protocol=='TCP' && (destinationPortRange=='27017' || destinationPortRange=='27018' || destinationPortRange=='27019')]"
+
+    matchers:
+      - type: word
+        words:
+          - '"sourceAddressPrefix": "*"'
+          - '"sourceAddressPrefix": "internet"'
+          - '"sourceAddressPrefix": "any"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'nsg + " has unrestricted access on TCP ports 27017, 27018, and 27019"'
+# digest: 4a0a00473045022100ba3a8a8309944df16b7e2c2db495c56fd09a955e4f32eed6cfe76dae19bc11030220280352a97b3464653ae90576880dc245dc4c5866d1d1efa5253db2d7577d2788:922c64590222798bb761d5b6d8e72950

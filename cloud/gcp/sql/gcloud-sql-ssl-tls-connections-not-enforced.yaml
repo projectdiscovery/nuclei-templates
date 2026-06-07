@@ -1,0 +1,72 @@
+id: gcloud-sql-ssl-tls-connections-not-enforced
+
+info:
+  name: Allow SSL/TLS Connections Only
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that all incoming connections to your Cloud SQL database instances are encrypted with SSL/TLS to protect against eavesdropping and unauthorized access. The SSL enforcement mode must be set to "ENCRYPTED_ONLY" to enforce secure connections.
+  impact: |
+    Allowing unencrypted connections can expose sensitive data to interception and increase the risk of unauthorized access.
+  remediation: |
+    Set the SSL enforcement mode to "ENCRYPTED_ONLY" for all Cloud SQL database instances to ensure all incoming connections use SSL/TLS encryption.
+  reference:
+    - https://cloud.google.com/sql/docs/mysql/configure-ssl
+  tags: cloud,devops,gcp,gcloud,google-cloud-sql,networking,security,ssl,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let sqlInstance of iterate(template.sqlInstances)){
+      set("sqlInstance", sqlInstance)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: sqlInstances
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud sql instances describe $sqlInstance --project $projectId --format="value(settings.ipConfiguration.sslMode)"
+
+    matchers:
+      - type: word
+        words:
+          - 'ALLOW_UNENCRYPTED_AND_ENCRYPTED'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"The SQL instance " + sqlInstance + " in project " + projectId + " does not enforce SSL/TLS connections and allows unencrypted access"'
+# digest: 4a0a0047304502210099dbe79a178ef1807f290c2341ac97fdb8b83392e06b4bb3e88e269aa3c73cbd022000cd1099abfac9f0774af5535a19731a7f4c9921d8da69555fa0df11f435d474:922c64590222798bb761d5b6d8e72950

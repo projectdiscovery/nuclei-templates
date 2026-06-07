@@ -1,0 +1,61 @@
+id: cloudfront-origin-shield
+
+info:
+  name: CloudFront Origin Shield - Not Enabled
+  author: DhiyaneshDK
+  severity: info
+  description: |
+    Ensure that the Origin Shield performance optimization feature is enabled for all your Amazon CloudFront distributions in order to help reduce the load on your distribution's origin, improve its availability, and reduce its operating costs.
+  impact: |
+    Not enabling CloudFront Origin Shield can lead to increased load on your origin server, higher latency, and greater costs due to more frequent requests during traffic spikes.
+  remediation: |
+    Enable CloudFront Origin Shield for your distributions to optimize cache efficiency, reduce load on your origin server, and improve content delivery performance during high traffic periods.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/CloudFront/enable-origin-shield.html
+    - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html
+  tags: cloud,devops,aws,amazon,cloudfront,aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for(let DistributionListItemsId of iterate(template.distributions)){
+    set("distribution", DistributionListItemsId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws cloudfront list-distributions --output table --query 'DistributionList.Items[*].Id' --region $region --output json
+
+    extractors:
+      - type: json
+        name: distributions
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+        aws cloudfront get-distribution-config --id $distribution --query 'DistributionConfig.Origins.Items[*].OriginShield.Enabled' --region $region --output text
+
+    matchers:
+      - type: word
+        words:
+          - "False"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"CloudFront Origin Shield " + distribution + " not Enabled"'
+# digest: 4b0a00483046022100dd96e4176b628f6bde5087c60dd3c52d1025a52dc88c1c70250636f051baab9702210096d6a9b2cf84d6c1bcf08bbb6f2a8bf521313a4213d1c7f30bc7af41949c4c03:922c64590222798bb761d5b6d8e72950

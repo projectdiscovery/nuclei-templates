@@ -1,0 +1,56 @@
+id: azure-aks-rbac-unconfigured
+info:
+  name: Azure AKS RBAC Not Enabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Kubernetes Role-Based Access Control (RBAC) is enabled for all Azure Kubernetes Service (AKS) clusters in order to achieve fine-grained control over AKS cluster resources. The Kubernetes Role-Based Access Control (RBAC) represents an efficient method of regulating access to Azure Kubernetes Service resources based on the roles of individual users or groups within an organization.
+  impact: |
+    If RBAC is not enabled for AKS clusters, unauthorized access or unregulated permissions may occur, leading to potential security vulnerabilities.
+  remediation: |
+    Ensure that Kubernetes Role-Based Access Control (RBAC) is enabled for each AKS cluster by configuring it during cluster creation or modifying existing clusters to enable RBAC settings.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/aks/concepts-identity
+  tags: cloud,devops,azure,microsoft,aks,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ClusterData of iterate(template.clusterList)) {
+    ClusterData = JSON.parse(ClusterData);
+    set("name", ClusterData.name);
+    set("resourceGroup", ClusterData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks list --output json --query '[*].{name:name, resourceGroup:resourceGroup}'
+
+    extractors:
+      - type: json
+        name: clusterList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az aks show --name "$name" --resource-group "$resourceGroup" --query 'enableRbac'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'false'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has RBAC not enabled"'
+# digest: 4a0a0047304502200fb549a6357ba626c40b39f158908db141ce3101bb4d1cd8f49121491b8fd9ad02210091d629174538987b8e8044efcb8cd5611081f8b5e4a2e1f6f885e50bc7155913:922c64590222798bb761d5b6d8e72950

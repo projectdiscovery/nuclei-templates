@@ -1,0 +1,60 @@
+id: elb-delete-protection-disabled
+
+info:
+  name: ELB Delete Protection - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    Ensure that Deletion Protection safety feature is enabled for your Amazon Gateway Load Balancers (GWLBs) in order to protect the load balancers from being accidentally deleted.
+  impact: |
+    Disabling delete protection on an Elastic Load Balancer (ELB) increases the risk of accidental or intentional deletion of the load balancer.
+  remediation: |
+    Enable Server-Side Encryption (SSE) on the queue to protect sensitive data by encrypting it at rest using AWS KMS.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity-staging/knowledge-base/aws/ELBv2/enable-gwlb-deletion-protection.html
+    - https://awscli.amazonaws.com/v2/documentation/api/latest/reference/elbv2/index.html
+  tags: cloud, devops, aws, amazon, elb, aws-cloud-config
+
+variables:
+  region: "us-west-2"
+
+flow: |
+  code(1)
+  for (let LoadBalancer of iterate(template.loadbalancers)) {
+    set("loadbalancer", LoadBalancer)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws elbv2 describe-load-balancers --region $region --query 'LoadBalancers[*].LoadBalancerArn' --output json
+
+    extractors:
+      - type: json
+        name: loadbalancers
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aws elbv2 describe-load-balancer-attributes --region $region --load-balancer-arn $loadbalancer --query 'Attributes[?(Key == `deletion_protection.enabled`)].Value | []'
+
+    matchers:
+      - type: word
+        words:
+          - '"false"'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"ELB Delete Protection " + loadbalancer + " is Disabled"'
+# digest: 490a00463044022044df88935f4a42ed24a3c066e3532b576a935efe863199fe2fc70871fd6df42702207776a28bee65b76eda99797d26f07325da26bf4a03ad9c35823c98a743831b30:922c64590222798bb761d5b6d8e72950

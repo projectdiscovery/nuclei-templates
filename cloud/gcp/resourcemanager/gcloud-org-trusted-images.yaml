@@ -1,0 +1,56 @@
+id: gcloud-org-trusted-images
+
+info:
+  name: Trusted Image Projects Not Defined
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that only images from trusted Google Cloud Platform (GCP) projects are allowed as the source for boot disks for new virtual machine instances. By enforcing the "Define Trusted Image Projects" policy at the GCP organization level, you can restrict access to disk images so that project members can create boot disks only from images that contain approved software meeting strict security requirements.
+  impact: |
+    By default, project members can create persistent disks or copy images using any public or private images they can access through their Cloud IAM roles. Without restrictions, this could allow the use of untrusted or malicious disk images.
+  remediation: |
+    Configure the "Define Trusted Image Projects" policy at the organization level to explicitly specify trusted projects. Use the format projects/<project-id> where <project-id> is the ID of the trusted Google Cloud project that shares approved disk images.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ResourceManager/disk-image-restriction.html
+    - https://cloud.google.com/compute/docs/images/restricting-image-access
+  tags: cloud,devops,gcp,gcloud,resourcemanager,security,compute,images,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let orgId of iterate(template.orgIds)){
+    set("orgId", orgId)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud organizations list --format="json(name)"
+
+    extractors:
+      - type: json
+        name: orgIds
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud alpha resource-manager org-policies describe compute.trustedImageProjects --organization=$orgId --effective --format="json(listPolicy.allValues)"
+
+    matchers:
+      - type: word
+        words:
+          - "ALLOW"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Organization " + orgId + " has not restricted disk image usage to trusted projects, allowing use of any accessible image"'
+# digest: 4a0a00473045022005f8d7d948e798f053737cc794a8fbb90e01c8324aaaa19e76b6d10d7b4fca8e022100f0da87101d6534f35fa4051d23dd04b48e8af55424ee6b92ac604016461f3d68:922c64590222798bb761d5b6d8e72950

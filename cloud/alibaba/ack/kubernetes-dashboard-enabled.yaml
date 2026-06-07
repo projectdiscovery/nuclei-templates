@@ -1,0 +1,57 @@
+id: kubernetes-dashboard-enabled
+
+info:
+  name: Kubernetes Dashboard for ACK Clusters - Enabled
+  author: ritikchaddha
+  severity: medium
+  description: |
+    Ensure that Kubernetes Dashboard (Dashboard WebUI) is disabled for your ACK clusters in order to enhance cluster security and prevent potential attack vectors. The Kubernetes Dashboard is a web-based user interface (UI) that provides a visual representation and management capabilities for Kubernetes clusters. It allows users to monitor and interact with the resources within the cluster, such as pods, deployments, and services, through a graphical interface rather than using command-line tools.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-ACK/disable-kubernetes-dashboard.html
+  metadata:
+    max-request: 2
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,aliyun-cloud-config,ack
+
+variables:
+  region: "cn-hangzhou"
+
+flow: |
+  code(1)
+  for (let cluster_id of iterate(template.cluster)) {
+    set("cluster", cluster_id)
+    code(2)
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs GET /clusters --header "Content-Type=application/json;" --body "{}"
+
+    extractors:
+      - type: json
+        name: cluster
+        internal: true
+        json:
+          - '.[].cluster_id'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun cs DescribeClusterAddonsVersion --ClusterId $cluster
+
+    matchers:
+      - type: word
+        words:
+          - 'kubernetes-dashboard'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'cluster + " Kubernetes Dashboard is enabled for the selected ACK cluster"'
+# digest: 4b0a00483046022100b4f98ba55922b99ffbf57dd68fa814f198dd99130e9d1d6c168a246eb842d3260221009a8c004329b2015cefef39ffbb2c7abda163de2e0d00132796e1cc133d5a5531:922c64590222798bb761d5b6d8e72950

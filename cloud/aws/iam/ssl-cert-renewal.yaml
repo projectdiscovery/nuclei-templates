@@ -1,0 +1,30 @@
+id: ssl-cert-renewal
+info:
+  name: SSL/TLS Certificates in AWS IAM about to expire in 30 days
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks if SSL/TLS certificates in AWS IAM are set for renewal 30 days before expiration.
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/iam/get-account-password-policy.html
+  tags: cloud,devops,aws,amazon,iam,ssl,tls,aws-cloud-config
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-server-certificates | jq -r '.ServerCertificateMetadataList[] | select(.Expiration | fromdateiso8601 - now < (30 * 86400)) | .ServerCertificateName'
+
+    extractors:
+      - type: regex
+        name: certificate
+        internal: true
+        regex:
+          - '\b[a-zA-Z0-9]+\b'
+
+      - type: dsl
+        dsl:
+          - 'certificate + " Certificate is about to expire in 30 days"'
+# digest: 490a0046304402207ceeaa999c2242c73703b6d92780253e90b295714742d8b24f2834da80a1fed8022011df83ed05a900328336163cfa94797a8f2f989431f7cec5d20abf3572114ad7:922c64590222798bb761d5b6d8e72950

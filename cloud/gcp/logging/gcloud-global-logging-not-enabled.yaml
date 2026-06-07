@@ -1,0 +1,68 @@
+id: gcloud-logging-global-buckets-check
+
+info:
+  name: Logging Buckets Not Configured with Global Location
+  author: princechaddha
+  severity: medium
+  description: |
+    Checks if Cloud Logging buckets are configured with a global location scope to ensure centralized log management and consistent access control.
+  impact: |
+    Logging buckets not configured with a global location can result in fragmented log storage and difficulty in maintaining centralized logging practices.
+  remediation: |
+    Update Cloud Logging buckets to use the global location scope to enable centralized logging across all regions.
+  reference:
+    - https://cloud.google.com/logging/docs/export/configure_export_v2
+  tags: cloud,devops,gcp,gcloud,google-cloud-logging,logging-buckets,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for (let bucket of template.buckets) {
+      set("bucket", bucket);
+      javascript(1);
+    }}
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud logging buckets list --project $projectId --format="json(name,location)"
+
+    extractors:
+      - type: json
+        name: buckets
+        internal: true
+        json:
+          - '.[].name'
+
+javascript:
+  - code: |
+        bucket = template.bucket
+        if (!bucket.includes('/global/')) {
+          let result = `Bucket '${bucket}' is not configured with a global location.`;
+          Export(result);
+        }
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4a0a0047304502210089ceb690c37e7afa99402d1f262734f8219129e212f2a5922475458799bd197e022075143acc7f17ad79b6a6d61b134cea2d5c887f6a8db3b30ad81fe1505b6ba7b1:922c64590222798bb761d5b6d8e72950

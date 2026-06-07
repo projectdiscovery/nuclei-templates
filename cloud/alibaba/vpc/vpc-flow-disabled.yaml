@@ -1,0 +1,59 @@
+id: vpc-flow-disabled
+
+info:
+  name: VPC Flow Log - Disabled
+  author: DhiyaneshDK
+  severity: medium
+  description: |
+    The VPC Flow Log is disabled, meaning network traffic data is not being captured or monitored. This lack of logging reduces visibility into network activities, making it difficult to detect and investigate potential security incidents or performance issues.
+  reference:
+    - https://www.alibabacloud.com/help/en/vpc/user-guide/create-and-manage-flow-log
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/alibaba-cloud/AlibabaCloud-VPC/enable-flow-logs.html
+  metadata:
+    max-request: 1
+    verified: true
+  tags: cloud,devops,aliyun,alibaba,alibaba-cloud-config,alibaba-vpc
+
+variables:
+  region: "cn-hangzhou"
+
+self-contained: true
+
+flow: |
+  code(1)
+  for(let VpcId of iterate(template.vpcid)){
+    set("vpc", VpcId)
+    code(2)
+  }
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aliyun vpc DescribeVpcs --region $region
+
+    extractors:
+      - type: json
+        name: vpcid
+        internal: true
+        json:
+          - '.Vpcs.Vpc[].VpcId'
+
+  - engine:
+      - sh
+      - bash
+
+    source: |
+      aliyun vpc DescribeFlowLogs --RegionId $region --VpcId $vpcid
+
+    matchers:
+      - type: word
+        words:
+          - '"FlowLog": []'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'vpcid + " VPC Flow Log is Disabled "'
+# digest: 490a004630440220721651a199ad66d9248c520014a542df1de8ee0e95aa8b20688be059ffc1b07902204763733958bc565151af0a403d7ca951193862779fdaa488e62726dca8ed2151:922c64590222798bb761d5b6d8e72950

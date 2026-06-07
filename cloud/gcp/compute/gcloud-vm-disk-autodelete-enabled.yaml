@@ -1,0 +1,75 @@
+id: gcloud-vm-disk-autodelete-enabled
+
+info:
+  name: Auto-Delete Not Disabled for VM Instance Persistent Disks
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the Auto-Delete behavior rule is disabled for the persistent disks attached to your Google Cloud virtual machine (VM) instances in order to protect the VM data from being deleted and meet security and compliance requirements. When Auto-Delete is on, the persistent disks are deleted when the associated VM instance is deleted.
+  impact: |
+    With Auto-Delete enabled, persistent disks are automatically deleted when their associated VM instances are deleted, potentially causing unintended data loss for mission-critical systems.
+  remediation: |
+    Disable Auto-Delete for your VM instance persistent disks using the 'gcloud compute instances set-disk-auto-delete' command or through the Google Cloud Console. This ensures disks are retained after instance deletion.
+  reference:
+    - https://www.trendmicro.com/cloudoneconformity/knowledge-base/gcp/ComputeEngine/disable-auto-delete.html
+    - https://cloud.google.com/compute/docs/disks/add-persistent-disk
+  tags: cloud,devops,gcp,gcloud,compute,security,storage,disk,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let instance of iterate(template.instances)){
+      instance = JSON.parse(instance)
+      set("instanceName", instance.name)
+      set("zone", instance.zone)
+      code(3)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances list --project $projectId --format="json(name,zone.basename())"
+
+    extractors:
+      - type: json
+        name: instances
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute instances describe $instanceName --zone $zone --project $projectId --format="json(disks[].autoDelete)"
+
+    matchers:
+      - type: word
+        words:
+          - '"autoDelete": true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"VM instance " + instanceName + " in zone " + zone + " of project " + projectId + " has one or more disks with auto-delete enabled"'
+# digest: 4a0a0047304502201225636c26ee4b6234cb21160525eabf8d369b26bbb55af3ec6e1de798cd29a5022100ff680983b468e16af90a5472d1c6bf29c825b0d2dc4617c8d5e0b7071bc4b121:922c64590222798bb761d5b6d8e72950

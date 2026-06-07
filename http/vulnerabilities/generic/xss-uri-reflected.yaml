@@ -1,0 +1,48 @@
+id: xss-uri-reflected
+
+info:
+  name: Reflected XSS
+  author: nadino,geeknik,matejsmycka
+  severity: low
+  description: |
+    Reflected cross-site scripting vulnerability was discovered via generic testing. Manual testing is needed to verify exploitation.
+  classification:
+    cwe-id: CWE-79
+  metadata:
+    max-request: 1
+  tags: xss,generic,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/a%22%3E%3Cinjectable%3E"
+      - "{{BaseURL}}/a%27%3E%3Cinjectable%3E"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "\"><injectable>"
+          - "'><injectable>"
+        condition: or
+
+      - type: word
+        part: content_type
+        words:
+          - "text/html"
+
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "<title>Access Denied</title>"
+          - "You don't have permission to access"
+        negative: true
+# digest: 4a0a0047304502201fd22e8f19f1d75bc70167dd8b61ebfdfc0baaa910c6ea898aa2505c47c3fbc9022100a49d0084e5053012f8facecbde381d5a24988ca4027da3da3558262001971d39:922c64590222798bb761d5b6d8e72950

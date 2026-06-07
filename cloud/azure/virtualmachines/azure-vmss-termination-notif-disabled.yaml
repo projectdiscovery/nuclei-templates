@@ -1,0 +1,56 @@
+id: azure-vmss-termination-notif-disabled
+info:
+  name: Azure VMSS Instance Termination Notifications Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that your Microsoft Azure virtual machine scale sets are configured to receive instance termination notifications through the Azure Metadata service and have a predefined delay timeout configured for the "Terminate" operation (event). The termination notifications are delivered through Scheduled Events, an Azure Metadata feature which sends termination notifications, and can also be used to delay impactful operations such as reboots and redeployments. The delay associated with the "Terminate" event will depend on the delay limit specified in the VM scale set model configuration.
+  impact: |
+    Failing to enable instance termination notifications can lead to insufficient preparation time for termination events, potentially disrupting operations and leading to data loss.
+  remediation: |
+    Configure the termination notification feature for all your Azure VM scale sets to receive proper alerts and set a reasonable delay for the termination events.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-terminate-notification
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ScaleSetData of iterate(template.scaleSetList)) {
+    ScaleSetData = JSON.parse(ScaleSetData);
+    set("name", ScaleSetData.name);
+    set("resourceGroup", ScaleSetData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: scaleSetList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss show --name "$name" --resource-group "$resourceGroup" --query '{"TerminateNotificationProfileStatus": virtualMachineProfile.scheduledEventsProfile.terminateNotificationProfile.enable}'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '"TerminateNotificationProfileStatus": null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " does not have termination notifications enabled."'
+# digest: 4b0a00483046022100927c281002aa7b9e2c00d00e63c8e074deddad50548b0ae15b7a46203529703f022100bc9c7a7b81bb4f84c5d3a802f02c72464998d77fd45e804c99cfa118a5733f23:922c64590222798bb761d5b6d8e72950

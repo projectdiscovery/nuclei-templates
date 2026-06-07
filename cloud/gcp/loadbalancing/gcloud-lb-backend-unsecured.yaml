@@ -1,0 +1,89 @@
+id: gcloud-lb-backend-unsecured
+
+info:
+  name: Unsecured Backend Services in Google Cloud Load Balancers
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that the backend services associated with your Google Cloud load balancers are protected with edge security policies provided by the Cloud Armor service in order to shield your backend services from a range of potential attacks. Edge security policies let you control access to your cloud resources at the Google Cloud Platform (GCP) network edge.
+  impact: |
+    Without edge security policies, backend services are vulnerable to a variety of network-based attacks, which can compromise data integrity and availability.
+  remediation: |
+    Attach an edge security policy to your backend services via the Google Cloud Console or using the Cloud Armor APIs to enhance security at your network's edge.
+  reference:
+    - https://cloud.google.com/armor/docs/security-policy-overview
+  tags: cloud,devops,gcp,gcloud,google-cloud-load-balancer,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let urlMapName of iterate(template.urlMaps)){
+      set("urlMapName", urlMapName)
+      code(3)
+      for(let backendService of iterate(template.backendServices)){
+        set("backendService", backendService)
+        code(4)
+      }
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name)"
+
+    extractors:
+      - type: json
+        name: urlMaps
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps describe $urlMapName --format="json(defaultService)"
+
+    extractors:
+      - type: json
+        name: backendServices
+        internal: true
+        json:
+          - '.defaultService'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute backend-services describe $backendService --format="json(securityPolicy)"
+
+    matchers:
+      - type: word
+        words:
+          - 'null'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Unsecured Backend Service " + backendService + " for URL Map " + urlMapName + " in Project " + projectId'
+# digest: 490a004630440220279358e65ac5b963edec13c94cb6c092c5cd7bb5efc2d6556cf1a14174d428060220347ee3311f47662b5d3cdf9870d49478b018f98ddf6703f283187f7878c26d69:922c64590222798bb761d5b6d8e72950

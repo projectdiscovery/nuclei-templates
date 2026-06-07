@@ -1,0 +1,64 @@
+id: kubernetes-exposing-docker-socket-hostpath
+
+info:
+  name: Kubernetes Exposing Host's Docker Socket
+  author: dwisiswant0
+  severity: high
+  description: Exposing host's Docker socket to containers via a volume.
+  impact: |
+    The owner of this socket is root. Giving someone access to it is equivalent
+    to giving unrestricted root access to your host.
+  remediation: Remove 'docker.sock' from hostpath to prevent this.
+  reference:
+    - https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+    - https://kubernetes.io/docs/concepts/policy/pod-security-policy/#volumes-and-file-systems
+    - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    - https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-1-do-not-expose-the-docker-daemon-socket-even-to-the-containers
+  tags: cloud,devops,kubernetes,k8s
+
+flow: |
+  code(1);
+  for (let pod of template.items) {
+    pod = JSON.parse(pod);
+    if (!pod.spec.hasOwnProperty('volumes')) continue;
+    for (const volume of pod.spec.volumes) {
+      if (volume.hasOwnProperty('hostPath')) {
+        if (!volume.hostPath.hasOwnProperty('path')) continue;
+        const path = volume.hostPath.path;
+        if (path && path !== '/var/run/docker.sock') continue
+      }
+      set('volume', JSON.stringify(volume));
+      set('pod', pod.metadata.name);
+      set('namespace', pod.metadata.namespace);
+      code(2)
+    }
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: kubectl get pods --all-namespaces --output=json
+    extractors:
+      - type: json
+        name: items
+        internal: true
+        json:
+          - '.items[]'
+
+  - engine:
+      - sh
+      - bash
+    source: echo -e '$volume'
+
+    matchers:
+      - type: word
+        words:
+          - "/var/run/docker.sock"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"Exposed Docker socket via a volume in the " + pod + " pod of " + namespace + " namespace"'
+# digest: 490a004630440220118723a85165514f59da64d85df3822f05a47ab5fc3e1e2a01ea0d06cb8d58110220147f70004616c4ee4b84fc2137e253c00a1908207be5e1cfb70b86cb586e0ba3:9e2dfd48464943e7ca3816f5f86e5507

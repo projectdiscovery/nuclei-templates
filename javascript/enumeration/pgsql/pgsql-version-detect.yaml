@@ -1,0 +1,51 @@
+id: pgsql-version-detect
+
+info:
+  name: Postgresql Version - Detect
+  author: pussycat0x
+  severity: high
+  description: |
+    Detect Postgresql Version.
+  reference:
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/SQL%20Injection/PostgreSQL%20Injection.md#postgresql-version
+  metadata:
+    verified: true
+    max-request: 8
+    shodan-query: "product:\"PostgreSQL\""
+  tags: js,network,postgresql,enum,authenticated,discovery
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      const postgres = require('nuclei/postgres');
+      const client = new postgres.PGClient;
+      connected =  client.ExecuteQuery(Host, Port, User, Pass, Db, "select version();");
+      Export(connected);
+
+    args:
+      Host: "{{Host}}"
+      Port: 5432
+      User: "{{usernames}}"
+      Pass: "{{password}}"
+      Db: "{{database}}"
+
+    payloads:
+      usernames:
+        - postgres
+        - admin
+      password:
+        - postgres
+        -
+        - 123
+        - amber
+      database:
+        - postgres
+
+    attack: clusterbomb
+
+    extractors:
+      - type: json
+        json:
+          - '.Rows[0].version'
+# digest: 490a004630440220352e247ec1bc262fe5d7f01e8abaf57b1c9998070954f0153873e35d7169a6b502206d73b56b95c7c21c380eae96869fbc3c842b7e6255a7b429efc2afee2eb7a283:922c64590222798bb761d5b6d8e72950

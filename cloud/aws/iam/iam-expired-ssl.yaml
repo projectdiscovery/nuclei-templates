@@ -1,0 +1,30 @@
+id: iam-expired-ssl
+info:
+  name: Remove Expired SSL/TLS Certificates in AWS IAM
+  author: princechaddha
+  severity: high
+  description: |
+    Checks for expired SSL/TLS certificates from AWS IAM
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/iam/list-server-certificates.html
+  tags: cloud,devops,aws,amazon,iam,ssl,aws-cloud-config
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-server-certificates | jq -r '.ServerCertificateMetadataList[] | select(.Expiration | fromdateiso8601 < now) | .ServerCertificateName'
+
+    extractors:
+      - type: regex
+        name: certificate
+        internal: true
+        regex:
+          - '\b[a-zA-Z0-9]+\b'
+
+      - type: dsl
+        dsl:
+          - 'certificate + " Certificate is expired in your AWS account"'
+# digest: 490a00463044022059ac4f9219e64810790d41ca393d51de01a079833df0edebb382504c04e4bf4a022000f7b6d93b12090a69721751a99fd93d116dd9604d349e9883d9c7c819b66a82:922c64590222798bb761d5b6d8e72950

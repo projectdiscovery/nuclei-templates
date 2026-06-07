@@ -1,0 +1,52 @@
+id: iam-ssh-keys-rotation
+info:
+  name: SSH Key Rotation - 90-Day Policy
+  author: princechaddha
+  severity: high
+  description: |
+    Verifies that IAM SSH public keys are rotated every 90 days, enhancing security and preventing unauthorized access to AWS CodeCommit repositories
+  reference:
+    - https://docs.aws.amazon.com/cli/latest/reference/iam/list-ssh-public-keys.html
+  metadata:
+    max-request: 2
+  tags: cloud,devops,aws,amazon,iam,ssh,aws-cloud-config
+
+flow: |
+  code(1)
+  for(let UserName of iterate(template.users)){
+    set("user", UserName)
+    code(2)
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws iam list-users --query 'Users[*].UserName'
+
+    extractors:
+      - type: json # type of the extractor
+        internal: true
+        name: users
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+         aws iam list-ssh-public-keys --user-name $user | jq -r '.SSHPublicKeys[] | select(.UploadDate | fromdateiso8601 < (now - (90 * 86400))) | .SSHPublicKeyId'
+
+    extractors:
+      - type: regex # type of the extractor
+        name: accesskey
+        internal: true
+        regex:
+          - '^AP.*'
+
+      - type: dsl
+        dsl:
+          - '"The SSH Public Key " + accesskey +" is older than 90 days"'
+# digest: 4a0a004730450221008e725b347dbe75b49ef09c2106a669f9299cca4a153694ee0d071d16131196b6022049fe3c78c09fb8ea6d6c4c50e592fb0e9e5fc00d42129e8ab5c41ffcd95c9fbf:922c64590222798bb761d5b6d8e72950

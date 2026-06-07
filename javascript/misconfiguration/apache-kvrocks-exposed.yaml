@@ -1,0 +1,45 @@
+id: apache-kvrocks-exposed
+
+info:
+  name: Apache Kvrocks - Exposed
+  author: icarot
+  severity: high
+  description: |
+   Detects if an Apache Kvrocks server is exposed with no authentication credentials, this application is a distributed key value NoSQL database that uses RocksDB as storage engine and is compatible with Redis protocol.
+  reference:
+    - https://github.com/apache/kvrocks
+  metadata:
+    verified: true
+    max-request: 1
+  tags: apache,kvrocks,network,unauth,js,exposed
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+
+    code: |
+      const redis = require('nuclei/redis');
+      const info = redis.GetServerInfo(Host,Port);
+      Export(info);
+
+    args:
+      Host: "{{Host}}"
+      Port: "6379"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "kvrocks_version"
+          - "kvrocks_git_sha1"
+          - "kvrocks_mode"
+        condition: or
+
+    extractors:
+      - type: regex
+        part: response
+        regex:
+          - "kvrocks_version:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}"
+          - "kvrocks_git_sha1:\\w+"
+          - "kvrocks_mode:standalone"
+# digest: 4a0a00473045022100d040b084def2f6406f801a9bb7000e7b50884ec0ad9d1f479b42407f894a8d400220298c583c3b4c96924e108841f77131405d74b4ab7295f054abdd5cc9e777f9a3:922c64590222798bb761d5b6d8e72950

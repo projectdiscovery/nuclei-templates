@@ -1,0 +1,45 @@
+id: autologon-control
+
+info:
+  name: Autologon Function Control Check
+  author: nukunga[SungHyunJeon]
+  severity: medium
+  description: |
+    Ensure the Autologon feature is disabled by verifying that the AutoAdminLogon registry value under
+    HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon is either missing or set to "0".
+    A value of "1" indicates that login credentials may be stored in the registry, creating a potential security risk.
+  impact: |
+    Enabling Autologon allows attackers with physical or remote access to retrieve stored login credentials, potentially resulting in unauthorized system access.
+  remediation: |
+    Disable Autologon by setting the AutoAdminLogon registry value to "0". This can be done using:
+    - Registry Editor: Go to HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon and set AutoAdminLogon to "0".
+  reference:
+    - https://isms.kisa.or.kr/main/csap/notice/?boardId=bbs_0000000000000004&mode=view&cntId=85
+  tags: autologon,account-management,code,windows-audit,kisa
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $regPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+      $autologon = (Get-ItemProperty -Path $regPath -Name AutoAdminLogon -ErrorAction SilentlyContinue).AutoAdminLogon
+      if ($null -eq $autologon -or $autologon -eq "0") {
+          "AUTO_ADMIN_LOGON_DISABLED"
+      } else {
+          "AUTO_ADMIN_LOGON_ENABLED"
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "AUTO_ADMIN_LOGON_ENABLED"
+# digest: 4a0a00473045022100f6c7e1a440a97be82ee3459e2a332e1ff946165fd3d81fe5fe130fd9994b3e9c022054d9ac214e6fa41663e07b56e06c9b2d47c504b8419e08dd5daf0b733d717e46:922c64590222798bb761d5b6d8e72950

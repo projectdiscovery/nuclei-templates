@@ -1,0 +1,49 @@
+id: wordpress-siteguard
+
+info:
+  name: SiteGuard WP Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/siteguard/
+  metadata:
+    plugin_namespace: siteguard
+    wpscan: https://wpscan.com/plugin/siteguard
+  tags: tech,wordpress,wp-plugin,top-200,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/siteguard/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/siteguard.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a004830460221009963c8a9e7dd83b367bf65c89d5be6dd235618352b20bb837763c12568576d0d022100a1c0b5255ecb14d131093876a760c688830588b1e296215fa0dc9c85a2239876:922c64590222798bb761d5b6d8e72950

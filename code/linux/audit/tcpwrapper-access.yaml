@@ -1,0 +1,54 @@
+id: tcpwrapper-access
+
+info:
+  name: TCP Wrapper Access Control Check
+  author: songyaeji
+  severity: low
+  description: |
+    Checked if IP and port restrictions were properly applied using TCP Wrapper (/etc/hosts.allow and /etc/hosts.deny). Reported systems as vulnerable if unrestricted remote access (e.g. Telnet, RSH, SSH) was possible.
+  reference:
+    - https://isms.kisa.or.kr
+  tags: linux,local,audit,kisa,compliance
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      echo "[*] Checking /etc/hosts.deny (default deny policy)"
+      if grep -Eq "^[[:space:]]*ALL:[[:space:]]*ALL" /etc/hosts.deny; then
+        echo "[SAFE] /etc/hosts.deny has ALL:ALL policy"
+      else
+        echo "[VULNERABLE] /etc/hosts.deny is missing ALL:ALL (default deny)"
+      fi
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      echo "[*] Checking sshd allow policy in /etc/hosts.allow"
+      if grep -Eq "^[[:space:]]*sshd" /etc/hosts.allow; then
+        if grep -Eq "^[[:space:]]*sshd:[[:space:]]*ALL" /etc/hosts.allow; then
+          echo "[VULNERABLE] sshd allows ALL hosts (too permissive)"
+        else
+          echo "[SAFE] sshd-specific allow policy found with restrictions"
+        fi
+      else
+        echo "[VULNERABLE] No sshd-specific allow policy found"
+      fi
+
+    matchers:
+      - type: word
+        name: hosts.deny
+        part: code_1_response
+        words:
+          - "[VULNERABLE]"
+
+      - type: word
+        name: sshd
+        part: code_2_response
+        words:
+          - "[VULNERABLE]"
+# digest: 4b0a00483046022100aaf438d9d1df7bb250887b6732f0c1238fd0baa0b46cdd3bfcb9294e178624dd0221008dc264a278dc80cdb7f50423f878c08b49b46e0c097519dadeddf0642e74072f:922c64590222798bb761d5b6d8e72950

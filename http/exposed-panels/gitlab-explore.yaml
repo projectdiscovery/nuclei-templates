@@ -1,0 +1,38 @@
+id: gitlab-explore
+
+info:
+  name: GitLab Instance Explore - Detect
+  author: Sujal Tuladhar
+  severity: info
+  description: |
+    This template checks for GitLab instances by verifying if /explore and /api/v4/projects endpoints are accessible with a 200 response.
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: title:"GitLab"
+    fofa-query: title="GitLab"
+  tags: gitlab,explore,panel,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/explore"
+      - "{{BaseURL}}/api/v4/projects"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        name: gitlab-community
+        dsl:
+          - 'contains_all(body, ">Most stars", "Hide archived projects")'
+          - 'contains_all(body, "description\":", "name_with_namespace\":")'
+        condition: or
+
+      - type: dsl
+        name: gitlab-enterprise
+        dsl:
+          - 'contains_all(body, ">Most starred", "Explore public groups")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a0046304402200ed24b5716117d445e45976f6cef64bb44b647bc8a1497e7cdd5dfcce342f4e50220759f131ff9cead5a0e4c89ece93a0677240cb7801ef143f4e1c490dcd0b9aaa1:922c64590222798bb761d5b6d8e72950

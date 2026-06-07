@@ -1,0 +1,56 @@
+id: azure-vmss-empty-unattached
+info:
+  name: Azure Virtual Machine Scale Sets Empty and Unattached
+  author: princechaddha
+  severity: low
+  description: |
+    Identify any empty virtual machine scale sets available within your Microsoft Azure cloud account and delete them in order to eliminate unnecessary costs and meet compliance requirements when it comes to unused resources. A Microsoft Azure virtual machine scale set is considered empty when it doesn't have any VM instances attached anymore and is no longer associated with a load balancer.
+  impact: |
+    Maintaining empty VM scale sets can incur unnecessary costs and occupy valuable resources that could be utilized elsewhere.
+  remediation: |
+    Regularly check and remove any VM scale sets that do not contain any VM instances and are not associated with any load balancers.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/
+  tags: cloud,devops,azure,microsoft,vmss,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ScaleSetData of iterate(template.scaleSetList)) {
+    ScaleSetData = JSON.parse(ScaleSetData);
+    set("name", ScaleSetData.Name);
+    set("resourceGroup", ScaleSetData.ResourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list --output json --query '[*].{"Name":name,"ResourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: scaleSetList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az vmss list-instances --name "$name" --resource-group "$resourceGroup" --query '[*].id'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - '[]'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " is empty and unattached"'
+# digest: 490a0046304402201a6b82832b21c4c94f90e700eeabe4850840f42aa47e6cd7f23e7655f6b6e54e02202b637ce0ab6f5c2de0d55f682529e4a29c7aaa1e5ce5bf9876e6b524bee80914:922c64590222798bb761d5b6d8e72950

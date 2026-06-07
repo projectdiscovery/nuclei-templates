@@ -1,0 +1,86 @@
+id: gcloud-cdn-tls-unenforced
+
+info:
+  name: Unenforced SSL/TLS on Cloud CDN Backend Service Origins
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that Google Cloud CDN backend service origins are using SSL/TLS certificates to enforce HTTPS in order to manage encrypted traffic. This helps to protect the integrity and confidentiality of the transmitted information.
+  impact: |
+    If SSL/TLS certificates are not enforced, the integrity and confidentiality of the transmitted information through Cloud CDN can be compromised, leading to potential data leaks and security breaches.
+  remediation: |
+    Configure SSL/TLS certificates for your Cloud CDN backend service origins to enforce HTTPS and ensure that all communications are securely encrypted.
+  reference:
+    - https://cloud.google.com/cdn/docs/using-https
+  tags: cloud,devops,gcp,gcloud,cloud-cdn,gcp-cloud-config
+
+flow: |
+  code(1)
+  for(let projectId of iterate(template.projectIds)){
+    set("projectId", projectId)
+    code(2)
+    for(let service of iterate(template.services)){
+      set("serviceName", service)
+      code(3)
+      code(4)
+    }
+  }
+
+self-contained: true
+
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud projects list --format="json(projectId)"
+
+    extractors:
+      - type: json
+        name: projectIds
+        internal: true
+        json:
+          - '.[].projectId'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute url-maps list --project $projectId --format="json(name,defaultService)"
+
+    extractors:
+      - type: json
+        name: services
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute forwarding-rules list --project $projectId
+
+    extractors:
+      - type: json
+        name: forwardingRules
+        internal: true
+        json:
+          - '.[].name'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      gcloud compute forwarding-rules describe $forwardingRules --global --format="value(portRange)"
+
+    matchers:
+      - type: word
+        words:
+          - '80-80'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"HTTP traffic allowed without SSL/TLS on service: " + serviceName + " in Project: " + projectId'
+# digest: 490a0046304402201816c5925b439d4d82d194b0fb552913beb2e0db771ff47d6958979005d5ba7d022062305cca30ff33b8ea930373bac7689f188531b66aa798ad08af6e62eb6b6f11:922c64590222798bb761d5b6d8e72950

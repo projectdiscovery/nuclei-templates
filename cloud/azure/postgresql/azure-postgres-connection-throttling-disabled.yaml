@@ -1,0 +1,56 @@
+id: azure-postgres-connection-throttling-disabled
+info:
+  name: Azure PostgreSQL Server Connection Throttling Disabled
+  author: princechaddha
+  severity: medium
+  description: |
+    Ensure that "connection_throttling" server parameter is enabled for all PostgreSQL database servers provisioned within your Microsoft Azure cloud account. The "connection_throttling" parameter enables temporary connection throttling per IP address for too many invalid login failures.
+  impact: |
+    Disabling the "connection_throttling" server parameter exposes your PostgreSQL databases to potential brute force or DDoS attacks by not limiting the rate of failed login attempts.
+  remediation: |
+    Enable the "connection_throttling" server parameter on your Azure PostgreSQL servers to prevent excessive failed login attempts and mitigate potential attacks.
+  reference:
+    - https://docs.microsoft.com/en-us/azure/postgresql/concepts-server-parameters
+  tags: cloud,devops,azure,microsoft,postgresql,azure-cloud-config
+
+flow: |
+  code(1);
+  for (let ServerData of iterate(template.serverList)) {
+    ServerData = JSON.parse(ServerData);
+    set("name", ServerData.name);
+    set("resourceGroup", ServerData.resourceGroup);
+    code(2);
+  }
+
+self-contained: true
+code:
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server list --output json --query '[*].{"name":name,"resourceGroup":resourceGroup}'
+
+    extractors:
+      - type: json
+        name: serverList
+        internal: true
+        json:
+          - '.[]'
+
+  - engine:
+      - sh
+      - bash
+    source: |
+      az postgres server configuration show --server-name "$name" --resource-group "$resourceGroup" --name connection_throttling --query 'value'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - 'off'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'name + " in " + resourceGroup + " has connection throttling disabled"'
+# digest: 4b0a00483046022100ab6d91fa46318129f1b571c113c8149e882eab80fe403024bea66ccbf74e41af022100c40dc6bef2134c8e1146942d8c36bdfb8795008412c46192e2dab3408b23c830:922c64590222798bb761d5b6d8e72950
