@@ -1,0 +1,51 @@
+id: ssh-unrestricted-nonwhitelist
+
+info:
+  name: Unrestricted SSH Access from Non-Whitelisted IPs
+  author: pussycat0x
+  severity: unknown
+  description: |
+    SSH access is not restricted to specific IP addresses, allowing connections from any source. This increases the risk of unauthorized access and brute-force attacks.
+  remediation: |
+    Restrict SSH to specific IPs in /etc/ssh/sshd_config by setting ListenAddress <trusted-IP> and restarting the SSH service.
+  reference:
+    - https://vishalraj82.medium.com/hardening-openssh-security-37f5d634015f
+    - https://www.cyberciti.biz/tips/howto-openssh-sshd-listen-multiple-ip-address.html
+  metadata:
+    verified: true
+  tags: audit,config,ssh,auth
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/ssh");
+      var c = m.SSHClient();
+      c.Connect(Host,Port,User,Pass);
+      const sshConfig = c.Run('cat /etc/ssh/sshd_config')
+      sshConfig
+      let result = "";
+      if (sshConfig.includes('#ListenAddress') && !sshConfig.includes('ListenAddress  ')){
+      result += "SSH access restriction not enforced";
+      }
+      else{
+      exit();
+      }
+      result
+
+    args:
+      Host: "{{Host}}"
+      Port: "22"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - response
+# digest: 4b0a00483046022100e083bd557c319077edc862d63ff616e5f3b16c97993aa815fc99275c3d0b8681022100b655fa349c18a03be6a56866c42c56cdc6829c22ebf02f09b2d625e2b7119452:922c64590222798bb761d5b6d8e72950
