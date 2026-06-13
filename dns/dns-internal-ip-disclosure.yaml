@@ -1,0 +1,42 @@
+id: dns-internal-ip-disclosure
+
+info:
+  name: DNS A Record - Internal IP Address Disclosure
+  author: DevamShah
+  severity: info
+  description: |
+    A public DNS A record resolves to an RFC 1918 private or loopback IP address (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8). Exposing internal addressing in authoritative DNS leaks internal network topology and can aid attackers in mapping internal infrastructure or staging DNS rebinding attacks.
+  reference:
+    - https://datatracker.ietf.org/doc/html/rfc1918
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/01-Conduct_Search_Engine_Discovery_Reconnaissance_for_Information_Leakage
+    - https://cwe.mitre.org/data/definitions/200.html
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+  tags: dns,a,internal-ip,disclosure,misconfig
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: a-record-present
+        part: answer
+        regex:
+          - "IN\tA\t(.+)$"
+
+      - type: regex
+        name: rfc1918-or-loopback
+        part: answer
+        regex:
+          - "IN\tA\t(10|127|192\\.168|172\\.(1[6-9]|2[0-9]|3[01]))\\.[0-9]{1,3}\\.[0-9]{1,3}"
+
+    extractors:
+      - type: regex
+        group: 1
+        part: answer
+        regex:
+          - "IN\tA\t((?:10|127|192\\.168|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9.]+)"
