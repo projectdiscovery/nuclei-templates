@@ -1,0 +1,48 @@
+id: vigilix-login-panel-discovery
+
+info:
+  name: Login Panel Discovery via Vigilix Engine
+  author: darkknight
+  severity: info
+  description: Discovers exposed login panels in Indonesian internet infrastructure using Vigilix Engine passive index.
+  tags: vigilix,recon,indonesia,login,panel
+  reference:
+    - https://engine.vigilix.id
+
+self-contained: true
+
+variables:
+  vigilix_api_key: "{{ENV_VIGILIX_API_KEY}}"
+
+requests:
+  - raw:
+      - |
+        GET /api/v1/search?q=title:login+country:ID&size=100 HTTP/1.1
+        Host: engine.vigilix.id
+        X-API-Key: {{vigilix_api_key}}
+        Accept: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - '"results"'
+          - '"ip"'
+        condition: and
+
+    extractors:
+      - type: json
+        name: hosts
+        json:
+          - '.results[].ip'
+      - type: json
+        name: titles
+        json:
+          - '.results[].title'
+      - type: json
+        name: ports
+        json:
+          - '.results[].port'
