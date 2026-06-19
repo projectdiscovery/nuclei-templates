@@ -2,12 +2,13 @@ id: inertiajs-detect
 
 info:
   name: Inertia.js - Detect
-  author: antonkulyk
+  author: antonkulyk,marcialpaulg
   severity: info
   description: |
-    Detects Inertia.js, a stack for building single-page apps using classic server-side routing. Matching targets the server-rendered page payload embedded in the root element's data-page attribute (JSON with component, props, and url keys), which is the default integration pattern for adapters such as Laravel's inertia-laravel.
+    Detects Inertia.js, a protocol layer for building single-page apps over classic server-side routing. Detection is fully passive: a single plain GET with no special request headers, matching four independent, server-emitted, Inertia-specific signals on the first-load document. Three proximity-bound body signals cover the on-the-wire forms of the embedded page object, each requiring the component/props/url keys to sit inside the data-page carrier itself (so unrelated pagination data-page attributes or embedded JSON config blocks cannot trigger it): the entity-encoded double-quoted div form (inertia-laravel, inertia-rails, inertia-django, inertia-phoenix), the raw-JSON single-quoted div form (flask-inertia), and the raw-JSON script-element form bound to the script data-page tag (canonical Inertia v2/v3 and Rails script-mode, the v3 default). The header signal is the line-anchored "Vary: X-Inertia" response header set unconditionally by middleware-based adapters such as inertia-laravel, gonertia, and AdonisJS.
   reference:
     - https://inertiajs.com/
+    - https://inertiajs.com/the-protocol
     - https://github.com/inertiajs/inertia
     - https://github.com/inertiajs/inertia-laravel
   metadata:
@@ -27,17 +28,22 @@ http:
 
     matchers-condition: or
     matchers:
-      - type: word
+      - type: regex
         part: body
-        words:
-          - 'data-page="'
-          - '&quot;component&quot;'
-          - '&quot;props&quot;'
-          - '&quot;url&quot;'
-        condition: and
+        regex:
+          - 'data-page="[^"]*&quot;component&quot;[^"]*&quot;props&quot;[^"]*&quot;url&quot;'
 
       - type: regex
         part: body
         regex:
-          - "(?is)data-page\\s*=\\s*\"(?:[^\"\\\\]|\\\\.)*\\\\\"component\\\\\"(?:[^\"\\\\]|\\\\.)*\\\\\"props\\\\\"(?:[^\"\\\\]|\\\\.)*\\\\\"url\\\\\""
-# digest: 490a00463044022005bb2a6b3783297e7f6d9cdf10e9899892a88549ec28211af6be1c83e0bc282c02201da00a9d22f8c045a0685cbcd021172c1fb9f1af90a6ff339dc390254efe2dd9:922c64590222798bb761d5b6d8e72950
+          - 'data-page=''[^'']*"component":[^'']*"props":[^'']*"url":'
+
+      - type: regex
+        part: body
+        regex:
+          - '<script[^>]*data-page=["''][^>]*>[^<]*"component":[^<]*"props":[^<]*"url":'
+
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^vary:[^\r\n]*x-inertia'
