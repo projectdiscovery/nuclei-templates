@@ -1,0 +1,84 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: mcp-server-detect
+
+info:
+  name: Model Context Protocol (MCP) Server - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    The Model Context Protocol (MCP) is an open protocol that lets LLM applications connect to
+    external tools, resources, and prompts. MCP servers expose a JSON-RPC endpoint (commonly
+    /mcp) over the Streamable HTTP transport. This template performs a read-only JSON-RPC
+    "initialize" handshake on /mcp and matches the server's result, extracting the implementation
+    name/version and the negotiated protocol version. It never invokes tools (tools/call). An
+    unauthenticated MCP server lets any client enumerate and invoke its tools, which frequently
+    include command execution, file access, and network/SSRF primitives. The legacy HTTP+SSE
+    transport (GET /sse) is detected by a separate mechanism.
+  reference:
+    - https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
+    - https://github.com/modelcontextprotocol/modelcontextprotocol
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: modelcontextprotocol
+    product: mcp
+    shodan-query: 'http.html:"protocolVersion"'
+    # runZero detects and fingerprints MCP natively (both transports, serverInfo, tools, OAuth
+    # posture); suppress this template where the native scanner has already tagged the service.
+  tags: tech,detect,mcp,ai
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/mcp"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+
+    body: |
+      {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"nuclei","version":"1"}}}
+
+    matchers-condition: and
+    matchers:
+      # A JSON-RPC initialize reply carries protocolVersion and a serverInfo object. The transport
+      # may frame it as application/json or as a text/event-stream "message" event, so match on
+      # the JSON-RPC result shape rather than the content type. Field-name tokens are matched
+      # independently of value spacing ("x":"y" vs "x": "y") for cross-server robustness.
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"protocolVersion"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"result"'
+          - '"serverInfo"'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: protocol_version
+        part: body
+        group: 1
+        regex:
+          - '"protocolVersion"\s*:\s*"([0-9A-Za-z.\-]+)"'
+
+      - type: regex
+        name: server_name
+        part: body
+        group: 1
+        regex:
+          - '"serverInfo"\s*:\s*\{[^}]*?"name"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        name: server_version
+        part: body
+        group: 1
+        regex:
+          - '"serverInfo"\s*:\s*\{[^}]*?"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'

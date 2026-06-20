@@ -1,0 +1,60 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: tgi-detect
+
+info:
+  name: HuggingFace Text Generation Inference (TGI) - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Detected HuggingFace Text Generation Inference (TGI), a Rust/Python toolkit for serving
+    and deploying large language models. Its read-only /info endpoint discloses the served
+    model id and the running TGI version, and the OpenAI-compatible API allows unauthenticated
+    inference by default, exposing the deployment to model disclosure and compute/cost abuse.
+  reference:
+    - https://github.com/huggingface/text-generation-inference
+    - https://huggingface.co/docs/text-generation-inference/index
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: huggingface
+    product: text-generation-inference
+    shodan-query: 'http.html:"text-generation-inference"'
+    fofa-query: 'body="text-generation-inference"'
+  tags: tech,detect,tgi,ai,llm,inference
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/info"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"model_id"'
+          - '"text-generation-router"'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+
+      - type: regex
+        name: model_id
+        part: body
+        group: 1
+        regex:
+          - '"model_id"\s*:\s*"([^"]+)"'

@@ -1,0 +1,62 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: tei-detect
+
+info:
+  name: HuggingFace Text Embeddings Inference (TEI) - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Detected HuggingFace Text Embeddings Inference (TEI), a toolkit for serving text embedding
+    and re-ranking models. Its read-only /info endpoint reports model_type "embedding" along
+    with the served model id and the running TEI version. Exposed instances allow
+    unauthenticated embedding requests by default, leaking the deployed model and inviting
+    compute/cost abuse.
+  reference:
+    - https://github.com/huggingface/text-embeddings-inference
+    - https://huggingface.co/docs/text-embeddings-inference/index
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: huggingface
+    product: text-embeddings-inference
+    shodan-query: 'http.html:"text-embeddings-inference"'
+    fofa-query: 'body="text-embeddings-inference"'
+  tags: tech,detect,tei,ai,llm,inference
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/info"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"model_id"'
+          - '"model_type"'
+          - '"embedding"'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+
+      - type: regex
+        name: model_id
+        part: body
+        group: 1
+        regex:
+          - '"model_id"\s*:\s*"([^"]+)"'

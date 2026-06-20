@@ -1,0 +1,69 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: librechat-detect
+
+info:
+  name: LibreChat - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    LibreChat is a self-hosted, multi-provider AI chat web application that fronts backend LLM
+    inference providers (OpenAI, Anthropic, Azure, Google, and local/OpenAI-compatible endpoints).
+    An exposed instance with open registration grants anyone an account and unauthenticated use of
+    the configured backend models. Detection reads the read-only /api/config endpoint (appTitle
+    "LibreChat" plus registration/login flags) and the HTML title. The version and the
+    registration posture are extracted where present.
+  reference:
+    - https://github.com/danny-avila/LibreChat
+    - https://www.librechat.ai/docs
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: librechat
+    product: librechat
+    shodan-query: 'http.title:"LibreChat"'
+    fofa-query: 'title="LibreChat"'
+  tags: tech,detect,librechat,ai,llm,webui
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/api/config"
+      - "{{BaseURL}}/"
+
+    matchers-condition: or
+    matchers:
+      # /api/config carries the literal app title "LibreChat" alongside the registration and
+      # login flags (registrationEnabled / emailLoginEnabled / socialLogins) that define posture.
+      - type: word
+        name: api-config
+        part: body
+        words:
+          - '"appTitle":"LibreChat"'
+          - '"appTitle": "LibreChat"'
+        condition: or
+
+      # Served SPA: the HTML <title> is "LibreChat" (used when /api/config is unavailable).
+      - type: word
+        name: html-title
+        part: body
+        words:
+          - '<title>LibreChat</title>'
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+
+      # Registration posture: registrationEnabled=true means anyone can sign up for backend access.
+      - type: regex
+        name: registration_enabled
+        part: body
+        group: 1
+        regex:
+          - '"registrationEnabled"\s*:\s*(true|false)'

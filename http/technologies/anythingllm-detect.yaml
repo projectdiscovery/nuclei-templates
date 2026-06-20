@@ -1,0 +1,63 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: anythingllm-detect
+
+info:
+  name: AnythingLLM - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    AnythingLLM is a self-hosted, all-in-one AI application (RAG, agents, document chat) that
+    fronts backend LLM and embedding providers. An exposed instance can permit document access
+    and unauthenticated use of the configured backend models when multi-user mode and password
+    protection are not enabled. Detection combines the read-only /api/ping liveness endpoint with
+    the served SPA, whose markup carries the literal "AnythingLLM", and reads /api/system where
+    reachable. The build version is extracted where present.
+  reference:
+    - https://github.com/Mintplex-Labs/anything-llm
+    - https://docs.anythingllm.com/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: mintplex-labs
+    product: anythingllm
+    shodan-query: 'http.html:"AnythingLLM"'
+    fofa-query: 'body="AnythingLLM"'
+  tags: tech,detect,anythingllm,ai,llm,webui
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/api/ping"
+
+    matchers-condition: or
+    matchers:
+      # Served SPA: the document title / markup carries the literal product name "AnythingLLM".
+      - type: word
+        name: html-marker
+        part: body
+        words:
+          - '<title>AnythingLLM'
+          - 'AnythingLLM</title>'
+          - 'content="AnythingLLM'
+        condition: or
+
+      # /api/ping liveness probe returns {"online":true} as JSON - the AnythingLLM API marker.
+      - type: dsl
+        name: api-ping
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"online\":true")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"v?([0-9][0-9A-Za-z.\-+]*)"'

@@ -1,0 +1,54 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: openai-compatible-api-detect
+
+info:
+  name: OpenAI-compatible Inference API - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    A generic OpenAI-compatible inference API was detected via GET /v1/models returning the
+    OpenAI model-list shape ("object":"list" with one or more "object":"model" entries). This
+    interface is implemented by many self-hosted servers (vLLM, SGLang, LiteLLM, LocalAI,
+    LM Studio, text-generation-webui, llama.cpp and others), so this is a LOW-CONFIDENCE,
+    framework-agnostic match - prefer the product-specific templates where they fire. An
+    unauthenticated /v1/models endpoint discloses the served model inventory and usually means
+    inference is callable without credentials. Model ids are extracted.
+  reference:
+    - https://platform.openai.com/docs/api-reference/models/list
+    - https://github.com/vllm-project/vllm
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: openai
+    product: openai-compatible-api
+    shodan-query: 'http.html:"\"object\":\"list\""'
+  tags: tech,detect,openai-compatible-api,ai,llm,inference
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/models"
+
+    matchers-condition: and
+    matchers:
+      # Require BOTH the list envelope AND at least one model entry to avoid matching arbitrary
+      # JSON that merely contains the word "list" or "model". Whitespace after the colon is
+      # tolerated since most servers (FastAPI/Starlette, vLLM, LM Studio, ...) pretty-separate.
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"object\"\\s*:\\s*\"list\"", body)'
+          - 'regex("\"object\"\\s*:\\s*\"model\"", body)'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: model
+        part: body
+        group: 1
+        regex:
+          - '"id"\s*:\s*"([^"]+)"\s*,\s*"object"\s*:\s*"model"'
+          - '"object"\s*:\s*"model"\s*,\s*"id"\s*:\s*"([^"]+)"'
