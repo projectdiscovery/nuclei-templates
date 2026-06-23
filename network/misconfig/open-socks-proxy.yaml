@@ -3,31 +3,35 @@ id: open-socks-proxy
 info:
   name: Open SOCKS4/SOCKS5 proxy
   author: snicket2100
-  severity: high
+  severity: medium
   description: |
-    Detects open SOCKS4 and SOCKS5 proxies.
-      - SOCKS4: send CONNECT to 1.1.1.1:80; expect reply byte 2 == 0x5A.
-      - SOCKS5: negotiate "no auth", expect 05 00, then send CONNECT
-        1.1.1.1:80 and expect REP=0x00 success (05 00 00 01 ...).
+    The host accepts unauthenticated SOCKS4/SOCKS5 connections and can proxy TCP traffic to external destinations. This could allow abuse for anonymization, spam, scanning, or network pivoting. Verification was performed by successfully connecting to 1.1.1.1:80 through the proxy.
+  reference:
+    - https://www.rfc-editor.org/rfc/rfc1928
+    - https://en.wikipedia.org/wiki/Open_proxy
+    - https://owasp.org/www-community/vulnerabilities/Unrestricted_Proxy
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: port:1080
   tags: network,socks,socks4,socks5,proxy,exposure,misconfig
 
 tcp:
-  # --- SOCKS4: CONNECT 1.1.1.1:80 ---------------------------------------
   - inputs:
-      # 04        VER=4
-      # 01        CMD=CONNECT
-      # 0050      DSTPORT=80
-      # 01010101  DSTIP=1.1.1.1
-      # 00        empty USERID + NUL terminator
       - data: "040100500101010100"
         type: hex
+
     host:
       - "{{Hostname}}"
+
     port: 1080
-    # reduce the default reserved ports list as it may happen
-    # that a SOCKS server runs on ports 8080 or 8081
     exclude-ports: 80,443,8443,53
     read-size: 2
+
     matchers:
       - type: binary
         name: open-socks4-proxy
@@ -35,7 +39,6 @@ tcp:
         binary:
           - "005a"              # VN=0, CD=0x5A (90, request granted)
 
-  # --- SOCKS5: negotiate no-auth, then CONNECT 1.1.1.1:80 ---------------
   - inputs:
       - data: "050100"
         # 05        VER=5
@@ -44,26 +47,17 @@ tcp:
         type: hex
         read: 2
       - data: "05010001010101010050"
-        # 05        VER=5
-        # 01        CMD=CONNECT
-        # 00        RSV
-        # 01        ATYP=IPv4
-        # 01010101  DST=1.1.1.1
-        # 0050      PORT=80
         type: hex
         read: 4
+
     host:
       - "{{Hostname}}"
     port: 1080
-    # reduce the default reserved ports list as it may happen
-    # that a SOCKS server runs on ports 8080 or 8081
     exclude-ports: 80,443,8443,53
+
     matchers:
       - type: binary
         name: open-socks5-proxy
         part: raw
         binary:
           - "050005000001"
-            # concatenation of:
-            # 0500            - response to auth - VER=5, METHOD=0x00 (no auth)
-            # 05000001        - response to connect - VER=5, REP=0x00 success, RSV=0, ATYP=IPv4
