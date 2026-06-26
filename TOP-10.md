@@ -1,12 +1,12 @@
 |    TAG    | COUNT |    AUTHOR     | COUNT | DIRECTORY  | COUNT | SEVERITY | COUNT | TYPE | COUNT |
 |-----------|-------|---------------|-------|------------|-------|----------|-------|------|-------|
-| vuln      |  6614 | dhiyaneshdk   |  2088 | http       | 10727 | info     |  4890 | file |   446 |
-| cve       |  4175 | daffainfo     |   949 | cloud      |   663 | high     |  2871 | dns  |    33 |
-| discovery |  3639 | princechaddha |   867 | file       |   446 | medium   |  2771 |      |       |
-| vkev      |  1753 | dwisiswant0   |   806 | code       |   284 | critical |  1766 |      |       |
-| wordpress |  1630 | pussycat0x    |   781 | network    |   281 | low      |   498 |      |       |
-| wp-plugin |  1447 | ritikchaddha  |   770 | dast       |   249 | unknown  |    58 |      |       |
-| panel     |  1431 | rxerium       |   567 | workflows  |   206 |          |       |      |       |
-| exposure  |  1426 | 0x_akoko      |   386 | javascript |   112 |          |       |      |       |
-| xss       |  1401 | pikpikcu      |   353 | ssl        |    38 |          |       |      |       |
-| osint     |  1130 | theamanrawat  |   333 | dns        |    30 |          |       |      |       |
+| vuln      |  6626 | dhiyaneshdk   |  2114 | http       | 10970 | info     |  5013 | file |   447 |
+| cve       |  4283 | daffainfo     |   949 | cloud      |   663 | high     |  2915 | dns  |    33 |
+| discovery |  3729 | princechaddha |   867 | file       |   447 | medium   |  2803 |      |       |
+| vkev      |  1795 | dwisiswant0   |   807 | code       |   288 | critical |  1820 |      |       |
+| wordpress |  1656 | pussycat0x    |   797 | network    |   280 | low      |   504 |      |       |
+| panel     |  1537 | ritikchaddha  |   779 | dast       |   249 | unknown  |    58 |      |       |
+| wp-plugin |  1473 | rxerium       |   644 | workflows  |   207 |          |       |      |       |
+| exposure  |  1456 | 0x_akoko      |   417 | javascript |   124 |          |       |      |       |
+| xss       |  1409 | pikpikcu      |   353 | ssl        |    38 |          |       |      |       |
+| osint     |  1131 | theamanrawat  |   343 | dns        |    30 |          |       |      |       |

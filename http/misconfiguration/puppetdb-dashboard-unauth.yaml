@@ -1,0 +1,59 @@
+id: puppetdb-dashboard-unauth
+
+info:
+  name: PuppetDB Dashboard - Unauthenticated Access
+  author: DhiyaneshDk,pussycat0x
+  severity: high
+  description: |
+    PuppetDB dashboard and API endpoints were found accessible without authentication. PuppetDB stores infrastructure configuration data including node facts, catalogs, and reports. Unauthenticated access exposes sensitive infrastructure details such as hostnames, IP addresses, OS versions, installed packages, Puppet classes, and configuration parameters across the entire managed environment.
+  impact: |
+    An attacker can enumerate the entire Puppet-managed infrastructure, extract node facts (hostnames, IPs, OS details, hardware specs), read catalogs containing configuration secrets, and gather intelligence for lateral movement or targeted attacks.
+  remediation: |
+    Restrict access to PuppetDB by configuring certificate-based authentication (mutual TLS) in the jetty.ini or webserver.conf. Use firewall rules to limit access to trusted Puppet infrastructure hosts only. Disable the dashboard in production or place it behind an authenticated reverse proxy.
+  reference:
+    - https://puppet.com/docs/puppetdb/latest/configure.html
+    - https://puppet.com/docs/puppetdb/latest/api/index.html
+    - https://puppet.com/security/cve/CVE-2020-7943
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-306
+    cpe: cpe:2.3:a:puppet:puppetdb:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: 'title:"PuppetDB: Dashboard"'
+    fofa-query: 'title="PuppetDB: Dashboard"'
+    product: puppetdb
+    vendor: puppet
+  tags: puppetdb,misconfig,exposure,unauth,dashboard
+
+flow: http(1) && http(2)
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/pdb/dashboard/index.html"
+      - "{{BaseURL}}/dashboard/index.html"
+
+    stop-at-first-match:
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "PuppetDB: Dashboard")'
+          - 'contains_any(body, "metrics","population","puppetdb")'
+          - 'status_code == 200'
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/pdb/query/v4/facts"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header, "application/json")'
+          - 'contains_all(body, "certname","environment","value")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4b0a00483046022100864fd25b7ebd8cce0300344cb807af01e2f8b34e4f0cee5363e11a438f1a0f1f022100a7e0f54cd6f106bbcfc320431b0581389a16e0c11f681cdb9b6ea35415d85504:922c64590222798bb761d5b6d8e72950
