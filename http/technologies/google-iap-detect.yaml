@@ -21,21 +21,9 @@ info:
     fofa-query: header="X-Goog-Iap-Generated-Response"
   tags: tech,google,iap,cloud,identity,proxy,discovery
 
-flow: http(1) && (http(2) || true)
+flow: http(1) && http(2)
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-
-    extractors:
-      - type: regex
-        part: header
-        name: iap_detected
-        internal: true
-        regex:
-          - "(X-Goog-Iap-Generated-Response)"
-
   - method: GET
     path:
       - "{{BaseURL}}"
@@ -46,7 +34,25 @@ http:
     extractors:
       - type: regex
         part: body
-        name: contact_email
+        name: email
+        internal: true
         regex:
           - "key:\\s*'ds:1'[^;]*data:\\s*\\[[^,]+,[^,]+,[^,]+,\\s*\"([^\"]+)\""
         group: 1
+
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "X-Goog-Iap-Generated-Response"
+        case-insensitive: true
+
+    extractors:
+      - type: dsl
+        name: contact_email
+        dsl:
+          - "email"
