@@ -1,0 +1,64 @@
+id: vllm-openai-api-exposed
+
+info:
+  name: vLLM OpenAI-Compatible API - Unauthenticated Exposure
+  author: fsoppelsa
+  severity: medium
+  description: |
+    Detects a vLLM inference server exposing its OpenAI-compatible API
+    without authentication. The /v1/models endpoint returns the list of
+    served models and is reachable by any unauthenticated client, allowing
+    model enumeration and unauthorized inference (resource abuse / cost and
+    information exposure). vLLM does not enable an API key by default; it is
+    only enforced when the server is started with --api-key.
+  reference:
+    - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+    - https://github.com/vllm-project/vllm
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L
+    cvss-score: 6.5
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    shodan-query: title:"vLLM"
+    verified: true
+  tags: exposure,vllm,llm,ai,api,unauth,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/models"
+
+    matchers-condition: and
+    matchers:
+      # Strict: vLLM /v1/models returns an OpenAI-style list object.
+      # Match on JSON structure, not loose strings.
+      - type: word
+        part: body
+        words:
+          - '"object":"list"'
+          - '"object": "list"'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - '"owned_by":"vllm"'
+          - '"owned_by": "vllm"'
+          - '"max_model_len"'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - ".data[].id"
