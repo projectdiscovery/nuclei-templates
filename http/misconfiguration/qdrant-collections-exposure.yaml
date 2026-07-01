@@ -1,0 +1,48 @@
+id: qdrant-collections-exposure
+
+info:
+  name: Qdrant Vector Database - Information Exposure
+  author: DevamShah
+  severity: medium
+  description: |
+    A Qdrant vector database was detected exposing its collections listing over the unauthenticated REST API. Qdrant enforces no API key by default; when reachable without the service.api_key set, a bare GET /collections returns the names of all collections. Vector stores back RAG and AI applications and hold embedded private corpora, so an exposed instance permits enumeration, retrieval and poisoning of that data.
+  impact: |
+    An open /collections response confirms the data plane (/collections/{name}/points, scroll, search) is reachable without credentials, enabling silent exfiltration of the embedded source corpus, index poisoning of downstream retrieval, and deletion of collections.
+  remediation: |
+    Set service.api_key (and read-only key where applicable) and require it on every request, enable TLS, and place Qdrant behind an authenticated network boundary. Never bind TCP 6333 to a public interface unauthenticated.
+  reference:
+    - https://qdrant.tech/documentation/guides/security/
+    - https://api.qdrant.tech/api-reference/collections/get-collections
+    - https://cwe.mitre.org/data/definitions/200.html
+  classification:
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:qdrant:qdrant:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: qdrant
+    product: qdrant
+    shodan-query: title:"Qdrant"
+    fofa-query: 'body="\"collections\""'
+  tags: qdrant,vectordb,ai,ml,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/collections"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"result":'
+          - '"collections":'
+          - '"status":"ok"'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+        condition: and
