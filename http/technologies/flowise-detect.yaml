@@ -1,0 +1,62 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: flowise-detect
+
+info:
+  name: Flowise - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Flowise is a low-code/visual builder for LLM orchestration flows and agents built on
+    LangChain/LlamaIndex. It acts as a gateway: its deployed chatflow prediction endpoints
+    (/api/v1/prediction/{id}) are frequently publicly callable, and an exposed instance can leak
+    flow configuration and allow unauthenticated inference against the configured backend models.
+    Detection reads the read-only /api/v1/version endpoint and the HTML title "Flowise". The
+    Flowise version is extracted.
+  reference:
+    - https://github.com/FlowiseAI/Flowise
+    - https://docs.flowiseai.com/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: flowiseai
+    product: flowise
+    shodan-query: 'http.title:"Flowise"'
+    fofa-query: 'title="Flowise"'
+  tags: tech,detect,flowise,ai,llm,gateway
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/api/v1/version"
+      - "{{BaseURL}}/"
+
+    matchers-condition: or
+    matchers:
+      # /api/v1/version returns {"version":"x.y.z"} from a JSON endpoint - the Flowise API marker.
+      - type: dsl
+        name: api-version
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"version\"\\s*:\\s*\"[0-9]+\\.[0-9]+", body)'
+        condition: and
+
+      # Served SPA: the HTML <title> is "Flowise" (used when the API is gated/unavailable).
+      - type: word
+        name: html-title
+        part: body
+        words:
+          - '<title>Flowise</title>'
+          - '<title>Flowise -'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'

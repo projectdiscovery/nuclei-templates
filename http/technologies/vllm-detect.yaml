@@ -1,0 +1,72 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: vllm-detect
+
+info:
+  name: vLLM - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    vLLM is a high-throughput inference and serving engine for large language models that
+    exposes an OpenAI-compatible API. Because the generic /v1/models endpoint is shared by many
+    servers, this template anchors on vLLM-unique signals: the vLLM-specific /version endpoint
+    (returning {"version":"..."}), the Prometheus "vllm:" metric-name prefix, and the OpenAI
+    list shape. An exposed unauthenticated instance permits free inference and model disclosure.
+    The vLLM version is extracted.
+  reference:
+    - https://github.com/vllm-project/vllm
+    - https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: vllm-project
+    product: vllm
+    shodan-query: 'http.html:"vllm" port:8000'
+    fofa-query: 'body="vllm"'
+  tags: tech,detect,vllm,ai,llm,inference
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/version"
+      - "{{BaseURL}}/metrics"
+
+    matchers-condition: or
+    matchers:
+      # vLLM-specific /version endpoint: {"version":"0.6.2"}. Generic OpenAI-compatible servers
+      # do not serve /version, so this is the disambiguating anchor.
+      - type: dsl
+        name: version-endpoint
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("^\\s*\\{\\s*\"version\"\\s*:\\s*\"[0-9]", body)'
+        condition: and
+
+      # Prometheus metrics: every metric name is prefixed with "vllm:" (e.g.
+      # vllm:num_requests_running) - a string no other framework emits.
+      - type: word
+        name: metrics-prefix
+        part: body
+        words:
+          - 'vllm:num_requests'
+          - 'vllm:'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+          - 'vllm:[a-z_]+\{[^}]*version="([0-9][0-9A-Za-z.\-+]*)"'
+
+      - type: regex
+        name: model
+        part: body
+        group: 1
+        regex:
+          - 'vllm:[a-z_]+\{[^}]*model_name="([^"]+)"'

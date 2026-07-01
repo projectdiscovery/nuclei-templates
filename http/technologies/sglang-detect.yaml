@@ -1,0 +1,64 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: sglang-detect
+
+info:
+  name: SGLang - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    SGLang is a fast serving framework for large language models that exposes an
+    OpenAI-compatible API (default port 30000). Because the generic /v1/models endpoint is
+    shared by many servers, this template anchors on SGLang-unique signals: the SGLang-specific
+    /get_model_info endpoint (returning "model_path" and "is_generation") and the Prometheus
+    "sglang:" metric-name prefix. An exposed unauthenticated instance permits free inference and
+    discloses the served model path, which is extracted.
+  reference:
+    - https://github.com/sgl-project/sglang
+    - https://docs.sglang.ai/backend/openai_api_completions.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: sgl-project
+    product: sglang
+    shodan-query: 'http.html:"is_generation" port:30000'
+  tags: tech,detect,sglang,ai,llm,inference
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/get_model_info"
+      - "{{BaseURL}}/metrics"
+
+    matchers-condition: or
+    matchers:
+      # SGLang-specific /get_model_info: {"model_path":"...","is_generation":true}. No other
+      # framework serves this endpoint, so it is the disambiguating anchor.
+      - type: word
+        name: get-model-info
+        part: body
+        words:
+          - '"model_path"'
+          - '"is_generation"'
+        condition: and
+
+      # Prometheus metrics: SGLang prefixes every metric name with "sglang:" (e.g.
+      # sglang:num_running_reqs) - a string unique to SGLang.
+      - type: word
+        name: metrics-prefix
+        part: body
+        words:
+          - 'sglang:num_running'
+          - 'sglang:'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: model
+        part: body
+        group: 1
+        regex:
+          - '"model_path"\s*:\s*"([^"]+)"'
+          - 'sglang:[a-z_]+\{[^}]*model_name="([^"]+)"'

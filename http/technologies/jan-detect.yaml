@@ -1,0 +1,70 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: jan-detect
+
+info:
+  name: Jan AI - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Detected the Jan AI local server, an open-source ChatGPT alternative that runs models
+    locally and exposes a Cortex-powered, OpenAI-compatible API (default port 1337). The server
+    answers GET /healthz with an OK status and serves an OpenAI-style model list at /v1/models.
+    Detection is based on Jan's documented Cortex/OpenAI-compatible API; no captured byte
+    signature was available, so this template is marked verified:false and should be confirmed
+    against a live instance.
+  reference:
+    - https://github.com/janhq/jan
+    - https://jan.ai/docs/server
+  metadata:
+    verified: false
+    max-request: 2
+    vendor: janhq
+    product: jan
+    shodan-query: 'port:1337 http.title:"Jan"'
+    fofa-query: 'body="cortex"'
+  tags: tech,detect,jan,ai,llm,inference
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/v1/models"
+      - "{{BaseURL}}/healthz"
+
+    matchers-condition: or
+    matchers:
+      # OpenAI-compatible model list served by Jan's Cortex engine.
+      - type: dsl
+        name: models
+        dsl:
+          - 'contains(body, "\"object\":\"list\"")'
+          - 'contains(body, "\"object\":\"model\"")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+      # Cortex/Jan health endpoint.
+      - type: dsl
+        name: healthz
+        dsl:
+          - 'contains(tolower(body), "ok")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: model
+        part: body
+        group: 1
+        regex:
+          - '"id"\s*:\s*"([^"]+)"'
+
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'

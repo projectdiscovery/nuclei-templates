@@ -1,0 +1,47 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: ollama-detect
+
+info:
+  name: Ollama - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Ollama is a self-hosted runner for local large language models that exposes an
+    unauthenticated REST API by default. An exposed instance lets anyone list the installed
+    models (/api/tags) and run inference, leading to model disclosure and compute/cost abuse.
+    Detection keys on the plaintext "Ollama is running" banner the server returns at the web
+    root - the canonical, product-unique Ollama signature. KoboldCpp and Open WebUI expose
+    Ollama-compatible API endpoints (/api/version, /api/tags) but do not serve this banner, so
+    gating on it avoids those false positives. The installed model list (/api/tags) and version
+    (/api/version) are available on the same unauthenticated API for follow-up enumeration.
+  reference:
+    - https://github.com/ollama/ollama
+    - https://github.com/ollama/ollama/blob/main/docs/api.md
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: ollama
+    product: ollama
+    shodan-query: 'product:"Ollama"'
+    fofa-query: 'body="Ollama is running"'
+  tags: tech,detect,ollama,ai,llm,inference
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers-condition: and
+    matchers:
+      # The Ollama HTTP server returns this exact plaintext banner at the web root. It is how
+      # exposed instances are found in the wild and is unique to Ollama among LLM runners.
+      - type: word
+        part: body
+        words:
+          - 'Ollama is running'
+
+      - type: status
+        status:
+          - 200

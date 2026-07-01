@@ -1,0 +1,54 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: lmstudio-detect
+
+info:
+  name: LM Studio - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    LM Studio is a desktop application for running local large language models that ships an
+    OpenAI-compatible local server (default port 1234). Because the generic /v1/models endpoint
+    is shared by many servers, this template anchors on LM Studio-specific markers: the
+    "owned_by":"organization_owner" field LM Studio stamps on every model entry, and its model
+    ids which are GGUF repository paths (publisher/repository). An exposed instance discloses
+    locally loaded models and permits unauthenticated inference. Model ids are extracted.
+  reference:
+    - https://lmstudio.ai/docs/api/openai-api
+    - https://lmstudio.ai/docs/app/api/endpoints/openai
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: lmstudio
+    product: lm-studio
+    shodan-query: 'http.html:"organization_owner" port:1234'
+  tags: tech,detect,lmstudio,ai,llm,inference
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/models"
+
+    matchers-condition: and
+    matchers:
+      # OpenAI list shape PLUS the LM Studio-specific owner string. LM Studio reports every
+      # model with "owned_by":"organization_owner", which generic OpenAI servers
+      # ("owned_by":"openai") and other frameworks do not emit. Whitespace after each colon is
+      # tolerated (LM Studio's local server pretty-separates its JSON).
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"object\"\\s*:\\s*\"list\"", body)'
+          - 'regex("\"object\"\\s*:\\s*\"model\"", body)'
+          - 'regex("\"owned_by\"\\s*:\\s*\"organization_owner\"", body)'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: model
+        part: body
+        group: 1
+        regex:
+          - '"id"\s*:\s*"([^"]+)"\s*,\s*"object"\s*:\s*"model"'

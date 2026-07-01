@@ -1,0 +1,55 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: koboldcpp-detect
+
+info:
+  name: KoboldCpp - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Detected KoboldCpp, a single-binary inference server for GGUF/GGML models that exposes the
+    KoboldAI, OpenAI, and Ollama-compatible APIs. Its read-only /api/extra/version endpoint
+    returns a {"result":"KoboldCpp","version":...} banner, and /api/v1/info/version reports the
+    KoboldAI API version. Exposed instances allow unauthenticated text generation by default.
+  reference:
+    - https://github.com/LostRuins/koboldcpp
+    - https://lite.koboldai.net/koboldcpp_api
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: lostruins
+    product: koboldcpp
+    shodan-query: 'http.html:"KoboldCpp"'
+    fofa-query: 'body="KoboldCpp"'
+  tags: tech,detect,koboldcpp,ai,llm,inference
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/api/extra/version"
+      - "{{BaseURL}}/api/v1/info/version"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'KoboldCpp'
+          - '"result"'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'

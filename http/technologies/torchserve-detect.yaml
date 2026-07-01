@@ -1,27 +1,43 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
 id: torchserve-detect
 
 info:
-  name: TorchServe API Description - Detect
-  author: DhiyaneshDk
+  name: PyTorch TorchServe - Detect
+  author: DhiyaneshDk,insidetrust,hdm
   severity: info
   description: |
-    Detects the presence of TorchServe APIs.
+    Detected PyTorch TorchServe, a model-serving framework for PyTorch models. The inference
+    API (default port 8080) answers GET /ping with {"status":"Healthy"} and exposes
+    /api-description; the management API (default port 8081) lists registered models at
+    GET /models. An exposed management API permits unauthenticated model registration and
+    scaling and discloses the served model names.
+  reference:
+    - https://github.com/pytorch/serve
+    - https://pytorch.org/serve/
   metadata:
     verified: true
-    max-request: 1
+    max-request: 3
     vendor: pytorch
     product: torchserve
-    fofa-query: body="Requested method is not allowed, please refer to API document"
-  tags: tech,pytorch,api,discovery
+    shodan-query: 'http.html:"TorchServe"'
+    fofa-query: 'body="Requested method is not allowed, please refer to API document"'
+  tags: tech,detect,torchserve,pytorch,ai,llm,inference,discovery
 
 http:
   - method: GET
+    stop-at-first-match: true
     path:
       - "{{BaseURL}}/api-description"
+      - "{{BaseURL}}/models"
+      - "{{BaseURL}}/ping"
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
+      # /api-description: the OpenAPI-style document served by both APIs (original signal).
       - type: word
+        name: api-description
         part: body
         words:
           - 'TorchServe APIs"'
@@ -29,8 +45,30 @@ http:
           - 'operationId":'
         condition: or
 
-      - type: word
-        part: content_type
-        words:
-          - "application/json"
-# digest: 490a0046304402204b9c790eaae0812f804ec6fb372df739d9201f9f4a1c248cfc6077715bf9a11d0220056a6825c9708696d99aa82c7a039d8d12b4e58ee8ded008895cb2a6afdba6e7:922c64590222798bb761d5b6d8e72950
+      # Management API (8081): /models lists registered models.
+      - type: dsl
+        name: management
+        dsl:
+          - 'contains(body, "\"models\"")'
+          - 'contains(body, "\"modelName\"")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+      # Inference API (8080): /ping health check.
+      - type: dsl
+        name: inference
+        dsl:
+          - 'contains(body, "\"status\"")'
+          - 'contains(body, "Healthy")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: models
+        part: body
+        group: 1
+        regex:
+          - '"modelName"\s*:\s*"([^"]+)"'

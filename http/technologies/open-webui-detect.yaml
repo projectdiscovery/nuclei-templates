@@ -1,0 +1,81 @@
+# Detection logic derived from nmap-ai-recon by Ben Williams (@insidetrust),
+# the original work on AI/LLM/MCP service detection:
+# https://github.com/insidetrust/nmap-ai-recon
+id: open-webui-detect
+
+info:
+  name: Open WebUI - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Open WebUI (formerly Ollama WebUI) is a self-hosted, feature-rich web interface that fronts
+    one or more backend LLM inference servers (Ollama, OpenAI-compatible APIs). An exposed
+    instance can grant unauthenticated use of a backend model when authentication is disabled
+    (WEBUI_AUTH=false), when self-registration is enabled, or before the first admin account is
+    claimed (onboarding). Detection reads the read-only /api/config endpoint (name "Open WebUI"
+    plus the features/auth posture) and /api/version. The version and access posture are extracted.
+  reference:
+    - https://github.com/open-webui/open-webui
+    - https://docs.openwebui.com/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: open-webui
+    product: open-webui
+    shodan-query: 'http.title:"Open WebUI"'
+    fofa-query: 'title="Open WebUI"'
+  tags: tech,detect,open-webui,ai,llm,webui
+
+http:
+  - method: GET
+    stop-at-first-match: true
+    path:
+      - "{{BaseURL}}/api/config"
+      - "{{BaseURL}}/"
+
+    matchers-condition: or
+    matchers:
+      # /api/config is the authoritative signal: it returns the literal product name
+      # "Open WebUI" alongside the features/auth flags that define the access posture.
+      - type: word
+        name: api-config
+        part: body
+        words:
+          - '"name":"Open WebUI"'
+          - '"name": "Open WebUI"'
+        condition: or
+
+      # Fallback: the SPA root carries the product name in the HTML <title>/branding.
+      # (A bare {"version":...} JSON body is intentionally NOT matched - it is not unique
+      # to Open WebUI and collides with Ollama/KoboldCpp /api/version emulation.)
+      - type: word
+        name: html-root
+        part: body
+        words:
+          - '<title>Open WebUI'
+          - 'Open WebUI</title>'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+
+      # Access posture leaked by /api/config: enable_signup=true -> self-registration;
+      # onboarding=true -> no admin yet (first visitor claims admin); auth=false -> fully open.
+      - type: regex
+        name: enable_signup
+        part: body
+        group: 1
+        regex:
+          - '"enable_signup"\s*:\s*(true|false)'
+
+      - type: regex
+        name: onboarding
+        part: body
+        group: 1
+        regex:
+          - '"onboarding"\s*:\s*(true|false)'
