@@ -1,0 +1,54 @@
+id: vigilix-government-exposure
+
+info:
+  name: Indonesian Government Exposed Services via Vigilix
+  author: darkknight
+  severity: info
+  description: Uses Vigilix Engine passive global IPv4 index to find exposed government services, currently focused on Indonesian networks.
+  tags: vigilix,recon,indonesia,government,osint
+  reference:
+    - https://engine.vigilix.id
+  metadata:
+    verified: true
+
+self-contained: true
+
+variables:
+  vigilix_api_key: "{{ENV_VIGILIX_API_KEY}}"
+
+requests:
+  - raw:
+      - |
+        GET /api/v1/search?q=sector:Pemerintah+status:200&size=100 HTTP/1.1
+        Host: engine.vigilix.id
+        X-API-Key: {{vigilix_api_key}}
+        Accept: application/json
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - '"sector"'
+          - '"Pemerintah"'
+        condition: and
+
+    extractors:
+      - type: json
+        name: ip
+        json:
+          - '.results[].ip'
+      - type: json
+        name: port
+        json:
+          - '.results[].port'
+      - type: json
+        name: title
+        json:
+          - '.results[].title'
+      - type: json
+        name: org
+        json:
+          - '.results[].org'
