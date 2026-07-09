@@ -4,30 +4,44 @@ info:
   name: HAProxy Statistics Page - Detect
   author: dhiyaneshDK
   severity: medium
-  description: HAProxy statistics page was detected.
+  description: |
+    HAProxy statistics page was detected and is served without authentication. The page discloses the HAProxy version, frontend and backend proxy names, server pool members and their health state, and live traffic statistics. This aids reconnaissance of the internal load-balancing topology. The page is often exposed at the root of a dedicated stats listener (for example a separate port) as well as at the common stats paths.
   reference:
     - https://www.exploit-db.com/ghdb/4191
+    - https://docs.haproxy.org/latest/configuration.html#4-stats%20enable
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
     cvss-score: 5.3
     cwe-id: CWE-200
   metadata:
-    max-request: 2
+    max-request: 3
   tags: logs,haproxy,edb,misconfig,vuln
 
 http:
   - method: GET
     path:
+      - "{{BaseURL}}"
       - "{{BaseURL}}/haproxy-status"
       - "{{BaseURL}}/haproxy?stats"
 
+    stop-at-first-match: true
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
           - 'Statistics Report for HAProxy'
+          - 'Statistics Report for pid'
+        condition: or
 
       - type: status
         status:
           - 200
-# digest: 4a0a00473045022039750db5dba0afaa7eb74a467adb2ad9c78bf55b2b452482d51af67a223012be022100e1ac66a580b55129b923552a71ae8005c320d89e9ce5290419d56c242643a00e:922c64590222798bb761d5b6d8e72950
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - "HAProxy version ([0-9]+\\.[0-9]+[.0-9a-z-]*)"
