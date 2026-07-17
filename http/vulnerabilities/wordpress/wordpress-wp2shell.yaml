@@ -1,0 +1,67 @@
+id: wordpress-wp2shell
+
+info:
+  name: WordPress wp2shell - Safe Version and Batch API Exposure Check
+  author: mielverkerken
+  severity: critical
+  description: Non-invasive check for affected WordPress versions with unauthenticated REST batch endpoint exposure.
+  metadata:
+    max-request: 5
+  tags: wordpress,wp,wp2shell,rce,exposure
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+        Accept: text/html
+
+      - |
+        GET /wp-json/ HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+      - |
+        GET /?feed=rss2 HTTP/1.1
+        Host: {{Hostname}}
+        Accept: */*
+
+      - |
+        POST /wp-json/batch/v1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {}
+
+      - |
+        POST /?rest_route=/batch/v1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {}
+
+    req-condition: true
+    stop-at-first-match: true
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        internal: true
+        group: 1
+        regex:
+          - '(?i)<meta[^>]*name=["''"]?generator["''"]?[^>]*content=["''"]?WordPress\s+([0-9.]+)'
+          - '(?i)wordpress\.org/\?v=([0-9.]+)'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        name: affected-version
+        dsl:
+          - 'len(version) > 0 && (compare_versions(version, ">=6.9.0", "<=6.9.4") || compare_versions(version, ">=7.0.0", "<=7.0.1"))'
+
+      - type: dsl
+        name: unauth-batch-api-reachable
+        dsl:
+          - '(status_code_4 == 400 && contains(body_4, "rest_missing_callback_param") && contains(body_4, "requests")) || (status_code_5 == 400 && contains(body_5, "rest_missing_callback_param") && contains(body_5, "requests"))'
