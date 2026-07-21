@@ -1,0 +1,54 @@
+id: zrok-version-detect
+
+info:
+  name: Zrok Version Detection
+  author: kn0ck0ut
+  severity: info
+  description: |
+    Detects Zrok installations and identifies the version through the /api/v2/version endpoint.
+    Zrok is an open-source sharing platform for tunneling services.
+  reference:
+    - https://zrok.io
+    - https://github.com/openziti/zrok
+  metadata:
+    verified: true
+    max-request: 2
+  tags: tech,zrok,version,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v2/version"
+      - "{{BaseURL}}:8081/api/v2/version"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'zrok'
+          - 'installation'
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version_message
+        part: body
+        group: 0
+        regex:
+          - '".*"'
+
+      - type: regex
+        name: docs_link
+        part: body
+        group: 1
+        regex:
+          - 'https://docs\.zrok\.io/[^"'\'']*'
+
+# Example responses:
+# "your local zrok installation is out of date and needs to be upgraded! please visit 'https://docs.zrok.io/docs/guides/install/' for the latest release!"
+# Or potentially: {"version":"v1.0.0","buildDate":"2024-01-15","commit":"abc123"}

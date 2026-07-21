@@ -1,0 +1,61 @@
+id: zrok-panel-detect
+
+info:
+  name: Zrok Control Panel Detection
+  author: kn0ck0ut
+  severity: info
+  description: |
+    Detects Zrok control panel installations. Zrok is an open-source sharing platform
+    that enables secure tunneling and sharing. This template identifies both the API
+    console (HTTPS) and frontend access points (port 8081).
+  reference:
+    - https://zrok.io
+    - https://github.com/openziti/zrok
+  metadata:
+    verified: true
+    max-request: 4
+  tags: tech,zrok,panel,detect,openziti
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}:8081"
+      - "{{BaseURL}}/health"
+      - "{{BaseURL}}/api/v2/version"
+
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'zrok API Console'
+          - 'zrok - unauthorized!'
+          - 'zrok ui'
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - 'Caddy'
+
+    extractors:
+      - type: regex
+        name: title
+        part: body
+        group: 1
+        regex:
+          - '<title>(.*?)</title>'
+
+      - type: kval
+        part: header
+        kval:
+          - via
+          - server
+
+      - type: regex
+        name: zrok_logo
+        part: body
+        regex:
+          - 'z r o k'
+          - 'zrok-.*\.svg'
