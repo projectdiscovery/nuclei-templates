@@ -1,0 +1,55 @@
+id: sentinel-default-login
+
+info:
+  name: Alibaba Sentinel - Default Login
+  author: wujiecong
+  severity: high
+  description: |
+    Alibaba Sentinel versions 1.6.0 and later may expose a basic login interface with default credentials sentinel/sentinel. This template checks for that default login behavior on affected versions.
+  reference:
+    - https://github.com/alibaba/sentinel
+    - https://www.cnvd.org.cn/flaw/show/CNVD-2021-35876
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 8.8
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+    verified: true
+    shodan-query: http.html:"Sentinel 控制台"
+  tags: alibaba,sentinel,default-login,vuln
+
+http:
+  - raw:
+      - |
+        POST /auth/login?password={{password}}&username={{username}} HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json, text/plain, */*
+        Content-Length: 0
+
+    attack: pitchfork
+    payloads:
+      username:
+        - sentinel
+      password:
+        - sentinel
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '"success":true'
+          - '"superUser":true'
+          - '"loginName":"sentinel"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+# digest: 4b0a00483046022100b47a09c080eff8967120e8625fc932623ea16f458e5cec23d93e0e921f5485f0022100c61e36a977b4854fbddec142c2d73f1c7c744e774e16378497802b08c4ec850f:922c64590222798bb761d5b6d8e72950
