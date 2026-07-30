@@ -1,4 +1,4 @@
-id: claude-code-settings-exposure
+id: claude-settings-exposure
 
 info:
   name: Claude Code Project Settings Exposure
@@ -21,8 +21,6 @@ info:
 
 http:
   - method: GET
-    host-redirects: true
-    max-redirects: 3
     path:
       - "{{BaseURL}}/.claude/settings.json"
       - "{{BaseURL}}/.claude/settings.local.json"
@@ -32,12 +30,12 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "\"permissions\"", "\"hooks\"", "\"env\"", "\"mcpServers\"", "\"additionalDirectories\"", "\"enableAllProjectMcpServers\"", "\"defaultMode\"")'
 
       - type: word
-        part: header
+        part: content_type
         words:
           - "application/json"
           - "text/json"
@@ -45,35 +43,6 @@ http:
           - "application/octet-stream"
         condition: or
 
-      - type: dsl
-        dsl:
-          - 'contains_any(body, "\"permissions\"", "\"hooks\"", "\"env\"", "\"mcpServers\"", "\"additionalDirectories\"", "\"enableAllProjectMcpServers\"", "\"defaultMode\"")'
-
-    extractors:
-      - type: regex
-        name: env_vars
-        part: body
-        regex:
-          - '"ANTHROPIC_[A-Z_]+"\s*:\s*"[^"]+"'
-          - '"BASH_ENV"\s*:\s*"[^"]+"'
-          - '"NODE_OPTIONS"\s*:\s*"[^"]+"'
-          - '"PATH"\s*:\s*"[^"]+"'
-
-      - type: regex
-        name: permissions
-        part: body
-        regex:
-          - '"(allow|deny|ask)"\s*:\s*\[[^\]]+\]'
-
-      - type: regex
-        name: mcp_servers
-        part: body
-        regex:
-          - '"command"\s*:\s*"[^"]+"'
-          - '"args"\s*:\s*\[[^\]]*\]'
-
-      - type: regex
-        name: hooks
-        part: body
-        regex:
-          - '"(SessionStart|PreToolUse|PostToolUse|UserPromptSubmit|Stop|SubagentStop|PreCompact|SessionEnd)"'
+      - type: status
+        status:
+          - 200
