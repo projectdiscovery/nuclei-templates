@@ -1,0 +1,44 @@
+id: fuzz-open-redirect
+
+info:
+  name: Open Redirect Parameter Fuzzing
+  author: Reynaud702
+  severity: info
+  description: |
+    Fuzzes common redirect-related parameter names with an external payload
+    to detect potential open redirect vulnerabilities based on parameter
+    name matching, without prior knowledge of the target application.
+  reference:
+    - https://owasp.org/www-community/attacks/Unvalidated_Redirects_and_Forwards_Cheat_Sheet
+  tags: fuzz,redirect,generic
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      redirect:
+        - "https://interact.projectdiscovery.io"
+
+    stop-at-first-match: true
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        keys-regex:
+          - "(?i)(redirect|url|next|return|dest|destination|continue|target|link|out|view|to)"
+        fuzz:
+          - "{{redirect}}"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code >= 300 && status_code < 400'
+
+      - type: word
+        part: header
+        words:
+          - "interact.projectdiscovery.io"
