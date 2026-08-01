@@ -1,0 +1,45 @@
+id: remote-login-warning-banner-configured-check
+
+info:
+  name: Ensure Remote Login Warning Banner is Configured Properly
+  author: Th3l0newolf
+  severity: low
+  description: |
+    This template checks whether the remote login warning banner is configured
+    without exposing system information.
+  remediation: |
+    Edit `/etc/issue.net` and remove any operating system, kernel, architecture,
+    or version information that could disclose system details. Configure the
+    banner according to your organization's security policy.
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,linux,ubuntu,issue.net,banner,audit
+  metadata:
+    verified: true
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        os_id=$(grep '^ID=' /etc/os-release | cut -d= -f2 | sed 's/"//g')
+
+        if grep -E -i "(\\\v|\\\r|\\\m|\\\s|$os_id)" /etc/issue.net >/dev/null 2>&1; then
+          echo "[remote-login-warning-banner-configured-check:Policy-Fail] [/etc/issue.net contains system information] [CIS_FAIL] [low]"
+        else
+          echo "[remote-login-warning-banner-configured-check:Policy-Pass] [/etc/issue.net is properly configured] [CIS_PASS] [low]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"

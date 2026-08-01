@@ -1,0 +1,44 @@
+id: apport-error-reporting-disabled-check
+
+info:
+  name: Ensure Automatic Error Reporting is Not Enabled
+  author: Th3l0newolf
+  severity: medium
+  description: |
+    This template checks whether the Apport automatic error reporting service is enabled.
+  remediation: |
+    Disable Apport by editing `/etc/default/apport` and setting:
+      enabled=0
+
+    If Apport is not required, remove it:
+      sudo apt remove apport -y
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,linux,ubuntu,apport,error-reporting,audit
+  metadata:
+    verified: true
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        if dpkg-query -s apport &>/dev/null && grep -Psiq -- '^\h*enabled\h*=\h*[^0]\b' /etc/default/apport; then
+          echo "[apport-error-reporting-disabled-check:Policy-Fail] [Automatic Error Reporting is enabled] [CIS_FAIL] [medium]"
+        else
+          echo "[apport-error-reporting-disabled-check:Policy-Pass] [Automatic Error Reporting is disabled] [CIS_PASS] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"

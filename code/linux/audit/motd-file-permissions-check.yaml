@@ -1,0 +1,51 @@
+id: motd-file-permissions-check
+
+info:
+  name: Ensure Access to /etc/motd is Configured
+  author: Th3l0newolf
+  severity: medium
+  description: |
+    This template checks whether /etc/motd has secure ownership and permissions.
+  remediation: |
+    Set the ownership and permissions on `/etc/motd`:
+      sudo chown root:root /etc/motd
+      sudo chmod 644 /etc/motd
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,linux,ubuntu,motd,permissions,audit
+  metadata:
+    verified: true
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        if [ ! -e /etc/motd ]; then
+          echo "[motd-file-permissions-check:Policy-Pass] [/etc/motd does not exist] [CIS_PASS] [medium]"
+          exit 0
+        fi
+
+        mode=$(stat -Lc "%a" /etc/motd)
+        uid=$(stat -Lc "%u" /etc/motd)
+        gid=$(stat -Lc "%g" /etc/motd)
+
+        if [ "$uid" -eq 0 ] && [ "$gid" -eq 0 ] && [ "$mode" -le 644 ]; then
+          echo "[motd-file-permissions-check:Policy-Pass] [/etc/motd ownership and permissions are correctly configured] [CIS_PASS] [medium]"
+        else
+          echo "[motd-file-permissions-check:Policy-Fail] [/etc/motd ownership or permissions are incorrectly configured] [CIS_FAIL] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"

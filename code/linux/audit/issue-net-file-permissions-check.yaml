@@ -1,0 +1,46 @@
+id: issue-net-file-permissions-check
+
+info:
+  name: Ensure Access to /etc/issue.net is Configured
+  author: Th3l0newolf
+  severity: medium
+  description: |
+    This template checks whether /etc/issue.net has secure ownership and permissions.
+  remediation: |
+    Set the ownership and permissions on `/etc/issue.net`:
+      sudo chown root:root /etc/issue.net
+      sudo chmod 644 /etc/issue.net
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,linux,ubuntu,issue.net,permissions,audit
+  metadata:
+    verified: true
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        mode=$(stat -Lc "%a" /etc/issue.net)
+        uid=$(stat -Lc "%u" /etc/issue.net)
+        gid=$(stat -Lc "%g" /etc/issue.net)
+
+        if [ "$uid" -eq 0 ] && [ "$gid" -eq 0 ] && [ "$mode" -le 644 ]; then
+          echo "[issue-net-file-permissions-check:Policy-Pass] [/etc/issue.net ownership and permissions are correctly configured] [CIS_PASS] [medium]"
+        else
+          echo "[issue-net-file-permissions-check:Policy-Fail] [/etc/issue.net ownership or permissions are incorrectly configured] [CIS_FAIL] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"

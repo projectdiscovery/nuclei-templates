@@ -1,0 +1,48 @@
+id: gdm-screen-lock-idle-check
+
+info:
+  name: Ensure GDM Screen Locks When the User is Idle
+  author: Th3l0newolf
+  severity: medium
+  description: |
+    This template checks whether the screen is configured to lock after a period of user inactivity.
+  remediation: |
+    Configure the screen lock settings to meet your organization's security policy:
+      - Set `lock-delay` to 5 seconds or less.
+      - Set `idle-delay` to 900 seconds (15 minutes) or less and ensure it is not disabled.
+  reference:
+    - https://www.cisecurity.org/benchmark/ubuntu_linux
+  tags: cis,linux,ubuntu,gdm,screensaver,screenlock,audit
+  metadata:
+    verified: true
+
+self-contained: true
+
+code:
+  - engine:
+      - bash
+    args:
+      - "-c"
+      - |
+        lock_delay=$(gsettings get org.gnome.desktop.screensaver lock-delay 2>/dev/null | awk '{print $2}')
+        idle_delay=$(gsettings get org.gnome.desktop.session idle-delay 2>/dev/null | awk '{print $2}')
+
+        if [ -n "$lock_delay" ] && [ -n "$idle_delay" ] && \
+           [ "$lock_delay" -le 5 ] && \
+           [ "$idle_delay" -gt 0 ] && \
+           [ "$idle_delay" -le 900 ]; then
+          echo "[gdm-screen-lock-idle-check:Policy-Pass] [Screen lock is configured correctly] [CIS_PASS] [medium]"
+        else
+          echo "[gdm-screen-lock-idle-check:Policy-Fail] [Screen lock is not configured correctly] [CIS_FAIL] [medium]"
+        fi
+
+    matchers:
+      - type: word
+        name: policy-pass
+        words:
+          - "Policy-Pass"
+
+      - type: word
+        name: policy-fail
+        words:
+          - "Policy-Fail"
