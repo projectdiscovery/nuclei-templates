@@ -1,0 +1,88 @@
+id: mcp-server-unauth-tools-list
+
+info:
+  name: Model Context Protocol (MCP) Server - Unauthenticated tools/list Exposure
+  author: shadowhunter-92
+  severity: high
+  description: |
+    A Model Context Protocol (MCP) server was detected responding to the JSON-RPC 2.0 `tools/list` method WITHOUT any authentication. MCP is the open protocol used by AI agents (Claude, ChatGPT, Cursor, Windsurf, custom LangChain agents, etc.) to invoke external tools; each tool the server exposes can be called via the `tools/call` method with arbitrary arguments. When `tools/list` is reachable unauthenticated, the tools it enumerates are typically also invocable unauthenticated, allowing an attacker to enumerate and execute all server-side tool capabilities: file I/O, shell command execution, database queries, API calls, credential lookups, etc. — whatever the operator implemented. Real-world exploitations of this pattern include CVE-2026-59822 (LiteLLM MCP proxy authentication bypass) and the mem0 unauthenticated API family (CVE-2026-59705 / CVE-2026-59706). A public survey of 9,695 exposed MCP servers found 2,054 (21%) had NO authentication at all.
+  reference:
+    - https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
+    - https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-59822
+    - https://github.com/webpro255/awesome-ai-agent-attacks
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: "jsonrpc"
+  tags: exposure,mcp,jsonrpc,ai,anthropic,unauth,misconfig
+
+http:
+  - method: POST
+    host-redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/mcp"
+      - "{{BaseURL}}/messages"
+      - "{{BaseURL}}/sse"
+      - "{{BaseURL}}/"
+
+    headers:
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+
+    body: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc":"2.0"'
+          - '"jsonrpc": "2.0"'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - '"result"'
+
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+
+      - type: word
+        part: body
+        negative: true
+        words:
+          - '"error"'
+          - '"code":-32'
+          - '"Unauthorized"'
+          - '"401"'
+        condition: or
+
+    extractors:
+      - type: regex
+        name: tool_names
+        part: body
+        regex:
+          - '"name"\s*:\s*"([a-zA-Z0-9_.-]+)"'
+
+      - type: regex
+        name: tool_descriptions
+        part: body
+        regex:
+          - '"description"\s*:\s*"([^"]{1,120})"'
