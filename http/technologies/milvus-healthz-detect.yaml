@@ -1,0 +1,43 @@
+id: milvus-healthz-detect
+
+info:
+  name: Milvus Server - Detect via Health Endpoint
+  author: hiddingtrojans
+  severity: info
+  description: |
+    Milvus vector database was detected through its HTTP health endpoint (default port 9091). The Server response header identifies the product and exact version. Milvus deployments have no authentication by default, and the gRPC data plane (port 19530) typically shares the same exposure. This complements milvus-detect, which matches management UI titles, by fingerprinting the server itself.
+  reference:
+    - https://milvus.io/docs
+    - https://unauth.dev/fixes/milvus-exposed
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: milvus-io
+    product: milvus
+    shodan-query: product:"Milvus"
+    fofa-query: server:"Milvus"
+  tags: tech,vector-database,milvus,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/healthz"
+      - "{{BaseURL}}:9091/healthz"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "Milvus/"
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - "Milvus/([0-9]+(?:\\.[0-9]+)*)"
