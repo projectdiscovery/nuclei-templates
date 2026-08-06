@@ -1,0 +1,54 @@
+id: agents-md-exposure
+
+info:
+  name: AGENTS.md Agent Instructions Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected an exposed AGENTS.md (or nested agents instruction) file. AGENTS.md
+    is used by coding agents and multi-agent tooling (for example Codex, Cursor
+    workflows, and custom agent harnesses) to describe repository conventions,
+    commands, architecture, and operational rules. Exposure can leak internal
+    process details, service names, and sensitive operational guidance.
+  reference:
+    - https://agents.md/
+    - https://docs.claude.com/en/docs/claude-code/memory
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 4
+    shodan-query: html:"AGENTS.md"
+  tags: config,exposure,agents,ai,markdown,cursor,codex
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/AGENTS.md"
+      - "{{BaseURL}}/agents.md"
+      - "{{BaseURL}}/.agents/AGENTS.md"
+      - "{{BaseURL}}/.github/AGENTS.md"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 40'
+          - 'regex("(?m)^\\s*#\\s+", body)'
+          - 'contains_any(to_lower(body), "agent", "codebase", "repository", "prefer ", "always ", "never ", "do not ", "must ", "build", "test", "pull request", "workflow")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
