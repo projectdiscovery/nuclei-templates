@@ -1,0 +1,71 @@
+id: drupal-eol
+
+info:
+  name: Drupal End-of-Life - Detect
+  author: CyberTechSea
+  severity: info
+  description: |
+    Detected Drupal versions that have reached End-of-Life (EOL) and no longer receive security updates.
+    Drupal 7, 8 and 9 are entirely unsupported. For Drupal 10 and 11 only the most recent minor
+    branches receive security coverage, so older minors are reported as EOL.
+    Detection note: on up-to-date, hardened Drupal 10/11 installs the minor version is not
+    disclosed to unauthenticated requests (the generator meta tag / X-Generator header expose
+    only the major, and core/CHANGELOG.txt no longer carries the current point release). In that
+    case a bare "Drupal 10" or "Drupal 11" is intentionally treated as ambiguous and NOT reported:
+    an empty result is expected, not a false negative. Reliable minor-level detection on Drupal 8+
+    requires static-asset hash fingerprinting, which is out of scope for a single regex-based template.
+  impact: |
+    Unsupported Drupal releases no longer receive security advisories or patches, so newly disclosed
+    vulnerabilities remain permanently exploitable.
+  remediation: |
+    Upgrade to a Drupal release still covered by security support, as published in the Drupal core
+    release cycle policy.
+  reference:
+    - https://endoflife.date/drupal
+    - https://www.drupal.org/about/core/policies/core-release-cycles/schedule
+    - https://www.drupal.org/about/drupal-7/d7eol
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.component:"Drupal"
+    product: drupal
+    vendor: drupal
+  tags: tech,drupal,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/core/CHANGELOG.txt"
+      - "{{BaseURL}}/CHANGELOG.txt"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    extractors:
+      - type: regex
+        part: all
+        name: version
+        group: 1
+        regex:
+          - '(?i)Drupal\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?),\s+[0-9]{4}-'
+          - '(?i)content=["\x27]?Drupal\s+([0-9]+(?:\.[0-9]+)*)'
+          - '(?i)X-Generator:\s*Drupal\s+([0-9]+(?:\.[0-9]+)*)'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(version) > 0'
+
+      # Drupal 7/8/9 are entirely EOL, so a bare major is already conclusive.
+      # For 10.x and 11.x a minor is required: a bare "10" or "11" is ambiguous
+      # (it may be a supported branch) and must not raise a false positive.
+      - type: dsl
+        dsl:
+          - >-
+            compare_versions(version, '<10.0.0') ||
+            (contains(version, '.') &&
+              (compare_versions(version, '>=10.0.0', '<10.6.0') ||
+               compare_versions(version, '>=11.0.0', '<11.3.0')))
