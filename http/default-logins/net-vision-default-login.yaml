@@ -1,7 +1,7 @@
 id: net-vision-default-login
 
 info:
-  name: Net Vision UPS Monitor Default Login
+  name: Net Vision UPS Monitor - Default Login
   author: Th3l0newolf
   severity: high
   description: |
@@ -12,14 +12,28 @@ info:
   metadata:
     max-request: 2
     verified: true
+    shodan-query: title:"Net Vision UPS"
     product: net-vision
     vendor: socomec
-  tags: socomec,net-vision,ups,default-login,default-credentials
+  tags: socomec,net-vision,ups,default-login
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/"
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "Net Vision UPS Monitor")'
+          - 'contains_any(body, ".input_username", "Login</span>"")'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
       - "{{BaseURL}}/PageAEventlog.asp"
 
     headers:
@@ -30,14 +44,11 @@ http:
 
     matchers-condition: and
     matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "USHA Events Log", "Events Log", "Event Level")'
+        condition: and
+
       - type: status
         status:
           - 200
-
-      - type: dsl
-        dsl:
-          - 'contains(body_1, "Net Vision UPS Monitor")'
-          - 'contains(body_2, "USHA Events Log")'
-          - 'contains(body_2, "Events Log")'
-          - 'contains(body_2, "Event Level")'
-        condition: and
