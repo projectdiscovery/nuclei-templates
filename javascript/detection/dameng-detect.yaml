@@ -15,16 +15,18 @@ info:
 javascript:
   - pre-condition: |
       isPortOpen(Host,Port);
-    code: |
-      let packet = bytes.NewBuffer();
+  - code: |
       const c = require("nuclei/net");
-      const cmd = "00000000c8005100000000000000000000000099000000000000000001020000000000000000000000000000000000000000000000000000000000000000000008000000382e312e312e34390040000000068149bbe004a62fb45552831704c802d4d802b4579cb045b3c6100880725ececf148a7c9205047caccadfef5ff264460d11092a3b483bf9d24382dea1dc43e7"
-      packet.WriteString(cmd)
+      const cmd = "00000000c8005100000000000000000000000099000000000000000001020000000000000000000000000000000000000000000000000000000000000000000008000000382e312e312e34390040000000068149bbe004a62fb45552831704c802d4d802b4579cb045b3c6100880725ececf148a7c9205047caccadfef5ff264460d11092a3b483bf9d24382dea1dc43e7";
       let conn = c.Open('tcp', `${Host}:${Port}`);
       conn.SendHex(cmd);
-      const result = conn.RecvFullString()
-      result
-
+      const result = conn.RecvFullString();
+      conn.Close();
+      let versionMatch = result.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if (versionMatch && result.includes(String.fromCharCode(0))) {
+        Export("version", versionMatch[1]);
+        Export("full", result);
+      }
     args:
       Host: "{{Host}}"
       Port: 5236
@@ -33,9 +35,10 @@ javascript:
       - type: dsl
         dsl:
           - "success == true"
+          - "version != null"
 
     extractors:
       - type: regex
         regex:
           - (\d+\.\d+\.\d+\.\d+)
-# digest: 490a00463044022034a2c3e7c073df92244a63a7d197f1c6e7c7ef3264432c228f4090a82a45a73f0220743a3451fbc039dabfe972a85fff2435f103b43f3abd871f6685f66d5ec015c7:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022042dcafe97e9b94b84fba72656651d05e56e3240ef9bcda8cdcac48f36220c6af022100ab5b3a4bf694a0e4869de88459313ef82e15cd41c9fc895a79b7a72098f6a9d0:922c64590222798bb761d5b6d8e72950

