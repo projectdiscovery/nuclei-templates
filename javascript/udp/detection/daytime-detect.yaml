@@ -1,0 +1,47 @@
+id: daytime-detect
+
+info:
+  name: Daytime Service - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects the Daytime service on UDP port 13 by requesting the current date and time in ASCII format as defined in RFC 867. This legacy protocol can expose system information and should be disabled to reduce attack surface.
+  reference:
+    - https://github.com/CiscoCXSecurity/udp-proto-scanner
+    - https://www.rfc-editor.org/rfc/rfc867
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:13
+  tags: daytime,legacy,network,js,udp
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+
+    code: |
+      const c = require("nuclei/net");
+      const payload = "313233";
+      const conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(payload);
+      let resp = conn.RecvString(256);
+      conn.Close();
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 13
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 10"
+        condition: and
+
+      - type: regex
+        part: response
+        regex:
+          - "\\d{2}[:\\-]\\d{2}[:\\-]\\d{2}"
+# digest: 4a0a00473045022100fca87e311900aa8aa3a3e73a03697cf182fb03234fc07a8bf67f45337434a7f102200727dedd440ea4296be318cfcca1781dccdf8c30ee070b5fe92628a72161f882:922c64590222798bb761d5b6d8e72950

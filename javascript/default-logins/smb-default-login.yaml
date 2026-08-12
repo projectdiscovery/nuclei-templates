@@ -1,0 +1,50 @@
+id: smb-default-login
+
+info:
+  name: SMB - Default Logins
+  author: pussycat0x
+  severity: high
+  description: |
+    Attempts to guess username/password combinations over SMB.
+  reference:
+    - https://nmap.org/nsedoc/scripts/smb-brute.html
+  metadata:
+    verified: true
+    max-request: 9
+    shodan-query: "port:445"
+  tags: js,network,smb,enum,default,bruteforce,discovery
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host,Port);
+    code: |
+      var m = require("nuclei/smb");
+      var c = new m.SMBClient();
+      var response = c.ListShares(Host, Port, User, Pass);
+      response;
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+      User: "{{usernames}}"
+      Pass: "{{passwords}}"
+
+    attack: clusterbomb
+    payloads:
+      usernames:
+        - 'admin'
+        - 'administrator'
+        - 'guest'
+      passwords:
+        - 'admin'
+        - 'password'
+        - 'guest'
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'response != "[]"'
+          - 'success == true'
+        condition: and
+# digest: 4a0a004730450221008d64d3698d8e32ba8fec5ba7082bed6d4bb27670972573d9c05de0babfad4a55022000d565449a02f505cfceda975181bede834952245042b1a5cc6b763e7a0e97b9:922c64590222798bb761d5b6d8e72950

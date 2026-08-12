@@ -1,0 +1,53 @@
+id: 9router-default-login
+
+info:
+  name: 9Router - Default Login
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected 9Router AI coding proxy was using default credentials (password 123456). 9Router ships with a hardcoded initial password that grants full dashboard access including connected provider API keys, OAuth tokens, and model routing configuration.
+  reference:
+    - https://github.com/decolua/9router
+    - https://deepwiki.com/decolua/9router/13.1-authentication-and-token-issues
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: decolua
+    product: 9router
+    shodan-query: http.html:"9Router"
+    fofa-query: body="9Router"
+  tags: default-login,9router,ai
+
+variables:
+  password: "123456"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - '9Router'
+        internal: true
+
+  - raw:
+      - |
+        POST /api/auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"password":"{{password}}"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "\"success\":true")'
+          - 'contains(header, "auth_token=eyJ")'
+        condition: and
+# digest: 4a0a00473045022054caaf3e19a24794760a64df458b5fa11774aa46d7df52addb9d664f528fa88b022100cb69e34f59155992894aa17fb240d23260f24dacc09255df8999c9a6d29a7f89:922c64590222798bb761d5b6d8e72950

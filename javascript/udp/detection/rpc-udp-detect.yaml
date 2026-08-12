@@ -1,0 +1,67 @@
+id: rpc-udp-detect
+
+info:
+  name: RPC Portmapper (UDP) - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects Sun RPC Portmapper (rpcbind) service on UDP port 111 using amap and Nmap RPC probes for reliable identification. An exposed Portmapper may reveal RPC services like NFS or NIS and enable further enumeration or attacks.
+  reference:
+    - https://github.com/CiscoCXSecurity/udp-proto-scanner
+    - https://www.rfc-editor.org/rfc/rfc1833
+    - https://nmap.org/nsedoc/scripts/rpcinfo.html
+    - https://book.hacktricks.xyz/pentesting/pentesting-rpcbind
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:111
+  tags: rpc,portmapper,rpcbind,nfs,network,js,udp,detection
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      const c = require("nuclei/net");
+      let results = [];
+
+      // Probe 1: amap RPC portmapper probe (40 bytes)
+      const amapPayload = "039b65420000000000000002000f4243000000000000000000000000000000000000000000000000";
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(amapPayload);
+      let amapResp = conn.RecvHex(4096);
+      conn.Close();
+      if (amapResp && amapResp.length > 16) {
+        results.push("RPC Portmapper responded to amap probe");
+      }
+
+      // Probe 2: nmap RPCCheck probe (40 bytes)
+      const nmapPayload = "72FE1D130000000000000002000186A00001977C0000000000000000000000000000000000000000";
+      conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(nmapPayload);
+      let nmapResp = conn.RecvHex(4096);
+      conn.Close();
+      if (nmapResp && nmapResp.length > 16) {
+        results.push("RPC Portmapper responded to nmap RPCCheck probe");
+      }
+
+      results.join("\n");
+
+    args:
+      Host: "{{Host}}"
+      Port: 111
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 0"
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"RPC Portmapper UDP Detected"'
+# digest: 4b0a00483046022100aeb1f5d01307710a27153197b09eb300fe1d473a6bbfce89eb2f7d0c919c2116022100eba6a370596fe2ba77e57dee56b2e9e6aad359e3e927b3c549ef053e1bfbcfcf:922c64590222798bb761d5b6d8e72950

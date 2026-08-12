@@ -1,0 +1,52 @@
+id: litellm-unauth-model-exposure
+
+info:
+  name: LiteLLM Proxy - Model Exposure
+  author: DevamShah
+  severity: medium
+  description: |
+    LiteLLM proxy was detected with anonymous access to the model listing API. LiteLLM proxies that ship without `general_settings.master_key` (or with the key disabled) expose the configured upstream model catalog via /v1/models and /model/info — revealing which OpenAI / Anthropic / Azure / Bedrock / local-LLM endpoints are wired in, often along with their litellm_params routing config, and frequently leaving /chat/completions and /embeddings reachable without any bearer token.
+  impact: |
+    Attackers can enumerate the proxy's full model catalog and abuse the upstream accounts for free inference (cost amplification), exfiltrate any prompt logs cached locally, or pivot to internal-only model endpoints exposed via the proxy's routing config.
+  remediation: |
+    Set `general_settings.master_key: sk-...` in the LiteLLM config, or pass `--api_key` on startup. Enforce per-user virtual keys via the LiteLLM admin API and place the proxy behind authenticated reverse proxy or service mesh.
+  reference:
+    - https://docs.litellm.ai/docs/proxy/virtual_keys
+    - https://docs.litellm.ai/docs/proxy/configs
+    - https://github.com/BerriAI/litellm
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L
+    cvss-score: 6.5
+    cwe-id: CWE-862
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: berriai
+    product: litellm
+    shodan-query:
+      - 'http.title:"LiteLLM API - Swagger UI"'
+      - 'http.html:"LiteLLM"'
+    fofa-query: title="LiteLLM API"
+  tags: litellm,llm,ai,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/model/info"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"data\":", "\"litellm_params\":", "\"model_info\":")'
+        condition: and
+
+    extractors:
+      - type: json
+        name: models
+        part: body
+        json:
+          - '.data[].model_name'
+# digest: 490a0046304402202bc2e4f46c3679a3593827cfb57af522f7a0ae72ccc48322131876fcfc1495b20220287dc9603bd4cd21986f201edd7a252ac189cfca7484adc5b1cb8779d6d3d0aa:922c64590222798bb761d5b6d8e72950

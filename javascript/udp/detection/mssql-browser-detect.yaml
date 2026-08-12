@@ -1,0 +1,57 @@
+id: mssql-browser-detect
+
+info:
+  name: MS-SQL Browser Service - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects Microsoft SQL Server Browser service on UDP port 1434 by triggering an SVR_RESP response with a 0x02 probe.Extracts instance details such as ServerName, InstanceName, SQL version, clustering status, and TCP port information.
+  reference:
+    - https://github.com/CiscoCXSecurity/udp-proto-scanner
+    - https://learn.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-browser-service
+    - https://nmap.org/nsedoc/scripts/ms-sql-info.html
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:1434
+  tags: mssql,microsoft,sql,database,network,js,udp,detection
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      const c = require("nuclei/net");
+      // 0x02 = CLNT_UCAST_EX — client unicast request for all instances
+      const payload = "02";
+      const conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(payload);
+      let resp = conn.RecvString(4096);
+      conn.Close();
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 1434
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 10"
+        condition: and
+
+      - type: word
+        part: response
+        words:
+          - "ServerName"
+          - "InstanceName"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: ServerName
+        group: 1
+        regex:
+          - 'ServerName;([^;]+)'
+# digest: 4a0a00473045022100e1a8b2aeabb0bd812039697de465d97f5437c922ffcbf65abd27921acafe0cd702206a6dedf5f61db2ab83fee08681dd6e6eb6bd632bd7f908245179be32884f528d:922c64590222798bb761d5b6d8e72950

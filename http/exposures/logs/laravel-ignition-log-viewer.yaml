@@ -1,0 +1,44 @@
+id: laravel-ignition-log-viewer
+
+info:
+  name: Laravel Ignition - Log Viewer Information Disclosure
+  author: moamenbasel
+  severity: medium
+  description: |
+    Laravel Ignition's log viewer endpoint is publicly accessible and exposes application logs. These logs may contain stack traces, SQL queries, environment variables, API keys, user data, and other sensitive information.
+  impact: |
+    An attacker can access application logs without authentication, potentially exposing stack traces, database queries, environment variables, API keys, session tokens, user credentials, and internal application paths. This information can be leveraged for further attacks such as credential theft, privilege escalation, or direct system compromise.
+  remediation: |
+    Disable Ignition in production by setting APP_DEBUG=false. If Ignition must remain enabled, configure it to disable the log viewer endpoint via the ignition config file.
+  reference:
+    - https://github.com/spatie/laravel-ignition
+    - https://laravel.com/docs/10.x/errors#configuration
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Laravel"
+  tags: laravel,ignition,logs,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/_ignition/logs"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{"log_messages"'
+          - 'exception'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a0047304502206600c5f1931936efb623ff440584f65de18eba66d43149248158fb16ee40d5cd022100a806539afd77fc9acaee995ee6f324d92988ecb4b071c6a2db680da90ec0c861:922c64590222798bb761d5b6d8e72950

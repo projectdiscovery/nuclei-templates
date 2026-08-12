@@ -1,0 +1,44 @@
+id: checkmarx-cxsast-panel
+
+info:
+  name: Checkmarx CxSAST Login Panel - Detect
+  author: joanbonon,righettod
+  severity: info
+  description: |
+    Checkmarx CxSAST login panel was detected.
+  reference:
+    - https://docs.checkmarx.com/en/34965-44074-checkmarx-sast.html
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+    cpe: cpe:2.3:a:checkmarx:cxsast:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 3
+    verified: true
+    vendor: checkmarx
+    product: cxsast
+    shodan-query: http.html:"CxSASTManagerUri"
+  tags: panel,checkmarx,cxsast,detect,login,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/cxrestapi/help/system/version"
+      - "{{BaseURL}}/cxwebclient/Login.aspx"
+      - "{{BaseURL}}/cxrestapi/auth/identity/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "cxsastmanageruri", "cxauthorityconfigurations", "/cxwebclient/webapp/", "sast_api", "sast_rest_api" , "sast-permissions", "hotfix")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '(?i)"version":\s*"([0-9.]+)"'
+# digest: 4a0a0047304502204f9b3b8ed648f132492d88a35f140703a886a0dd3f8b0a95bd63a5eb3f3cf03c022100a57d43bb53f587f1717bf4b791d98475c1126c6c3de8fd05b0dcbfb70e629a15:922c64590222798bb761d5b6d8e72950

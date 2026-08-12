@@ -1,0 +1,57 @@
+id: infinispan-detect
+
+info:
+  name: Infinispan Console - Detection
+  author: DhiyaneshDk
+  severity: info
+  description: |
+    Infinispan is an open-source in-memory data grid by Red Hat that exposes a management console under `/console/welcome` and a REST API under `/rest/v2/` on the default port 11222. This template fingerprints Infinispan by matching the unique HTML console markers and the Digest authentication challenge from the REST API.
+  reference:
+    - https://infinispan.org/
+    - https://infinispan.org/docs/stable/titles/rest/rest.html
+    - https://github.com/infinispan/infinispan
+  classification:
+    cpe: cpe:/a:redhat:infinispan
+  metadata:
+    max-request: 2
+    vendor: redhat
+    product: infinispan
+    shodan-query: title:"Infinispan"
+    fofa-query: title="Infinispan" || body="/console/main.bundle.js"
+  tags: tech,detect,infinispan,redhat
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/console/welcome"
+      - "{{BaseURL}}/rest/v2/cache-managers/default"
+
+    stop-at-first-match: true
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: console
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<title>Console</title>", "/console/main.bundle.js", "pf-m-redhat-font")'
+        condition: and
+
+      - type: dsl
+        name: rest-api
+        dsl:
+          - 'status_code == 401'
+          - 'contains_all(tolower(header), "www-authenticate", "digest realm=\"default\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9.]+(?:\.[A-Za-z0-9-]+)?)"'
+# digest: 4a0a0047304502204c2f1cc53154511db1331d47b224bdef2500019fa31aa382fe5991086b64f2910221008d1902fbb88f1a19b527164557b3a35d89cf54fc374bd576f980320ad0639518:922c64590222798bb761d5b6d8e72950
