@@ -1,0 +1,67 @@
+id: dispatcharr-detect
+
+info:
+  name: Dispatcharr - Detect
+  author: rxerium
+  severity: info
+  description: |
+    Dispatcharr is an open-source IPTV stream and playlist management application.
+  reference:
+    - https://github.com/Dispatcharr/Dispatcharr
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: dispatcharr
+    product: dispatcharr
+    shodan-query: 'http.title:"Dispatcharr"'
+  tags: dispatcharr,tech,detect
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '<title>Dispatcharr</title>'
+        internal: true
+
+      - type: status
+        status:
+          - 200
+        internal: true
+
+    extractors:
+      - type: regex
+        name: js
+        part: body
+        group: 1
+        regex:
+          - 'src="(/assets/index-[^"]+\.js)"'
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}{{js}}"
+
+    host-redirects: true
+    max-redirects: 3
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'https://dispatcharr.github.io/Dispatcharr-Docs/'
+          - 'https://github.com/Dispatcharr/Dispatcharr'
+        condition: and
+
+      - type: status
+        status:
+          - 200

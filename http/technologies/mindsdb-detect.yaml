@@ -1,0 +1,47 @@
+id: mindsdb-detect
+
+info:
+  name: MindsDB - Detect
+  author: rxerium
+  severity: info
+  description: |
+    MindsDB was detected through its status API.
+  reference:
+    - https://github.com/mindsdb/mindsdb
+    - https://docs.mindsdb.com/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: mindsdb
+    product: mindsdb
+    shodan-query: http.title:"MindsDB Studio"
+  tags: tech,mindsdb,ai,ml,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/status"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"mindsdb_version"'
+
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "application/json")
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"mindsdb_version":\s*"([0-9]+(?:\.[0-9]+)+)"'
