@@ -1,0 +1,49 @@
+id: netbios-udp-detect
+
+info:
+  name: NetBIOS Name Service (NBTStat) - Detect
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects NetBIOS Name Service on UDP port 137 using an NBTStat query to identify Windows network hosts.
+  reference:
+    - https://github.com/CiscoCXSecurity/udp-proto-scanner
+    - https://www.rfc-editor.org/rfc/rfc1002
+    - https://nmap.org/nsedoc/scripts/nbstat.html
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:137
+  tags: netbios,nbt,nbstat,windows,smb,network,js,udp,detection
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      const c = require("nuclei/net");
+      // NBTStat query - NBSTAT wildcard name query (*<00>)
+      const payload = "80f00010000100000000000020434b4141414141414141414141414141414141414141414141414141414141410000210001";
+      const conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SendHex(payload);
+      let resp = conn.RecvString(2048);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 137
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 0"
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"NetBIOS Name Service Detected"'
+# digest: 4b0a004830460221008f8584953535ef9a631d8a7c6630108b10bd41c3272f9b1d7717e72b0829eff4022100ef704ea911cfb41fb7bf1823e7d7ed22b63883916048da6fb0321ec6ab2c7e18:922c64590222798bb761d5b6d8e72950

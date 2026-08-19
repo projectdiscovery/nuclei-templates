@@ -2,9 +2,10 @@ id: argocd-login
 
 info:
   name: Argo CD Login Panel
-  author: Adam Crosser,daffainfo,aringo
+  author: Adam Crosser,daffainfo,aringo,righettod
   severity: info
-  description: An Argo CD login panel was discovered.
+  description: |
+     ArgoCD was detected - A declarative, GitOps continuous delivery tool for Kubernetes.
   reference:
     - https://argoproj.github.io/cd/
   classification:
@@ -20,8 +21,10 @@ info:
 http:
   - method: GET
     path:
-      - "{{BaseURL}}/api/version"
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/swagger.json"
       - "{{BaseURL}}/api/v1/settings"
+      - "{{BaseURL}}/api/version"
 
     stop-at-first-match: true
 
@@ -29,18 +32,30 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - contains(to_lower(header_1), 'grpc-metadata-content-type')
+          - contains(to_lower(body_1), '<title>argo cd</title>')
           - status_code_1 == 200
         condition: and
 
       - type: dsl
         dsl:
-          - contains(body_2, 'appLabelKey')
-          - contains(body_2, 'resourceOverrides')
+          - contains(to_lower(body_2), 'argocd control plane')
+          - status_code_2 == 200
+        condition: and
+
+      - type: dsl
+        dsl:
+          - contains(to_lower(body_3), 'argocd.argoproj.io')
+          - status_code_3 == 200
+        condition: and
+
+      - type: dsl
+        dsl:
+          - contains(to_lower(header_4), 'grpc-metadata-content-type')
+          - status_code_4 == 200
         condition: and
 
     extractors:
       - type: json
         json:
           - .Version
-# digest: 4a0a00473045022100f05d675d8024ed48484e9c657180acc55ba087aba13b590c177a790ca33326a202203b8e30e10bb8273ce8a5d08ac6536abcf058d289a54ae1b7fe87584d14dd1116:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100c36ca31848e38eda3096905b44b9ddca8ac1a59e5421d6a3f9d3a20654cdbfca02210096d184e6f905b8db2fe9cdecaa37b2644ba0f2840ff3c76e86e45e4fcebf457f:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,59 @@
+id: google-iap-detect
+
+info:
+  name: Google Identity-Aware Proxy (IAP) - Detect
+  author: davidfegyver
+  severity: info
+  description: |
+    Detected whether the target was protected by Google's Identity-Aware Proxy (IAP). IAP provided application-level access control for services running on Google Cloud. When IAP intercepted an unauthenticated request, it set the X-Goog-Iap-Generated-Response header and redirected the request to Google OAuth. The second request followed the redirects to the consent screen and extracted the OAuth client_id, application owner, contact email, and display name.
+  reference:
+    - https://cloud.google.com/iap/docs/concepts-overview
+    - https://cloud.google.com/iap/docs/query-parameters-and-headers-howto#detecting_responses
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: google
+    product: identity-aware-proxy
+    shodan-query: "X-Goog-Iap-Generated-Response"
+    fofa-query: header="X-Goog-Iap-Generated-Response"
+  tags: tech,google,iap,cloud,identity,proxy,discovery
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    redirects: true
+    max-redirects: 3
+
+    extractors:
+      - type: regex
+        part: body
+        name: email
+        internal: true
+        regex:
+          - "key:\\s*'ds:1'[^;]*data:\\s*\\[[^,]+,[^,]+,[^,]+,\\s*\"([^\"]+)\""
+        group: 1
+
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "X-Goog-Iap-Generated-Response"
+        case-insensitive: true
+
+    extractors:
+      - type: dsl
+        name: contact_email
+        dsl:
+          - "email"
+# digest: 4a0a0047304502202f7187478106189b43bf293d29b1ab6d1eff5730e05c8535ad25c60178693e4b022100bd27e89e1a1ba8a668a97eede6f5cc58c538ac16aafbe05787861f1404415352:922c64590222798bb761d5b6d8e72950

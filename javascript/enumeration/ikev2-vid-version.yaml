@@ -1,0 +1,416 @@
+id: ikev2-vid-version
+
+info:
+  name: IKEv2 Deep Vendor ID Version - Detection
+  author: pussycat0x
+  severity: info
+  description: |
+    Detected valid IKEv1 VPN group names by sending Aggressive Mode probes with different IDi values. Extracts vendor, version, and capability details from IKEv2 Vendor ID and Notify payloads using a single unauthenticated exchange.
+  reference:
+    - https://www.rfc-editor.org/rfc/rfc7296#section-3.12
+    - https://hacktricks.wiki/en/network-services-pentesting/ipsec-ike-vpn-pentesting.html
+    - https://www.iana.org/assignments/ikev2-parameters
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:500 product:IKE"
+    fofa-query: "port=\"500\" && protocol=\"isakmp\""
+  tags: js,network,udp,ikev2,ipsec,vpn,ike,enum
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+    code: |
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SetTimeout(10);
+
+      // Proven IKEv2 SA_INIT packet (500 bytes, 2 proposals)
+      let packet =
+        "deadbeefc0decafe" +
+        "0000000000000000" +
+        "2120220800000000000001f4" +
+        "220000ac" +
+        "0200005001010008" +
+        "0300000c01000014800e0100" +
+        "0300000c01000014800e0080" +
+        "0300000802000005" +
+        "0300000802000007" +
+        "0300000803000000" +
+        "0300000804000014" +
+        "0300000804000013" +
+        "000000080400000e" +
+        "0000005802010009" +
+        "0300000c0100000c800e0100" +
+        "0300000c0100000c800e0080" +
+        "0300000801000003" +
+        "0300000802000005" +
+        "0300000802000002" +
+        "030000080300000c" +
+        "0300000803000002" +
+        "030000080400000e" +
+        "0000000804000002" +
+        "28000108000e0000" +
+        "000102030405060708090a0b0c0d0e0f" +
+        "101112131415161718191a1b1c1d1e1f" +
+        "202122232425262728292a2b2c2d2e2f" +
+        "303132333435363738393a3b3c3d3e3f" +
+        "404142434445464748494a4b4c4d4e4f" +
+        "505152535455565758595a5b5c5d5e5f" +
+        "606162636465666768696a6b6c6d6e6f" +
+        "707172737475767778797a7b7c7d7e7f" +
+        "808182838485868788898a8b8c8d8e8f" +
+        "909192939495969798999a9b9c9d9e9f" +
+        "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf" +
+        "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf" +
+        "c0c1c2c3c4c5c6c7c8c9cacbcccdcecf" +
+        "d0d1d2d3d4d5d6d7d8d9dadbdcdddedf" +
+        "e0e1e2e3e4e5e6e7e8e9eaebecedeeef" +
+        "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff" +
+        "00000024" +
+        "4142434445464748494a4b4c4d4e4f50" +
+        "5152535455565758595a414243444546";
+
+      conn.SendHex(packet);
+      let raw = conn.Recv(4096);
+      let hexBuf = bytes.NewBuffer();
+      hexBuf.Write(raw);
+      let resp = hexBuf.Hex();
+
+      // --- Helper functions ---
+      function hb(h, o) { return parseInt(h.substring(o*2, o*2+2), 16); }
+      function hu16(h, o) { return parseInt(h.substring(o*2, o*2+4), 16); }
+      function hs(h, s, e) { return h.substring(s*2, e*2); }
+
+      function hexToBytes(hex) {
+        var arr = [];
+        for (var i = 0; i < hex.length; i += 2) {
+          arr.push(parseInt(hex.substring(i, i+2), 16));
+        }
+        return arr;
+      }
+
+      // Extract printable ASCII sequences (>= 4 chars) from hex data
+      function extractAscii(hex) {
+        var bts = hexToBytes(hex);
+        var sequences = [];
+        var cur = "";
+        for (var i = 0; i < bts.length; i++) {
+          if (bts[i] >= 0x20 && bts[i] <= 0x7e) {
+            cur = cur + String.fromCharCode(bts[i]);
+          } else {
+            if (cur.length >= 4) sequences.push(cur);
+            cur = "";
+          }
+        }
+        if (cur.length >= 4) sequences.push(cur);
+        return sequences;
+      }
+
+      // Manual base64 decode (no regex, goja-safe)
+      function b64decode(str) {
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        var out = "";
+        var clean = "";
+        for (var ci = 0; ci < str.length; ci++) {
+          var ch = str.charAt(ci);
+          if (ch != ' ' && ch != '=' && ch != '\n' && ch != '\r') clean += ch;
+        }
+        var bits = 0;
+        var val = 0;
+        for (var i = 0; i < clean.length; i++) {
+          var idx = chars.indexOf(clean.charAt(i));
+          if (idx < 0) continue;
+          val = (val << 6) | idx;
+          bits += 6;
+          if (bits >= 8) {
+            bits -= 8;
+            var code = (val >> bits) & 0xFF;
+            if (code > 0) out += String.fromCharCode(code);
+            val = val & ((1 << bits) - 1);
+          }
+        }
+        return out;
+      }
+
+      var raw_len = resp.length / 2;
+      var resp_spi = hs(resp, 8, 16);
+      var vb = hb(resp, 17);
+      var ike_ver = ((vb >> 4) & 0x0f) + "." + (vb & 0x0f);
+
+      // --- VID database (25+ known hashes) ---
+      var vid_db = {
+        "afcad71368a1f1c96b8696fc77570100": "Dead Peer Detection v1.0",
+        "4a131c81070358455c5728f20e95452f": "RFC 3947 NAT-T",
+        "90cb80913ebb696e086381b5ec427b1f": "draft-ietf-ipsec-nat-t-ike-02",
+        "cd60464335df21f87cfdb2fc68b6a448": "draft-ietf-ipsec-nat-t-ike-00",
+        "4485152d18b6bbcd0be8a8469579ddcc": "draft-ietf-ipsec-nat-t-ike-05",
+        "7d9419a65310ca6f2c179d9215529d56": "draft-ietf-ipsec-nat-t-ike-03",
+        "4048b7d56ebce88525e7de7f00d6c2d3": "IKE Fragmentation",
+        "26244d38eddb61b3172a36e3d0cfb819": "StrongSwan",
+        "4865617274426561745f4e6f74696679": "Heartbeat Notify",
+        "c61baca1f1a60cc10800000000000000": "Cisco IOS VPN (UNITY)",
+        "12f5f28c457168a9702d9fe274cc0100": "Cisco IOS VPN (UNITY) v1.0",
+        "1f07f70eaa6514d3b0fa96542a500300": "Cisco VPN Concentrator",
+        "09002689dfd6b712": "XAUTH (Cisco)",
+        "1e2b516905991c7d7c96fcbfb587e461": "MS NT5 ISAKMPOAKLEY (Windows)",
+        "fb1de3cdf341b7ea16b7e5be0855f120": "MS-Negotiation Discovery Capable",
+        "e3a5966a76379fe707228231e5ce8652": "MS-MamieExists",
+        "4d1e0e136deafa34c4f3ea9f02ec7285": "Openswan",
+        "8299031757a36082c6a621de00000000": "KAME racoon",
+        "6105c422e76847e43f968480ed93a5a0": "Cisco Delete Reason",
+        "7f50cc4ebf04c2d01d23e668e0168aab": "Juniper Netscreen",
+        "166f932d55eb64d8e4df4fd37e2308c0": "Juniper SSG",
+        "69936c6ff1cfa12e5add7c7f13fb58e4": "SonicWall",
+        "326f5b937d3efde4ba4332920612f1a8": "Fortinet FortiGate",
+        "a03d6b85e0e0cdca8094e2cd7cb8524c": "Check Point VPN"
+      };
+
+      // Known notify types
+      var notify_names = {
+        "5": "INVALID_SPI", "7": "INVALID_SYNTAX",
+        "14": "NO_PROPOSAL_CHOSEN", "17": "INVALID_KE_PAYLOAD",
+        "24": "AUTHENTICATION_FAILED",
+        "16384": "INITIAL_CONTACT",
+        "16388": "NAT_DETECTION_SOURCE_IP",
+        "16389": "NAT_DETECTION_DESTINATION_IP",
+        "16390": "COOKIE",
+        "16396": "MOBIKE_SUPPORTED",
+        "16430": "FRAGMENTATION_SUPPORTED",
+        "16431": "SIGNATURE_HASH_ALGORITHMS"
+      };
+
+      // IKEv2 payload type names
+      var pnames = {
+        "33": "SA", "34": "KE", "35": "IDi", "36": "IDr",
+        "37": "CERT", "38": "CERTREQ", "39": "AUTH",
+        "40": "Nonce", "41": "Notify", "42": "Delete",
+        "43": "VendorID", "44": "TSi", "45": "TSr",
+        "46": "Encrypted", "48": "EAP", "53": "SKF"
+      };
+
+      var vendor_ids = [];
+      var vendor_names_arr = [];
+      var notifies = [];
+      var chain = [];
+      var ascii_strings = [];
+      var identified_product = "Unknown";
+      var identified_version = "";
+      var watchguard_ver = "";
+      var strongswan_ver = "";
+
+      // --- Walk IKEv2 payload chain ---
+      var np = hb(resp, 16);
+      var off = 28;
+      var itr = 0;
+
+      while (np != 0 && off + 4 <= raw_len && itr < 60) {
+        itr++;
+        var ct = np;
+        var cn = pnames[ct.toString()] || ("Type_" + ct);
+
+        np = hb(resp, off);
+        var pl = hu16(resp, off + 2);
+
+        if (pl < 4 || off + pl > raw_len) {
+          chain.push(cn + "(TRUNC)");
+          break;
+        }
+        chain.push(cn);
+        if (ct == 43 && pl > 4) {
+          var vid_start = off + 4;
+          var vid_len = pl - 4;
+          if (vid_start + vid_len <= raw_len) {
+            var vid_hex = hs(resp, vid_start, vid_start + vid_len);
+            var vid_name = vid_db[vid_hex] || "Unknown_VID";
+            var vid_version = "";
+            var matched = (vid_db[vid_hex] != undefined);
+
+            // (A) StrongSwan prefix detection (882fe56d40069dd2...)
+            if (!matched && vid_hex.substring(0, 16) == "882fe56d40069dd2") {
+              vid_name = "StrongSwan";
+              matched = true;
+              if (vid_len > 16) {
+                var svBytes = hexToBytes(vid_hex.substring(32));
+                var svParts = [];
+                for (var sv = 0; sv < svBytes.length; sv++) {
+                  svParts.push(svBytes[sv].toString());
+                }
+                strongswan_ver = svParts.join(".");
+                vid_version = strongswan_ver;
+              }
+            }
+
+            // (B) Cisco Unity prefix match
+            if (!matched && vid_hex.substring(0, 16) == "c61baca1f1a60cc1") {
+              vid_name = "Cisco IOS VPN (UNITY)";
+              matched = true;
+            }
+
+            // (C) KAME racoon prefix match
+            if (!matched && vid_hex.substring(0, 16) == "8299031757a36082") {
+              vid_name = "KAME racoon";
+              matched = true;
+            }
+
+            // (D) IKE Fragmentation with version suffix
+            if (!matched && vid_hex.substring(0, 16) == "4048b7d56ebce885") {
+              vid_name = "IKE Fragmentation";
+              matched = true;
+            }
+
+            // (E) WatchGuard Detection: 32-byte hash + base64 tail
+            // The base64 decodes to "VN=12.11.3 BN=719894"
+            if (vid_len > 32) {
+              var tail_hex = vid_hex.substring(64);
+              var tail_bytes = hexToBytes(tail_hex);
+              var tail_str = "";
+              var all_b64 = true;
+              for (var tb = 0; tb < tail_bytes.length; tb++) {
+                var tch = tail_bytes[tb];
+                if ((tch >= 65 && tch <= 90) || (tch >= 97 && tch <= 122) ||
+                    (tch >= 48 && tch <= 57) || tch == 43 || tch == 47 || tch == 61) {
+                  tail_str += String.fromCharCode(tch);
+                } else {
+                  all_b64 = false;
+                  break;
+                }
+              }
+              if (all_b64 && tail_str.length >= 8) {
+                var decoded = b64decode(tail_str);
+                if (decoded.indexOf("VN=") >= 0 || decoded.indexOf("BN=") >= 0) {
+                  watchguard_ver = decoded;
+                  vid_name = "WatchGuard Fireware OS";
+                  matched = true;
+                  var vnIdx = decoded.indexOf("VN=");
+                  if (vnIdx >= 0) {
+                    var vnEnd = decoded.indexOf(" ", vnIdx);
+                    if (vnEnd < 0) vnEnd = decoded.length;
+                    vid_version = decoded.substring(vnIdx + 3, vnEnd);
+                    identified_version = vid_version;
+                  }
+                }
+              }
+            }
+
+            // (F) ASCII string extraction from any VID
+            var ascii_seqs = extractAscii(vid_hex);
+            for (var ai = 0; ai < ascii_seqs.length; ai++) {
+              ascii_strings.push(ascii_seqs[ai]);
+              // Try to identify vendor from embedded ASCII
+              if (!matched) {
+                var sl = ascii_seqs[ai].toLowerCase();
+                if (sl.indexOf("watchguard") >= 0) { vid_name = "WatchGuard"; matched = true; }
+                else if (sl.indexOf("strongswan") >= 0) { vid_name = "StrongSwan"; matched = true; }
+                else if (sl.indexOf("openswan") >= 0) { vid_name = "Openswan"; matched = true; }
+                else if (sl.indexOf("libreswan") >= 0) { vid_name = "Libreswan"; matched = true; }
+                else if (sl.indexOf("cisco") >= 0) { vid_name = "Cisco"; matched = true; }
+                else if (sl.indexOf("juniper") >= 0) { vid_name = "Juniper"; matched = true; }
+                else if (sl.indexOf("fortinet") >= 0) { vid_name = "FortiGate"; matched = true; }
+                else if (sl.indexOf("sonicwall") >= 0) { vid_name = "SonicWall"; matched = true; }
+              }
+            }
+
+            // Build VID entry string
+            var entry = vid_hex + "=" + vid_name;
+            if (vid_version.length > 0) entry += "(" + vid_version + ")";
+            vendor_ids.push(entry);
+            vendor_names_arr.push(vid_name);
+
+            // Update identified product (priority order)
+            if (vid_name.indexOf("WatchGuard") >= 0) identified_product = "WatchGuard";
+            else if (vid_name.indexOf("StrongSwan") >= 0 && identified_product == "Unknown") identified_product = "StrongSwan";
+            else if (vid_name.indexOf("Cisco") >= 0 && identified_product == "Unknown") identified_product = "Cisco";
+            else if (vid_name.indexOf("Windows") >= 0 && identified_product == "Unknown") identified_product = "Microsoft_Windows";
+            else if (vid_name.indexOf("Openswan") >= 0 && identified_product == "Unknown") identified_product = "Openswan";
+            else if (vid_name.indexOf("Libreswan") >= 0 && identified_product == "Unknown") identified_product = "Libreswan";
+            else if (vid_name.indexOf("racoon") >= 0 && identified_product == "Unknown") identified_product = "KAME_racoon";
+            else if (vid_name.indexOf("Juniper") >= 0 && identified_product == "Unknown") identified_product = "Juniper";
+            else if (vid_name.indexOf("FortiGate") >= 0 && identified_product == "Unknown") identified_product = "FortiGate";
+            else if (vid_name.indexOf("SonicWall") >= 0 && identified_product == "Unknown") identified_product = "SonicWall";
+            else if (vid_name.indexOf("Check Point") >= 0 && identified_product == "Unknown") identified_product = "Check_Point";
+          }
+        }
+
+        // =============================================
+        // Notify payload (type 41) - Decode
+        // =============================================
+        if (ct == 41 && pl >= 8) {
+          var spi_sz = hb(resp, off + 5);
+          var ntype = hu16(resp, off + 6);
+          var nname = notify_names[ntype.toString()] || ("NOTIFY_" + ntype);
+
+          var nd_start = off + 8 + spi_sz;
+          var nd_len = pl - 8 - spi_sz;
+          var ndata = "";
+          if (nd_len > 0 && nd_start + nd_len <= raw_len) {
+            ndata = hs(resp, nd_start, nd_start + nd_len);
+
+            // Decode SIGNATURE_HASH_ALGORITHMS notify data
+            if (ntype == 16431 && nd_len >= 2) {
+              var alg_strs = [];
+              var alg_map = {"1":"SHA1","2":"SHA2-256","3":"SHA2-384","4":"SHA2-512","5":"IDENTITY"};
+              for (var ao = 0; ao < nd_len; ao += 2) {
+                var alg = hu16(resp, nd_start + ao);
+                alg_strs.push(alg_map[alg.toString()] || ("ALG_" + alg));
+              }
+              ndata = alg_strs.join(",");
+            }
+
+            if (ndata.length > 48) ndata = ndata.substring(0, 48) + "...";
+          }
+
+          var nentry = nname;
+          if (ndata.length > 0) nentry += "[" + ndata + "]";
+          notifies.push(nentry);
+        }
+
+        off += pl;
+      }
+
+      // --- Build pipe-delimited output string ---
+      var out = "IKE_VERSION:" + ike_ver;
+      out += "|SPI:" + resp_spi;
+      out += "|VENDOR_PRODUCT:" + identified_product;
+      if (identified_version.length > 0) {
+        out += "|VENDOR_VERSION:" + identified_version;
+      }
+      out += "|CHAIN:" + chain.join("->");
+      out += "|VID_COUNT:" + vendor_ids.length;
+      if (vendor_ids.length > 0) {
+        out += "|VIDS:" + vendor_ids.join(";");
+        out += "|VID_NAMES:" + vendor_names_arr.join(",");
+      }
+      if (notifies.length > 0) {
+        out += "|NOTIFIES:" + notifies.join(";");
+      }
+      if (watchguard_ver.length > 0) {
+        out += "|WATCHGUARD_VERSION:" + watchguard_ver;
+      }
+      if (strongswan_ver.length > 0) {
+        out += "|STRONGSWAN_VERSION:" + strongswan_ver;
+      }
+      if (ascii_strings.length > 0) {
+        out += "|ASCII_STRINGS:" + ascii_strings.join(";");
+      }
+      out += "|BYTES:" + raw_len;
+      out;
+    args:
+      Host: "{{Host}}"
+      Port: "500"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "contains(response, 'IKE_VERSION:2.')"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: vendor_product
+        group: 1
+        regex:
+          - 'VENDOR_PRODUCT:([^|]+)'
+# digest: 490a00463044022004f775d5bf1a9277b27d5ac693adc8ec13544a2676937312ae9c69a8d2db475a02207bb3243216c03191ab722e1175773971e0fc7223e567e5047eef2bd507dcf8db:922c64590222798bb761d5b6d8e72950

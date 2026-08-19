@@ -1,0 +1,59 @@
+id: sonicwall-sma-panel
+
+info:
+  name: SonicWall Secure Mobile Access (SMA) Panel - Detection
+  author: DhiyaneshDk
+  severity: info
+  description: |
+    Detected SonicWall Secure Mobile Access (SMA) appliances — an enterprise SSL-VPN gateway for secure remote access (SMA 1000/6200/7200 series).
+  reference:
+    - https://www.sonicwall.com/products/remote-access/
+    - https://www.sonicwall.com/support/technical-documentation/?category=Secure%20Remote%20Access
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:“SonicWall SMA”
+    fofa-query: body=“SonicWall SMA”
+  tags: sonicwall,sma,ssl-vpn,vpn,tech,detect,login,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/workplace/home.action"
+
+    redirects: true
+    max-redirects: 3
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)Server:\s*SMA/\d'
+
+      - type: word
+        part: header
+        words:
+          - "EXTRAWEB_REFERER"
+
+      - type: word
+        part: body
+        words:
+          - "/__extraweb__/"
+          - "SonicWall"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        name: sma-version
+        regex:
+          - '(?i)Server:\s*(SMA/[\d.]+)'
+# digest: 490a0046304402202e1676204980b16959c4892c2e22e9247b494933cd63d0ff63f1f2cb83cb408a022033af8316417046ebf14a9517471a995737861fad2ed79c19f3c3f3454602c910:922c64590222798bb761d5b6d8e72950
