@@ -1,0 +1,46 @@
+﻿id: nats-monitoring-exposure
+
+info:
+  name: NATS Server Monitoring - Exposure
+  author: FREECANDY-DEV
+  severity: low
+  description: NATS messaging server HTTP monitoring endpoints (/varz, /connz, /routez) are exposed without authentication, disclosing server telemetry, connection counts, version information, and internal network routes.
+  reference:
+    - https://docs.nats.io/running-a-nats-service/monitoring
+    - https://github.com/nats-io/nats-server
+  classification:
+    cpe: cpe:2.3:a:nats:nats-server:*:*:*:*:*:*:*:*
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: nats
+    product: nats-server
+  tags: nats,exposure,monitoring,misconfig,telemetry
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/varz"
+      - "{{BaseURL}}/connz"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"server_id":'
+          - '"server_name":'
+          - '"connections":'
+          - '"in_bytes":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
