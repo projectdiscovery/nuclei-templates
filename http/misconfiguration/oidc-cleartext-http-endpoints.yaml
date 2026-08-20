@@ -1,0 +1,47 @@
+id: oidc-cleartext-http-endpoints
+
+info:
+  name: OpenID Connect - Endpoints Served Over Cleartext HTTP
+  author: rocky55ayush
+  severity: low
+  description: |
+    The OpenID Connect discovery document advertises one or more protocol endpoints (authorization, token, or userinfo) using a cleartext http:// URL. OAuth 2.0 requires TLS for these endpoints; serving them over HTTP exposes authorization codes, access tokens, and credentials to network interception and man-in-the-middle attacks.
+  reference:
+    - https://openid.net/specs/openid-connect-discovery-1_0.html
+    - https://datatracker.ietf.org/doc/html/rfc6749#section-3.1
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 3.7
+    cwe-id: CWE-319
+  metadata:
+    max-request: 3
+  tags: oidc,openid,oauth,keycloak,misconfig,ssl
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/realms/master/.well-known/openid-configuration"
+      - "{{BaseURL}}/auth/realms/master/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+      - type: regex
+        part: body
+        regex:
+          - '"(authorization_endpoint|token_endpoint|userinfo_endpoint)"\s*:\s*"http://'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"(?:authorization_endpoint|token_endpoint|userinfo_endpoint)"\s*:\s*"(http://[^"]+)"'
