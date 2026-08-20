@@ -1,0 +1,35 @@
+﻿id: directus-metrics-exposure
+
+info:
+  name: Directus Server Specs and Metrics - Exposure
+  author: FREECANDY-DEV
+  severity: low
+  description: |
+    Directus exposes internal system specs and application metrics on the /server/specs/info and /server/metrics endpoints when unauthenticated access is permitted. This misconfiguration allows unauthenticated users to inspect system health, node versions, and internal infrastructure metrics.
+  reference:
+    - https://docs.directus.io/reference/system/server.html
+    - https://github.com/directus/directus
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+  tags: directus,misconfig,exposure,metrics
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/server/specs/info"
+      - "{{BaseURL}}/server/metrics"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "directus") || contains(body, "directus_server_")'
+          - 'contains(body, "node_version") || contains(body, "os") || contains(body, "heap_used")'
+        condition: and
