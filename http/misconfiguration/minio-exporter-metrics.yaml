@@ -1,0 +1,41 @@
+﻿id: minio-exporter-metrics
+
+info:
+  name: MinIO Metrics - Exposure
+  author: FREECANDY-DEV
+  severity: low
+  description: MinIO object storage metrics endpoint is exposed without authentication, revealing cluster storage statistics, node traffic, and internal infrastructure metrics.
+  reference:
+    - https://min.io/docs/minio/linux/operations/monitoring/metrics-and-alerts.html
+    - https://github.com/minio/minio
+  classification:
+    cpe: cpe:2.3:a:minio:minio:*:*:*:*:*:*:*:*
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: minio
+    product: minio
+  tags: minio,exposure,metrics,misconfig,storage
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/minio/prometheus/metrics"
+      - "{{BaseURL}}/minio/v2/metrics/cluster"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "minio_node_storage_used_bytes"
+          - "minio_cluster_capacity_usable_free_bytes"
+          - "minio_s3_requests_total"
+          - "minio_cluster_nodes_online_total"
+        condition: or
+
+      - type: status
+        status:
+          - 200
