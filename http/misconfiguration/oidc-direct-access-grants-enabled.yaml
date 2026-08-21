@@ -1,0 +1,44 @@
+id: oidc-direct-access-grants-enabled
+
+info:
+  name: OpenID Connect - Direct Access Grants Password Enabled
+  author: rocky55ayush
+  severity: low
+  description: |
+    Detected The OpenID Connect discovery document advertises the Resource Owner Password Credentials grant (grant_type=password, also known as Direct Access Grants). This grant allows a client to submit end-user credentials directly to the token endpoint, exposing an unauthenticated credential-submission surface that facilitates password brute-force and credential-stuffing attacks.
+  reference:
+    - https://openid.net/specs/openid-connect-discovery-1_0.html
+    - https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
+    - https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics
+    - https://oauth.net/2.1/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-307
+  metadata:
+    max-request: 3
+  tags: oidc,openid,oauth,keycloak,misconfig,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.well-known/openid-configuration"
+      - "{{BaseURL}}/realms/master/.well-known/openid-configuration"
+      - "{{BaseURL}}/auth/realms/master/.well-known/openid-configuration"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "application/json")
+          - contains_all(body, "token_endpoint", "grant_types_supported", "password")
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"issuer"\s*:\s*"([^"]+)"'
