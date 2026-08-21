@@ -1,11 +1,11 @@
 id: oidc-direct-access-grants-enabled
 
 info:
-  name: OpenID Connect - Direct Access Grants (Password Grant) Enabled
+  name: OpenID Connect - Direct Access Grants Password Enabled
   author: rocky55ayush
   severity: low
   description: |
-    The OpenID Connect discovery document advertises the Resource Owner Password Credentials grant (grant_type=password, also known as Direct Access Grants). This grant allows a client to submit end-user credentials directly to the token endpoint, exposing an unauthenticated credential-submission surface that facilitates password brute-force and credential-stuffing attacks. The grant is removed in OAuth 2.1 and the OAuth Security BCP recommends it be disabled unless explicitly required.
+    Detected The OpenID Connect discovery document advertises the Resource Owner Password Credentials grant (grant_type=password, also known as Direct Access Grants). This grant allows a client to submit end-user credentials directly to the token endpoint, exposing an unauthenticated credential-submission surface that facilitates password brute-force and credential-stuffing attacks.
   reference:
     - https://openid.net/specs/openid-connect-discovery-1_0.html
     - https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
@@ -28,28 +28,13 @@ http:
 
     stop-at-first-match: true
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: content_type
-        words:
-          - "application/json"
-
-      - type: word
-        part: body
-        words:
-          - '"token_endpoint"'
-          - '"grant_types_supported"'
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "application/json")
+          - contains_all(body, "token_endpoint", "grant_types_supported", "password")
         condition: and
-
-      - type: regex
-        part: body
-        regex:
-          - '"grant_types_supported"\s*:\s*\[[^\]]*"password"'
 
     extractors:
       - type: regex
