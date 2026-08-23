@@ -1,0 +1,73 @@
+id: graphql-introspection
+
+info:
+  name: GraphQL Introspection Query Information Disclosure
+  author: omarbabba
+  severity: low
+  description: |
+    GraphQL introspection is enabled on the target endpoint. Introspection allows external clients
+    to query and dump the entire GraphQL schema, including types, queries, mutations, subscriptions,
+    and field arguments. This exposes undocumented API endpoints and internal data models.
+  reference:
+    - https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html
+    - https://graphql.org/learn/introspection/
+    - https://cwe.mitre.org/data/definitions/200.html
+  metadata:
+    verified: true
+    max-request: 4
+  tags: graphql,misconfig,info-disclosure,cwe-200
+
+http:
+  - raw:
+      - |
+        POST /graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query{__schema{queryType{name}mutationType{name}types{name,kind}}}"}
+      - |
+        POST /api/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query{__schema{queryType{name}mutationType{name}types{name,kind}}}"}
+      - |
+        POST /v1/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query{__schema{queryType{name}mutationType{name}types{name,kind}}}"}
+      - |
+        POST /api/v1/graphql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"query":"query{__schema{queryType{name}mutationType{name}types{name,kind}}}"}
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - '"__schema"'
+          - '"types"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "errors"
+          - "Unauthorized"
+          - "Forbidden"
+        negative: true
