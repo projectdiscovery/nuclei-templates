@@ -1,7 +1,7 @@
 id: wallabag-panel
 
 info:
-  name: wallabag Panel - Detect
+  name: Wallabag Panel - Detect
   author: ChrisJr404
   severity: info
   description: |
@@ -19,35 +19,29 @@ info:
     fofa-query: title="wallabag"
   tags: panel,wallabag,readlater,selfhosted,detect,discovery
 
-flow: http(1) && http(2)
-
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
+      - "{{BaseURL}}/api/info.json"
 
+    stop-at-first-match: true
     host-redirects: true
     max-redirects: 2
 
+    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
-          - 'contains(to_lower(body), "wallabag</title>")'
-          - 'contains(to_lower(body), "wallabag logo")'
-        internal: true
+          - 'contains_all(to_lower(body), "wallabag</title>", "wallabag logo")'
         condition: and
 
-  - method: GET
-    path:
-      - "{{BaseURL}}/api/info.json"
-
-    matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
           - 'contains(content_type, "application/json")'
-          - 'contains_all(body, "\"appname\"", "\"wallabag\"", "\"version\"", "\"allowed_registration\"")'
+          - 'contains_all(body, "\"appname\"", "\"wallabag\"", "\"version")'
         condition: and
 
     extractors:
