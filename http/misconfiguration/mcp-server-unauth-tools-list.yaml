@@ -1,0 +1,92 @@
+id: mcp-server-unauth-tools-list
+
+info:
+  name: Model Context Protocol (MCP) Server - Unauthenticated Tools List Exposure
+  author: HackerTrinity
+  severity: high
+  description: |
+    The remote Model Context Protocol (MCP) server exposes its JSON-RPC 2.0 tools/list endpoint without authentication. An unauthenticated remote attacker can enumerate available server-side tools and arguments, leading to unauthorized tool invocation and potential remote code execution.
+  reference:
+    - https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-59822
+    - https://github.com/webpro255/awesome-ai-agent-attacks
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 9.1
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: http.title:"MCP" OR http.component:"Model Context Protocol"
+  tags: misconfig,mcp,ai,agent,exposure,unauth
+
+http:
+  - raw:
+      - |
+        POST /mcp HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+      - |
+        POST /messages HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+      - |
+        POST /sse HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Accept: application/json
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"result"'
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+
+      - type: word
+        part: body
+        negative: true
+        words:
+          - '"error"'
+          - '"code":-32'
+          - "Unauthorized"
+          - "Forbidden"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - ".result.tools[].name"
