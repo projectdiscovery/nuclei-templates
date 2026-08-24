@@ -1,0 +1,40 @@
+id: inventree-panel
+
+info:
+  name: InvenTree Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    InvenTree (inventree.org / github.com/inventree/InvenTree) is an open-source inventory management system. Its API root at /api/ is reachable without authentication and returns server metadata including the running version, exposing internet-facing instances.
+  reference:
+    - https://github.com/inventree/InvenTree
+    - https://inventree.org/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: inventree
+    product: inventree
+    shodan-query: http.title:"InvenTree"
+    fofa-query: title="InvenTree"
+  tags: panel,inventree,inventory,selfhosted,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "InvenTree")'
+          - 'contains_all(body, "\"apiVersion\"", "\"worker_running\"", "\"instance\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
