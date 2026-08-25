@@ -1,0 +1,57 @@
+id: mealie-panel
+
+info:
+  name: Mealie Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    Detected Mealie was a self-hosted recipe manager and meal planner with a Vue/Nuxt frontend and FastAPI backend.
+  reference:
+    - https://github.com/mealie-recipes/mealie
+    - https://mealie.io/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: mealie-recipes
+    product: mealie
+    shodan-query: http.title:"Mealie"
+    fofa-query: title="Mealie"
+  tags: panel,mealie,recipe,selfhosted,detect,discovery
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>mealie</title>")'
+        internal: true
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/app/about"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"production\"", "\"version\"", "\"demoStatus\"", "\"allowSignup\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 490a004630440220793cf1c60a131c021ce4e0e06058380fad368c9290062343e7db5e5a0813959802200bde9c4f8b86bbcdd4929f6d552dc338f96a38927c40a151a1f99a1e9ffce4cb:922c64590222798bb761d5b6d8e72950

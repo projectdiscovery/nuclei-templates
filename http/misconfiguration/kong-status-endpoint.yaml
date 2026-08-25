@@ -1,0 +1,71 @@
+id: kong-status-endpoint
+
+info:
+  name: Kong API Gateway - Internal Status Endpoint
+  author: Amjad Ali
+  severity: info
+  description: |
+    Kong API Gateway's internal /status endpoint is publicly accessible either directly or via IP restriction bypass using spoofed headers. The endpoint exposes server metrics including active connections, request counts, database reachability, worker Lua VM memory usage, and shared dictionary allocation details.
+  reference:
+    - https://docs.konghq.com/gateway/latest/production/monitoring/status-api/
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: konghq
+    product: kong-gateway
+    shodan-query: 'http.title:"Kong" || "Server: kong"'
+    fofa-query: 'header="Server: kong"'
+  tags: kong,misconfig,exposure,api-gateway,konghq
+
+flow: http(1) || http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/status"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
+
+  - raw:
+      - |
+        GET /status HTTP/1.1
+        Host: {{Hostname}}
+        {{header}}: 127.0.0.1
+
+    attack: clusterbomb
+    payloads:
+      header:
+        - "X-Forwarded-For"
+        - "X-Real-IP"
+        - "X-Client-IP"
+        - "True-Client-IP"
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "\"connections_reading\"", "\"workers_lua_vms\"", "\"lua_shared_dicts\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - 'Server: kong/([0-9.]+)'
+# digest: 4b0a00483046022100f17584ea23ba20ee744b1d475adce4b6dcb8a4e5efd68e35922c1ee3c035484b022100b863dec4fb95cf82dccaa62dd7950212de8def74da0e616279fe12096b3a7717:922c64590222798bb761d5b6d8e72950

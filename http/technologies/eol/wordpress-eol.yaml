@@ -1,0 +1,46 @@
+id: wordpress-eol
+
+info:
+  name: WordPress End-of-Life - Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detected WordPress versions that have reached End-of-Life (EOL) and no longer receive security updates.
+  reference:
+    - https://endoflife.date/wordpress
+    - https://wordpress.org/documentation/article/wordpress-versions/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "WordPress"
+  tags: tech,wordpress,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '(?i)<meta[^>]*name=["\'']?generator["\'']?[^>]*content=["\'']?WordPress\s+([0-9.]+)'
+          - 'wp-includes/js/wp-emoji-release(?:\.min)?\.js\?ver=([0-9]+\.[0-9.]+)'
+          - 'wp-includes/css/dist/block-library/style(?:\.min)?\.css\?ver=([0-9]+\.[0-9.]+)'
+          - 'wp-includes/blocks/[a-z-]+/style(?:\.min)?\.css\?ver=([0-9]+\.[0-9.]+)'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(to_lower(body), "/wp-content/","/wp-includes/","/wp-json/")'
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(version) > 0'
+          - 'compare_versions(version, "<6.9")'
+        condition: and
+# digest: 4a0a0047304502204eda988a78ebf79e7077e1d1cbb237e870d6b799a4fd9adeff72c30d432d52c80221008c7022f1d52546ac0c52242dfa69b9506aef2f3ae814e0dff4ff3ee4ae90f331:922c64590222798bb761d5b6d8e72950

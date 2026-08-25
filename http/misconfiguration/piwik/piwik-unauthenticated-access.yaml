@@ -1,0 +1,55 @@
+id: piwik-unauthenticated-access
+
+info:
+  name: Piwik/Matomo - Unauthenticated Access
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Piwik/Matomo instances exposing analytics data without authentication. When anonymous access was enabled, the API returned visitor statistics, page views, and other sensitive analytics data using the anonymous token.
+  reference:
+    - https://developer.matomo.org/api-reference/reporting-api
+    - https://matomo.org/faq/general/faq_152/
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: matomo
+    product: matomo
+    shodan-query:
+      - http.title:"Piwik"
+      - http.title:"Matomo"
+    fofa-query:
+      - title="Piwik"
+      - title="Matomo"
+  tags: piwik,matomo,unauth,exposure,misconfig,analytics
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=today&format=json&token_auth=anonymous"
+      - "{{BaseURL}}/matomo/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=today&format=json&token_auth=anonymous"
+      - "{{BaseURL}}/piwik/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=today&format=json&token_auth=anonymous"
+      - "{{BaseURL}}/index.php?module=API&method=SitesManager.getAllSites&format=json&token_auth=anonymous"
+      - "{{BaseURL}}/matomo/index.php?module=API&method=SitesManager.getAllSites&format=json&token_auth=anonymous"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "nb_visits"
+          - "nb_uniq_visitors"
+          - "nb_actions"
+          - "idsite"
+          - "main_url"
+        condition: or
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 490a004630440220547f37a63db550d3d7dae32f9f8986b6125f275f2d4e0e0d701db25d1bad4c75022077f93b4c8ad0923afb3cfaabbffc97ad80847f5d6caf067170e7f3fb4517cf0b:922c64590222798bb761d5b6d8e72950

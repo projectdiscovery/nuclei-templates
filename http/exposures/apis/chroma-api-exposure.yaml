@@ -1,0 +1,40 @@
+id: chroma-api-exposure
+
+info:
+  name: ChromaDB - Unauthenticated API Exposure
+  author: pussycat0x,DevamShah
+  severity: medium
+  description: |
+    ChromaDB runs without authentication by default, exposing the API edpoint to anyone and allowing unauthorized access to read.
+  reference:
+    - https://github.com/chroma-core/chroma
+    - https://docs.trychroma.com/docs/run-chroma/chroma-server/security
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: '"ChromaDB"'
+    product: chromadb
+    vendor: chroma-core
+  tags: chromadb,exposure,misconfig,unauth,ai,ml,vectordb
+
+http:
+  - raw:
+      - |
+        GET /api/v2/tenants/default_tenant/databases/default_database/collections HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+      - |
+        GET /api/v1/collections HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains_all(body, "configuration_json","hnsw_configuration","log_position")
+        condition: and
+# digest: 490a00463044022028302e2cd1831fa746528fcca287cf7bcc567e170f6204201609d316188eab8d022031224a12fbc38f99b9ff7e71c36b5632a5b7dcc804799919918432c055982a61:922c64590222798bb761d5b6d8e72950

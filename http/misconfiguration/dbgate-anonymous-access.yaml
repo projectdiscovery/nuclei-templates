@@ -1,0 +1,51 @@
+id: dbgate-anonymous-access
+
+info:
+  name: DbGate Anonymous Access - Detection
+  author: benharvey-sage
+  severity: high
+  description: |
+    Detected DbGate instances that allowed anonymous access due to insecure default authentication settings, where unauthenticated users could obtain a valid JWT token and access database management APIs.
+  reference:
+    - https://github.com/dbgate/dbgate
+    - https://dbgate.io/
+    - https://docs.dbgate.io/
+  classification:
+    cwe-id: CWE-1188
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: dbgate
+    product: dbgate
+    shodan-query:
+      - http.title:"DbGate"
+      - http.favicon.hash:-1320884137,1198579728,361029891,-1421367029,1377130137,-1258062033
+  tags: misconfig,exposure,unauth,anonymous,dbgate
+
+http:
+  - raw:
+      - |
+        POST /auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"amoid":"none"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '{"accessToken":"'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: access_token
+        part: body
+        json:
+          - '.accessToken'
+# digest: 4a0a0047304502204c7707c5997ffe2cb5f347e9ba1168a25041b71ee35449a46935ee80af2e6ddf022100b536626f8b400173b9cee5cf706efe8b63f5be1608893af8cbf28037d8fb061f:922c64590222798bb761d5b6d8e72950

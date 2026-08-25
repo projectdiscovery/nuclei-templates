@@ -1,0 +1,65 @@
+id: superset-default-login
+
+info:
+  name: Apache Superset - Default Login
+  author: theamanrawat
+  severity: high
+  description: |
+    Apache Superset instance discovered using weak default credentials, allows the attacker to gain admin privilege.
+  reference:
+    - https://superset.apache.org/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: apache
+    product: superset
+    shodan-query:
+      - http.title:"Superset"
+      - product:"Apache Superset"
+    fofa-query:
+      - app="Apache-Superset" || title="Superset"
+  tags: default-login,apache,superset,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/login/'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_any(body, "alt=\"Superset\"", "<title>Superset</title>", "SUPERSET", "superset")'
+        condition: and
+        internal: true
+
+
+  - raw:
+      - |
+        POST /api/v1/security/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}","provider":"db","refresh":true}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "access_toke", "refresh_token")'
+        condition: and
+# digest: 4a0a0047304502205956ca43fb9a729b1db5e6ff70709e37f5e5dfd61132be75700e0998df088f99022100e303e69a985afdbaab56183235817896dcf9640398942860b08225758842417c:922c64590222798bb761d5b6d8e72950

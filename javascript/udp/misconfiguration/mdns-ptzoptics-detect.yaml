@@ -1,0 +1,65 @@
+id: mdns-ptzoptics-detect
+
+info:
+  name: PTZOptics Device via mDNS - Detect
+  author: rxerium
+  severity: info
+  description: |
+    Detects PTZOptics camera devices exposed via mDNS (Multicast DNS) on port 5353. PTZOptics cameras broadcast mDNS service advertisements including SSH, SFTP, and NDI streaming services. These devices are commonly used for video conferencing and broadcast production.
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: port:5353 ptzoptics
+  tags: mdns,udp,js,ptzoptics,camera,iot,exposure
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host,Port);
+
+    code: |
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      // Query for _services._dns-sd._udp.local PTR records
+      // This queries for all advertised mDNS services
+      let packet = "e3bc01200001000000000001095f7365727669636573075f646e732d7364045f756470056c6f63616c00000c000100002904d000000000000c000a00083e6e072b14fd0be3";
+      conn.SendHex(packet);
+      let resp = conn.Recv(512);
+      resp;
+
+    args:
+      Host: "{{Host}}"
+      Port: 5353
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "len(response) > 0"
+
+      - type: word
+        words:
+          - "_ndi"
+          - "_ssh"
+        condition: and
+
+    extractors:
+      - type: regex
+        name: device_name
+        regex:
+          - "Name=([^\n\r]+)"
+        group: 1
+
+      - type: regex
+        name: services
+        regex:
+          - "_ndi\\._tcp"
+          - "_ssh\\._tcp"
+          - "_sftp-ssh\\._tcp"
+
+      - type: regex
+        name: ip_address
+        regex:
+          - "Address=([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})"
+        group: 1
+# digest: 4a0a00473045022048d507a2e4b2cbbfd53bed5bf3778e188a73eb5acedae0a2dbd096c7e1901a56022100ed460a99770d2e313130258905c59c18f5bfdf2867b2604986e8243e76cb6cc5:922c64590222798bb761d5b6d8e72950

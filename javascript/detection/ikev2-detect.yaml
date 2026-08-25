@@ -1,0 +1,137 @@
+id: ikev2-detect
+
+info:
+  name: IKEv2 Service - Detection
+  author: pussycat0x
+  severity: info
+  description: |
+    Detects IKEv2 services by sending a crafted IKE_SA_INIT request over UDP/500 and analyzing the response. Supports multiple cipher suites and DH groups for broad compatibility; any valid IKEv2 reply confirms the service.
+  reference:
+    - https://www.rfc-editor.org/rfc/rfc7296
+    - https://www.iana.org/assignments/ikev2-parameters
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: "port:500 product:IKE"
+    fofa-query: "port=\"500\" && protocol=\"isakmp\""
+  tags: js,network,udp,ikev2,ipsec,vpn,ike,detect,discovery
+
+javascript:
+  - pre-condition: |
+      isUDPPortOpen(Host, Port);
+
+    code: |
+      let c = require("nuclei/net");
+      let conn = c.Open('udp', `${Host}:${Port}`);
+      conn.SetTimeout(10);
+
+      // Pre-crafted IKEv2 SA_INIT packet (500 bytes)
+      let packet =
+        "deadbeefc0decafe" +                // Initiator SPI
+        "0000000000000000" +                // Responder SPI (empty)
+        "2120220800000000000001f4" +        // IKE Header: Next=SA(21) Ver=2.0(20) ExType=SA_INIT(22) Flags=Init(08) MsgID=0 Len=500
+        "220000ac" +                        // SA Payload: Next=KE(22) Len=172
+        "0200005001010008" +                // Proposal 1 (AEAD): More, Len=80, #1, IKE, SPIsz=0, 8 transforms
+        "0300000c01000014800e0100" +        //   ENCR_AES_GCM_16ICV KeyLen=256
+        "0300000c01000014800e0080" +        //   ENCR_AES_GCM_16ICV KeyLen=128
+        "0300000802000005" +                //   PRF_HMAC_SHA256
+        "0300000802000007" +                //   PRF_HMAC_SHA512
+        "0300000803000000" +                //   INTEG_NONE (AEAD)
+        "0300000804000014" +                //   DH_GROUP_20 (384-bit ECP)
+        "0300000804000013" +                //   DH_GROUP_19 (256-bit ECP)
+        "000000080400000e" +                //   DH_GROUP_14 (2048-bit MODP)
+        "0000005802010009" +                // Proposal 2 (Classic): Last, Len=88, #2, IKE, SPIsz=0, 9 transforms
+        "0300000c0100000c800e0100" +        //   ENCR_AES_CBC KeyLen=256
+        "0300000c0100000c800e0080" +        //   ENCR_AES_CBC KeyLen=128
+        "0300000801000003" +                //   ENCR_3DES
+        "0300000802000005" +                //   PRF_HMAC_SHA256
+        "0300000802000002" +                //   PRF_HMAC_SHA1
+        "030000080300000c" +                //   INTEG_HMAC_SHA256_128
+        "0300000803000002" +                //   INTEG_HMAC_SHA1_96
+        "030000080400000e" +                //   DH_GROUP_14
+        "0000000804000002" +                //   DH_GROUP_2
+        "28000108000e0000" +                // KE Payload: Next=Ni(28) Len=264 DHGroup=14
+        "000102030405060708090a0b0c0d0e0f" +
+        "101112131415161718191a1b1c1d1e1f" +
+        "202122232425262728292a2b2c2d2e2f" +
+        "303132333435363738393a3b3c3d3e3f" +
+        "404142434445464748494a4b4c4d4e4f" +
+        "505152535455565758595a5b5c5d5e5f" +
+        "606162636465666768696a6b6c6d6e6f" +
+        "707172737475767778797a7b7c7d7e7f" +
+        "808182838485868788898a8b8c8d8e8f" +
+        "909192939495969798999a9b9c9d9e9f" +
+        "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf" +
+        "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf" +
+        "c0c1c2c3c4c5c6c7c8c9cacbcccdcecf" +
+        "d0d1d2d3d4d5d6d7d8d9dadbdcdddedf" +
+        "e0e1e2e3e4e5e6e7e8e9eaebecedeeef" +
+        "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff" +
+        "00000024" +                        // Nonce Payload: Next=None(00) Len=36
+        "4142434445464748494a4b4c4d4e4f50" +
+        "5152535455565758595a414243444546";
+
+      conn.SendHex(packet);
+      let raw = conn.Recv(2048);
+      let hexBuf = bytes.NewBuffer();
+      hexBuf.Write(raw);
+      let resp = hexBuf.Hex();
+      let result = {};
+      result.raw_hex = resp;
+      result.raw_length = resp.length / 2;
+
+      if (resp.length >= 56) {
+        result.initiator_spi = resp.substring(0, 16);
+        result.responder_spi = resp.substring(16, 32);
+
+        let ver_byte = parseInt(resp.substring(34, 36), 16);
+        result.ike_major = (ver_byte >> 4) & 0x0f;
+        result.ike_minor = ver_byte & 0x0f;
+        result.ike_version = result.ike_major + "." + result.ike_minor;
+
+        let flags_byte = parseInt(resp.substring(38, 40), 16);
+        result.is_response = (flags_byte & 0x20) != 0;
+
+        let extype = parseInt(resp.substring(36, 38), 16);
+        if (extype == 34) result.exchange_name = "IKE_SA_INIT";
+        else if (extype == 35) result.exchange_name = "IKE_AUTH";
+        else if (extype == 37) result.exchange_name = "INFORMATIONAL";
+        else result.exchange_name = "EXCHANGE_" + extype;
+
+        let nxt = parseInt(resp.substring(32, 34), 16);
+        if (nxt == 33) result.first_payload = "SA";
+        else if (nxt == 34) result.first_payload = "KE";
+        else if (nxt == 40) result.first_payload = "Nonce";
+        else if (nxt == 41) result.first_payload = "Notify";
+        else if (nxt == 43) result.first_payload = "VendorID";
+        else result.first_payload = "PayloadType_" + nxt;
+
+        if (nxt == 41 && resp.length >= 72) {
+          let notify_type = parseInt(resp.substring(68, 72), 16);
+          if (notify_type == 14) result.notify_message = "NO_PROPOSAL_CHOSEN";
+          else if (notify_type == 17) result.notify_message = "INVALID_KE_PAYLOAD";
+          else if (notify_type == 16390) result.notify_message = "COOKIE";
+          else if (notify_type == 7) result.notify_message = "INVALID_SYNTAX";
+          else if (notify_type == 5) result.notify_message = "INVALID_SPI";
+          else if (notify_type == 24) result.notify_message = "AUTHENTICATION_FAILED";
+          else result.notify_message = "NOTIFY_" + notify_type;
+        }
+
+        result.sa_established = result.responder_spi != "0000000000000000";
+        result.detected = (result.ike_major == 2);
+        result.service = "IKEv2/IPsec";
+      }
+
+      Export(result);
+
+    args:
+      Host: "{{Host}}"
+      Port: "500"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "success == true"
+          - "contains(response, 'detected:true')"
+        condition: and
+# digest: 4a0a00473045022000e5d0edfff461be01b9755067c4aa5c22293c054da18116e30adf98e2ecfc24022100bab2f07149afa8f693f28e11a083b12d6a9d26902ff7cea7f22adf4fe7a8c509:922c64590222798bb761d5b6d8e72950

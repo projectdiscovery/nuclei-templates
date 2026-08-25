@@ -1,0 +1,46 @@
+id: forgejo-eol
+
+info:
+  name: Forgejo End-of-Life - Detect
+  author: Shivam Kamboj
+  severity: info
+  description: |
+    Detected Forgejo versions that have reached End-of-Life (EOL) and no longer receive security updates.
+  reference:
+    - https://endoflife.date/forgejo
+    - https://forgejo.org/docs/latest/admin/upgrade/#release-life-cycle
+    - https://forgejo.org/docs/next/user/versions/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: 'http.title:"Forgejo"'
+    fofa-query: 'title="Forgejo"'
+  tags: tech,forgejo,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/api/v1/version"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'len(version) > 0'
+
+      - type: dsl
+        dsl:
+          - 'compare_versions(version, "< 11.0.0") || compare_versions(version, ">= 12.0.0", "< 14.0.0")'
+          - 'contains(tolower(body_1), "forgejo")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        name: version
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9]+\.[0-9]+\.[0-9]+)'
+        internal: true
+# digest: 4a0a00473045022100a6885401d773dc00fda6aea32a15f00ecfcd1b271b91f4e40c70dffaae29b1e602201c35e7ca9cbbf6e6d01f8f5162c3034a45b6195241b7decc211a06149a9689cc:922c64590222798bb761d5b6d8e72950

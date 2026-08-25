@@ -1,0 +1,48 @@
+id: argo-workflows-unauth
+
+info:
+  name: Argo Workflows - Unauthenticated Dashboard
+  author: 0xBassia
+  severity: high
+  description: |
+    Argo Workflows dashboard is accessible without authentication. Argo Workflows is a Kubernetes-native workflow engine that can execute arbitrary containers and commands. Unauthenticated access allows viewing, creating, and modifying workflows.
+  impact: |
+    An attacker can view all workflow executions and their logs (potentially containing secrets), submit new workflows that execute arbitrary containers in the Kubernetes cluster, and access service account tokens for further cluster exploitation.
+  remediation: |
+    Configure Argo Workflows SSO authentication or set --auth-mode=server in the argo-server deployment. Apply Kubernetes RBAC policies to restrict workflow creation.
+  reference:
+    - https://argo-workflows.readthedocs.io/en/latest/argo-server-auth-mode/
+    - https://argo-workflows.readthedocs.io/en/latest/argo-server-sso/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L
+    cvss-score: 9.4
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: title:"Argo Workflows"
+  tags: misconfig,argo,kubernetes,unauth,workflow
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}/api/v1/workflows/argo'
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"metadata"'
+          - '"items"'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008eea12d714421f82dbea9ce90333d9f64875ca4f2dd43da0ced9e739fe85c3b9022100e212bf4c09eb4df846e6f32f1015922bb882e5e26935a4355cddf358712b4748:922c64590222798bb761d5b6d8e72950

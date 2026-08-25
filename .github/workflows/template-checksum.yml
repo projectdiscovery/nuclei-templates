@@ -1,11 +1,21 @@
 name: 📝 Template Checksum
 
 on:
+  # For YAML changes: wait for signing to complete first, then checksum
+  workflow_run:
+    workflows:
+      - "☑️ Template Sign"
+    types:
+      - completed
+    branches:
+      - main
+  # For non-YAML changes: trigger directly (signing doesn't run for these)
   push:
     branches:
       - main
-    paths:
+    paths-ignore:
       - '**.yaml'
+      - 'templates-checksum.txt'
   workflow_dispatch:
 
 env:
@@ -14,9 +24,14 @@ env:
 jobs:
   checksum:
     runs-on: ubuntu-latest
-    if: github.repository == 'projectdiscovery/nuclei-templates'
+    if: >
+      github.repository == 'projectdiscovery/nuclei-templates' && (
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'push' ||
+        github.event.workflow_run.conclusion == 'success'
+      )
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: projectdiscovery/actions/generate/checksum@v1
         with:
           templates-directory: '${{ github.workspace }}'
