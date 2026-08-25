@@ -1,0 +1,54 @@
+id: huggingface-tei-tgi-detect
+
+info:
+  name: HuggingFace TEI & TGI - Detect
+  author: insidetrust,hdm
+  severity: info
+  description: |
+    Detected the presence of HuggingFace Text Embeddings Inference (TEI), a toolkit for serving text embedding and re-ranking models, and HuggingFace Text Generation Inference (TGI), a Rust/Python toolkit for serving and deploying large language models.
+  reference:
+    - https://github.com/huggingface/text-embeddings-inference
+    - https://github.com/huggingface/text-generation-inference
+    - https://huggingface.co/docs/text-embeddings-inference/index
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: huggingface
+    product: text-embeddings-inference
+  tags: tech,detect,tei,tgi,llm
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/info"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"model_id"'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+          - 'contains(body, "\"model_type\"") && contains(body, "\"embedding\"") || contains(body, "\"text-generation-router\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([0-9][0-9A-Za-z.\-+]*)"'
+
+      - type: regex
+        name: model_id
+        part: body
+        group: 1
+        regex:
+          - '"model_id"\s*:\s*"([^"]+)"'
+# digest: 4a0a004730450220700ae90664888636a0086066dd6b03307527e9560886952e41aafbd3895697b4022100ddc8da26bf6927dc29567b5f25a749bfd060955b8192b9c32ef17bd639547463:922c64590222798bb761d5b6d8e72950

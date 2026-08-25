@@ -1,0 +1,49 @@
+id: claude-settings-exposure
+
+info:
+  name: Claude Code Project Settings Exposure
+  author: shadowhunter-92
+  severity: medium
+  description: |
+    Claude Code project configuration file (.claude/settings.json or .claude/settings.local.json) was detected on the web server. This file controls Claude Code's runtime behavior including permission rules (Bash allow/deny lists, file access), environment variables, hooks that execute shell commands on lifecycle events, and MCP server configurations. Exposure of this file may leak sensitive permission rules, environment variables (including API keys placed in the env block), and reveal information about the project's internal automation setup.
+  reference:
+    - https://docs.claude.com/en/docs/claude-code/settings
+    - https://docs.claude.com/en/docs/claude-code/permissions
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.html:"claude"
+  tags: config,exposure,claude,claude-code,anthropic,ai
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.claude/settings.json"
+      - "{{BaseURL}}/.claude/settings.local.json"
+      - "{{BaseURL}}/.mcp.json"
+
+    stop-at-first-match: false
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "\"permissions\"", "\"hooks\"", "\"env\"", "\"mcpServers\"", "\"additionalDirectories\"", "\"enableAllProjectMcpServers\"", "\"defaultMode\"")'
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+          - "text/json"
+          - "text/plain"
+          - "application/octet-stream"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402207a101efa867afc4b6ec17c383a0ee147a44fb5ad6c6245ad57220778ffa16bdc02203fe1850a99d82e71d979359a049940af6245cec054566655b67ec39fc8730547:922c64590222798bb761d5b6d8e72950

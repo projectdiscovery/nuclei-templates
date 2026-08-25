@@ -2,12 +2,13 @@ id: inertiajs-detect
 
 info:
   name: Inertia.js - Detect
-  author: antonkulyk
+  author: antonkulyk,marcialpaulg
   severity: info
   description: |
-    Detects Inertia.js, a stack for building single-page apps using classic server-side routing. Matching targets the server-rendered page payload embedded in the root element's data-page attribute (JSON with component, props, and url keys), which is the default integration pattern for adapters such as Laravel's inertia-laravel.
+    Detected Inertia.js passively using a single plain GET request with no special headers. It matched four server-emitted Inertia-specific signals on the initial document: three proximity-bound body patterns covering the embedded page object formats and one `Vary: X-Inertia` response header signal set by supported middleware adapters.
   reference:
     - https://inertiajs.com/
+    - https://inertiajs.com/the-protocol
     - https://github.com/inertiajs/inertia
     - https://github.com/inertiajs/inertia-laravel
   metadata:
@@ -27,17 +28,23 @@ http:
 
     matchers-condition: or
     matchers:
-      - type: word
+      - type: regex
         part: body
-        words:
-          - 'data-page="'
-          - '&quot;component&quot;'
-          - '&quot;props&quot;'
-          - '&quot;url&quot;'
-        condition: and
+        regex:
+          - 'data-page="[^"]*&quot;component&quot;[^"]*&quot;props&quot;[^"]*&quot;url&quot;'
 
       - type: regex
         part: body
         regex:
-          - "(?is)data-page\\s*=\\s*\"(?:[^\"\\\\]|\\\\.)*\\\\\"component\\\\\"(?:[^\"\\\\]|\\\\.)*\\\\\"props\\\\\"(?:[^\"\\\\]|\\\\.)*\\\\\"url\\\\\""
-# digest: 490a00463044022005bb2a6b3783297e7f6d9cdf10e9899892a88549ec28211af6be1c83e0bc282c02201da00a9d22f8c045a0685cbcd021172c1fb9f1af90a6ff339dc390254efe2dd9:922c64590222798bb761d5b6d8e72950
+          - 'data-page=''[^'']*"component":[^'']*"props":[^'']*"url":'
+
+      - type: regex
+        part: body
+        regex:
+          - '<script[^>]*data-page=["''][^>]*>[^<]*"component":[^<]*"props":[^<]*"url":'
+
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^vary:[^\r\n]*x-inertia'
+# digest: 4a0a0047304502200d657a4c3e3a50a9436b90b899f0cbf698a285349b0868c044cfdd5f43fc56d3022100cfb1775c7d076834ba9d69b07431c1443752c43d8d311974b8f287f5c41f469b:922c64590222798bb761d5b6d8e72950
