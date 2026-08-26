@@ -1,0 +1,52 @@
+id: litellm-default-login
+
+info:
+  name: LiteLLM - Default Login
+  author: icarot
+  severity: high
+  description: |
+    LiteLLM enables default admin credential. An attacker can execute unauthorized operations.
+  reference:
+    - https://github.com/BerriAI/litellm
+  metadata:
+    max-request: 1
+    shodan-query: http.html:"LiteLLM"
+  tags: litellm,default-login,misconfig
+
+variables:
+  username: admin
+  password: sk-1234
+
+http:
+  - raw:
+      - |
+        POST /v2/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"redirect_url":'
+          - '"token":'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: token
+        json:
+          - '.token'
+# digest: 490a0046304402203945b0cc3d28061e771c9cfa73ec2dda798ab0cfc317be52cf4a000c4b43980a02203bea43e5bf47d43109587f2ac32da7aa8ed79f7b0f43962326a0d956048e3411:922c64590222798bb761d5b6d8e72950

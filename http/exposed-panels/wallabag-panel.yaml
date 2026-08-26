@@ -1,0 +1,53 @@
+id: wallabag-panel
+
+info:
+  name: Wallabag Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    wallabag (wallabag.org / github.com/wallabag/wallabag) is a popular open-source self-hosted read-it-later application built on Symfony. The login page and the anonymous /api/info.json endpoint expose the running instance and its version.
+  reference:
+    - https://github.com/wallabag/wallabag
+    - https://wallabag.org/
+    - https://doc.wallabag.org/developer/api/methods.html
+  metadata:
+    verified: false
+    max-request: 2
+    vendor: wallabag
+    product: wallabag
+    shodan-query: http.title:"wallabag"
+    fofa-query: title="wallabag"
+  tags: panel,wallabag,readlater,selfhosted,detect,discovery
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/api/info.json"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(to_lower(body), "wallabag</title>", "wallabag logo")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"appname\"", "\"wallabag\"", "\"version")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100a674eaa1e7bdf7d90022b12445353c988feebac211a3c6b37b23e10f015a8ce30221008da31c94933409ec2cae81542aa43e438a77e580dc8db69490e15ea2c0b149e4:922c64590222798bb761d5b6d8e72950
