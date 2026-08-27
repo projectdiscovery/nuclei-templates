@@ -1,0 +1,49 @@
+id: johnson-controls-frick-quantum-hd-compressor-default-login
+
+info:
+  name: Johnson Controls Frick Quantum HD Compressors - Default Login
+  author: mister-joe
+  severity: high
+  description: |
+    Detected Johnson Controls Frick Quantum HD Compressor control panels are accessible with default PIN credentials. These are industrial refrigeration controllers used in cold storage and food processing facilities. Default PINs allow full control of the compressor system.
+  reference:
+    - https://www.johnsoncontrols.com/industrial-refrigeration/frick-control-panels-and-control-systems/quantum-hd-industrial-refrigeration-control-panel
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 6
+    vendor: johnson-controls
+    product: frick-quantum-hd
+    shodan-query: http.headers:"PrimeUnity"
+    fofa-query: header="PrimeUnity" || body="Quantum HD"
+  tags: default-login,iot,ics,scada,johnson-controls,frick
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        {"pin":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      password:
+        - 1
+        - 2
+        - 3
+        - 10
+        - 20
+        - 30
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Authorized")'
+          - 'contains(header, "PrimeUnity")'
+        condition: and
