@@ -1,38 +1,29 @@
 id: log4j-4255-marshalledobject-rce
 
 info:
-  name: Apache Log4j2 #4255 - FilteredObjectInputStream allowlist bypass (MarshalledObject) - blind RCE (interactsh)
+  name: Apache Log4j2 2.11.0-2.26.1 - MarshalledObject Deserialization Filter Bypass to RCE
   author: redpatronus
   severity: critical
   description: |
-    Self-contained detection for log4j2 #4255 -- no payload generator, no external
-    files. Sends one serialized LogEvent over a RAW TCP socket to a FOIS-based
-    serialized-LogEvent receiver; a pure commons-collections6 gadget hidden in the
-    LogEventProxy's java.rmi.MarshalledObject is deserialized on a fresh UNFILTERED
-    stream -> RCE. No attacker class is required on the victim (only a usable gadget
-    version, e.g. commons-collections 3.2.1).
-
-    This is BLIND, silent RCE (the receiver returns nothing and keeps running), so
-    detection is out-of-band via ProjectDiscovery Interactsh: the victim contacts a
-    per-scan {{interactsh-url}} over DNS (getent) and HTTP (curl), and the
-    interaction confirms code execution.
-
-    The serialized object is carried as two static halves (prefix/suffix). The
-    embedded command is padded to a FIXED 200 bytes so both length fields in the
-    stream (the MarshalledObject byte[] length and the command String length) stay
-    valid regardless of the interactsh URL length -- only the space padding is
-    computed inline (repeat + len(iurl)); no length bytes are patched.
+    Apache Log4j2 2.11.0 through 2.26.1 allows deserialization filter bypass via java.rmi.MarshalledObject in the TCP socket LogEvent receiver. The allowlisted MarshalledObject wraps an inner stream that is deserialized without filtering, enabling RCE with standard Java gadget chains (e.g. commons-collections).
+  impact: |
+    Unauthenticated remote code execution on any Log4j2 TCP serialized-LogEvent receiver.
+  remediation: |
+    Upgrade to Log4j2 2.26.2 or later. Restrict access to TCP LogEvent receiver ports..
   reference:
     - https://github.com/apache/logging-log4j2/issues/4255
     - https://github.com/apache/logging-log4j2/discussions/4168
     - https://logging.apache.org/security/faq.html
   classification:
     cwe-id: CWE-502
-  tags: log4j,deserialization,rce,tcp,oast,interactsh,java,marshalledobject
   metadata:
-    note: "raw TCP object stream, not HTTP. Target = host:port of the serialized-LogEvent receiver."
-    victim-precondition: "unauthenticated FOIS LogEvent receiver + usable gadget (e.g. commons-collections 3.2.1) on classpath"
-    max-interactsh-url: "command padded to 200B; supports interactsh URLs up to ~74 bytes"
+    verified: true
+    max-request: 1
+    vendor: apache
+    product: log4j
+    shodan-query: port:"4712,4560" product:"Log4j"
+    fofa-query: protocol="tcp" && banner="log4j"
+  tags: log4j,log4j2,deserialization,rce,network,oast,java
 
 variables:
   iurl: "{{interactsh-url}}"
@@ -60,3 +51,4 @@ tcp:
         name: http-oob-rce
         words:
           - "http"
+
