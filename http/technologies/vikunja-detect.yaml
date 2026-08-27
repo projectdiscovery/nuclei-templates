@@ -1,0 +1,37 @@
+id: vikunja-detect
+
+info:
+  name: Vikunja - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    Detects Vikunja instances through the unauthenticated info API endpoint and extracts the running version. Vikunja is a self hosted to-do and project management application.
+  reference:
+    - https://vikunja.io/
+    - https://github.com/go-vikunja/vikunja
+    - https://vikunja.io/docs/config-options/
+  metadata:
+    verified: true
+    max-request: 1
+    shodan-query: http.title:"Vikunja"
+  tags: tech,vikunja,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/info"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"link_sharing_enabled\"", "\"available_migrators\"", "\"caldav_enabled\"")'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.version'
