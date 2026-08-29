@@ -1,0 +1,44 @@
+id: victoriametrics-vmagent-exposed
+
+info:
+  name: VictoriaMetrics vmagent - Unauthenticated Targets Exposure
+  author: SEU_GITHUB_USER
+  severity: low
+  description: |
+    VictoriaMetrics' vmagent exposes a /targets (human) and /api/v1/targets
+    (JSON) view of every scrape target it is configured against, with no
+    authentication by default. This leaks internal service inventory
+    (hostnames, ports, labels) and scrape health, which is useful recon data
+    for an attacker mapping an organization's internal infrastructure.
+  reference:
+    - https://docs.victoriametrics.com/victoriametrics/vmagent/
+  classification:
+    cpe: cpe:2.3:a:victoriametrics:victoriametrics:*:*:*:*:*:*:*:*
+  metadata:
+    verified: false # TODO: confirm against `docker run -p 8429:8429 victoriametrics/vmagent` before PR
+    max-request: 1
+    vendor: victoriametrics
+    product: vmagent
+  tags: exposure,victoriametrics,vmagent,unauth,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/targets"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"activeTargets"'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: active_targets
+        json:
+          - ".data.activeTargets"

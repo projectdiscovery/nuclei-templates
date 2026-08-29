@@ -1,0 +1,47 @@
+id: jaeger-ui-exposed
+
+info:
+  name: Jaeger Query UI/API - Unauthenticated Exposure
+  author: SEU_GITHUB_USER
+  severity: low
+  description: |
+    Jaeger's UI and Query API have no built-in authentication (tracked upstream
+    as jaegertracing/jaeger-ui#211, still open). An internet-facing Jaeger
+    instance lets anyone enumerate every instrumented service via /api/services
+    and read distributed traces, which routinely leak internal hostnames, IPs,
+    endpoint paths and occasionally credentials/tokens placed in span tags.
+  reference:
+    - https://github.com/jaegertracing/jaeger-ui/issues/211
+    - https://www.jaegertracing.io/docs/latest/apis/
+  classification:
+    cpe: cpe:2.3:a:jaegertracing:jaeger:*:*:*:*:*:*:*:*
+  metadata:
+    verified: false # TODO: confirm against `docker run -p 16686:16686 jaegertracing/all-in-one` before PR
+    max-request: 1
+    vendor: jaegertracing
+    product: jaeger
+  tags: exposure,jaeger,tracing,unauth,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/services"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"data"'
+          - '"total"'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: services
+        json:
+          - ".data"

@@ -1,0 +1,46 @@
+id: thanos-query-exposed
+
+info:
+  name: Thanos Query UI/API - Unauthenticated Exposure
+  author: SEU_GITHUB_USER
+  severity: medium
+  description: |
+    Thanos' Query component has no built-in authentication and, by design,
+    federates metrics across every store/sidecar it is configured to talk to.
+    An internet-facing Thanos Query instance can therefore expose aggregated
+    metrics (and internal topology, via /api/v1/stores) across multiple
+    clusters/tenants at once through a single unauthenticated endpoint.
+  reference:
+    - https://thanos.io/tip/components/query.md/
+  classification:
+    cpe: cpe:2.3:a:thanos:thanos:*:*:*:*:*:*:*:*
+  metadata:
+    verified: false # TODO: confirm against `thanosio/thanos query` container before PR
+    max-request: 1
+    vendor: thanos
+    product: thanos
+  tags: exposure,thanos,prometheus,unauth,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/status/runtimeinfo"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"status":"success"'
+          - '"data"'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: runtimeinfo
+        json:
+          - ".data"

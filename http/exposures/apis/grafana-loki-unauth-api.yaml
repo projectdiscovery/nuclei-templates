@@ -1,0 +1,47 @@
+id: grafana-loki-unauth-api
+
+info:
+  name: Grafana Loki - Unauthenticated API Access
+  author: SEU_GITHUB_USER
+  severity: medium
+  description: |
+    Grafana Loki ships with authentication disabled by default (auth_enabled
+    must be explicitly turned on, or a reverse-proxy/gateway with auth must be
+    placed in front of it). An internet-facing Loki instance without an auth
+    layer allows anyone to read (and often push) log streams via its HTTP API,
+    which frequently contain sensitive application data.
+  reference:
+    - https://grafana.com/docs/loki/latest/operations/authentication/
+    - https://grafana.com/docs/loki/latest/reference/loki-http-api/
+  classification:
+    cpe: cpe:2.3:a:grafana:loki:*:*:*:*:*:*:*:*
+  metadata:
+    verified: false # TODO: confirm against `docker run -p 3100:3100 grafana/loki` before PR
+    max-request: 2
+    vendor: grafana
+    product: loki
+  tags: exposure,loki,grafana,unauth,misconfig
+
+# TODO before PR: confirm exact /ready and /loki/api/v1/labels response bodies/status
+# on a real instance, and add a negative check so a Loki behind auth (401/403) does not match.
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/loki/api/v1/labels"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"status":"success"'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: labels
+        json:
+          - ".data"
