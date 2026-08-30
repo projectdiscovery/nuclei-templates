@@ -1,0 +1,55 @@
+id: directus-api-exposure
+
+info:
+  name: Directus Server Info - Unauthenticated Fingerprint
+  author: RootKaito
+  severity: info
+  description: |
+    Directus exposes a /server/info endpoint without authentication by
+    design, returning project metadata (name, branding, public registration
+    status) and license entitlement flags (e.g. whether AI translations or
+    production mode are enabled). Confirmed against a live directus/directus
+    instance that the current version no longer includes an exact version
+    string in this unauthenticated response, but the endpoint still reliably
+    fingerprints a live Directus instance and leaks project/tenant naming and
+    licensing configuration that operators sometimes expect to be private.
+  reference:
+    - https://directus.io/docs/api/server
+  classification:
+    cpe: cpe:2.3:a:directus:directus:*:*:*:*:*:node.js:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: monospace
+    product: directus
+  tags: exposure,directus,fingerprint,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/server/info"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"display_powered_by"'
+          - '"DIRECTUS"'
+          - '"entitlements"'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: project_name
+        json:
+          - ".data.project.project_name"
+
+      - type: json
+        name: production_enabled
+        json:
+          - ".data.license.entitlements.production_enabled"
