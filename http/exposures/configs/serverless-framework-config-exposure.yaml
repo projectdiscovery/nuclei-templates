@@ -1,0 +1,53 @@
+id: serverless-framework-config-exposure
+
+info:
+  name: Serverless Framework Configuration Exposure
+  author: ChrisJr404
+  severity: medium
+  description: |
+    A Serverless Framework configuration file (serverless.yml) was found exposed on the web server. The file describes the service, cloud provider, functions and often provider level environment variables, IAM statements and plugin settings, which can disclose the application architecture and occasionally hardcoded secrets to an unauthenticated visitor.
+  reference:
+    - https://www.serverless.com/framework/docs/providers/aws/guide/serverless.yml
+    - https://www.serverless.com/framework/docs/providers/aws/guide/functions
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 2
+    google-query: intitle:"index of" "serverless.yml"
+  tags: exposure,config,serverless,iac,aws
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/serverless.yml"
+      - "{{BaseURL}}/serverless.yaml"
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "service:"
+          - "provider:"
+          - "functions:"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "text/html"
+        negative: true
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'service:\s*([a-zA-Z0-9_-]+)'
