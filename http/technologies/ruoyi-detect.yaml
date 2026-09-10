@@ -1,0 +1,73 @@
+id: ruoyi-detect
+
+info:
+  name: RuoYi - Detect
+  author: xiabai2008
+  severity: info
+  description: |
+    RuoYi is a Java-based rapid development framework widely deployed for
+    enterprise and government backend systems in China, with a large number of
+    secondary-development projects. This template detects RuoYi installations
+    across its major variants (Bootstrap, Vue, Vue3, Cloud) using the
+    application title and framework-specific response markers.
+  reference:
+    - https://github.com/yangzongzhuan/RuoYi
+    - https://github.com/yangzongzhuan/RuoYi-Vue
+    - https://github.com/yangzongzhuan/RuoYi-Cloud
+    - https://ruoyi.vip/
+    - https://github.com/xiabai2008/ruoyi-scan
+  classification:
+    cpe: cpe:2.3:a:ruoyi:ruoyi:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: ruoyi
+    product: ruoyi
+    shodan-query: 'http.title:"RuoYi"'
+    fofa-query: 'title="若依"'
+  tags: tech,ruoyi,detect
+
+http:
+  # 品牌指纹：登录页 / 首页标题
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "若依管理系统"
+          - "若依管理"
+          - "RuoYi管理系统"
+          - "RuoYi"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: variant
+        group: 1
+        regex:
+          - "(?i)(ruoyi-vue-plus|ruoyi-cloud-plus|ruoyi-vue3|ruoyi-vue|ruoyi-cloud|ruoyi-app|ruoyi)"
+
+  # Vue / Cloud 变体：/prod-api/ 前缀返回 RuoYi 专属鉴权 JSON
+  - method: GET
+    path:
+      - "{{BaseURL}}/prod-api/"
+
+    matchers:
+      - type: word
+        name: ruoyi-vue
+        part: body
+        words:
+          - "无法访问系统资源"
+          - "认证失败"
+        condition: or

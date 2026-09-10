@@ -1,0 +1,61 @@
+id: ruoyi-job-unauth
+
+info:
+  name: RuoYi - Scheduled Task Unauthenticated Access
+  author: xiabai2008
+  severity: high
+  description: |
+    RuoYi versions prior to 4.7 expose the Quartz scheduled task endpoint
+    (/monitor/job/edit) without enforcing authentication. An unauthenticated
+    attacker reaches the task management business layer, which is the
+    prerequisite for abusing the invokeTarget parameter to invoke arbitrary
+    methods and achieve remote code execution.
+
+    This template only verifies whether the endpoint is reachable without
+    authentication. It does not create, modify, or trigger any scheduled task.
+  reference:
+    - https://github.com/yangzongzhuan/RuoYi
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-4564
+    - https://github.com/M0onc/RuoYi-Quartz-RCE
+    - https://github.com/xiabai2008/ruoyi-scan
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: ruoyi
+    product: ruoyi
+    shodan-query: 'http.title:"RuoYi"'
+    fofa-query: 'title="若依"'
+  tags: ruoyi,unauth,quartz,misconfig
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/monitor/job/edit"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    body: "jobId=99999999&jobName=nuclei&jobGroup=DEFAULT&invokeTarget=nuclei&cronExpression=0/5+*+*+*+*%3F&misfirePolicy=1&concurrent=1&status=0"
+
+    matchers-condition: and
+    matchers:
+      # 1) 已进入业务层：任务不存在（而非鉴权拦截）
+      - type: word
+        part: body
+        words:
+          - "任务不存在"
+          - "定时任务不存在"
+
+      # 2) 明确排除鉴权拦截响应，避免把受保护实例判为未授权
+      - type: word
+        part: body
+        words:
+          - "请先登录"
+          - "认证失败"
+          - "无法访问系统资源"
+          - "未登录"
+        negative: true
