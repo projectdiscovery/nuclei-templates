@@ -2,33 +2,60 @@ id: gude-default-login
 
 info:
   name: GUDE - Default Login
-  author: Bretss
+  author: Bretss,benzoo
   severity: high
-  description: GUDE 2301 and 2302 default administrator login credentials (admin:admin) were detected.
+  description: |
+    GUDE Expert Net Control devices (e.g. 2301/2302) ship with default
+    credentials (admin:admin and user:user) that grant access to the device
+    control panel and its switched power outputs over HTTP Basic authentication.
   reference:
     - https://media.distrelec.com/Web/Downloads/_m/an/Gude_2302-1_ger_man.pdf
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
-    cwe-id: CWE-522
+    cwe-id: CWE-1392
   metadata:
-    max-request: 1
+    max-request: 4
     shodan-query: http.html:"Expert Net Control"
     fofa-query: body="Expert Net Control"
-  tags: gude,default-login
+  tags: gude,default-login,ics,ot,iot
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/ov.html?"
+  - raw:
+      # Credentials are injected per attempt and base64-encoded as user:pass,
+      # replacing the previous single hard-coded admin:admin header.
+      - |
+        GET /ov.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
 
-    headers:
-      Authorization: "Basic YWRtaW46YWRtaW4="
+    # Both documented factory pairs (admin:admin, user:user) plus their crosses.
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+        - user
+      password:
+        - admin
+        - user
 
+    stop-at-first-match: true
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'contains(body, "Control Panel")'
-          - 'status_code == 200'
-        condition: and
-# digest: 4a0a004730450220504ccf3d1762a9465975fd96a4f6c6246097255281fd1a85ef109b132bb82afa022100e81c412b19e12779813e46492c32058b811bbb1f9565b53fbd7742492cc7eb9d:922c64590222798bb761d5b6d8e72950
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: or
+        words:
+          - "Control Panel"
+          - "Output Port"
+
+    extractors:
+      # Reports device model and firmware, e.g. "Expert Net Control 2301 - v1.1.1".
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - "(Expert Net Control [0-9]+ - v[0-9.]+)"
