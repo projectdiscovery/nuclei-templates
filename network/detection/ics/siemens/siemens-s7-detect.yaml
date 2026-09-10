@@ -1,0 +1,54 @@
+id: siemens-s7-detect
+
+info:
+  name: Siemens SIMATIC S7 Series PLC - Detect
+  author: SergioCc13
+  severity: info
+  description: |
+    Detected Siemens SIMATIC S7 series PLCs by completing the ISO-on-TCP (COTP) handshake and issuing an S7comm SZL (System Status List) read for the module identification list (SZL-ID 0x0011) over port 102. Genuine S7-300/400/1200/1500 CPUs answer with their MLFB / order number, which always begins with the "6ES7" prefix. The SIMATIC S7 family is part of Siemens' industrial automation product line widely used in Industrial Control Systems (ICS).
+  reference:
+    - https://wiki.wireshark.org/S7comm
+    - https://nmap.org/nsedoc/scripts/s7-info.html
+    - https://github.com/klsecservices/s7scan
+  metadata:
+    max-request: 3
+    vendor: siemens
+    product: simatic_s7
+    shodan-query: port:102 "6ES7"
+  tags: ics,siemens,simatic,s7,s7comm,detect,network,tcp
+
+tcp:
+  - inputs:
+      - data: "0300001611e00000001400c1020100c2020102c0010a"
+        type: hex
+        read: 1024
+        name: cotp
+      - data: "0300001902f08032010000000000080000f0000001000101e0"
+        type: hex
+        read: 1024
+        name: setup
+      - data: "0300002102f080320700000000000800080001120411440100ff09000400110001"
+        type: hex
+        read: 1024
+        name: szl
+
+    host:
+      - "{{Hostname}}"
+    port: 102
+    read-size: 1024
+
+    matchers:
+      - type: binary
+        part: szl
+        binary:
+          - "02f08032070000"
+          - "36455337"
+        condition: and
+
+    extractors:
+      - type: regex
+        part: szl
+        group: 1
+        name: order_number
+        regex:
+          - "(6ES7[ -][0-9A-Za-z -]{9,})"
