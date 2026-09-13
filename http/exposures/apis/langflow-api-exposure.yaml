@@ -1,0 +1,50 @@
+id: langflow-api-exposure
+
+info:
+  name: Unauthenticated Langflow API Endpoint
+  author: comradezephyr
+  severity: high
+  description: Unauthenticated Langflow instance exposing custom LLM flows and component node structures.
+  tags:
+    - mlops
+    - ai
+    - langflow
+    - llm
+    - unauth
+    - exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/flows/"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - "data"
+          - "name"
+          - "description"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '"is_component"\s*:\s*(true|false)'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'

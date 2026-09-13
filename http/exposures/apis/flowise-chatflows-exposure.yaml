@@ -1,0 +1,51 @@
+id: flowise-chatflows-exposure
+
+info:
+  name: Unauthenticated Flowise AI Interface API
+  author: comradezephyr
+  severity: high
+  description: Unauthenticated Flowise AI instance exposing visual LLM chatflows and integration secrets.
+  tags:
+    - mlops
+    - ai
+    - flowise
+    - llm
+    - unauth
+    - exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/chatflows"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - "id"
+          - "name"
+          - "flowData"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '"deployed"\s*:\s*(true|false)'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+          - '"id"\s*:\s*"([0-9a-fA-F-]+)"'

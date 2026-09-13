@@ -1,0 +1,50 @@
+id: qdrant-api-exposure
+
+info:
+  name: Unauthenticated Qdrant Vector DB REST API
+  author: comradezephyr
+  severity: high
+  description: Exposed Qdrant vector database API exposing collection schemas and vector embeddings.
+  tags:
+    - mlops
+    - ai
+    - vectordb
+    - qdrant
+    - unauth
+    - exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/collections"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - "result"
+          - "collections"
+          - "status"
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '"status"\s*:\s*"ok"'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
