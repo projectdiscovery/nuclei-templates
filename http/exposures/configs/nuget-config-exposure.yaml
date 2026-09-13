@@ -1,0 +1,46 @@
+id: nuget-config-exposure
+
+info:
+  name: NuGet.config Package Source Credentials - Exposure
+  author: ChrisJr404
+  severity: high
+  description: |
+    Detected A NuGet.config file with a packageSourceCredentials section is exposed. NuGet stores per-feed authentication in this section and often keeps it as a ClearTextPassword, so a public copy leaks the username and password used to reach private package feeds.
+  reference:
+    - https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file
+    - https://learn.microsoft.com/en-us/nuget/consume-packages/consuming-packages-authenticated-feeds
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-522
+  metadata:
+    verified: false
+    max-request: 3
+    google-query: intitle:"index of" "nuget.config"
+  tags: exposure,config,nuget,dotnet,credentials,files
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nuget.config"
+      - "{{BaseURL}}/NuGet.Config"
+      - "{{BaseURL}}/.nuget/nuget.config"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<configuration>", "packageSourceCredentials", "Username")'
+          - 'contains_any(tolower(body), "cleartextpassword", "\"password\"")'
+          - '!contains_any(tolower(body), "<html", "<!doctype", "<script", "<meta", "application/json", "application/javascript", "application/x-javascript", "application/xml", "text/xml", "image/", "response xmlns", "mongodb over http")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - 'key="Username"\s+value="([^"]+)"'
+# digest: 4a0a0047304502201c9c9d108d2c1c21d687af63305cf7c591c812b8b64e7933309d8b21e21a1909022100afad2bda1977544a60851db824ef360c262b5792fe94944bccd1c2aea0404010:922c64590222798bb761d5b6d8e72950
