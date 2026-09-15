@@ -1,0 +1,61 @@
+id: ray-dashboard-exposure
+
+info:
+  name: Ray Dashboard - Unauthenticated API Exposure
+  author: comradezephyr
+  severity: high
+  description: |
+    Ray dashboard API is exposed without authentication, allowing unauthorized access to cluster status, active jobs, and execution logs.
+  reference:
+    - https://docs.ray.io/en/latest/cluster/dashboard.html
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: anyscale
+    product: ray
+    shodan-query: title:"Ray Dashboard"
+  tags: ray,anyscale,exposure,unauth,mlops,ai
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/version HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'contains(body, "ray_version") && contains(body, "ray_commit")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: ray_version
+        part: body
+        internal: true
+        group: 1
+        regex:
+          - '"ray_version"\s*:\s*"([^"]+)"'
+
+  - raw:
+      - |
+        GET /api/jobs/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "job_id") && contains(body, "entrypoint")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"job_id"\s*:\s*"([0-9a-f]+)"'

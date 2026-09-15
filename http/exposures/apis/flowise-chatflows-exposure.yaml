@@ -1,46 +1,34 @@
 id: flowise-chatflows-exposure
 
 info:
-  name: Unauthenticated Flowise AI Interface API
+  name: Flowise AI - Unauthenticated Chatflows API Exposure
   author: comradezephyr
   severity: high
-  description: Unauthenticated Flowise AI instance exposing visual LLM chatflows and integration secrets.
-  tags:
-    - mlops
-    - ai
-    - flowise
-    - llm
-    - unauth
-    - exposure
+  description: |
+    Flowise AI instance is exposed without authentication, allowing unauthorized access to visual LLM chatflows and integration configurations.
+  reference:
+    - https://github.com/FlowiseAI/Flowise
+    - https://docs.flowiseai.com/
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: flowiseai
+    product: flowise
+    shodan-query: title:"Flowise"
+  tags: flowise,flowiseai,exposure,unauth,mlops,ai,llm
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/api/v1/chatflows"
+  - raw:
+      - |
+        GET /api/v1/chatflows HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
-      - type: word
-        part: header
-        words:
-          - "application/json"
-
-      - type: word
-        part: body
-        words:
-          - "id"
-          - "name"
-          - "flowData"
+      - type: dsl
+        dsl:
+          - 'contains(body, "flowData") && contains(body, "\"deployed\"")'
+          - 'status_code == 200'
         condition: and
-
-      - type: regex
-        part: body
-        regex:
-          - '"deployed"\s*:\s*(true|false)'
 
     extractors:
       - type: regex
@@ -48,4 +36,3 @@ http:
         group: 1
         regex:
           - '"name"\s*:\s*"([^"]+)"'
-          - '"id"\s*:\s*"([0-9a-fA-F-]+)"'
