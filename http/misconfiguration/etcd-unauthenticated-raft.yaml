@@ -1,0 +1,47 @@
+id: http-etcd-unauthenticated-raft
+
+info:
+  name: etcd RAFT Unauthenticated API
+  author: x3lfyn
+  severity: high
+  description: etcd RAFT API is exposed.
+  metadata:
+    max-request: 1
+  tags: misconfig,raft,unauth,etcd,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/members"
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "peerURLs"
+          - "clientURLs"
+        condition: and
+      - type: word
+        part: header
+        words:
+          - "application/json"
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        name: cluster-members
+        json:
+          - '.[] | .name'
+      - type: json
+        part: body
+        name: client-urls
+        json:
+          - '.[] | .clientURLs[]'
+      - type: json
+        part: body
+        name: peer-urls
+        json:
+          - '.[] | .peerURLs[]'
