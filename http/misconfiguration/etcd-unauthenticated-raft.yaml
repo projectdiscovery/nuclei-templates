@@ -4,15 +4,29 @@ info:
   name: etcd RAFT Unauthenticated API
   author: x3lfyn
   severity: high
-  description: etcd RAFT API is exposed.
+  description: |
+    etcd's v2 API is reachable without authentication, exposing the /v2/members endpoint. This endpoint discloses the full cluster membership list, including each member's name, internal peer URLs, and client URLs, without requiring any credentials.
+  impact: |
+    An unauthenticated attacker can enumerate every node in the etcd cluster along with their internal peer and client addresses.
+  remediation: |
+    Disable the deprecated v2 API (etcd 3.4+ defaults to v2 disabled; confirm `--enable-v2=false`), enable client authentication and RBAC, and restrict network access to etcd's client
+  reference:
+    - https://etcd.io/docs/v3.5/op-guide/authentication/
+    - https://etcd.io/docs/v3.5/op-guide/security/
+  classification:
+    cwe-id: CWE-306
   metadata:
     max-request: 1
-  tags: misconfig,raft,unauth,etcd,exposure
+    vendor: etcd
+    product: etcd
+    shodan-query: product:"etcd"
+  tags: misconfig,unauth,etcd,exposure
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/members"
+
     matchers-condition: and
     matchers:
       - type: word
@@ -21,27 +35,12 @@ http:
           - "peerURLs"
           - "clientURLs"
         condition: and
+
       - type: word
         part: header
         words:
           - "application/json"
+
       - type: status
         status:
           - 200
-
-    extractors:
-      - type: json
-        part: body
-        name: cluster-members
-        json:
-          - '.[] | .name'
-      - type: json
-        part: body
-        name: client-urls
-        json:
-          - '.[] | .clientURLs[]'
-      - type: json
-        part: body
-        name: peer-urls
-        json:
-          - '.[] | .peerURLs[]'
