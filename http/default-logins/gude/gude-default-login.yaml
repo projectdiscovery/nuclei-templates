@@ -4,32 +4,26 @@ info:
   name: GUDE - Default Login
   author: Bretss,BENZOOgatag
   severity: high
-  description: |
-    GUDE Expert Net Control devices (e.g. 2301/2302) ship with default
-    credentials (admin:admin and user:user) that grant access to the device
-    control panel and its switched power outputs over HTTP Basic authentication.
+  description: GUDE 2301 and 2302 default administrator or user login credentials (admin:admin or user:user) were detected.
   reference:
     - https://media.distrelec.com/Web/Downloads/_m/an/Gude_2302-1_ger_man.pdf
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
     cvss-score: 8.3
-    cwe-id: CWE-1392
+    cwe-id: CWE-522
   metadata:
-    max-request: 4
+    max-request: 1
     shodan-query: http.html:"Expert Net Control"
     fofa-query: body="Expert Net Control"
-  tags: gude,default-login,ics,ot,iot
+  tags: gude,default-login
 
 http:
   - raw:
-      # Credentials are injected per attempt and base64-encoded as user:pass,
-      # replacing the previous single hard-coded admin:admin header.
       - |
         GET /ov.html HTTP/1.1
         Host: {{Hostname}}
         Authorization: Basic {{base64(username + ':' + password)}}
 
-    # Both documented factory pairs (admin:admin, user:user) plus their crosses.
     attack: clusterbomb
     payloads:
       username:
@@ -45,17 +39,10 @@ http:
       - type: status
         status:
           - 200
+
       - type: word
         part: body
-        condition: or
+        condition: and
         words:
           - "Control Panel"
           - "Output Port"
-
-    extractors:
-      # Reports device model and firmware, e.g. "Expert Net Control 2301 - v1.1.1".
-      - type: regex
-        part: body
-        group: 1
-        regex:
-          - "(Expert Net Control [0-9]+ - v[0-9.]+)"
