@@ -1,0 +1,57 @@
+id: qdrant-telemetry-exposure
+
+info:
+  name: Qdrant - Unauthenticated Telemetry Exposure
+  author: DevamShah
+  severity: medium
+  description: |
+    Qdrant ships with no API key configured. When service.api_key is unset, the internal /telemetry endpoint answers unauthenticated requests and returns the instance UUID, the running Qdrant version, the number of collections, the cluster configuration, and per-endpoint REST and gRPC request statistics. Reaching this endpoint without a credential also proves that no API key is enforced on the instance at all, since Qdrant gates /telemetry behind the same key as the rest of its REST API.
+  impact: |
+    The response discloses the exact Qdrant build for targeted exploitation, the cluster topology, and traffic patterns that reveal which collections and endpoints are in active use. Because /telemetry is unauthenticated only when service.api_key is unset, a match also confirms the data plane is reachable without credentials, allowing the embedded corpus behind a RAG application to be read, poisoned, or deleted.
+  remediation: |
+    Set service.api_key (and read_only_api_key where a read role is needed) so Qdrant enforces authentication on the REST and gRPC APIs, enable TLS, and keep port 6333 behind an authenticated network boundary rather than on a public interface.
+  reference:
+    - https://qdrant.tech/documentation/guides/security/
+    - https://api.qdrant.tech/api-reference/service/telemetry
+    - https://github.com/qdrant/qdrant
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: qdrant
+    product: qdrant
+    shodan-query: 'html:"qdrant - vector search engine"'
+  tags: qdrant,vectordb,exposure,unauth,ai,misconfig
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/telemetry"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"app":{"name":"qdrant"'
+          - '"collections":{"number_of_collections"'
+          - '"requests":{"rest":'
+          - '"status":"ok"'
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.result.app.version'
+          - '.result.collections.number_of_collections'
