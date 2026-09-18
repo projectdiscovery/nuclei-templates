@@ -1,0 +1,55 @@
+id: opencode-config-exposure
+
+info:
+  name: OpenCode Configuration Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected exposed OpenCode configuration files. OpenCode project config can
+    describe models, providers, permissions, MCP servers, and agent behavior.
+    Public exposure may leak internal tooling setup and sensitive configuration
+    hints.
+  reference:
+    - https://opencode.ai/docs
+    - https://github.com/sst/opencode
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 5
+    shodan-query: html:"opencode"
+  tags: config,exposure,opencode,ai,json
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/opencode.json"
+      - "{{BaseURL}}/.opencode.json"
+      - "{{BaseURL}}/.opencode/config.json"
+      - "{{BaseURL}}/.config/opencode/config.json"
+      - "{{BaseURL}}/opencode.jsonc"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+          - "text/plain"
+          - "text/json"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 20'
+          - 'contains_any(to_lower(body), "\"provider\"", "\"model\"", "\"mcp\"", "\"agent\"", "\"permission\"", "\"opencode\"", "\"autoshare\"", "\"autoupdate\"", "\"username\"")'
+          - 'contains_any(body, "{", "}")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'

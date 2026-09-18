@@ -1,0 +1,53 @@
+id: coderabbit-config-exposure
+
+info:
+  name: CodeRabbit Configuration Exposure
+  author: 686f6c61
+  severity: low
+  description: |
+    Detected an exposed CodeRabbit configuration file. CodeRabbit config can
+    reveal review preferences, path filters, knowledge base settings, and
+    automation behavior for pull request review bots. Exposure is usually low
+    risk but can aid recon of internal process and tooling.
+  reference:
+    - https://docs.coderabbit.ai/guides/configure-coderabbit
+    - https://github.com/coderabbitai
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    max-request: 3
+    shodan-query: html:"coderabbit"
+  tags: config,exposure,coderabbit,ai,yaml
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.coderabbit.yaml"
+      - "{{BaseURL}}/.coderabbit.yml"
+      - "{{BaseURL}}/coderabbit.yaml"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/yaml"
+          - "application/yaml"
+          - "application/x-yaml"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 15'
+          - 'contains_any(to_lower(body), "language:", "reviews:", "chat:", "knowledge_base:", "path_filters:", "path_instructions:", "coderabbit", "early_access:", "enable_free_tier:")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
