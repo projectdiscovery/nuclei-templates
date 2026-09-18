@@ -2,9 +2,9 @@ id: gude-default-login
 
 info:
   name: GUDE - Default Login
-  author: Bretss,s4e-io
+  author: Bretss,BENZOOgatag
   severity: high
-  description: GUDE 2301 and 2302 default administrator login credentials (admin:admin) were detected.
+  description: GUDE 2301 and 2302 default administrator or user login credentials (admin:admin or user:user) were detected.
   reference:
     - https://media.distrelec.com/Web/Downloads/_m/an/Gude_2302-1_ger_man.pdf
   classification:
@@ -20,18 +20,30 @@ info:
 http:
   - raw:
       - |
-        GET /ov.html? HTTP/1.1
+        GET /ov.html HTTP/1.1
         Host: {{Hostname}}
-      - |
-        GET /ov.html? HTTP/1.1
-        Host: {{Hostname}}
-        Authorization: Basic YWRtaW46YWRtaW4=
+        Authorization: Basic {{base64(username + ':' + password)}}
 
+    attack: clusterbomb
+    payloads:
+      username:
+        - admin
+        - user
+      password:
+        - admin
+        - user
+
+    stop-at-first-match: true
+
+    matchers-condition: and
     matchers:
-      - type: dsl
-        dsl:
-          - 'status_code_1 == 401'
-          - 'status_code_2 == 200'
-          - 'contains(body_2, "Control Panel")'
+      - type: word
+        part: body
+        words:
+          - "Control Panel"
+          - "Output Port"
         condition: and
-# digest: 4b0a00483046022100acbaca0a5271805ec7972bad35e35c8e38a1df06a760eae409c994b64d5524b1022100df77a12daa438ddc88469ad46e1a9de05a7ea6f6407cb754d7a1e5b2aacd33b2:922c64590222798bb761d5b6d8e72950
+
+      - type: status
+        status:
+          - 200
