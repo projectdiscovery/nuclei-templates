@@ -1,0 +1,54 @@
+id: claude-md-exposure
+
+info:
+  name: Claude Code CLAUDE.md Project Instructions Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected an exposed Claude Code project instruction file (CLAUDE.md). These
+    markdown files define project-specific guidance for Claude Code agents,
+    including coding conventions, architecture notes, internal service names,
+    workflow rules, and sometimes environment or secret-handling instructions.
+    Public exposure can leak proprietary process detail and aid targeted attacks
+    against the application or its infrastructure.
+  reference:
+    - https://docs.claude.com/en/docs/claude-code/memory
+    - https://docs.claude.com/en/docs/claude-code/overview
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 3
+    shodan-query: html:"CLAUDE.md"
+  tags: config,exposure,claude,claude-code,anthropic,ai,markdown
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/CLAUDE.md"
+      - "{{BaseURL}}/.claude/CLAUDE.md"
+      - "{{BaseURL}}/claude.md"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 40'
+          - 'regex("(?m)^\\s*#\\s+", body)'
+          - 'contains_any(to_lower(body), "claude", "codebase", "prefer ", "always ", "never ", "do not ", "must ", "when working", "this project", "pull request")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
