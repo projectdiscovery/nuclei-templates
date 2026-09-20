@@ -1,0 +1,230 @@
+id: mcp-server-unauth-tools-list
+
+info:
+  name: MCP Server - Unauthenticated tools/list Exposure
+  author: Tito0015
+  severity: high
+  description: |
+    Model Context Protocol (MCP) HTTP transport exposes the JSON-RPC 2.0 tools/list method without authentication, allowing anyone to enumerate tool capabilities (often including file I/O or shell-adjacent primitives).
+  impact: |
+    Unauthenticated tool enumeration enables targeted prompt-injection and follow-on abuse of exposed MCP tools.
+  remediation: |
+    Require authentication on every MCP HTTP endpoint (Bearer token, API key, or mTLS). Do not expose MCP dashboards on untrusted networks.
+  reference:
+    - https://github.com/projectdiscovery/nuclei-templates/issues/16735
+    - https://mcpsafe.io/threats/MCP-217
+    - https://modelcontextprotocol.io/specification/draft/basic/security_best_practices
+  classification:
+    cwe-id: CWE-306
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+  metadata:
+    verified: true
+    max-request: 4
+  tags: mcp,misconfig,unauth,exposure,jsonrpc
+
+http:
+  - raw:
+      - |
+        POST /mcp HTTP/1.1
+        Host: {{Hostname}}
+        MCP-Protocol-Version: 2026-07-28
+        Accept: application/json, text/event-stream
+        Content-Type: application/json
+        User-Agent: Nuclei-Scanner
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+    extractors:
+      - type: regex
+        name: mcp_tool_names
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"2.0"'
+        condition: and
+      - type: word
+        part: body
+        words:
+          - '"result"'
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - '"error"'
+          - 'code":-32'
+          - 'Unauthorized'
+          - '401'
+        negative: true
+      - type: regex
+        part: body
+        regex:
+          - '"name"\s*:\s*"[^"]+"'
+
+  - raw:
+      - |
+        POST /messages HTTP/1.1
+        Host: {{Hostname}}
+        MCP-Protocol-Version: 2026-07-28
+        Accept: application/json, text/event-stream
+        Content-Type: application/json
+        User-Agent: Nuclei-Scanner
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+    extractors:
+      - type: regex
+        name: mcp_tool_names
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"2.0"'
+        condition: and
+      - type: word
+        part: body
+        words:
+          - '"result"'
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - '"error"'
+          - 'code":-32'
+          - 'Unauthorized'
+          - '401'
+        negative: true
+      - type: regex
+        part: body
+        regex:
+          - '"name"\s*:\s*"[^"]+"'
+
+  - raw:
+      - |
+        POST /sse HTTP/1.1
+        Host: {{Hostname}}
+        MCP-Protocol-Version: 2026-07-28
+        Accept: application/json, text/event-stream
+        Content-Type: application/json
+        User-Agent: Nuclei-Scanner
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+    extractors:
+      - type: regex
+        name: mcp_tool_names
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"2.0"'
+        condition: and
+      - type: word
+        part: body
+        words:
+          - '"result"'
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - '"error"'
+          - 'code":-32'
+          - 'Unauthorized'
+          - '401'
+        negative: true
+      - type: regex
+        part: body
+        regex:
+          - '"name"\s*:\s*"[^"]+"'
+
+  - raw:
+      - |
+        POST / HTTP/1.1
+        Host: {{Hostname}}
+        MCP-Protocol-Version: 2026-07-28
+        Accept: application/json, text/event-stream
+        Content-Type: application/json
+        User-Agent: Nuclei-Scanner
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+    extractors:
+      - type: regex
+        name: mcp_tool_names
+        part: body
+        group: 1
+        regex:
+          - '"name"\s*:\s*"([^"]+)"'
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"2.0"'
+        condition: and
+      - type: word
+        part: body
+        words:
+          - '"result"'
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or
+      - type: word
+        part: body
+        words:
+          - '"error"'
+          - 'code":-32'
+          - 'Unauthorized'
+          - '401'
+        negative: true
+      - type: regex
+        part: body
+        regex:
+          - '"name"\s*:\s*"[^"]+"'
+
