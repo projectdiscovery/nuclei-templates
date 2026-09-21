@@ -1,36 +1,36 @@
 id: torchserve-detect
 
 info:
-  name: TorchServe API Description - Detect
-  author: DhiyaneshDk
+  name: PyTorch TorchServe - Detect
+  author: DhiyaneshDk,insidetrust,hdm
   severity: info
   description: |
-    Detects the presence of TorchServe APIs.
+    Detected PyTorch TorchServe, a model-serving framework for PyTorch models. The inference API (default port 8080) answers GET /ping with {"status":"Healthy"} and exposes /api-description; the management API (default port 8081) lists registered models at GET /models. An exposed management API permits unauthenticated model registration and scaling and discloses the served model names.
+  reference:
+    - https://github.com/pytorch/serve
+    - https://pytorch.org/serve/
   metadata:
     verified: true
-    max-request: 1
+    max-request: 3
     vendor: pytorch
     product: torchserve
-    fofa-query: body="Requested method is not allowed, please refer to API document"
-  tags: tech,pytorch,api,discovery
+    shodan-query: 'http.html:"TorchServe"'
+    fofa-query: 'body="Requested method is not allowed, please refer to API document"'
+  tags: tech,detect,torchserve,pytorch,ai,llm,inference,discovery
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}/api-description"
+      - "{{BaseURL}}/models"
+      - "{{BaseURL}}/ping"
 
-    matchers-condition: and
+    stop-at-first-match: true
     matchers:
-      - type: word
-        part: body
-        words:
-          - 'TorchServe APIs"'
-          - '"apiDescription"'
-          - 'operationId":'
-        condition: or
-
-      - type: word
-        part: content_type
-        words:
-          - "application/json"
-# digest: 490a0046304402204b9c790eaae0812f804ec6fb372df739d9201f9f4a1c248cfc6077715bf9a11d0220056a6825c9708696d99aa82c7a039d8d12b4e58ee8ded008895cb2a6afdba6e7:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'contains_any(body, "\"TorchServe APIs\"", "\"apiDescription\"", "\"operationId\"") || contains_all(body, "\"models\"", "\"modelName\"") || contains_all(body, "\"status\"", "Healthy")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
+# digest: 4b0a00483046022100c896f32f1ce8a549b704ef8bc397187cde8cec4af51cced645c4040778a589f50221008320962232873af43371f9ef9d3fba3f5778a5327058d42c132f4131f3f8bd2e:922c64590222798bb761d5b6d8e72950
