@@ -25,29 +25,18 @@ info:
   tags: qdrant,vectordb,exposure,unauth,ai,misconfig
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/telemetry"
+  - raw:
+      - |
+        GET /telemetry HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
     matchers:
-      - type: word
-        part: body
-        words:
-          - '"app":{"name":"qdrant"'
-          - '"collections":{"number_of_collections"'
-          - '"requests":{"rest":'
-          - '"status":"ok"'
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"app\":{\"name\":\"qdrant\"", "\"collections\":{\"number_of_collections\"", "\"requests\":{\"rest\":", "\"status\":\"ok\"")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
         condition: and
-
-      - type: word
-        part: content_type
-        words:
-          - "application/json"
-
-      - type: status
-        status:
-          - 200
 
     extractors:
       - type: json
