@@ -1,0 +1,83 @@
+id: 3xui-default-login
+
+info:
+  name: 3X-UI - Default Login
+  author: mapioe
+  severity: high
+  description: |
+    Detected 3X-UI contains default credentials admin/admin. An attacker can obtain access to the admin panel and manage VPN configurations, modify data, and execute unauthorized operations.
+  reference:
+    - https://github.com/MHSanaei/3x-ui
+    - https://github.com/MHSanaei/3x-ui/wiki/Installation
+  classification:
+    cwe-id: CWE-798
+    cpe: cpe:2.3:a:mhsanaei:3x-ui:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    product: 3x-ui
+    vendor: mhsanaei
+    fofa-query: 'title="3x-ui"'
+    shodan-query: '3x-ui http.title:"sign in"'
+  tags: 3x-ui,default-login
+
+variables:
+  username: "admin"
+  password: "admin"
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 3
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "X_UI_BASE_PATH", "<title>3x-ui")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /csrf-token HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "success")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: json
+        name: csrftoken
+        json:
+          - ".obj"
+        internal: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        X-Csrf-Token: {{csrftoken}}
+
+        username={{username}}&password={{password}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"success\":true", "msg")'
+        condition: and
+# digest: 4a0a004730450220262ea4a46884b04598024288506351d5f472afd144068c5e156120557c3c2c76022100a95b0042888a22e7524734e359c3014c815edadc5b7aa042c35e7284efdf559a:922c64590222798bb761d5b6d8e72950

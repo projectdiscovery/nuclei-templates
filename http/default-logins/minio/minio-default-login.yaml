@@ -1,7 +1,7 @@
 id: minio-default-login
 
 info:
-  name: Minio Default Login
+  name: Minio - Default Login
   author: pikpikcu
   severity: high
   description: Minio default admin credentials were discovered.
@@ -14,8 +14,8 @@ info:
     cpe: cpe:2.3:a:minio:minio:*:*:*:*:*:*:*:*
   metadata:
     verified: true
-    max-request: 2
-    shodan-query: http.html:"symfony Profiler"
+    max-request: 3
+    shodan-query: title:"MinIO Console"
     product: minio
     vendor: minio
   tags: default-login,minio,vuln
@@ -23,11 +23,19 @@ info:
 http:
   - raw:
       - |
+        POST /api/v1/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"accessKey":"{{username}}","secretKey":"{{password}}"}
+
+      - |
         POST /minio/webrpc HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/json
 
         {"id":1,"jsonrpc":"2.0","params":{"username":"{{username}}","password":"{{password}}"},"method":"Web.Login"}
+
       - |
         POST /minio/webrpc HTTP/1.1
         Host: {{Hostname}}
@@ -41,22 +49,12 @@ http:
       password:
         - minioadmin
     attack: pitchfork
+    stop-at-first-match: true
 
-    matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - "Content-Type: application/json"
-        part: header
-
-      - type: word
-        words:
-          - 'uiVersion'
-          - 'token'
-        part: body
-        condition: and
-
-      - type: status
-        status:
-          - 200
-# digest: 490a0046304402201d7565d66c1faae0380b56ef5ec72f58fc51643879d584b85aca210b9541c85b02206bbc72d60c297b273592f8cd8a61106757c78c141521222046a14e2ef156a436:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "uiVersion", "token") && contains(content_type, "application/json") && status_code == 200'
+          - 'contains(header, "Set-Cookie: token=") && status_code == 204'
+        condition: or
+# digest: 4b0a00483046022100830840ca8fe6bbf1e4e7eb53c5730117bacaadb66a2af49068f6a4938308f09c022100d073d93c5761dc7d36860fc2471c28c43e6455b609f52228926ea3d0b42aec4a:922c64590222798bb761d5b6d8e72950

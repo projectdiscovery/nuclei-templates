@@ -1,0 +1,57 @@
+id: signoz-panel
+
+info:
+  name: SigNoz Panel - Detect
+  author: ChrisJr404,rxerium
+  severity: info
+  description: |
+    SigNoz is an open-source observability platform for metrics, traces and logs. It ships a React frontend and a Go query service that exposes an unauthenticated version endpoint at /api/v1/version.
+  reference:
+    - https://github.com/SigNoz/signoz
+    - https://signoz.io/
+  metadata:
+    verified: false
+    max-request: 2
+    vendor: signoz
+    product: signoz
+    shodan-query: http.title:"SigNoz"
+    fofa-query: title="SigNoz"
+  tags: panel,signoz,observability,oss,detect
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "signoz")'
+        internal: true
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/version"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"version\"", "\"ee\"", "\"setupCompleted\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100e0996b004410ed7de44782652071a0149a937221dcc53b0cdca66fd66368632f022100bf5ff31bffbe8b24db68812a997363022320d93483d83b56692ceb225c746e12:922c64590222798bb761d5b6d8e72950

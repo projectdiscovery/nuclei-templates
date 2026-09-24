@@ -1,0 +1,43 @@
+id: dns-internal-ip-disclosure
+
+info:
+  name: Public DNS Resolving to Private IP Addresses
+  author: infosec-asish,DevamShah
+  severity: info
+  description: |
+    Detected when a public domain's DNS A records resolved to private or reserved IP addresses, potentially revealing internal network topology to external parties.
+  reference:
+    - https://tools.ietf.org/html/rfc1918
+    - https://tools.ietf.org/html/rfc6598
+    - https://cwe.mitre.org/data/definitions/200.html
+  classification:
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+  tags: dns,exposure,misconfig,recon
+
+dns:
+  - name: "{{FQDN}}"
+    type: A
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: a-record-present
+        part: answer
+        regex:
+          - "IN\tA\t(.+)$"
+
+      - type: regex
+        name: rfc1918-or-loopback
+        part: answer
+        regex:
+          - "IN\tA\t(10|127|192\\.168|172\\.(1[6-9]|2[0-9]|3[01]))\\.[0-9]{1,3}\\.[0-9]{1,3}"
+
+    extractors:
+      - type: regex
+        group: 1
+        part: answer
+        regex:
+          - "IN\tA\t((?:10|127|192\\.168|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9.]+)"
+# digest: 490a00463044022056f0442a5058beaa3436c221d2c3ce122ce78dcf5a164d3e0ed57063e69a91e5022018f59b4e0d6da5020e65151623fd67b9d4270166174bc820cf0be567750e4a4b:922c64590222798bb761d5b6d8e72950

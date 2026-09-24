@@ -1,0 +1,64 @@
+id: open-socks-proxy
+
+info:
+  name: Open SOCKS4/SOCKS5 proxy
+  author: snicket2100
+  severity: medium
+  description: |
+    The host accepts unauthenticated SOCKS4/SOCKS5 connections and can proxy TCP traffic to external destinations. This could allow abuse for anonymization, spam, scanning, or network pivoting. Verification was performed by successfully connecting to 1.1.1.1:80 through the proxy.
+  reference:
+    - https://www.rfc-editor.org/rfc/rfc1928
+    - https://en.wikipedia.org/wiki/Open_proxy
+    - https://owasp.org/www-community/vulnerabilities/Unrestricted_Proxy
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N
+    cvss-score: 5.8
+    cwe-id: CWE-441
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: port:1080
+  tags: network,socks,socks4,socks5,proxy,exposure,misconfig
+
+tcp:
+  - inputs:
+      - data: "040100500101010100"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+
+    port: 1080
+    exclude-ports: 80,443,8443,53
+    read-size: 2
+
+    matchers:
+      - type: binary
+        name: open-socks4-proxy
+        part: body
+        binary:
+          - "005a"              # VN=0, CD=0x5A (90, request granted)
+
+  - inputs:
+      - data: "050100"
+        # 05        VER=5
+        # 01        NMETHODS=1
+        # 00        METHOD=0x00 (no auth)
+        type: hex
+        read: 2
+      - data: "05010001010101010050"
+        type: hex
+        read: 4
+
+    host:
+      - "{{Hostname}}"
+    port: 1080
+    exclude-ports: 80,443,8443,53
+
+    matchers:
+      - type: binary
+        name: open-socks5-proxy
+        part: raw
+        binary:
+          - "050005000001"
+# digest: 4a0a00473045022100b7b64e83170d1a0a12c04bd65ecf144177d156809342301a4e95da5c5a702e96022034f699852c0ee9f20077f7e8aa7160b44005ecd85e3b0ee224e25628348d9529:922c64590222798bb761d5b6d8e72950

@@ -10,21 +10,23 @@ info:
     verified: true
     max-request: 1
     fofa-query: protocol="dameng"
-  tags: network,dameng,detection,protocol
+  tags: network,dameng,detection,protocol,discovery
 
 javascript:
   - pre-condition: |
       isPortOpen(Host,Port);
-    code: |
-      let packet = bytes.NewBuffer();
+  - code: |
       const c = require("nuclei/net");
-      const cmd = "00000000c8005100000000000000000000000099000000000000000001020000000000000000000000000000000000000000000000000000000000000000000008000000382e312e312e34390040000000068149bbe004a62fb45552831704c802d4d802b4579cb045b3c6100880725ececf148a7c9205047caccadfef5ff264460d11092a3b483bf9d24382dea1dc43e7"
-      packet.WriteString(cmd)
+      const cmd = "00000000c8005100000000000000000000000099000000000000000001020000000000000000000000000000000000000000000000000000000000000000000008000000382e312e312e34390040000000068149bbe004a62fb45552831704c802d4d802b4579cb045b3c6100880725ececf148a7c9205047caccadfef5ff264460d11092a3b483bf9d24382dea1dc43e7";
       let conn = c.Open('tcp', `${Host}:${Port}`);
       conn.SendHex(cmd);
-      const result = conn.RecvFullString()
-      result
-
+      const result = conn.RecvFullString();
+      conn.Close();
+      let versionMatch = result.match(/(\d+\.\d+\.\d+\.\d+)/);
+      if (versionMatch && result.includes(String.fromCharCode(0))) {
+        Export("version", versionMatch[1]);
+        Export("full", result);
+      }
     args:
       Host: "{{Host}}"
       Port: 5236
@@ -33,9 +35,10 @@ javascript:
       - type: dsl
         dsl:
           - "success == true"
+          - "version != null"
 
     extractors:
       - type: regex
         regex:
           - (\d+\.\d+\.\d+\.\d+)
-# digest: 490a00463044022034a2c3e7c073df92244a63a7d197f1c6e7c7ef3264432c228f4090a82a45a73f0220743a3451fbc039dabfe972a85fff2435f103b43f3abd871f6685f66d5ec015c7:922c64590222798bb761d5b6d8e72950
+# digest: 4a0a00473045022100ed9db66c2950c352320fc9278060c7e38583b0b12339806639ebccb589ba017202207d6a27854ac582fedadb73a9e7fbc19e1eed754957ecd7d1409de55cea184b7d:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,46 @@
+id: laravel-nova-unauth
+
+info:
+  name: Laravel Nova - Unauthenticated Admin Panel Access
+  author: moamenbasel
+  severity: high
+  description: |
+    Laravel Nova admin panel is accessible without authentication. Nova provides full CRUD access to application models and database records, making unauthenticated access a critical security risk.
+  remediation: |
+    Configure Nova's gate method in the NovaServiceProvider to restrict access. Ensure the Gate::define callback in app/Providers/NovaServiceProvider.php properly validates user authorization.
+  reference:
+    - https://nova.laravel.com/docs/4.0/installation.html#authorizing-nova
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: html:"nova-resources" html:"laravel"
+  tags: laravel,nova,admin,unauth,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/nova/dashboards/main"
+      - "{{BaseURL}}/nova/resources"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Nova.booting"
+          - "nova-resources"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "nova-login"
+          - "/nova/login"
+        negative: true
+
+      - type: status
+        status:
+          - 200
+# digest: 490a00463044022000fc65216eee09ba94c9a08ed653eaa4df21510c70051576a85a6897424034760220482eec9012b813f3ada9a2d2bab18155269a3b3cbc4dc117a7d440de1a9bacb0:922c64590222798bb761d5b6d8e72950

