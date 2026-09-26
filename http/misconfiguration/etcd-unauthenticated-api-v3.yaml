@@ -1,0 +1,50 @@
+id: http-etcd-unauthenticated-api-v3
+
+info:
+  name: etcd v3 Unauthenticated API
+  author: x3lfyn
+  severity: high
+  description: |
+    etcd's v3 API is reachable and authentication is disabled or not configured. With auth disabled, the v3 API grants full read and write access to every key in the store to anyone who can reach it.
+  impact: |
+    An unauthenticated attacker can read and write arbitrary keys in the etcd store.
+  remediation: |
+    Enable etcd client authentication and RBAC (`--client-cert-auth=true` plus `etcdctl auth enable`), and restrict network access to the etcd.
+  reference:
+    - https://etcd.io/docs/v3.5/op-guide/authentication/
+    - https://etcd.io/docs/v3.5/op-guide/security/
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    vendor: etcd
+    product: etcd
+    shodan-query: product:"etcd"
+  tags: misconfig,unauth,etcd,exposure
+
+http:
+  - id: check-auth-status
+    method: POST
+    path:
+      - "{{BaseURL}}/v3/auth/status"
+    headers:
+      Content-Type: application/json
+    body: "{}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"enabled":true'
+        negative: true
+
+      - type: word
+        part: body
+        words:
+          - "authRevision"
+
+      - type: status
+        status:
+          - 200
+# digest: 4b0a004830460221008be66c17948f6e3da949dffb294f6b9764f576f705d472be62f8807660f462f4022100cee6068b2ea1bd9f6fee932d845a0ef687257ced6b1ab5629bf085cdb3e8732c:922c64590222798bb761d5b6d8e72950
