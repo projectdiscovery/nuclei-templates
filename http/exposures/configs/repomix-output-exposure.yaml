@@ -1,0 +1,56 @@
+id: repomix-output-exposure
+
+info:
+  name: Repomix Output or Config Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected exposed Repomix configuration or packed repository output.
+    Repomix packs source trees into a single file for LLM consumption. If
+    served publicly, this can disclose large portions of private source code,
+    secrets accidentally included in the pack, and project structure.
+  reference:
+    - https://github.com/yamadashy/repomix
+    - https://repomix.com/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 5
+    shodan-query: html:"repomix"
+  tags: config,exposure,repomix,ai,source-code
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/repomix-output.xml"
+      - "{{BaseURL}}/repomix-output.md"
+      - "{{BaseURL}}/repomix.config.json"
+      - "{{BaseURL}}/.repomixignore"
+      - "{{BaseURL}}/repomix.json"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "text/xml"
+          - "application/xml"
+          - "application/json"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 20'
+          - 'contains_any(to_lower(body), "repomix", "<file path=", "<repository", "\"output\"", "\"include\"", "\"ignore\"", "packed", "this file is a merged representation")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype html", "page not found", "404 not found")'
