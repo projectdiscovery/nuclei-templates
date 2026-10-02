@@ -1,0 +1,45 @@
+id: maven-settings-xml-exposure
+
+info:
+  name: Apache Maven settings.xml Credentials - Exposure
+  author: ChrisJr404
+  severity: high
+  description: |
+    Detected An Apache Maven settings.xml file is exposed. The server section of this file stores the credentials Maven uses to authenticate to remote repositories and distribution servers, so a public copy can leak repository usernames and passwords.
+  reference:
+    - https://maven.apache.org/settings.html
+    - https://maven.apache.org/guides/mini/guide-encryption.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-522
+  metadata:
+    verified: false
+    max-request: 3
+    google-query: intitle:"index of" "settings.xml" "maven.apache.org/SETTINGS"
+  tags: exposure,config,maven,java,credentials,files
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/settings.xml"
+      - "{{BaseURL}}/.m2/settings.xml"
+      - "{{BaseURL}}/conf/settings.xml"
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "maven.apache.org/SETTINGS", "<server>", "<password>")'
+          - '!contains_any(tolower(body), "<html", "<!doctype", "<script", "<meta", "application/json", "application/javascript", "image/", "mongodb over http")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<username>([^<]+)</username>'
+# digest: 4a0a00473045022100bbc7497b055a578ec65c180c0417ff57db4b5e3f4214086e36000d9dbb59b7be0220145bf53467a270fb356292acaffc0d0f1c1bb6f7befdd5091cbf0697bdc968e4:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,73 @@
+id: powerdns-monitor-exposure
+
+info:
+  name: PowerDNS Authoritative Server Monitor - Unauthenticated Exposure
+  author: ritikchaddha
+  severity: medium
+  description: |
+    Exposed PowerDNS Authoritative Server monitor allows unauthenticated access to operational stats, aiding reconnaissance but not zone takeover.
+  impact: |
+    Attackers can gather DNS server info (zones, queries, client IPs, version) for further attacks, but can't modify zones without API key.
+  remediation: |
+    Restrict monitor to localhost, use webserver-allow-from, webserver-password, or firewall to block port 8081.
+  reference:
+    - https://docs.powerdns.com/authoritative/http-api/index.html
+    - https://doc.powerdns.com/md/common/logging/
+    - https://www.powerdns.com/powerdns-authoritative-server
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: powerdns
+    product: authoritative_server
+    shodan-query:
+      - http.title:"PowerDNS Authoritative Server Monitor"
+      - html:"PowerDNS Authoritative Server Monitor"
+    fofa-query:
+      - title="PowerDNS Authoritative Server Monitor"
+      - body="PowerDNS Authoritative Server Monitor"
+  tags: exposure,misconfig,powerdns,dns,monitor,unauth,panel
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+      - "{{BaseURL}}/index.html"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "PowerDNS Authoritative Server Monitor"
+          - "PowerDNS"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "Queries/second"
+          - "Remote server IP addresses"
+          - "Log Messages"
+          - "Variables"
+          - "Cache hitrate"
+        condition: or
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - '(?i)PowerDNS\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)'
+          - '(?i)Authoritative Server\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)'
+# digest: 4b0a00483046022100bea430449deeff011f3e308c38c8a7efad6abe7869f8475486b8cd748b8b95fd022100eee9ecc2b98a77133d87a412d78780af29fface30af3101cb750007b204eaa92:922c64590222798bb761d5b6d8e72950
