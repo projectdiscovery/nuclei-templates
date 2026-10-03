@@ -1,0 +1,67 @@
+id: nvidia-triton-repository-unauth
+
+info:
+  name: NVIDIA Triton Inference Server - Unauthenticated Model Repository API
+  author: DevamShah
+  severity: medium
+  description: |
+    NVIDIA Triton Inference Server was detected with its model repository management API reachable without authentication. Triton ships no authentication of its own, so POST /v2/repository/index answers any unauthenticated caller with the full repository index - every model name, version and load state the server knows about. That endpoint is served in all three model control modes, and when the server additionally runs with --model-control-mode=explicit the sibling /v2/repository/models/<name>/load and /unload endpoints accept unauthenticated calls as well.
+  impact: |
+    Attackers can enumerate every model the server hosts along with its version and load state, then drive unauthenticated inference against /v2/models/<name>/infer for free GPU time. On servers in explicit model-control mode the same open management plane lets them unload production models or load one from an attacker-controlled repository path, which Triton then runs through a backend.
+  remediation: |
+    Triton has no built-in authentication, so place it behind an authenticating reverse proxy or service mesh and restrict the HTTP port to trusted networks. Leave --model-control-mode at its default of none so that load and unload requests are rejected, and do not expose the model repository endpoints to untrusted clients.
+  reference:
+    - https://github.com/triton-inference-server/server/blob/main/docs/protocol/extension_model_repository.md
+    - https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_management.md
+    - https://github.com/triton-inference-server/server/blob/main/docs/customization_guide/deploy.md
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L
+    cvss-score: 6.5
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    vendor: nvidia
+    product: triton-inference-server
+  tags: triton,nvidia,llm,ai,ml,misconfig,exposure,unauth
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/v2/repository/index"
+    headers:
+      Content-Type: application/json
+    body: "{}"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"state":"READY"'
+          - '"state":"UNAVAILABLE"'
+          - '"state":"LOADING"'
+          - '"state":"UNLOADING"'
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - '"name":"'
+          - '"version":"'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        name: models
+        part: body
+        json:
+          - '.[].name'
