@@ -2,11 +2,11 @@ id: ldap-anonymous-login-detect
 
 info:
   name: LDAP Anonymous Login - Detect
-  author: pussycat0x,s0obi
+  author: pussycat0x,s0obi,0x_Akoko
   severity: medium
   description: |
     Detects whether an LDAP server allows anonymous bind (login without credentials). Anonymous access can expose sensitive directory information and should be restricted
-    unless explicitly intended.
+    unless explicitly intended. Both plaintext LDAP and implicit-TLS LDAPS ports are covered.
   reference:
     - https://ldap.com/ldapv3-wire-protocol-reference-bind/#anonymous
     - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Client#getadgroups
@@ -18,23 +18,35 @@ info:
 
 javascript:
   - code: |
-      try {
-        let ldap = require('nuclei/ldap');
+      const ldap = require('nuclei/ldap');
 
-        let port = TargetPort ? TargetPort : "389";
-        let host = "ldap://" + Host + ":" + port;
+      // 636 and 3269 (AD global catalog) are implicit TLS. 389 and 3268 are
+      // plaintext with an optional StartTLS upgrade, which cfg.Upgrade requests.
+      const tlsPorts = ['636', '3269'];
 
-        let cfg = ldap.Config();
+      function tryPort(port) {
+        const scheme = tlsPorts.indexOf(String(port)) !== -1 ? 'ldaps://' : 'ldap://';
+        const cfg = new ldap.Config();
+        // The module ignores Upgrade when the scheme is already ldaps.
         cfg.Upgrade = true;
+        const client = new ldap.Client(scheme + Host + ':' + port, Realm, cfg);
+        client.Authenticate('', '');
+        return client.CollectMetadata();
+      }
 
-        let client = ldap.Client(host, Realm, cfg);
-        let result = client.Authenticate('', '');
-        let metadata = client.CollectMetadata();
+      // Honour the scanned port when there is one, otherwise cover the common pair.
+      const ports = TargetPort ? [TargetPort] : ['389', '636'];
 
-        Export(metadata);
-
-      } catch (e) {
-        // ignore errors
+      for (let i = 0; i < ports.length; i++) {
+        try {
+          const metadata = tryPort(ports[i]);
+          if (metadata) {
+            Export(metadata);
+            break;
+          }
+        } catch (e) {
+          // port closed, wrong scheme, or bind refused - try the next one
+        }
       }
 
     args:
@@ -46,4 +58,3 @@ javascript:
       - type: dsl
         dsl:
           - "success == true"
-# digest: 4b0a00483046022100db26b121212ebbe5215a0ff5d0e719c49d7a0cb384f64817d13bbd482474e9b4022100c09c92084f21c4207a5c432b51eb0d0e08210c43c432cdc99dabab25a6dac982:922c64590222798bb761d5b6d8e72950
