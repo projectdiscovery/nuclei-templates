@@ -2,10 +2,10 @@ id: smb-anonymous-access
 
 info:
   name: SMB Anonymous Access Detection
-  author: pussycat0x
+  author: pussycat0x,i-am-durga
   severity: high
   description: |
-    Detects anonymous access to SMB shares on a remote server.
+    Detects anonymous read access to SMB shares on a remote server by authenticating as guest and verifying directory listing.
   reference:
     - https://wadcoms.github.io/wadcoms/SMBClient-List-Shares-Anonymous/
   metadata:
@@ -21,24 +21,39 @@ javascript:
     code: |
       var m = require("nuclei/smb");
       var c = m.SMBClient();
-      var response = c.ListShares(Host,Port,User,Pass);
-      Export(response);
+      var shares = c.ListShares(Host, Port, User, Pass);
+      var accessibleShares = [];
+      if (shares && shares.length > 0) {
+        var ignoredShares = ["print$", "prnproc$"];
+        for (var i = 0; i < shares.length; i++) {
+          var s = shares[i];
+          if (!s) continue;
+          var lower = s.toLowerCase();
+          if (ignoredShares.indexOf(lower) !== -1) continue;
+          try {
+            var entries = c.ListDir(Host, Port, User, Pass, s, ".");
+            if (entries !== null && entries !== undefined) {
+              accessibleShares.push(s);
+            }
+          } catch (e) {}
+        }
+      }
+      Export(accessibleShares);
 
     args:
       Host: "{{Host}}"
       Port: "445"
-      User: " "
-      Pass: " "
+      User: "guest"
+      Pass: ""
 
     matchers:
       - type: dsl
         dsl:
           - success == true
-          - contains(response, "IPC$")
+          - len(response) > 0
         condition: and
 
     extractors:
       - type: json
         json:
           - '.[]'
-# digest: 490a0046304402200889586efac83c0ef9d940a4a96d0eebe820e0ae74a0efac7f247eff9cc4a31c0220036346b5d0e3d959dcdd644cb821b9764eaf21045caf2347cd809d522defa23d:922c64590222798bb761d5b6d8e72950
