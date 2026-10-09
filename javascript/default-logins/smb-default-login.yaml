@@ -10,14 +10,39 @@ info:
     - https://nmap.org/nsedoc/scripts/smb-brute.html
   metadata:
     verified: true
-    max-request: 9
+    max-request: 10
     shodan-query: "port:445"
   tags: js,network,smb,enum,default,bruteforce,discovery
+
+flow: javascript(1) && javascript(2)
 
 javascript:
   - pre-condition: |
       isPortOpen(Host,Port);
     code: |
+      var m = require("nuclei/smb");
+      var c = new m.SMBClient();
+      var acceptsAnyLogin = true;
+      try {
+        c.ListShares(Host, Port, User, Pass);
+      } catch (e) {
+        acceptsAnyLogin = false;
+      }
+      !acceptsAnyLogin;
+
+    args:
+      Host: "{{Host}}"
+      Port: "445"
+      User: "{{randstr}}"
+      Pass: "{{randstr}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'success == true'
+        internal: true
+
+  - code: |
       var m = require("nuclei/smb");
       var c = new m.SMBClient();
       var response = c.ListShares(Host, Port, User, Pass);
@@ -44,7 +69,4 @@ javascript:
     matchers:
       - type: dsl
         dsl:
-          - 'response != "[]"'
           - 'success == true'
-        condition: and
-# digest: 4a0a004730450221008d64d3698d8e32ba8fec5ba7082bed6d4bb27670972573d9c05de0babfad4a55022000d565449a02f505cfceda975181bede834952245042b1a5cc6b763e7a0e97b9:922c64590222798bb761d5b6d8e72950
