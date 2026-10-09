@@ -28,7 +28,7 @@ tcp:
 
     host:
       - "{{Hostname}}"
-    port: 22, 443, 2222
+    port: 22,443,2222
 
     matchers:
       - type: word
@@ -43,37 +43,41 @@ code:
       - python3
 
     source: |
-      import os, socket, sys, logging
+      import os, socket, logging
       logging.getLogger("paramiko").setLevel(logging.CRITICAL)
+
+      # Surface a missing dependency instead of silently reporting "not vulnerable".
+      try:
+          import paramiko
+      except ImportError:
+          print("gost-ssh-error: paramiko is required for this template (pip install paramiko)")
+          raise SystemExit(0)
 
       host = os.getenv("Host", "").strip("[]")
       port = int(os.getenv("Port") or 22)
       mode = "unknown"
+      t = None
 
       try:
-          import paramiko
           sock = socket.create_connection((host, port), timeout=5.0)
-
           t = paramiko.Transport(sock)
           t.banner_timeout = 5.0
           t.start_client(timeout=5.0)
 
-          # Test None authentication
           try:
               t.auth_none("root")
           except Exception:
               pass
 
           if t.is_authenticated():
-              # Probe 1: Ping global request (GOST v2/v3 heartbeat)
+              # GOST v2/v3 answer a proprietary 'ping' global request.
               try:
-                  ping_res = t.global_request("ping", wait=True)
-                  if ping_res is not None:
+                  if t.global_request("ping", wait=True) is not None:
                       mode = "tunnel"
               except Exception:
                   pass
 
-              # Probe 2: Proprietary 'gost-tunnel' channel (SSHTunnelListener)
+              # SSHTunnelListener exposes a proprietary 'gost-tunnel' channel type.
               if mode == "unknown":
                   try:
                       chan = t.open_channel("gost-tunnel", timeout=3.0)
@@ -82,32 +86,24 @@ code:
                           chan.close()
                   except Exception:
                       pass
-
-              # Probe 3: 'direct-tcpip' channel (SSHForwardHandler / forward+ssh)
-              if mode == "unknown":
-                  try:
-                      chan_tcp = t.open_channel("direct-tcpip", dest_addr=("127.0.0.1", 80), src_addr=("127.0.0.1", 12345), timeout=3.0)
-                      if chan_tcp is not None:
-                          mode = "forward+ssh"
-                          chan_tcp.close()
-                  except Exception:
-                      pass
-
-          t.close()
       except Exception:
           pass
+      finally:
+          if t is not None:
+              try:
+                  t.close()
+              except Exception:
+                  pass
 
-      if mode != "unknown":
-          print(mode)
+      if mode == "tunnel":
+          print("gost-tunnel")
 
     matchers:
-      - type: word
-        words:
-          - "tunnel"
-          - "forward+ssh"
-        condition: or
+      - type: dsl
+        dsl:
+          - 'contains(response, "gost-tunnel")'
 
     extractors:
       - type: regex
         regex:
-          - "^(tunnel|forward\\+ssh)$"
+          - 'gost-tunnel'
