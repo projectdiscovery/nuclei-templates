@@ -1,0 +1,109 @@
+id: gost-ssh-detect
+
+info:
+  name: GO Simple Tunnel (GOST) SSH Listener - Detect
+  author: darses
+  severity: info
+  description: |
+    GO Simple Tunnel (GOST) SSH service was detected via unauthenticated 'none' authentication bypass and proprietary 'ping' global request or 'gost-tunnel' channel confirmation.
+  reference:
+    - https://github.com/ginuerzh/gost
+    - https://github.com/go-gost/gost
+    - https://gost.run
+  metadata:
+    verified: true
+    max-requests: 2
+    vendor: gost
+    product: gost
+    shodan-query:
+      - product:"Go SSH"
+  tags: network,tcp,code,ssh,proxy,tunnel,c2,gost,detect
+
+flow: tcp(1) && code(1)
+
+tcp:
+  - inputs:
+      - data: "SSH-2.0-Nuclei\r\n"
+        read: 20
+
+    host:
+      - "{{Hostname}}"
+    port: 22,443,2222
+
+    matchers:
+      - type: word
+        part: raw
+        words:
+          - "SSH-2.0-Go"
+        internal: true
+
+code:
+  - engine:
+      - py
+      - python3
+
+    source: |
+      import os, socket, logging
+      logging.getLogger("paramiko").setLevel(logging.CRITICAL)
+
+      # Surface a missing dependency instead of silently reporting "not vulnerable".
+      try:
+          import paramiko
+      except ImportError:
+          print("gost-ssh-error: paramiko is required for this template (pip install paramiko)")
+          raise SystemExit(0)
+
+      host = os.getenv("Host", "").strip("[]")
+      port = int(os.getenv("Port") or 22)
+      mode = "unknown"
+      t = None
+
+      try:
+          sock = socket.create_connection((host, port), timeout=5.0)
+          t = paramiko.Transport(sock)
+          t.banner_timeout = 5.0
+          t.start_client(timeout=5.0)
+
+          try:
+              t.auth_none("root")
+          except Exception:
+              pass
+
+          if t.is_authenticated():
+              # GOST v2/v3 answer a proprietary 'ping' global request.
+              try:
+                  if t.global_request("ping", wait=True) is not None:
+                      mode = "tunnel"
+              except Exception:
+                  pass
+
+              # SSHTunnelListener exposes a proprietary 'gost-tunnel' channel type.
+              if mode == "unknown":
+                  try:
+                      chan = t.open_channel("gost-tunnel", timeout=3.0)
+                      if chan is not None:
+                          mode = "tunnel"
+                          chan.close()
+                  except Exception:
+                      pass
+      except Exception:
+          pass
+      finally:
+          if t is not None:
+              try:
+                  t.close()
+              except Exception:
+                  pass
+
+      if mode == "tunnel":
+          print("gost-tunnel")
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(response, "gost-tunnel")'
+
+    extractors:
+      - type: regex
+        regex:
+          - 'gost-tunnel'
