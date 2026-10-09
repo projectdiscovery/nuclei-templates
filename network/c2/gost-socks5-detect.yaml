@@ -5,21 +5,20 @@ info:
   author: darses
   severity: info
   description: |
-    GO Simple Tunnel (GOST) SOCKS5 proxy service was detected via its proprietary SOCKS5 authentication extension negotiation (0x80 TLS / 0x82 TLS-Auth) and TLS server certificate inspection.
+    GO Simple Tunnel (GOST) SOCKS5 proxy service was detected by its proprietary SOCKS5 authentication extension, where the server selects method 0x80 (TLS) or 0x82 (TLS-Auth) from the RFC 1928 private method range.
   reference:
     - https://github.com/ginuerzh/gost
     - https://github.com/go-gost/gost
     - https://gost.run
   metadata:
     verified: true
-    max-requests: 2
+    max-request: 1
     vendor: gost
     product: gost
     shodan-query:
-      - shodan.module:"socks5-proxy" "\x05\x02" -"\x05\xff"
-  tags: network,tcp,code,socks,socks5,proxy,detect,c2,gost
-
-flow: tcp(1) && code(1)
+      - ssl.cert.subject.cn:"gost.run"
+      - ssl.cert.subject.cn:"gost"
+  tags: network,tcp,socks,socks5,proxy,detect,discovery,c2,gost
 
 tcp:
   - inputs:
@@ -35,74 +34,6 @@ tcp:
       - type: binary
         part: raw
         binary:
-          - "0582"
           - "0580"
+          - "0582"
         condition: or
-
-code:
-  - engine:
-      - py
-      - python3
-
-    source: |
-      import os, socket, ssl, json
-
-      host = os.getenv("Host")
-      port = int(os.getenv("Port") or 1080)
-
-      try:
-          s = socket.create_connection((host, port), timeout=5)
-          s.sendall(b"\x05\x01\x80")
-          resp = s.recv(2)
-          if resp in (b"\x05\x80", b"\x05\x82"):
-              proto = "TLS" if resp == b"\x05\x80" else "TLS-Auth"
-              ctx = ssl.create_default_context()
-              ctx.check_hostname = False
-              ctx.verify_mode = ssl.CERT_NONE
-              tls_sock = ctx.wrap_socket(s)
-
-              chain = tls_sock._sslobj.get_unverified_chain()
-              cert_dict = chain[0].get_info() if chain else {}
-              tls_sock.close()
-
-              cn = ""
-              org = ""
-              for rdn in cert_dict.get("subject", ()):
-                  for item in rdn:
-                      if isinstance(item, (tuple, list)) and len(item) == 2:
-                          k, v = item
-                          if k == "commonName":
-                              cn = v
-                          elif k == "organizationName":
-                              org = v
-              if not cn and org:
-                  cn = org
-
-              not_before = cert_dict.get("notBefore", "")
-
-              print(json.dumps({
-                  "gost": True,
-                  "proto": proto,
-                  "cn": cn,
-                  "not_before": not_before
-              }))
-      except Exception:
-          pass
-
-    matchers:
-      - type: word
-        words:
-          - '"gost": true'
-
-    extractors:
-      - type: json
-        json:
-          - .cn
-
-      - type: json
-        json:
-          - .not_before
-
-      - type: json
-        json:
-          - .proto
