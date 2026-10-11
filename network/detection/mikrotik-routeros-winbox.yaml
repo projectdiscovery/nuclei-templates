@@ -1,0 +1,75 @@
+id: mikrotik-routeros-winbox
+
+info:
+  name: MikroTik WinBox Service - Detect
+  author: abdo342003
+  severity: info
+  description: |
+    MikroTik WinBox management service (TCP/8291) was detected.
+
+    Two probes are sent, mirroring nmap's `MikroTik_Winbox` and
+    `MikroTik_Winbox_Legacy` service probes:
+
+    - RouterOS >= 6.43 answers a 36-byte session frame with a 35-byte
+      frame beginning `21 06`.
+    - RouterOS < 6.43 answers the 250-byte legacy frame with one beginning
+      `f8 05`. The legacy matcher also rejects an all-zero body, so bare TCP
+      echo services are not misreported as WinBox.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: port:8291 product:"MikroTik"
+    fofa-query: port="8291" && banner="MikroTik"
+  tags: network,mikrotik,routeros,winbox,detect,detection,tcp,discovery
+
+tcp:
+  # RouterOS >= 6.43 (current, including 7.x)
+  - inputs:
+      - data: "220600000000000000000000000000000000000000000000000000000000000000000000"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+    port: 8291
+    read-size: 512
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: winbox-modern-prefix
+        regex:
+          - '(?s)^\x21\x06.{32}[\x00\x01]$'
+      # second, independent check: the reply is the 35-byte frame itself and
+      # not the all-zero body an echo service would reflect back
+      - type: regex
+        name: winbox-modern-not-echo
+        negative: true
+        regex:
+          - '(?s)^\x22\x06\x00{34}$'
+
+  # RouterOS < 6.43 (legacy protocol)
+  - inputs:
+      - data: "f8050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+    port: 8291
+    read-size: 512
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        name: winbox-legacy
+        regex:
+          - '(?s)^\xf8\x05.{248}$'
+      # reject a bare TCP echo service, which reflects the frame back
+      - type: regex
+        name: not-echo
+        negative: true
+        regex:
+          - '(?s)^\xf8\x05\x00{248}$'
+...
