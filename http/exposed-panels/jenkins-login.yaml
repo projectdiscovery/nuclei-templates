@@ -2,7 +2,7 @@ id: jenkins-login
 
 info:
   name: Jenkins Login Detected
-  author: pdteam
+  author: pdteam,bhutch
   severity: info
   description: Jenkins is an open source automation server.
   remediation: Ensure proper access.
@@ -30,10 +30,22 @@ http:
     matchers-condition: and
     matchers:
       - type: word
+        part: body
         words:
-          - 'Sign in [Jenkins]'
+          - 'j_spring_security_check'   # Spring Security login endpoint (>=2.266)
+          - 'j_acegi_security_check'    # legacy Acegi (<2.266)
+        condition: or
+
+      - type: dsl
+        dsl:
+          - "contains(tolower(all_headers), 'x-jenkins') || contains(body, 'resURL=') || contains(body, 'data-rooturl')"
 
       - type: status
         status:
           - 200
-# digest: 4a0a0047304502210084d642c326adc8755ccaa81a23a3b0a3f3243e771949313e406b85d39f5de3ba02207c65d9dadb4c9cc8320e223fe5bc81598f3034e3b1c6aa4cf475b0358be04c8a:922c64590222798bb761d5b6d8e72950
+
+    extractors:
+      - type: kval
+        name: version
+        kval:
+          - x_jenkins       # best-effort: annotates version when the header is present
