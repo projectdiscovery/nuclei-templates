@@ -19,7 +19,7 @@ info:
       - product:"Go SSH"
   tags: network,tcp,code,ssh,proxy,tunnel,c2,gost,detect
 
-flow: tcp(1) && code(1)
+flow: tcp(1) && javascript(1)
 
 tcp:
   - inputs:
@@ -37,73 +37,58 @@ tcp:
           - "SSH-2.0-Go"
         internal: true
 
-code:
-  - engine:
-      - py
-      - python3
+javascript:
+  - pre-condition: |
+      isPortOpen(Host, Port);
 
-    source: |
-      import os, socket, logging
-      logging.getLogger("paramiko").setLevel(logging.CRITICAL)
+    code: |
+      const m = require("nuclei/ssh");
+      const c = m.SSHClient();
 
-      # Surface a missing dependency instead of silently reporting "not vulnerable".
-      try:
-          import paramiko
-      except ImportError:
-          print("gost-ssh-error: paramiko is required for this template (pip install paramiko)")
-          raise SystemExit(0)
+      // ConnectSSHInfoMode performs a full SSH handshake (key-exchange + auth probe).
+      // The Go SSH client always attempts 'none' auth first (empty auth-method list).
+      //
+      // GOST (NoClientAuth = true in x/crypto/ssh ServerConfig):
+      //   Server replies SSH_MSG_USERAUTH_SUCCESS immediately.
+      //   No SSH_MSG_USERAUTH_FAILURE is sent → UserAuth is empty.
+      //
+      // Standard SSH (OpenSSH, Dropbear, …):
+      //   Server replies SSH_MSG_USERAUTH_FAILURE with the accepted-methods list.
+      //   UserAuth contains ["password", "publickey", …] → non-empty.
+      const info = c.ConnectSSHInfoMode(Host, Port);
+      // Host and Port are flow built-ins: Host from {{Hostname}}, Port from
+      // the tcp step that matched SSH-2.0-Go (22 / 443 / 2222).
 
-      host = os.getenv("Host", "").strip("[]")
-      port = int(os.getenv("Port") or 22)
-      mode = "unknown"
-      t = None
+      if (!info) {
+        throw "No SSH info returned";
+      }
 
-      try:
-          sock = socket.create_connection((host, port), timeout=5.0)
-          t = paramiko.Transport(sock)
-          t.banner_timeout = 5.0
-          t.start_client(timeout=5.0)
+      // Confirm Go SSH banner (secondary — already filtered by the tcp step)
+      const rawBanner = (info.ServerID && info.ServerID.Raw) || "";
+      if (!rawBanner.includes("Go")) {
+        throw "Not a Go SSH server: " + rawBanner;
+      }
 
-          try:
-              t.auth_none("root")
-          except Exception:
-              pass
+      // Empty UserAuth is the key GOST indicator.
+      // It means 'none' auth succeeded and no failure / methods list was received.
+      const userAuth = info["UserAuth"] || [];
+      const acceptedMethods = Array.isArray(userAuth) ? userAuth : [];
+      if (acceptedMethods.length > 0) {
+        throw "SSH server requires auth: " + acceptedMethods.join(",");
+      }
 
-          if t.is_authenticated():
-              # GOST v2/v3 answer a proprietary 'ping' global request.
-              try:
-                  if t.global_request("ping", wait=True) is not None:
-                      mode = "tunnel"
-              except Exception:
-                  pass
+      Export("gost_banner", rawBanner);
+      "gost-ssh-detected";
 
-              # SSHTunnelListener exposes a proprietary 'gost-tunnel' channel type.
-              if mode == "unknown":
-                  try:
-                      chan = t.open_channel("gost-tunnel", timeout=3.0)
-                      if chan is not None:
-                          mode = "tunnel"
-                          chan.close()
-                  except Exception:
-                      pass
-      except Exception:
-          pass
-      finally:
-          if t is not None:
-              try:
-                  t.close()
-              except Exception:
-                  pass
-
-      if mode == "tunnel":
-          print("gost-tunnel")
+    args:
+      Host: "{{Host}}"
 
     matchers:
       - type: dsl
         dsl:
-          - 'contains(response, "gost-tunnel")'
+          - success == true
 
     extractors:
-      - type: regex
-        regex:
-          - 'gost-tunnel'
+      - type: kval
+        kval:
+          - gost_banner
