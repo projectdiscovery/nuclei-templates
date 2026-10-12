@@ -5,7 +5,11 @@ info:
   author: s4e-io
   severity: high
   description: |
-    MITRE Caldera was found using default credentials. When started with the insecure default configuration, both the v4 (classic) and v5 (Magma) consoles ship static operator accounts - red, blue and admin - that all authenticate with the password "admin". An attacker who logs in gains full control of the adversary-emulation server and can run operations that execute commands on every connected agent.
+    MITRE Caldera was found using default credentials. When started with the insecure default configuration, both the v4 (classic) and v5 (Magma) consoles ship static operator accounts (red, blue and admin) that all authenticate with the password "admin". An attacker who logs in gains full control of the adversary-emulation server and can run operations that execute commands on every connected agent.
+  impact: |
+    An attacker with default credentials gains full operator access to the Caldera server, enabling them to launch adversary-emulation operations and execute arbitrary commands on all connected agents.
+  remediation: |
+    Change all default credentials immediately and configure unique, strong passwords for each operator account.
   reference:
     - https://github.com/mitre/caldera
     - https://caldera.readthedocs.io/en/latest/Server-Configuration.html
@@ -30,9 +34,9 @@ http:
 
     matchers:
       - type: dsl
-        internal: true
         dsl:
-          - 'contains(to_lower(body), "caldera")'
+          - 'regex("(?i)caldera", body)'
+        internal: true
 
   - raw:
       - |
@@ -52,17 +56,12 @@ http:
         - admin
 
     stop-at-first-match: true
-
-    matchers-condition: and
     matchers:
-      - type: word
-        part: header
-        words:
-          - "API_SESSION="
-
-      - type: status
-        status:
-          - 302
+      - type: dsl
+        dsl:
+          - 'contains(header, "API_SESSION=")'
+          - 'status_code == 302'
+        condition: and
 
     extractors:
       - type: dsl
