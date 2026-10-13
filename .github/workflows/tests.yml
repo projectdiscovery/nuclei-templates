@@ -30,6 +30,21 @@ jobs:
       - name: Validate templates
         run: nuclei -duc -validate -lfa -ud $GITHUB_WORKSPACE -w workflows/ -et .github/ -ept code -et helpers/payloads/
 
+  signing-key-check:
+    name: Signing Key Check
+    needs: lint
+    runs-on: ubuntu-latest
+    if: github.repository == 'projectdiscovery/nuclei-templates'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      # A code/javascript template signed with a contributor's own key can never
+      # be re-signed by the signing workflow, so it stays permanently unrunnable.
+      - name: Check templates carry the ProjectDiscovery signing key
+        run: python .github/scripts/check-signing-key.py
+
   weak-matcher-checks:
     needs: lint
     runs-on: ubuntu-latest
