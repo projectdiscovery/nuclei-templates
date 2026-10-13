@@ -1,0 +1,49 @@
+id: wordpress-click2shell
+
+info:
+  name: WordPress Click2Shell Theme Preview Selector Injection
+  author: alex700
+  severity: high
+  description: |
+    WordPress contains a client-side selector injection in the theme installer preview route. A crafted URL opened by an authenticated administrator can cause WordPress to automatically install and preview an attacker-selected inactive theme from WordPress.org. The issue can be chained with a separate vulnerability in an installed theme to achieve code execution.
+  impact: |
+    An attacker can use an authenticated administrator's browser session to install an inactive catalog theme without an explicit installation action. Additional vulnerable theme behavior may turn the forced installation into code execution.
+  remediation: |
+    Update WordPress to 7.1.1 or the corresponding security release for the installed maintenance branch.
+  reference:
+    - https://wordpress.org/news/2026/09/wordpress-7-1-1-maintenance-and-security-release/
+    - https://core.trac.wordpress.org/changeset/63664
+    - https://pwn.ai/blog/click2shell
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: wordpress
+    product: wordpress
+    shodan-query:
+      - http.component:"wordpress"
+  tags: wordpress,wp,click2shell,selector-injection,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin/js/theme.js"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "self.view.collection.once( 'query:success', function() {"
+          - "$( 'div[data-slug=\"' + slug + '\"]' ).trigger( 'click' );"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "escapeSelector"
+        negative: true
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a00473045022100ae99b1c463112403005699ab3247253510913e0bff75a4c580ccccfc3a74b2d1022047324164010d4894a2198f65b0175d323d397ffc32546006d139b50e1683d854:922c64590222798bb761d5b6d8e72950

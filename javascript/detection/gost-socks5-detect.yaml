@@ -1,0 +1,76 @@
+id: gost-socks5-detect
+
+info:
+  name: GO Simple Tunnel (GOST) SOCKS5 - Detect
+  author: darses
+  severity: info
+  description: |
+    GO Simple Tunnel (GOST) SOCKS5 proxy service was detected by its proprietary SOCKS5 authentication extension, where the server selects method 0x80 (TLS) or 0x82 (TLS-Auth) from the RFC 1928 private method range.
+  reference:
+    - https://github.com/ginuerzh/gost
+    - https://github.com/go-gost/gost
+    - https://gost.run
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: gost
+    product: gost
+    shodan-query:
+      - ssl.cert.subject.cn:"gost.run"
+      - ssl.cert.subject.cn:"gost"
+  tags: network,tcp,socks,socks5,proxy,detect,discovery,c2,gost
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host, Port);
+
+    code: |
+      const net = require("nuclei/net");
+      const conn = net.Open('tcp', `${Host}:${Port}`);
+      conn.SetTimeout(Timeout);
+
+      // RFC 1928 SOCKS5 client greeting:
+      //   VER=0x05  NMETHODS=0x01  METHODS=[0x80]
+      //
+      // 0x80 is GOST's proprietary TLS sub-negotiation byte — outside the
+      // standard RFC 1928 range (0x00–0x02) — so only a GOST server echoes it back.
+      conn.SendHex("050180");
+
+      // Server replies with 2 bytes: VER (0x05) + selected METHOD
+      const resp = conn.Recv(4);
+      conn.Close();
+
+      if (!resp || resp.length < 2 || resp[0] !== 0x05) {
+        throw "Not a SOCKS5 server";
+      }
+
+      const method = resp[1];
+
+      // GOST private method range: 0x80 (TLS) and 0x82 (TLS-Auth)
+      let methodName;
+      if (method === 0x80) {
+        methodName = "0x80 (TLS)";
+      } else if (method === 0x82) {
+        methodName = "0x82 (TLS-Auth)";
+      } else {
+        throw "SOCKS5 server, but not GOST (method=0x" + method.toString(16) + ")";
+      }
+
+      Export("gost_method", methodName);
+      "gost-socks5-detected";
+
+    args:
+      Host: "{{Host}}"
+      Port: 1080
+      Timeout: 5
+
+    matchers:
+      - type: dsl
+        dsl:
+          - success == true
+
+    extractors:
+      - type: kval
+        kval:
+          - gost_method
+# digest: 4a0a0047304502210081c0b087e628faa2a7487d1ee780d035468df48d346b5ea11b5410d2f53ae61e02202d666855d35eeb7855a5a5b34f721fa57cefcfc43e75819d1305b6d8ed32860b:922c64590222798bb761d5b6d8e72950
