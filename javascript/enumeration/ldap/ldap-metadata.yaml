@@ -2,10 +2,10 @@ id: ldap-metadata
 
 info:
   name: LDAP Metadata - Enumeration
-  author: pussycat0x
+  author: pussycat0x,0x_Akoko
   severity: info
   description: |
-    LDAP metadata refers to the data that describes the structure, schema, and attributes of the LDAP directory
+    LDAP metadata refers to the data that describes the structure, schema, and attributes of the LDAP directory. Both plaintext LDAP and implicit-TLS LDAPS ports are covered.
   reference:
     - https://docs.projectdiscovery.io/templates/protocols/javascript/modules/ldap.Metadata
   metadata:
@@ -16,34 +16,50 @@ info:
 javascript:
   - code: |
       const ldap = require('nuclei/ldap');
-      const cfg = new ldap.Config();
-      cfg.Upgrade = true;
-      const client = new ldap.Client(Host, Port);
-      const metadata = client.CollectMetadata();
-      Export((metadata))
+
+      // 636 and 3269 (AD global catalog) are implicit TLS. 389 and 3268 are
+      // plaintext with an optional StartTLS upgrade, which cfg.Upgrade requests.
+      const tlsPorts = ['636', '3269'];
+
+      function tryPort(port) {
+        const scheme = tlsPorts.indexOf(String(port)) !== -1 ? 'ldaps://' : 'ldap://';
+        const cfg = new ldap.Config();
+        // The module ignores Upgrade when the scheme is already ldaps.
+        cfg.Upgrade = true;
+        // Client(ldapUrl, Realm, {Config}) - the second argument is the realm,
+        // and the config has to be passed as the third argument to take effect.
+        const client = new ldap.Client(scheme + Host + ':' + port, Realm, cfg);
+        return client.CollectMetadata();
+      }
+
+      // Honour the scanned port when there is one, otherwise cover the common pair.
+      const ports = TargetPort ? [TargetPort] : ['389', '636'];
+
+      for (let i = 0; i < ports.length; i++) {
+        try {
+          const metadata = tryPort(ports[i]);
+          if (metadata) {
+            Export(metadata);
+            break;
+          }
+        } catch (e) {
+          // port closed, wrong scheme, or bind refused - try the next one
+        }
+      }
 
     args:
-      Host: "ldap://{{Host}}"
-      Port: 389
+      Host: "{{Host}}"
+      TargetPort: "{{Port}}"
+      Realm: "anonymous"
 
     matchers:
       - type: dsl
         dsl:
-          - "len(BaseDn) != 0"
-          - "len(DnsHostName) != 0"
-          - "len(DefaultNamingContext) != 0"
-          - "len(DomainFunctionality) != 0"
-          - "len(ForestFunctionality) != 0"
-          - "len(DomainControllerFunctionality) != 0"
           - "success == true"
+          - "len(DefaultNamingContext) != 0 || len(DnsHostName) != 0 || len(DomainFunctionality) != 0"
+        condition: and
 
     extractors:
-      - type: json
-        internal: true
-        name: BaseDn
-        json:
-          - '.BaseDN'
-
       - type: json
         internal: true
         name: DnsHostName
@@ -63,23 +79,9 @@ javascript:
           - '.DomainFunctionality'
 
       - type: json
-        internal: true
-        name: ForestFunctionality
         json:
-          - '.ForestFunctionality'
-
-      - type: json
-        internal: true
-        name: DomainControllerFunctionality
-        json:
-          - '.DomainControllerFunctionality'
-
-      - type: json
-        json:
-          - '"BaseDN: " + .BaseDN'
           - '"DnsHostName: " + .DnsHostName'
           - '"DefaultNamingContext: "+ .DefaultNamingContext'
           - '"DomainFunctionality: "+ .DomainFunctionality'
           - '"ForestFunctionality: " + .ForestFunctionality'
           - '"DomainControllerFunctionality: "+ .DomainControllerFunctionality'
-# digest: 4a0a00473045022100fb81418a17542cdde195df6a7197af11cedf7efad6c62b7b65acc235913fe17102206774462282af9d8f9c468498c13d6ab5bbc7eed49504bbfb459b1d0d789a0f22:922c64590222798bb761d5b6d8e72950
