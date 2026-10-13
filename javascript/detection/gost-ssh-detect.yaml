@@ -1,0 +1,95 @@
+id: gost-ssh-detect
+
+info:
+  name: GO Simple Tunnel (GOST) SSH Listener - Detect
+  author: darses
+  severity: info
+  description: |
+    GO Simple Tunnel (GOST) SSH service was detected via unauthenticated 'none' authentication bypass and proprietary 'ping' global request or 'gost-tunnel' channel confirmation.
+  reference:
+    - https://github.com/ginuerzh/gost
+    - https://github.com/go-gost/gost
+    - https://gost.run
+  metadata:
+    verified: true
+    max-requests: 2
+    vendor: gost
+    product: gost
+    shodan-query:
+      - product:"Go SSH"
+  tags: network,tcp,code,ssh,proxy,tunnel,c2,gost,detect
+
+flow: tcp(1) && javascript(1)
+
+tcp:
+  - inputs:
+      - data: "SSH-2.0-Nuclei\r\n"
+        read: 20
+
+    host:
+      - "{{Hostname}}"
+    port: 22,443,2222
+
+    matchers:
+      - type: word
+        part: raw
+        words:
+          - "SSH-2.0-Go"
+        internal: true
+
+javascript:
+  - pre-condition: |
+      isPortOpen(Host, Port);
+
+    code: |
+      const m = require("nuclei/ssh");
+      const c = m.SSHClient();
+
+      // ConnectSSHInfoMode performs a full SSH handshake (key-exchange + auth probe).
+      // The Go SSH client always attempts 'none' auth first (empty auth-method list).
+      //
+      // GOST (NoClientAuth = true in x/crypto/ssh ServerConfig):
+      //   Server replies SSH_MSG_USERAUTH_SUCCESS immediately.
+      //   No SSH_MSG_USERAUTH_FAILURE is sent → UserAuth is empty.
+      //
+      // Standard SSH (OpenSSH, Dropbear, …):
+      //   Server replies SSH_MSG_USERAUTH_FAILURE with the accepted-methods list.
+      //   UserAuth contains ["password", "publickey", …] → non-empty.
+      const info = c.ConnectSSHInfoMode(Host, Port);
+      // Host and Port are flow built-ins: Host from {{Hostname}}, Port from
+      // the tcp step that matched SSH-2.0-Go (22 / 443 / 2222).
+
+      if (!info) {
+        throw "No SSH info returned";
+      }
+
+      // Confirm Go SSH banner (secondary — already filtered by the tcp step)
+      const rawBanner = (info.ServerID && info.ServerID.Raw) || "";
+      if (!rawBanner.includes("Go")) {
+        throw "Not a Go SSH server: " + rawBanner;
+      }
+
+      // Empty UserAuth is the key GOST indicator.
+      // It means 'none' auth succeeded and no failure / methods list was received.
+      const userAuth = info["UserAuth"] || [];
+      const acceptedMethods = Array.isArray(userAuth) ? userAuth : [];
+      if (acceptedMethods.length > 0) {
+        throw "SSH server requires auth: " + acceptedMethods.join(",");
+      }
+
+      Export("gost_banner", rawBanner);
+      "gost-ssh-detected";
+
+    args:
+      Host: "{{Host}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - success == true
+
+    extractors:
+      - type: kval
+        kval:
+          - gost_banner
+# digest: 490a00463044022038cf1d999c9016ce07dddc00fb125db11b0e257dd9ee59b837d9a0372f543289022001bd735e7c8cfd997ea6a4295eba2da56ffd259a00ae3d591804cebcce48211d:922c64590222798bb761d5b6d8e72950
