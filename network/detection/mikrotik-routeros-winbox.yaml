@@ -1,0 +1,39 @@
+id: mikrotik-routeros-winbox
+
+info:
+  name: MikroTik WinBox Service - Detect
+  author: abdo342003
+  severity: info
+  description: |
+    Detected MikroTik WinBox management service (TCP/8291). The service answers the session probe with a framed reply whose first byte is the payload length and whose second byte is 0x06, mirroring nmap's MikroTik_Winbox service probe.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cwe-id: CWE-200
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: port:8291 product:"MikroTik"
+    fofa-query: port="8291" && banner="MikroTik"
+  tags: network,mikrotik,routeros,winbox,detect,detection,tcp,discovery
+
+tcp:
+  - inputs:
+      - data: "220600000000000000000000000000000000000000000000000000000000000000000000"
+        type: hex
+
+    host:
+      - "{{Hostname}}"
+    port: 8291
+    read-size: 512
+
+    matchers:
+      - type: dsl
+        dsl:
+          # 35-byte hello without salt, or 51-byte hello with salt - both are WinBox
+          - 'len(raw) == 35 || len(raw) == 51'
+          # framing: first byte is the payload length, second byte is 0x06
+          - 'regex("^(21|31)06", hex_encode(raw))'
+          # an echo service reflects our own 36-byte 0x22 frame back
+          - '!regex("^2206", hex_encode(raw))'
+        condition: and
+# digest: 4a0a004730450220710df8416593b96807844843d8c462ec2cbdc041d3a0343eb37bfd34bec87749022100cf1b8ae8bfde89059cb8cb70e92ebb3c1d4ff9eaebc49cc1e51cf3e8e868e8f5:922c64590222798bb761d5b6d8e72950
