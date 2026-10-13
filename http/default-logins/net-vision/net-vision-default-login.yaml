@@ -1,0 +1,55 @@
+id: net-vision-default-login
+
+info:
+  name: Net Vision UPS Monitor - Default Login
+  author: Th3l0newolf
+  severity: high
+  description: |
+    Net Vision UPS Monitor default credentials were detected.
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cwe-id: CWE-798
+  metadata:
+    max-request: 2
+    verified: true
+    shodan-query: title:"Net Vision UPS"
+    product: net-vision
+    vendor: socomec
+  tags: socomec,net-vision,ups,default-login
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "Net Vision UPS Monitor")'
+          - 'contains_any(body, ".input_username", "Login</span>")'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/PageAEventlog.asp"
+
+    headers:
+      Authorization: "Basic YWRtaW46cHVibGlj"
+
+    redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "USHA Events Log", "Events Log", "Event Level")'
+        condition: and
+
+      - type: status
+        status:
+          - 200
+# digest: 490a0046304402204d011f020c2874e49ecbb686eb33b05122c6dd18155bf0bc2fa2d9649b6a5c6e022022ab9386aac1aaca17ddfa72ee1dc2319a719791fb3cfbd55b6f7d54d548a4b7:922c64590222798bb761d5b6d8e72950

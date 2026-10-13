@@ -1,0 +1,68 @@
+id: claude-code-agents
+
+info:
+  name: Claude Code Subagent Configuration - Exposure
+  author: shadowhunter-92
+  severity: low
+  description: |
+    Claude Code subagent configuration files under `.claude/agents/` were detected on the web server. Each `.md` file in this directory defines a specialized AI subagent (name, description, tool allow-list, system prompt) that Claude Code will delegate work to. Exposure of these files can leak custom system prompts (often containing internal API endpoints, business logic, prompt-engineering secrets), tool permission grants, and information about the project's internal automation setup. Directory listings on `.claude/agents/` further expose the full inventory of subagents defined for a project.
+  reference:
+    - https://docs.claude.com/en/docs/claude-code/sub-agents
+    - https://docs.claude.com/en/docs/claude-code/settings
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    verified: true
+    max-request: 4
+    shodan-query: http.html:"claude"
+  tags: config,exposure,claude,claude-code,anthropic,ai,subagent
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.claude/agents/"
+      - "{{BaseURL}}/.claude/agents/index.md"
+      - "{{BaseURL}}/.claude/agents/README.md"
+      - "{{BaseURL}}/.claude/agents/code-reviewer.md"
+
+    stop-at-first-match: false
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        condition: or
+        regex:
+          - '(?s)^---\s*\n.*?\bname:\s*[A-Za-z0-9_-]+.*?\bdescription:\s*.*?\n---'
+          - '(?i)Index of /\.claude/agents'
+          - '(?i)Directory listing for /\.claude/agents'
+          - '>[a-zA-Z0-9_.-]+\.md<'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        name: agent_name
+        part: body
+        regex:
+          - 'name:\s*["'']?([a-zA-Z0-9_-]+)'
+
+      - type: regex
+        name: allowed_tools
+        part: body
+        regex:
+          - 'tools:\s*\[?([^\]\n]+)'
+
+      - type: regex
+        name: agent_files
+        part: body
+        regex:
+          - '>([a-zA-Z0-9_.-]+\.md)<'
+# digest: 4b0a004830460221009c30dee88c60b9fc9b3842b458fddfba07c4fbf62774566705f45b670ad16b2c02210092ad4c093ba3dbc10e631a77118faa398c57e0a5f684bca46a7b6d79a3277810:922c64590222798bb761d5b6d8e72950

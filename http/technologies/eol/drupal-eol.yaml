@@ -1,0 +1,50 @@
+id: drupal-eol
+
+info:
+  name: Drupal End-of-Life - Detect
+  author: CyberTechSea
+  severity: info
+  description: |
+    Detected Drupal versions that have reached End-of-Life (EOL) and no longer receive security updates. Drupal 7, 8 and 9 are entirely unsupported. For Drupal 10 and 11 only the most recent minor branches receive security coverage, so older minors are reported as EOL.
+  impact: |
+    Unsupported Drupal releases no longer receive security advisories or patches, so newly disclosed vulnerabilities remain permanently exploitable.
+  remediation: |
+    Upgrade to a Drupal release still covered by security support, as published in the Drupal core release cycle policy.
+  reference:
+    - https://endoflife.date/drupal
+    - https://www.drupal.org/about/core/policies/core-release-cycles/schedule
+    - https://www.drupal.org/about/drupal-7/d7eol
+  metadata:
+    verified: true
+    max-request: 3
+    product: drupal
+    vendor: drupal
+    shodan-query: http.component:"Drupal"
+  tags: tech,drupal,eol
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/core/CHANGELOG.txt"
+      - "{{BaseURL}}/CHANGELOG.txt"
+
+    host-redirects: true
+    max-redirects: 2
+    stop-at-first-match: true
+
+    extractors:
+      - type: regex
+        part: all
+        name: version
+        group: 1
+        regex:
+          - '(?i)Drupal\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?),\s+[0-9]{4}-'
+          - '(?i)content=["\x27]?Drupal\s+([0-9]+(?:\.[0-9]+)*)'
+          - '(?i)X-Generator:\s*Drupal\s+([0-9]+(?:\.[0-9]+)*)'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "compare_versions(version, '<10.0.0')"
+# digest: 4b0a004830460221009a57f53a2bee19526486b9ea784b9b8133e28657ea445789dcb16aa07355cc19022100eefed539d11d858f002b89f7d16e688bce1928ed96ea62bf9024b2e980add745:922c64590222798bb761d5b6d8e72950

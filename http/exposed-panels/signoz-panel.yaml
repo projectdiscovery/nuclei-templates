@@ -1,34 +1,57 @@
 id: signoz-panel
 
 info:
-  name: SigNoz - Login Panel
-  author: rxerium
+  name: SigNoz Panel - Detect
+  author: ChrisJr404,rxerium
   severity: info
   description: |
-    SigNoz open-source observability platform web interface was detected.
+    SigNoz is an open-source observability platform for metrics, traces and logs. It ships a React frontend and a Go query service that exposes an unauthenticated version endpoint at /api/v1/version.
   reference:
-    - https://signoz.io/docs/
     - https://github.com/SigNoz/signoz
+    - https://signoz.io/
   metadata:
-    max-request: 1
-    shodan-query: 'http.title:"Open source Observability platform | SigNoz"'
-  tags: panel,signoz,observability
+    verified: false
+    max-request: 2
+    vendor: signoz
+    product: signoz
+    shodan-query: http.title:"SigNoz"
+    fofa-query: title="SigNoz"
+  tags: panel,signoz,observability,oss,detect
+
+flow: http(1) && http(2)
 
 http:
   - method: GET
     path:
       - "{{BaseURL}}"
 
-    matchers-condition: and
+    host-redirects: true
+    max-redirects: 2
+
     matchers:
-      - type: word
-        part: body
-        words:
-          - 'Open source Observability platform | SigNoz'
-          - 'SigNoz is an open source observability platform'
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(body), "signoz")'
+        internal: true
         condition: and
 
-      - type: status
-        status:
-          - 200
-# digest: 4a0a00473045022073e54d1e432bfab05f1102527d3a0ef0f8eae2dc1b4da7e28f298c351f224354022100ff0d250c2437edcad3835f03391a3d7300325e44ddc9d0c0b1d7478b863f66af:922c64590222798bb761d5b6d8e72950
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/version"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"version\"", "\"ee\"", "\"setupCompleted\"")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"version"\s*:\s*"([^"]+)"'
+# digest: 4b0a00483046022100e0996b004410ed7de44782652071a0149a937221dcc53b0cdca66fd66368632f022100bf5ff31bffbe8b24db68812a997363022320d93483d83b56692ceb225c746e12:922c64590222798bb761d5b6d8e72950
