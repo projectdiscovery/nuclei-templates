@@ -1,0 +1,39 @@
+id: apache-skywalking-horizon-ui-config
+
+info:
+  name: Apache SkyWalking Horizon UI - Config Exposure
+  author: icarot
+  severity: low
+  description: |
+    Detects if path /api/auth/oidc/providers and /api/auth/health of SkyWalking Horizon UI server is exposed, getting authentication information.
+  reference:
+    - https://github.com/apache/skywalking-horizon-ui
+  metadata:
+    max-request: 2
+    shodan-query: title:"SkyWalking Horizon UI"
+    vendor: apache
+    product: skywalking-horizon-ui
+  tags: apache,skywalking-horizon-ui,config,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/auth/oidc/providers"
+      - "{{BaseURL}}/api/auth/health"
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_all(body, '"backend":', '"configured":', '"ldap":')
+          - contains_all(body, '"passwordLogin":', '"providers":')
+        condition: or
+
+      - type: word
+        part: content_type
+        words:
+          - 'application/json'
+
+      - type: status
+        status:
+          - 200
