@@ -1,0 +1,39 @@
+id: gitlab-self-managed-detect
+
+info:
+  name: Self-Managed GitLab CE/EE - Detection
+  author: Flawfence
+  severity: info
+  description: |
+    Fingerprints a self-managed GitLab CE/EE from its unauthenticated /users/sign_in page,
+    for asset inventory. This is NOT a vulnerability, it only situates the host. It cannot
+    tell a patched instance from a vulnerable one: pair it with the token-based
+    CVE-2026-110264 template for that. GitLab.com and *.gitlab.com (SaaS, already
+    patched/managed) are excluded. Two independent signals are required, so a lone forged
+    header, or a reverse proxy that strips x-* headers, does not trigger it on its own.
+  reference:
+    - https://about.gitlab.com/install/
+  metadata:
+    max-request: 1
+    vendor: gitlab
+    product: gitlab
+    shodan-query: 'http.title:"GitLab"'
+  tags: tech,gitlab,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/users/sign_in"
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        name: self-managed
+        dsl:
+          - "status_code == 200"
+          - "!(to_lower(host) == 'gitlab.com' || ends_with(to_lower(host), '.gitlab.com'))"
+          - "contains(to_lower(header), 'x-gitlab-meta') || contains(body, 'about.gitlab.com')"
+          - "contains(body, 'GitLab') && (contains(body, 'user[login]') || contains(body, 'Sign in'))"
+        condition: and
