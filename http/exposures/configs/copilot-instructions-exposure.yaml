@@ -1,0 +1,53 @@
+id: copilot-instructions-exposure
+
+info:
+  name: GitHub Copilot Instructions Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected exposed GitHub Copilot custom instructions used to steer Copilot
+    in a repository. These markdown files often describe architecture,
+    coding conventions, internal services, and operational workflow. Public
+    exposure can leak proprietary process detail useful for attackers.
+  reference:
+    - https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot
+    - https://docs.github.com/en/copilot/how-tos/configure-custom-instructions
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 4
+    shodan-query: html:"copilot-instructions"
+  tags: config,exposure,copilot,github,ai,markdown
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.github/copilot-instructions.md"
+      - "{{BaseURL}}/.github/instructions/copilot.instructions.md"
+      - "{{BaseURL}}/.github/instructions/copilot-instructions.md"
+      - "{{BaseURL}}/copilot-instructions.md"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 40'
+          - 'regex("(?m)^\\s*#\\s+", body) || contains_any(to_lower(body), "copilot", "prefer ", "always ", "never ", "do not ", "must ", "this repository", "this project")'
+          - 'contains_any(to_lower(body), "copilot", "codebase", "prefer ", "always ", "never ", "do not ", "must ", "pull request", "commit", "test", "build")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
