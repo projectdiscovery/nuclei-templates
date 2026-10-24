@@ -6,39 +6,43 @@ info:
   severity: high
   tags: xss, storedxss, dast
   description: |
-    Detects a stored XSS vulnerability in a web application by automatically extracting form fields
-    and injecting a payload into each one to check for reflective patterns in the HTTP response.
+    Operator-configured skeleton to detect a stored XSS vulnerability. Fill the FIXME_* placeholders
+    for the target form, then run against a consented application. The injected value is a benign,
+    randomized markup canary (a custom non-executing element - no <script>, no event handler); the
+    matcher confirms the canary is reflected UNENCODED, demonstrating the markup-injection point
+    without planting an executable payload.
   reference:
     - https://owasp.org/www-project-web-security-testing-guide/v41/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting.html
     - https://portswigger.net/web-security/cross-site-scripting/stored
 
 variables:
-  payload: "<script>console.log(RANDINT);</script>"
+  canary: "ffxss{{rand_int(100000, 999999)}}"
+  payload: "<{{canary}}>canary</{{canary}}>"
 
 http:
   - id: inject-payload
-  - raw:
-    - |
-      FIXME_METHOD FIXME_ACTION?FIXME_ARGUMENT HTTP/1.1
-      Host: {{Host}}
-      Connection: close
-      Cookie: FIXME_COOKIES
-      Origin: {{BaseURL}}
-      Referer: {{BaseURL}}
-      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.59 Safari/537.36
-      Accept: application/json, text/javascript, */*; q=0.01
-      Accept-Language: en-US,en;q=0.9
-      Content-Type: FIXME_ENCTYPE
-      X-Requested-With: XMLHttpRequest
+    raw:
+      - |
+        FIXME_METHOD FIXME_ACTION?FIXME_ARGUMENT HTTP/1.1
+        Host: {{Host}}
+        Connection: close
+        Cookie: FIXME_COOKIES
+        Origin: {{BaseURL}}
+        Referer: {{BaseURL}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.59 Safari/537.36
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Language: en-US,en;q=0.9
+        Content-Type: FIXME_ENCTYPE
+        X-Requested-With: XMLHttpRequest
 
-      FIXME_BODY
+        FIXME_BODY
 
     matchers-condition: and
     matchers:
-      - type: regex
+      - type: word
         part: body
-        regex:
-          - <script>console\.log\((\d{12})\);<\/script>
+        words:
+          - "<{{canary}}>canary</{{canary}}>"
 
       - type: word
         part: header
@@ -51,8 +55,7 @@ http:
         name: xss_proof
         group: 1
         regex:
-          - <script>console\.log\((\d{12})\);<\/script>
-
+          - "<(ffxss[0-9]+)>canary</ffxss[0-9]+>"
 
   - id: check-payload
     method: "GET"
@@ -65,17 +68,15 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: regex
+      - type: word
         part: body
-        regex:
-          - <script>console\.log\((\d{12})\);<\/script>
-        condition: and
+        words:
+          - "<{{canary}}>canary</{{canary}}>"
 
       - type: word
         part: header
         words:
           - "text/html"
-        condition: and
 
     extractors:
       - type: regex
@@ -83,4 +84,4 @@ http:
         name: xss_proof
         group: 1
         regex:
-          - <script>console\.log\((\d{12})\);<\/script>
+          - "<(ffxss[0-9]+)>canary</ffxss[0-9]+>"

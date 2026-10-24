@@ -6,13 +6,15 @@ info:
   severity: high
   tags: xss, storedxss, dast
   description: |
-    Detects a stored XSS vulnerability by injecting a payload into all form fields except submit buttons
-    in a single request, checking for reflective patterns in the HTTP response.
+    Detects a stored XSS vulnerability by injecting a benign, randomized markup canary into all form
+    fields except submit buttons in a single request, then checking whether the canary is reflected
+    UNENCODED in the response. The canary is a custom non-executing element (no <script>, no event
+    handler), so the probe demonstrates the markup-injection point without planting an executable
+    payload. Intended for consented DAST runs against a specific application.
 
 variables:
-  xssProof: "{{rand_int(10000, 99999)}}"
-  interactshCallback: "{{interactsh-url}}"
-  xssPayload: "PAYLOAD"
+  xssProof: "ffxss{{rand_int(100000, 999999)}}"
+  xssPayload: "<{{xssProof}}>canary</{{xssProof}}>"
 
 flow: |
   http("extract-fields");
@@ -32,12 +34,10 @@ flow: |
   log(action_url)
 
   if (action_url.startsWith("http")) {
-    // URL complète si action_url est absolue
     set("full_url", action_url.join());
 
   } else {
     let full_url = "{{RootURL}}/" + action_url + "&"
-    //log(full_url)
     set("full_url", full_url);
   }
 
@@ -82,7 +82,7 @@ http:
       - type: word
         part: body
         words:
-          - "{{xssProof}}"
+          - "<{{xssProof}}>canary</{{xssProof}}>"
 
       - type: word
         part: header
@@ -94,10 +94,4 @@ http:
         part: body
         name: "xss_exploit_proof"
         regex:
-          - "{{xssProof}}"
-
-      - type: regex
-        part: body
-        name: "interactsh_callback_proof"
-        regex:
-          - "{{interactshCallback}}"
+          - "<{{xssProof}}>canary</{{xssProof}}>"
