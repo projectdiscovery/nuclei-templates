@@ -11,38 +11,51 @@ info:
   classification:
     cwe-id: CWE-798
   metadata:
+    verified: false
     max-request: 2
+    vendor: dell
+    product: dpi
   tags: dell,dpi,rpm,default-login,vuln
+
 variables:
+  def_user: "admin"
+  def_pass: "admin"
   str: "{{to_lower(rand_text_alpha(5))}}"
+
+flow: http(1) && http(2)
 
 http:
   - raw:
       - |
         POST /index2.html HTTP/1.1
         Host: {{Hostname}}
-        Authorization: Basic {{base64('{{username}}:{{password}}')}}
-      - |
-        POST /index2.html HTTP/1.1
-        Host: {{Hostname}}
-        Authorization: Basic {{base64('{{str}}:{{str}}')}}
+        Authorization: Basic {{base64(def_user + ':' + def_pass)}}
 
-    payloads:
-      username:
-        - admin
-      password:
-        - admin
-    attack: pitchfork
     host-redirects: true
     max-redirects: 2
 
-    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
-          - 'status_code_1 == 200 && status_code_2 == 401'
-          - 'contains(body_2, "Unauthorized")'
-          - '!contains(body_1, "/index.html")'
-          - 'contains_any(tolower(body_1), "<TITLE>DELL DPI Remote Power Management", "title=\"DELL DPI Remote Power Management")'
+          - 'status_code == 200'
+          - '!contains(body, "/index.html")'
+          - 'contains_any(tolower(body), "<title>dell dpi remote power management", "title=\"dell dpi remote power management")'
         condition: and
-# digest: 4a0a0047304502202e643445d559777c49121dd9608565a578d27e3e380b7fbde83c5e8d06a5c4e6022100ecffa08c33405eefd54e38a22dfec74968f04a8a59f69022c5211cbc6559d8f0:922c64590222798bb761d5b6d8e72950
+        internal: true
+
+  - raw:
+      - |
+        POST /index2.html HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(str + ':' + str)}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401'
+          - 'contains(body, "Unauthorized")'
+        condition: and
+# digest: 490a00463044022060a04062cfd827dea60ed1fedb36945fbe452c4fbf917a2bb5de942a7626dc5302207e536e0a96b1889d56977dc11d9b179aa9e8669acd14e007ddeeabdbac03d2da:922c64590222798bb761d5b6d8e72950
