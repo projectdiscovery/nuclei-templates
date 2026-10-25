@@ -13,20 +13,43 @@ info:
   reference:
     - https://patchstack.com/articles/cross-site-request-forgery-in-elementor-plugin-affecting-2-million-sites/
   metadata:
-    max-request: 3
+    max-request: 4
     vendor: elementor
     product: elementor
     framework: wordpress
   tags: wordpress,wp,wp-plugin,elementor,csrf,auth-bypass
 
-flow: http(1) && http(2) && http(3)
+flow: http(1) && http(2) && http(3) && http(4)
 
 http:
   - raw:
       - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{url_encode(username)}}&pwd={{url_encode(password)}}&wp-submit=Log+In&testcookie=1
+
+    redirects: false
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302 && contains(tolower(header), "wordpress_logged_in_")'
+        internal: true
+    extractors:
+      - type: regex
+        name: wp_cookie
+        part: header
+        regex:
+          - '(wordpress_logged_in_[^=;\s]+=[^;\r\n]+)'
+        internal: true
+
+  - raw:
+      - |
         GET /?rest_route=/wp/v2/settings HTTP/1.1
         Host: {{Hostname}}
-        Cookie: {{token}}
+        Cookie: {{wp_cookie}}
 
     matchers:
       - type: dsl
@@ -38,7 +61,7 @@ http:
       - |
         GET /?rest_route=/wp/v2/settings&elementor/v1/eventz/ HTTP/1.1
         Host: {{Hostname}}
-        Cookie: {{token}}
+        Cookie: {{wp_cookie}}
 
     matchers:
       - type: dsl
@@ -50,7 +73,7 @@ http:
       - |
         GET /?rest_route=/wp/v2/settings&elementor/v1/events/ HTTP/1.1
         Host: {{Hostname}}
-        Cookie: {{token}}
+        Cookie: {{wp_cookie}}
 
     matchers:
       - type: dsl
