@@ -19,18 +19,32 @@ info:
   tags: panel,infisical,secrets,auth,login,detect
 
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/api/status"
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
 
     host-redirects: true
     max-redirects: 2
+
     stop-at-first-match: true
 
+    matchers-condition: or
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200 && contains_any(to_lower(body), "<title id=\"initial-document-title\">infisical", "<title>infisical</title>") && contains(to_lower(body), "infisical.ico")'
-          - 'status_code == 200 && contains(to_lower(header), "application/json") && contains_all(body, "secretScanningConfigured", "maxIdentityAccessTokenTTL")'
-        condition: or
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title id=\"initial-document-title\">infisical", "<title>infisical</title>")'
+          - 'contains(to_lower(body), "infisical.ico")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "application/json")'
+          - 'contains_all(body, "secretScanningConfigured", "maxIdentityAccessTokenTTL")'
+        condition: and
