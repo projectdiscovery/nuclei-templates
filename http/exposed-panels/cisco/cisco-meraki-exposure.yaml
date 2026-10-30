@@ -1,33 +1,36 @@
 id: cisco-meraki-exposure
 
 info:
-  name: Cisco Meraki Cloud Security Appliance Panel - Detect
+  name: Cisco Meraki Local Status Page - Detect
   author: dhiyaneshDK,r3naissance
   severity: info
-  description: Cisco Meraki Cloud Security Appliance panel was detected.
+  description: |
+    Cisco Meraki local status page was detected. Meraki MX, MS, MR and MG devices serve this page to show their status and uplink details and to allow local configuration.
   reference:
     - https://www.exploit-db.com/ghdb/6708
+    - https://documentation.meraki.com/General_Administration/Tools_and_Troubleshooting/Using_the_Cisco_Meraki_Device_Local_Status_Page
   classification:
     cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cwe-id: CWE-200
   metadata:
+    verified: true
     max-request: 1
+    vendor: cisco
+    product: meraki
+    shodan-query:
+      - http.html:"device_noun"
+      - http.favicon.hash:804949239
   tags: panel,cisco,meraki,disclosure,edb,discovery
 
 http:
-  - method: GET
-    path:
-      - '{{BaseURL}}/#connection'
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
 
-    matchers-condition: and
     matchers:
-      - type: word
-        words:
-          - 'Your client connection'
-          - 'This security appliance is directly connected to a local network'
-        condition: and
-
-      - type: status
-        status:
-          - 200
-# digest: 4a0a00473045022100a6244426e839c90136f46e3ce35644ae2fc819a34bb68546d4248afb8d9241cc02205eb17fb23756aaf0d1a555d0b163cc67d5ca354de3bba389f11e5fcf5f8a726a:922c64590222798bb761d5b6d8e72950
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains_all(body, "device_noun", "healthy_message")'
+          - 'status_code >= 300 && status_code < 400 && contains(header, "devices.meraki.direct")'
+        condition: or
