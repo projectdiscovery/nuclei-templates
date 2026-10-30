@@ -1,0 +1,48 @@
+id: anylogic-team-license-server-default-login
+
+info:
+  name: AnyLogic Team License Server - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    AnyLogic Team License Server accepts the default admin/admin credentials when its administrator account has not been secured.
+  impact: |
+    An attacker can access license usage information and administrative license server settings.
+  remediation: |
+    Change the administrator credentials in the server's conf/serv.properties file, keep needLogin=True, and restrict network access to the server console.
+  reference:
+    - https://www.anylogic.com/upload/activation-guides/activation_of_anylogic_university_server_license.pdf
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: anylogic
+    product: team_license_server
+  tags: default-login,anylogic,license-server,intrusive
+
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+        Content-Type: application/x-www-form-urlencoded
+
+        un={{url_encode(username)}}&pw={{url_encode(password)}}&login=Sign+in
+
+    host-redirects: true
+    max-redirects: 1
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "Sign out"

