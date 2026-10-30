@@ -1,0 +1,50 @@
+id: infisical-panel
+
+info:
+  name: Infisical Login Panel - Detect
+  author: rafaelsoje
+  severity: info
+  description: |
+    Infisical login panel was detected. Infisical is an open-source secret management platform used to manage secrets, environment variables, certificates, and infrastructure credentials.
+  reference:
+    - https://github.com/Infisical/infisical
+    - https://infisical.com/
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: infisical
+    product: infisical
+    shodan-query: http.title:"Infisical"
+    fofa-query: title="Infisical"
+  tags: panel,infisical,secrets,auth,login,detect
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(to_lower(body), "<title id=\"initial-document-title\">infisical", "<title>infisical</title>")'
+          - 'contains(to_lower(body), "infisical.ico")'
+        condition: and
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(to_lower(header), "application/json")'
+          - 'contains_all(body, "secretScanningConfigured", "maxIdentityAccessTokenTTL")'
+        condition: and
