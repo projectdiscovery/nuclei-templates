@@ -1,0 +1,58 @@
+id: cursor-rules-exposure
+
+info:
+  name: Cursor AI Rules Configuration Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected exposed Cursor AI rule configuration files (.cursorrules,
+    .cursor/rules, or related Cursor project config). These files instruct the
+    Cursor coding agent on project conventions, architecture constraints, and
+    sometimes environment-specific guidance. Public exposure can leak
+    proprietary development process detail and internal system hints useful for
+    attackers.
+  reference:
+    - https://docs.cursor.com/context/rules
+    - https://docs.cursor.com/context/rules-for-ai
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 5
+    shodan-query: html:".cursorrules"
+  tags: config,exposure,cursor,ai,markdown
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.cursorrules"
+      - "{{BaseURL}}/.cursor/rules"
+      - "{{BaseURL}}/.cursor/rules.md"
+      - "{{BaseURL}}/.cursor/rules/index.mdc"
+      - "{{BaseURL}}/.cursor/mcp.json"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/json"
+          - "application/octet-stream"
+          - "text/yaml"
+          - "application/yaml"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 30'
+          - 'contains_any(to_lower(body), "you are", "always ", "never ", "prefer ", "do not ", "must ", "globs:", "alwaysapply", "\"mcpservers\"", "description:", "cursor", "rules for")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype html", "page not found", "404 not found")'
