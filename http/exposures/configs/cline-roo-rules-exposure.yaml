@@ -1,0 +1,55 @@
+id: cline-roo-rules-exposure
+
+info:
+  name: Cline and Roo Code Rules Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected exposed Cline or Roo Code agent rule files. These files steer VS
+    Code coding agents with project conventions, tool permissions, and
+    workflow instructions. Public exposure can leak proprietary process detail
+    and internal operational guidance.
+  reference:
+    - https://docs.cline.bot/
+    - https://docs.roocode.com/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 6
+    shodan-query: html:".clinerules"
+  tags: config,exposure,cline,roo,vscode,ai,markdown
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.clinerules"
+      - "{{BaseURL}}/.clinerules/default.md"
+      - "{{BaseURL}}/.cline/rules.md"
+      - "{{BaseURL}}/.roo/rules"
+      - "{{BaseURL}}/.roo/rules.md"
+      - "{{BaseURL}}/.roomodes"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/json"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 30'
+          - 'contains_any(to_lower(body), "cline", "roo", "you are", "always ", "never ", "prefer ", "do not ", "must ", "mode", "tools", "codebase", "workflow")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
