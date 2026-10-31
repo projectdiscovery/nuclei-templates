@@ -1,25 +1,79 @@
 id: azure-domain-tenant
 
 info:
-  name: Microsoft Azure Domain Tenant ID - Detect
-  author: V0idC0de
+  name: Microsoft Entra ID Tenant ID - Detect
+  author: V0idC0de, Tortuginator
   severity: info
-  description: Microsoft Azure Domain Tenant ID was detected.
+  description: |
+    Detects the Microsoft Entra ID (Azure AD) tenant ID behind a host. The target's
+    pre-authentication redirect is checked first for a tenant GUID in the Location header
+    or the Application Proxy x-ms-proxy-subscription-id header. If the target does not
+    disclose the tenant, the host is resolved to its verified Azure AD domain through the
+    login.microsoftonline.com userrealm endpoint and the tenant ID is read from the OpenID
+    Connect discovery document.
   reference:
-    - https://azure.microsoft.com
+    - https://learn.microsoft.com/en-us/entra/identity/authentication/
+    - https://learn.microsoft.com/en-us/entra/identity/app-proxy/overview-what-is-app-proxy
   classification:
     cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
     cvss-score: 0
     cwe-id: CWE-200
   metadata:
-    max-request: 1
-  tags: azure,microsoft,cloud,exposure,vuln
+    max-request: 3
+    verified: true
+  tags: azure,microsoft,cloud,exposure,entra,tenant,appproxy
+
+flow: http(1) || (http(2) && http(3))
 
 http:
-  - raw:
+  - id: redirect-tenant
+    method: GET
+    path:
+      - "{{BaseURL}}"
+    redirects: false
+
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?i)(?:Location:\s*https?://(?:login\.microsoftonline\.com|login\.windows\.net|login\.microsoft\.com|sts\.windows\.net)/|x-ms-proxy-subscription-id:\s*)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+    extractors:
+      - type: regex
+        name: tenant_id
+        part: header
+        group: 1
+        regex:
+          - '(?i)(?:Location:\s*https?://(?:login\.microsoftonline\.com|login\.windows\.net|login\.microsoft\.com|sts\.windows\.net)/|x-ms-proxy-subscription-id:\s*)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+
+  - id: userrealm
+    raw:
       - |
         @Host: https://login.microsoftonline.com:443
-        GET /{{Host}}/v2.0/.well-known/openid-configuration HTTP/1.1
+        GET /common/userrealm/{{Host}}?api-version=2.1 HTTP/1.1
+        Host: login.microsoftonline.com
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"DomainName":'
+        internal: true
+
+    extractors:
+      - type: regex
+        name: azure_domain
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - '"DomainName":"([^"]+)"'
+
+  - id: oidc-discovery
+    raw:
+      - |
+        @Host: https://login.microsoftonline.com:443
+        GET /{{azure_domain}}/v2.0/.well-known/openid-configuration HTTP/1.1
         Host: login.microsoftonline.com
 
     matchers-condition: and
@@ -29,13 +83,14 @@ http:
           - 200
 
       - type: word
+        part: body
         words:
           - "token_endpoint"
 
     extractors:
       - type: regex
+        name: tenant_id
         part: body
         group: 1
         regex:
-          - "\"https:\\/\\/login\\.microsoftonline\\.com\\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
-# digest: 4a0a0047304502207835573e7a5dff55a76f662014fab6aaf940501dae8ba0b8a97216efd3fdd96e022100c1782045c7eca4ed42b33b108beab8d0e3a5c8d9c577fd707c57bb266277a489:922c64590222798bb761d5b6d8e72950
+          - '"https://login\.microsoftonline\.com/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/'
