@@ -2,15 +2,10 @@ id: azure-domain-tenant
 
 info:
   name: Microsoft Entra ID Tenant ID - Detect
-  author: V0idC0de, Tortuginator
+  author: V0idC0de,Tortuginator
   severity: info
   description: |
-    Detects the Microsoft Entra ID (Azure AD) tenant ID behind a host. The target's
-    pre-authentication redirect is checked first for a tenant GUID in the Location header
-    or the Application Proxy x-ms-proxy-subscription-id header. If the target does not
-    disclose the tenant, the host is resolved to its verified Azure AD domain through the
-    login.microsoftonline.com userrealm endpoint and the tenant ID is read from the OpenID
-    Connect discovery document.
+    Detected the Microsoft Entra ID (Azure AD) tenant ID behind a host. The target's pre-authentication redirect is checked first for a tenant GUID in the Location header or the Application Proxy x-ms-proxy-subscription-id header. If the target does not disclose the tenant, the host is resolved to its verified Azure AD domain through the login.microsoftonline.com userrealm endpoint and the tenant ID is read from the OpenID Connect discovery document.
   reference:
     - https://learn.microsoft.com/en-us/entra/identity/authentication/
     - https://learn.microsoft.com/en-us/entra/identity/app-proxy/overview-what-is-app-proxy
@@ -23,13 +18,15 @@ info:
     verified: true
   tags: azure,microsoft,cloud,exposure,entra,tenant,appproxy
 
-flow: http(1) || (http(2) && http(3))
+flow: http('redirect-tenant') || (http('userrealm') && http('oidc-discovery'))
 
 http:
   - id: redirect-tenant
-    method: GET
-    path:
-      - "{{BaseURL}}"
+    raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
     redirects: false
 
     matchers:
@@ -63,11 +60,11 @@ http:
     extractors:
       - type: regex
         name: azure_domain
-        internal: true
         part: body
         group: 1
         regex:
           - '"DomainName":"([^"]+)"'
+        internal: true
 
   - id: oidc-discovery
     raw:
@@ -78,14 +75,14 @@ http:
 
     matchers-condition: and
     matchers:
-      - type: status
-        status:
-          - 200
-
       - type: word
         part: body
         words:
           - "token_endpoint"
+
+      - type: status
+        status:
+          - 200
 
     extractors:
       - type: regex
