@@ -23,9 +23,9 @@ info:
     product: jboss_application_server
     shodan-query: http.title:"JBoss AS Admin Console"
   tags: jboss,admin-console,default-login,seam,vuln
- 
+
 flow: http(1) && http(2)
- 
+
 http:
   # Request 1: detection gate - runs once; brute force (request 2) only
   # executes if this matches, so non-JBoss hosts are never brute forced.
@@ -33,7 +33,7 @@ http:
       - |
         GET /admin-console/login.seam HTTP/1.1
         Host: {{Hostname}}
- 
+
     matchers:
       - type: dsl
         internal: true
@@ -41,7 +41,7 @@ http:
           - 'status_code == 200'
           - 'contains(body, "JBoss") && contains_any(body, "Admin Console", "Embedded Jopr")'
         condition: and
- 
+
   # Request 2: GET (fresh ViewState) + POST, iterated by the clusterbomb.
   # The whole block repeats per credential pair, so a new ViewState/session
   # is obtained before each login attempt.
@@ -53,9 +53,9 @@ http:
         POST /admin-console/login.seam HTTP/1.1
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
- 
+
         login_form=login_form&login_form:name={{user}}&login_form:password={{pass}}&login_form:submit=Login&javax.faces.ViewState={{viewstate}}
- 
+
     attack: clusterbomb
     payloads:
       user:
@@ -81,7 +81,7 @@ http:
         - test
     threads: 1
     stop-at-first-match: true
- 
+
     extractors:
       - type: regex
         name: viewstate
@@ -90,7 +90,7 @@ http:
         group: 1
         regex:
           - 'id="javax.faces.ViewState" value="(.*?)"'
- 
+
     matchers-condition: and
     matchers:
       - type: dsl
