@@ -18,20 +18,31 @@ on:
       - 'templates-checksum.txt'
   workflow_dispatch:
 
+permissions: {}
+
 env:
   CHECKSUM_FILE: 'templates-checksum.txt'
 
 jobs:
   checksum:
     runs-on: ubuntu-latest
-    if: >
+    # A workflow_run start is accepted only from a successful Template Sign run
+    # on main of this repository.
+    if: >-
       github.repository == 'projectdiscovery/nuclei-templates' && (
         github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'push' ||
-        github.event.workflow_run.conclusion == 'success'
+        github.event_name == 'push' || (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.path == '.github/workflows/template-sign.yml' &&
+          (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch')
+        )
       )
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: projectdiscovery/actions/generate/checksum@v1
         with:
           templates-directory: '${{ github.workspace }}'
@@ -44,5 +55,5 @@ jobs:
           message: 'chore: generate templates checksum 🤖'
       - name: Push changes
         run: |
-          git pull origin $GITHUB_REF --rebase
-          git push origin $GITHUB_REF
+          git pull origin "$GITHUB_REF" --rebase
+          git push origin "$GITHUB_REF"
