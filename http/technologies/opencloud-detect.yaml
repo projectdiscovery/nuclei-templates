@@ -1,0 +1,53 @@
+id: opencloud-detect
+
+info:
+  name: OpenCloud - Detect
+  author: righettod
+  severity: info
+  description: |
+    OpenCloud was detected - a platform for file management, sharing and collaboration. Simple and sovereign.
+  reference:
+    - https://github.com/opencloud-eu/opencloud
+    - https://opencloud.eu/en
+  metadata:
+    verified: true
+    max-request: 2
+    shodan-query: http.title:"opencloud"
+    fofa-query: title="opencloud"
+  tags: tech,opencloud,detect,oss
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/ocs/v1.php/cloud/capabilities?format=json"
+      - "{{BaseURL}}"
+
+    stop-at-first-match: true
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        dsl:
+          - contains_all(to_lower(body), '"product":"opencloud"', '"productname":"opencloud"')
+          - status_code == 200
+        condition: and
+
+      - type: dsl
+        dsl:
+          - contains_all(to_lower(body), '<title>opencloud</title>', 'id="opencloud"')
+          - status_code == 200
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"productversion":\s*"([0-9a-f+.]+)"'
+
+      - type: regex
+        part: header
+        group: 1
+        regex:
+          - '(?i)X-Web-Version:\s*([0-9a-f+.]+)'
+# digest: 4b0a00483046022100b87af20981ad4cc49f75a683fdd7fe91a629f31d599c6e923299037cd369c8c7022100a51903f3bfde138c21d2b47eea844e3c0cc3d955ffdcfe9035a26cbe1aed96e8:922c64590222798bb761d5b6d8e72950

