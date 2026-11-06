@@ -5,8 +5,7 @@ info:
   author: mr-pmillz
   severity: high
   description: |
-    Polycom phone Web Configuration Utility accepts default credentials for administrator or user accounts when the factory passwords have not been changed.
-    This template checks the authentication form for the login success response.
+    Polycom phone Web Configuration Utility accepts default credentials for administrator or user accounts when the factory passwords have not been changed. This template checks the authentication form for the login success response.
   impact: |
     An attacker can access phone configuration with the permissions of the compromised administrator or user account.
   remediation: |
@@ -17,8 +16,12 @@ info:
   classification:
     cwe-id: CWE-1392
   metadata:
+    verified: true
+    max-request: 5
     vendor: polycom
     product: uc_software
+    shodan-query: http.html:"Polycom Web Configuration Utility"
+    fofa-query: body="Polycom Web Configuration Utility"
   tags: default-login,polycom,voip,intrusive
 
 http:
@@ -26,23 +29,35 @@ http:
       - |
         POST /form-submit/auth.htm HTTP/1.1
         Host: {{Hostname}}
-        User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
         Authorization: Basic {{base64(username + ':' + password)}}
+
     payloads:
       username:
-        - User
+        - Polycom
         - Admin
         - User
         - User
+        - User
       password:
-        - "123"
         - "456"
+        - "456"
+        - "123"
         - "789"
         - ""
     attack: pitchfork
+    matchers-condition: and
     matchers:
       - type: word
         part: body
         words:
           - 'lockparams|SUCCESS|0'
-        condition: or
+
+      - type: word
+        part: header
+        words:
+          - 'Polycom'
+        case-insensitive: true
+
+      - type: status
+        status:
+          - 200

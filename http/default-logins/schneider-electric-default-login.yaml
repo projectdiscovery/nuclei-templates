@@ -1,12 +1,11 @@
 id: schneider-electric-default-login
 
 info:
-  name: Schneider Electric APC UPS Network Management Card - Default Login
+  name: Schneider Electric - Default Login
   author: mr-pmillz
   severity: high
   description: |
-    Schneider Electric APC UPS Network Management Cards may retain default or weak account credentials.
-    This template checks known credential pairs against the card's web login interface.
+    Schneider Electric APC UPS Network Management Cards may retain default or weak account credentials. This template checks known credential pairs against the card's web login interface.
   impact: |
     An attacker can access UPS monitoring or management functions with the permissions of the compromised account.
   remediation: |
@@ -16,6 +15,10 @@ info:
   classification:
     cwe-id: CWE-1392
   metadata:
+    verified: true
+    max-request: 5
+    shodan-query: 'title:"APC | Log On"'
+    fofa-query: 'title="APC | Log On"'
     vendor: schneider-electric
     product: ups_network_management_card
   tags: default-login,schneider,schneider-electric,apc,ups,intrusive
@@ -33,9 +36,9 @@ http:
         name: token
         group: 1
         part: header
-        internal: true
         regex:
           - '/NMC/([^/]+)/logon\.htm'
+        internal: true
 
   - raw:
       - |
@@ -50,11 +53,13 @@ http:
       username:
         - apc
         - admin
+        - device
         - readonly
       password:
         - apc
         - admin
-        - admin
+        - apc
+        - apc
     attack: pitchfork
 
     matchers-condition: and
@@ -62,13 +67,13 @@ http:
       - type: status
         status:
           - 303
+
       - type: regex
         part: header
         regex:
-          - "APC[a-zA-Z0-9]"
-    pre-condition:
+          - "(?i)Location: .*/NMC/"
+
       - type: regex
+        part: header
         regex:
-          - ".+"
-        part: var
-        name: token
+          - "(?i)Set-Cookie: APC[^=]+=[^;]+"
