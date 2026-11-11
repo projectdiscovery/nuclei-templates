@@ -1,0 +1,336 @@
+id: s3-bucket-exposure
+
+info:
+  name: Amazon S3 Bucket - Public Exposure & Misconfiguration
+  author: seu-usuario
+  severity: high
+  description: |
+    Detecta múltiplas formas de exposição em buckets Amazon S3:
+    - Listagem pública completa (ListBucketResult)
+    - Arquivos sensíveis acessíveis publicamente
+    - Website Hosting habilitado
+    - Buckets públicos sem listagem (objetos individuais acessíveis)
+
+    Utiliza múltiplas camadas de validação (namespace XML oficial, headers x-amz-*,
+    Content-Type e negativos) para reduzir significativamente falsos positivos.
+  impact: |
+    Buckets S3 mal configurados são uma das causas mais comuns de vazamentos
+    de dados. Podem expor backups, credenciais, código-fonte, bancos de dados,
+    chaves SSH e informações confidenciais.
+  remediation: |
+    1. Ative o S3 Block Public Access (nível de conta e bucket)
+    2. Remova permissões List/Get/Put para "Everyone" e "AllUsers"
+    3. Utilize Bucket Policies restritivas e IAM roles
+    4. Para conteúdo público, use CloudFront + OAI/OAC ou presigned URLs
+    5. Habilite logging e monitoramento (CloudTrail + S3 Access Logs)
+  reference:
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+    - https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
+    - https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteAccessPermissions.html
+    - https://aws.amazon.com/premiumsupport/knowledge-center/secure-s3-resources/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+    cwe-id: CWE-200
+  metadata:
+    max-request: 12
+    verified: true
+  tags: aws,s3,cloud,exposure,misconfig,bucket,public,listing,sensitive-files,website
+
+http:
+  # ============================================
+  # 1. Detecção de Listagem Pública (ListBucketResult)
+  # ============================================
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/"
+
+    stop-at-first-match: true
+    redirects: false
+    max-redirects: 0
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/xml"
+          - "text/xml"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "<ListBucketResult"
+          - "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "<Name>"
+          - "<Contents>"
+          - "<Key>"
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "x-amz-id-2"
+          - "x-amz-request-id"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<HTML"
+          - "<body"
+          - "AccessDenied"
+          - "NoSuchBucket"
+          - "InvalidBucketName"
+          - "AllAccessDisabled"
+          - "cloudflare"
+          - "Just a moment"
+        condition: or
+        negative: true
+        case-insensitive: true
+
+      - type: dsl
+        dsl:
+          - 'contains(to_lower(body), "<listbucketresult")'
+          - 'contains(to_lower(body), "s3.amazonaws.com/doc/2006-03-01")'
+          - 'status_code == 200'
+          - '!contains(to_lower(body), "<html")'
+          - '!contains(to_lower(body), "accessdenied")'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: bucket-name
+        group: 1
+        regex:
+          - '<Name>([^<]+)</Name>'
+          - '<BucketName>([^<]+)</BucketName>'
+          - '://([a-z0-9\.\-]+)\.s3'
+
+      - type: regex
+        name: listed-objects
+        group: 1
+        regex:
+          - "<Key>([^<]+)</Key>"
+
+      - type: kval
+        part: header
+        kval:
+          - x_amz_request_id
+
+  # ============================================
+  # 2. Arquivos Sensíveis Comuns
+  # ============================================
+  - method: GET
+    path:
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.env.local"
+      - "{{BaseURL}}/.env.production"
+      - "{{BaseURL}}/.aws/credentials"
+      - "{{BaseURL}}/credentials.json"
+      - "{{BaseURL}}/config.json"
+      - "{{BaseURL}}/configuration.json"
+      - "{{BaseURL}}/.git/config"
+      - "{{BaseURL}}/backup.zip"
+      - "{{BaseURL}}/backup.tar.gz"
+      - "{{BaseURL}}/database.sql"
+      - "{{BaseURL}}/dump.sql"
+      - "{{BaseURL}}/id_rsa"
+      - "{{BaseURL}}/.ssh/id_rsa"
+      - "{{BaseURL}}/docker-compose.yml"
+      - "{{BaseURL}}/web.config"
+      - "{{BaseURL}}/appsettings.json"
+      - "{{BaseURL}}/.htpasswd"
+      - "{{BaseURL}}/wp-config.php"
+      - "{{BaseURL}}/config.php"
+
+    stop-at-first-match: false
+    redirects: false
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "x-amz-id-2"
+          - "x-amz-request-id"
+          - "AmazonS3"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "AccessDenied"
+          - "NoSuchKey"
+          - "NoSuchBucket"
+          - "<Error>"
+          - "<Code>AccessDenied</Code>"
+          - "<Code>NoSuchKey</Code>"
+          - "The specified key does not exist"
+        condition: or
+        negative: true
+        case-insensitive: true
+
+      # Conteúdo típico de arquivos sensíveis
+      - type: word
+        part: body
+        words:
+          - "DB_PASSWORD"
+          - "DB_HOST"
+          - "AWS_ACCESS_KEY_ID"
+          - "AWS_SECRET_ACCESS_KEY"
+          - "SECRET_KEY"
+          - "API_KEY"
+          - "PRIVATE KEY"
+          - "BEGIN RSA PRIVATE KEY"
+          - "BEGIN OPENSSH PRIVATE KEY"
+          - "password"
+          - "passwd"
+          - "mysql"
+          - "mongodb"
+          - "redis"
+          - "jwt_secret"
+          - "app_key"
+          - "[default]"
+          - "aws_access_key_id"
+          - "aws_secret_access_key"
+          - "DB_USERNAME"
+          - "DATABASE_URL"
+        condition: or
+        case-insensitive: true
+
+    extractors:
+      - type: dsl
+        name: sensitive-file
+        dsl:
+          - 'path'
+
+  # ============================================
+  # 3. Detecção de S3 Website Hosting
+  # ============================================
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/index.html"
+      - "{{BaseURL}}/index.htm"
+      - "{{BaseURL}}/error.html"
+      - "{{BaseURL}}/404.html"
+
+    stop-at-first-match: true
+    redirects: false
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+          - 403
+          - 404
+
+      - type: word
+        part: header
+        words:
+          - "x-amz-id-2"
+          - "x-amz-request-id"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "website"
+          - "Static website hosting"
+          - "index.html"
+          - "error.html"
+          - "The specified bucket does not have a website configuration"
+          - "NoSuchWebsiteConfiguration"
+          - "<Error><Code>NoSuchWebsiteConfiguration</Code>"
+        condition: or
+        case-insensitive: true
+
+      # Ou resposta HTML típica de website S3
+      - type: dsl
+        dsl:
+          - 'contains(to_lower(header), "x-amz-id-2") || contains(to_lower(header), "x-amz-request-id")'
+          - 'contains(to_lower(body), "<html") || contains(to_lower(body), "nosuchwebsiteconfiguration") || contains(to_lower(body), "website")'
+        condition: and
+
+  # ============================================
+  # 4. Objetos Públicos sem Listagem (teste de acesso individual)
+  # ============================================
+  - method: GET
+    path:
+      - "{{BaseURL}}/robots.txt"
+      - "{{BaseURL}}/favicon.ico"
+      - "{{BaseURL}}/crossdomain.xml"
+      - "{{BaseURL}}/clientaccesspolicy.xml"
+      - "{{BaseURL}}/sitemap.xml"
+      - "{{BaseURL}}/package.json"
+      - "{{BaseURL}}/composer.json"
+      - "{{BaseURL}}/README.md"
+      - "{{BaseURL}}/readme.txt"
+      - "{{BaseURL}}/.DS_Store"
+
+    stop-at-first-match: false
+    redirects: false
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "x-amz-id-2"
+          - "x-amz-request-id"
+          - "AmazonS3"
+        condition: or
+        case-insensitive: true
+
+      - type: word
+        part: body
+        words:
+          - "AccessDenied"
+          - "NoSuchKey"
+          - "NoSuchBucket"
+          - "<Error>"
+          - "<Code>AccessDenied</Code>"
+          - "<Code>NoSuchKey</Code>"
+        condition: or
+        negative: true
+        case-insensitive: true
+
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'len(body) > 0'
+          - '!contains(to_lower(body), "accessdenied")'
+          - '!contains(to_lower(body), "nosuchkey")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        name: public-object
+        dsl:
+          - 'path'
