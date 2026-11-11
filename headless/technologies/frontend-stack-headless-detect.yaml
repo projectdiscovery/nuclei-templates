@@ -1,0 +1,49 @@
+id: frontend-stack-headless-detect
+info:
+  name: Frontend Framework Detection (Headless)
+  author: joao victor
+  severity: info
+  description: |
+    Detecta frameworks frontend modernos (Next.js, Nuxt.js, SvelteKit, Vue, React)
+    analisando o DOM renderizado e objetos globais injetados no navegador via motor headless.
+  reference:
+    - https://nextjs.org/
+    - https://nuxt.com/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N
+    cvss-score: 0.0
+    cwe-id: CWE-200
+  metadata:
+    max-request: 1
+    verified: true
+  tags: tech,headless,discovery,frontend,react,nextjs,nuxt
+
+headless:
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+
+      - action: script
+        name: detect-frameworks
+        args:
+          code: |
+            (() => {
+              let frameworks = [];
+              if (window.__NEXT_DATA__) frameworks.push("Next.js");
+              if (window.__NUXT__ || document.querySelector('#__nuxt')) frameworks.push("Nuxt.js");
+              if (window.__svelte || document.querySelector('[data-sveltekit-hydrate]')) frameworks.push("SvelteKit");
+              if (window.React || document.querySelector('[data-reactroot]')) frameworks.push("React");
+              if (window.__VUE__) frameworks.push("Vue.js");
+              return frameworks.join(", ");
+            })();
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "len(detect-frameworks) > 0"
+
+      - type: status
+        status:
+          - 200
