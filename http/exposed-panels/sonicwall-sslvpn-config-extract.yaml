@@ -1,0 +1,59 @@
+id: sonicwall-sslvpn-config-extract
+
+info:
+  name: SonicWall SSL VPN Configuration Extraction
+  author: m4lwhere
+  severity: info
+  description: Extracts login domains, the SSL VPN user-login port, the management port, and the reported authentication type from the SonicOS configuration endpoint.
+  reference:
+    - https://www.greynoise.io/blog/active-reconnaissance-campaign-targets-sonicwall-firewalls-through-commercial-proxy-infrastructure
+  tags: sonicwall,sonicos,sslvpn,discovery,exposure
+  verified: true
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/sonicos/is-sslvpn-enabled"
+
+    headers:
+      X-Snwl-Timer: no-reset
+      X-Snwl-Api-Scope: extended
+      Accept: application/json, text/plain, */*
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        condition: and
+        words:
+          - '"domains"'
+          - '"portal_settings"'
+          - '"management_port"'
+
+    extractors:
+      - type: json
+        name: login-domain
+        part: body
+        json:
+          - '.domains[]? | select(.name != null) | "domain=" + (.name | tostring)'
+
+      - type: json
+        name: user-login-port
+        part: body
+        json:
+          - '.port | select(. != null) | "user-login-port=" + tostring'
+
+      - type: json
+        name: management-port
+        part: body
+        json:
+          - '.portal_settings.management_port | select(. != null) | "management-port=" + tostring'
+
+      - type: json
+        name: auth-type
+        part: body
+        json:
+          - '.auth_type | select(. != null) | "auth_type=" + tostring'
