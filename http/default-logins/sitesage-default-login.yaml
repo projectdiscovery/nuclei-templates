@@ -1,0 +1,55 @@
+id: sitesage-default-login
+
+info:
+  name: Powerhouse Dynamics SiteSage Gateway - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    SiteSage gateways may retain default credentials for their local configuration interface.
+    This template checks known administrator credential pairs for a successful sign-in response.
+  impact: |
+    An attacker can access the gateway's configuration interface and modify its network settings.
+  remediation: |
+    Change the gateway's default credentials where supported and restrict access to its local configuration interface to trusted administrators.
+  reference:
+    - https://www.powerwisesystems.com/blog/sitesage-gateway-and-wireless-networks/
+    - https://powerhousedynamics.com/wiki/18712-2/customer-support-knowledge-base-directory/powerhouse-dynamics-equipment/gateways-and-secure-access-points-sap/gateway-wi-fi-setup/
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    vendor: powerhousedynamics
+    product: sitesage_gateway
+  tags: default-login,powerhousedynamics,sitesage,gateway,wireless,intrusive
+
+http:
+  - raw:
+      - |
+        POST /cgi-bin/set_username_password HTTP/1.1
+        Host: {{Hostname}}
+        Cache-Control: max-age=0
+        Origin: http://{{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: http://{{Hostname}}/
+        Connection: keep-alive
+
+        username={{username}}&password={{password}}
+
+    payloads:
+      username:
+        - admin
+        - admin
+      password:
+        - admin
+        - lesspower
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'User Signed In'
+
+      - type: status
+        status:
+          - 303

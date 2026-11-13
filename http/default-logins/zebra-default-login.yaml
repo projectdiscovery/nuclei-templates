@@ -1,0 +1,48 @@
+id: zebra-web-default-login
+
+info:
+  name: Zebra Print Server - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    Zebra printer web interfaces may retain the default password 1234 for access to protected printer functions. This template submits the password to the authorization endpoint and checks for an access-granted response.
+  impact: |
+    An attacker can access protected printer functions and configuration settings.
+  remediation: |
+    Change the print server's default password and restrict access to its web interface to trusted management hosts.
+  reference:
+    - https://supportcommunity.zebra.com/s/article/Changing-the-Print-Server-s-Password?language=en_US
+    - https://docs.zebra.com/us/en/printers/desktop/bm-zd620-and-zd420-desktop-printers-user-guide-ditamap/c-zd620-420-setup/t-zd620-zd420-ug-connecting-your-printer-to-a-computer/r-zd620-420-ethernet-lan-rj-45/r-zd200t-ug-print-server-user-id-and-password-defaults.html
+  classification:
+    cwe-id: CWE-1393
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: zebra
+    product: print_server
+    fofa-query: 'body="Zebra Technologies"'
+    shodan-query: 'http.html:"Zebra Technologies"'
+  tags: default-login,zebra,printer,intrusive
+
+variables:
+  password: "1234"
+
+http:
+  - raw:
+      - |
+        POST /authorize HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        0={{url_encode(password)}}
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Access Granted."
+
+      - type: status
+        status:
+          - 200

@@ -1,0 +1,83 @@
+id: gw-security-camera-default-login
+
+info:
+  name: GW Security IP Camera - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    GW Security IP cameras with unchanged default credentials allow authenticated access to their user configuration endpoint. This template checks encoded administrator credentials and looks for a user configuration response.
+  impact: |
+    An attacker can retrieve camera account configuration and potentially obtain additional credentials from the response.
+  remediation: |
+    Change all default camera account passwords and restrict access to the management interface to trusted hosts.
+  reference:
+    - https://gwsecurityusa.com/wp-content/Firmware/Cameras/50-54-60-80%20Series%20IP%20Cameras/GW50-54-80%20Series%20Quick%20Guide%2020170619.pdf
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    max-request: 3
+    shodan-query: 'http.html:"GW Security"'
+    fofa-query: 'body="GW Security"'
+    vendor: gwsecurity
+    product: ip_camera
+  tags: default-login,gwsecurity,camera,intrusive
+
+variables:
+  username: admin
+  password: "123456"
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 302
+
+        internal: true
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^Location:\s*https?://[^/]+/login\.html\?t=[0-9]+'
+        internal: true
+
+    extractors:
+      - type: regex
+        part: header
+        name: tid
+        group: 1
+        internal: true
+        regex:
+          - '[?&]t=([0-9]+)'
+
+  - raw:
+      - |
+        GET /login.html?t={{tid}} HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'GW Security'
+        internal: true
+
+  - raw:
+      - |
+        POST /goform/formLogin HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{username}}&tid={{tid}}&access={{md5(tid + ':' + password)}}
+
+    matchers:
+      - type: status
+        status:
+          - 200

