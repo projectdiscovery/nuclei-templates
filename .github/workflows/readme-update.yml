@@ -7,14 +7,33 @@ on:
       - completed
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'projectdiscovery/nuclei-templates'
+    # A workflow_run start is accepted only from a successful Templates Stats
+    # run (tag push or manual) or KEV run (scheduled or manual on main) of this
+    # repository.
+    if: >-
+      github.repository == 'projectdiscovery/nuclei-templates' && (
+        github.event_name != 'workflow_run' || (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository && (
+            (github.event.workflow_run.path == '.github/workflows/templates-stats.yml' &&
+              (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) ||
+            (github.event.workflow_run.path == '.github/workflows/kev-update.yml' &&
+              github.event.workflow_run.head_branch == 'main' &&
+              (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch'))
+          )
+        )
+      )
+    permissions:
+      contents: write
     steps:
       - run: sudo apt-get install tree -y
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.8"
       - run: python .github/scripts/update-readme.py
@@ -23,4 +42,4 @@ jobs:
         with:
           files: 'README.md README_*.md'
           message: 'docs: update README 🤖'
-      - run: git push origin $GITHUB_REF
+      - run: git push origin "$GITHUB_REF"
