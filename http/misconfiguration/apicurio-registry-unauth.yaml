@@ -1,0 +1,57 @@
+id: apicurio-registry-unauth
+
+info:
+  name: Apicurio Registry - Unauthenticated Access
+  author: s4e-io
+  severity: medium
+  description: |
+    Apicurio Registry 3.x ships with authentication disabled by default (quarkus.oidc.tenant-enabled=false and no basic authentication configured). The always-public /apis/registry/v3/system/uiConfig endpoint then reports an auth type of none, and the core registry API is reachable without credentials. An unauthenticated attacker can enumerate and download every schema and API definition stored in the registry, and can create new artifacts and versions.
+  remediation: |
+    Enable OIDC or basic authentication, enable role-based authorization, and restrict network access to the registry.
+  reference:
+    - https://www.apicur.io/registry/docs/apicurio-registry/3.0.x/getting-started/assembly-configuring-registry-security.html
+    - https://github.com/Apicurio/apicurio-registry/blob/3.3.4/app/src/main/resources/application.properties
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N
+    cvss-score: 6.5
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    vendor: apicurio
+    product: apicurio_registry
+  tags: apicurio,apicurio-registry,exposure,misconfig,unauth
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/registry/v3/system/uiConfig"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"rbacEnabled\"", "\"obacEnabled\"")'
+          - 'regex("\"auth\"\\s*:\\s*\\{[^}]*\"type\"\\s*:\\s*\"none\"", body)'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/apis/registry/v3/search/artifacts"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"artifacts\"", "\"count\"")'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.artifacts[].artifactId'
