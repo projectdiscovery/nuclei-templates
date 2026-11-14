@@ -1,0 +1,57 @@
+id: nessie-unauth
+
+info:
+  name: Project Nessie - Unauthenticated API Access
+  author: s4e-io
+  severity: high
+  description: |
+    Project Nessie ships with nessie.server.authentication.enabled=false by default, so every request to the Nessie REST API is served as anonymous. An unauthenticated GET /api/v2/trees returns all branches and tags with their commit hashes, and the same access allows creating commits, merging, reassigning and deleting references of the data lakehouse catalog.
+  remediation: |
+    Set nessie.server.authentication.enabled=true with a valid OIDC configuration, enable authorization rules, and restrict network access to the Nessie server.
+  reference:
+    - https://projectnessie.org/nessie-latest/authentication/
+    - https://github.com/projectnessie/nessie/blob/nessie-0.110.0/servers/quarkus-server/src/main/resources/application.properties
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:N
+    cvss-score: 8.2
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    vendor: projectnessie
+    product: nessie
+    shodan-query: http.title:"Nessie"
+  tags: nessie,iceberg,exposure,misconfig,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v2/trees"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"references"'
+          - '"hasMore"'
+        condition: and
+
+      - type: regex
+        part: body
+        regex:
+          - '"type"\s*:\s*"(BRANCH|TAG)"'
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.references[].name'
