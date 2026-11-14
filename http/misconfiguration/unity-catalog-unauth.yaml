@@ -1,0 +1,51 @@
+id: unity-catalog-unauth
+
+info:
+  name: Unity Catalog - Unauthenticated API Access
+  author: s4e-io
+  severity: high
+  description: |
+    Unity Catalog OSS ships with server.authorization set to disable by default. In this mode the server does not register its authentication decorators, so the Unity Catalog REST API is reachable without a token. An unauthenticated GET /api/2.1/unity-catalog/catalogs returns the catalog listing, and the same access allows reading and changing schemas, tables, volumes, functions and models.
+  remediation: |
+    Set server.authorization=enable in etc/conf/server.properties, configure the identity provider settings, and restrict network access to the Unity Catalog server.
+  reference:
+    - https://docs.unitycatalog.io/server/auth/
+    - https://github.com/unitycatalog/unitycatalog/blob/v0.7.0/etc/conf/server.properties
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N
+    cvss-score: 8.2
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    vendor: unitycatalog
+    product: unity_catalog
+  tags: unity-catalog,exposure,misconfig,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/2.1/unity-catalog/catalogs"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"catalogs":'
+          - '"next_page_token":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.catalogs[].name'
