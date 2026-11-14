@@ -1,0 +1,65 @@
+id: apache-shenyu-default-login
+
+info:
+  name: Apache ShenYu Admin - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Apache ShenYu Admin ships with the default credentials admin/123456. An attacker can log in to the gateway administration console and change plugins, selectors, rules and upstream routes of the API gateway.
+  reference:
+    - https://shenyu.apache.org/docs/deployment/deployment-local/
+    - https://github.com/apache/shenyu/blob/v2.7.2/shenyu-admin/src/main/resources/sql-script/h2/schema.sql
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:apache:shenyu:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: apache
+    product: shenyu
+    shodan-query: http.title:"Apache ShenYu Gateway"
+    fofa-query: title="Apache ShenYu Gateway"
+  tags: apache,shenyu,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Apache ShenYu Gateway</title>")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /platform/login?userName={{username}}&password={{password}} HTTP/1.1
+        Host: {{Hostname}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - 123456
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"code\":200")'
+          - 'contains(body, "\"userName\":\"admin\"")'
+          - 'contains(body, "\"token\":\"ey")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
