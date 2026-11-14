@@ -1,0 +1,52 @@
+id: mcp-server-unauth-tools-list
+
+info:
+  name: Model Context Protocol (MCP) Server - Unauthenticated Tools List
+  author: shadowhunter-92,amanxplore
+  severity: high
+  description: Detects unauthenticated Model Context Protocol (MCP) servers exposing JSON-RPC 2.0 tools/list method.
+  remediation: Enforce authentication (e.g. Bearer token, API key, or mTLS) on all MCP server endpoints.
+  reference:
+    - https://modelcontextprotocol.io/specification/
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-59822
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    max-request: 4
+    verified: true
+  tags: misconfig,mcp,ai,unauth,exposure,jsonrpc,cve
+
+http:
+  - raw:
+      - |
+        POST {{path}} HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}
+
+    payloads:
+      path:
+        - /mcp
+        - /messages
+        - /sse
+        - /
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"jsonrpc"'
+          - '"result"'
+        condition: and
+      - type: word
+        part: body
+        words:
+          - '"tools"'
+          - '"inputSchema"'
+        condition: or\n
