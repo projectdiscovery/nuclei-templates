@@ -1,0 +1,52 @@
+id: gemini-md-exposure
+
+info:
+  name: Gemini GEMINI.md Project Instructions Exposure
+  author: 686f6c61
+  severity: medium
+  description: |
+    Detected an exposed Gemini project instruction file (GEMINI.md). These
+    markdown files provide project specific guidance for Gemini based coding
+    agents, including conventions, architecture notes, and operational rules.
+    Public exposure can leak proprietary process detail.
+  reference:
+    - https://github.com/google-gemini/gemini-cli
+    - https://ai.google.dev/gemini-api/docs
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-200,CWE-538
+  metadata:
+    max-request: 3
+    shodan-query: html:"GEMINI.md"
+  tags: config,exposure,gemini,google,ai,markdown
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/GEMINI.md"
+      - "{{BaseURL}}/.gemini/GEMINI.md"
+      - "{{BaseURL}}/gemini.md"
+
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: header
+        words:
+          - "text/plain"
+          - "text/markdown"
+          - "application/octet-stream"
+        condition: or
+
+      - type: dsl
+        dsl:
+          - 'len(body) > 40'
+          - 'regex("(?m)^\\s*#\\s+", body)'
+          - 'contains_any(to_lower(body), "gemini", "codebase", "prefer ", "always ", "never ", "do not ", "must ", "when working", "this project", "pull request")'
+          - '!contains_any(to_lower(body), "<html", "<!doctype", "page not found", "404 not found")'
