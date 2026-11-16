@@ -16,66 +16,129 @@ on:
       - "📋 KEV & vKEV Tag Update"
     types:
       - completed
+    branches:
+      - main
   workflow_dispatch:
+
+permissions: {}
+
+# nuclei release that signs the templates. It is installed from the official
+# release and checked against the SHA-256 below before it runs. To update it,
+# set the new version and copy the hashes of the two zip files from
+# nuclei_<version>_checksums.txt of that release.
+env:
+  NUCLEI_VERSION: 3.11.1
+  NUCLEI_LINUX_AMD64_SHA256: ea63d4ae232808cd7c6bc00d0142428e231fab59dae01042246097d195835ab6
+  NUCLEI_WINDOWS_AMD64_SHA256: bb6cb9ff8939b753f6fcab06fd30a15f5bc61d8382a597871334c007a85ff9d2
 
 jobs:
   linux-sign:
     name: Sign All Templates (Linux)
     runs-on: ubuntu-latest
-    if: github.repository == 'projectdiscovery/nuclei-templates'
+    # A workflow_run start is accepted only from a successful scheduled or
+    # manual EPSS/KEV run on main of this repository.
+    if: >-
+      github.repository == 'projectdiscovery/nuclei-templates' && (
+        github.event_name != 'workflow_run' || (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          github.event.workflow_run.head_branch == 'main' &&
+          (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch') &&
+          (github.event.workflow_run.path == '.github/workflows/epss-update.yml' || github.event.workflow_run.path == '.github/workflows/kev-update.yml')
+        )
+      )
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: projectdiscovery/nuclei-action@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          install-only: true
-      - run: nuclei -lfa -duc -sign -ud $GITHUB_WORKSPACE -t .
+          persist-credentials: false
+
+      - name: Install nuclei
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/nuclei-bin"
+          zip="$RUNNER_TEMP/nuclei.zip"
+          mkdir -p "$dir"
+          curl -sSfL --retry 3 -o "$zip" "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip"
+          echo "${NUCLEI_LINUX_AMD64_SHA256}  ${zip}" | sha256sum -c
+          unzip -o -q "$zip" nuclei -d "$dir"
+
+      # Only this step gets the signing key.
+      - name: Sign templates
+        run: '"$RUNNER_TEMP/nuclei-bin/nuclei" -lfa -duc -sign -ud "$GITHUB_WORKSPACE" -t .'
         env:
           NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
           NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
-      - uses: projectdiscovery/actions/setup/git@v1
-      - uses: projectdiscovery/actions/commit@v1
+
+      - uses: projectdiscovery/actions/setup/git@4ff2f2094e67bb1819a069aa130a49463ecaa3f3 # v1
+      - uses: projectdiscovery/actions/commit@4ff2f2094e67bb1819a069aa130a49463ecaa3f3 # v1
         with:
           files: '.'
           message: 'chore: sign templates 🤖'
+
+      # The token is given to git only after signing.
       - name: Push changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git pull origin $GITHUB_REF --rebase
-          git push origin $GITHUB_REF
+          set -euo pipefail
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${auth}"
+          git pull origin "$GITHUB_REF" --rebase
+          git push origin "$GITHUB_REF"
 
   windows-sign:
     name: Sign Windows Templates
     needs: linux-sign
     runs-on: windows-latest
     if: github.repository == 'projectdiscovery/nuclei-templates'
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: projectdiscovery/nuclei-action@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          install-only: true
-          
+          persist-credentials: false
+
+      - name: Install nuclei
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/nuclei-bin"
+          zip="$RUNNER_TEMP/nuclei.zip"
+          mkdir -p "$dir"
+          curl -sSfL --retry 3 -o "$zip" "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_windows_amd64.zip"
+          echo "${NUCLEI_WINDOWS_AMD64_SHA256}  ${zip}" | sha256sum -c
+          unzip -o -q "$zip" nuclei.exe -d "$dir"
+
+      # Only this step gets the signing key.
       - name: Sign Windows Templates
-        run: nuclei -lfa -duc -sign -ud "${{ github.workspace }}" -t "code/windows/audit"
+        run: '"$RUNNER_TEMP/nuclei-bin/nuclei.exe" -lfa -duc -sign -ud "$GITHUB_WORKSPACE" -t "code/windows/audit"'
         shell: bash
         env:
           NUCLEI_USER_CERTIFICATE: ${{ secrets.NUCLEI_USER_CERTIFICATE }}
           NUCLEI_USER_PRIVATE_KEY: ${{ secrets.NUCLEI_USER_PRIVATE_KEY }}
-          
+
       - name: Configure Git
         run: |
           git config --global user.name "Ghost"
           git config --global user.email "ghost@users.noreply.github.com"
         shell: bash
-          
+
       - name: Commit Changes
         run: |
           git add code/windows/audit
           git commit -m "chore: re-sign windows templates 🤖" || echo "No changes to commit"
         shell: bash
-          
+
+      # The token is given to git only after signing.
       - name: Push Changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${auth}"
           git remote update
-          git pull origin ${{ github.ref }} --rebase || exit 1
-          git push origin ${{ github.ref }} || (git remote update && git pull origin ${{ github.ref }} --rebase && git push origin ${{ github.ref }})
+          git pull origin "$GITHUB_REF" --rebase || exit 1
+          git push origin "$GITHUB_REF" || (git remote update && git pull origin "$GITHUB_REF" --rebase && git push origin "$GITHUB_REF")
         shell: bash

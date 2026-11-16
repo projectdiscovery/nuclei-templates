@@ -18,31 +18,56 @@ on:
       - 'templates-checksum.txt'
   workflow_dispatch:
 
+permissions: {}
+
 env:
   CHECKSUM_FILE: 'templates-checksum.txt'
+  NUCLEI_VERSION: '3.11.1'
 
 jobs:
   checksum:
     runs-on: ubuntu-latest
-    if: >
+    # A workflow_run start is accepted only from a successful Template Sign run
+    # on main of this repository.
+    if: >-
       github.repository == 'projectdiscovery/nuclei-templates' && (
         github.event_name == 'workflow_dispatch' ||
-        github.event_name == 'push' ||
-        github.event.workflow_run.conclusion == 'success'
+        github.event_name == 'push' || (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.path == '.github/workflows/template-sign.yml' &&
+          (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch')
+        )
       )
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: projectdiscovery/actions/generate/checksum@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          templates-directory: '${{ github.workspace }}'
-          checksum-file: '${{ env.CHECKSUM_FILE }}'
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 'stable'
+          cache: false
+      - name: Generate checksum
+        run: |
+          set -euo pipefail
+          go install "github.com/projectdiscovery/nuclei/v3/cmd/generate-checksum@v${NUCLEI_VERSION}"
+          "$(go env GOPATH)/bin/generate-checksum" "$GITHUB_WORKSPACE" "$CHECKSUM_FILE"
       - run: git status
-      - uses: projectdiscovery/actions/setup/git@v1
-      - uses: projectdiscovery/actions/commit@v1
+      - uses: projectdiscovery/actions/setup/git@4ff2f2094e67bb1819a069aa130a49463ecaa3f3 # v1
+      - uses: projectdiscovery/actions/commit@4ff2f2094e67bb1819a069aa130a49463ecaa3f3 # v1
         with:
           files: '${{ env.CHECKSUM_FILE }}'
           message: 'chore: generate templates checksum 🤖'
+      # The token is given to git only after the checksum is written.
       - name: Push changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git pull origin $GITHUB_REF --rebase
-          git push origin $GITHUB_REF
+          set -euo pipefail
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${auth}"
+          git pull origin "$GITHUB_REF" --rebase
+          git push origin "$GITHUB_REF"

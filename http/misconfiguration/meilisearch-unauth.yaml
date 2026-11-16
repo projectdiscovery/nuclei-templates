@@ -1,0 +1,51 @@
+id: meilisearch-unauth
+
+info:
+  name: Meilisearch - Unauthenticated Index Exposure
+  author: HaroonArshad-53
+  severity: medium
+  description: |
+    Meilisearch ships without a master key by default. Instances deployed without one expose the index API to any network-reachable client: an unauthenticated GET /indexes returns the full index listing, and the same unauthenticated access allows searching the documents inside those indexes.
+  remediation: |
+    Set a master key via the MEILI_MASTER_KEY environment variable (or the --master-key flag) to enforce API-key authentication, and restrict network access to the Meilisearch instance.
+  reference:
+    - https://www.meilisearch.com/docs/reference/api/overview
+    - https://www.meilisearch.com/docs/learn/security/master_key
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N
+    cvss-score: 5.3
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: meilisearch
+    product: meilisearch
+    shodan-query: http.html:"Meilisearch"
+    fofa-query: body="Meilisearch"
+  tags: meilisearch,exposure,misconfig,unauth,search
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/indexes"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"results":'
+          - '"offset":'
+          - '"limit":'
+          - '"total":'
+        condition: and
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+# digest: 4a0a004730450221009b9523d87e5117419b6d4cca7c0ea6ec207eecc1a40f6ef307bb531cd659ae8c0220747e9b49a8cdae2919d18568303720b077cf799362a261bc33f91682bf98abcf:922c64590222798bb761d5b6d8e72950
