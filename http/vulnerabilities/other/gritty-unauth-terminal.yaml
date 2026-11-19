@@ -5,7 +5,7 @@ info:
   author: bandrel
   severity: critical
   description: |
-    gritty's gritty.listen() asks for credentials only when the embedding application passes an auth callback; without one, every client that joins the /gritty Socket.IO namespace receives accept and can start a terminal. gritty's own CLI never passes one, and Cloud Commander's callback accepts any credentials while its auth option is off, which is the default, so cloudcmd --terminal without --auth is exposed. The template joins /gritty over Engine.IO v4, sends an auth event with empty credentials (which a server enforcing auth rejects), and matches on accept. It never sends a terminal event and runs no command. For an install under a URL prefix, scan the prefixed URL.
+    gritty's gritty.listen() asks for credentials only when the embedding application passes an auth callback; without one, every client that joins the /gritty Socket.IO namespace receives accept and can start a terminal. gritty's own CLI never passes one, and Cloud Commander's callback accepts any credentials while its auth option is off, which is the default, so cloudcmd --terminal without --auth is exposed. The template tries Engine.IO v4 (gritty 6.0.0 and later, socket.io 3 and 4) and then Engine.IO v3 (gritty 1.x to 5.x, socket.io 1 and 2); each attempt joins /gritty, sends an auth event with empty credentials (which a server enforcing auth rejects), and matches on accept. It never sends a terminal event and runs no command. For an install under a URL prefix, scan the prefixed URL.
   impact: |
     Unauthenticated attackers can run arbitrary commands on the server as the account running gritty or Cloud Commander.
   remediation: |
@@ -16,7 +16,7 @@ info:
     - https://github.com/bandrel/fastx32shell
   metadata:
     verified: true
-    max-request: 4
+    max-request: 8
     vendor: coderaiser
     product: gritty
   tags: gritty,cloudcmd,socketio,rce,unauth,vuln
@@ -61,5 +61,48 @@ http:
 
       - type: word
         part: body
+        words:
+          - '42/gritty,["accept"'
+
+  - raw:
+      - |
+        GET /socket.io/?EIO=3&transport=polling&t=nuclei5 HTTP/1.1
+        Host: {{Hostname}}
+
+      - |
+        POST /socket.io/?EIO=3&transport=polling&sid={{sid3}}&t=nuclei6 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain;charset=UTF-8
+
+        10:40/gritty,
+
+      - |
+        POST /socket.io/?EIO=3&transport=polling&sid={{sid3}}&t=nuclei7 HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain;charset=UTF-8
+
+        24:42/gritty,["auth","",""]
+
+      - |
+        GET /socket.io/?EIO=3&transport=polling&sid={{sid3}}&t=nuclei8 HTTP/1.1
+        Host: {{Hostname}}
+
+    extractors:
+      - type: regex
+        name: sid3
+        part: body_1
+        internal: true
+        group: 1
+        regex:
+          - '"sid"\s*:\s*"([A-Za-z0-9_-]+)"'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_4 == 200"
+
+      - type: word
+        part: body_4
         words:
           - '42/gritty,["accept"'
