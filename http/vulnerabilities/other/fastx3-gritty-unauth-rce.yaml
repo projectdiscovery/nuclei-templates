@@ -1,0 +1,65 @@
+id: fastx3-gritty-unauth-rce
+
+info:
+  name: StarNet FastX 3 - Unauthenticated Remote Code Execution via /gritty
+  author: bandrel
+  severity: critical
+  description: |
+    Affected StarNet FastX 3 builds mount the gritty web terminal on a /gritty Socket.IO namespace with no authentication handler, so any client that joins the namespace receives accept and can send a terminal event that runs arbitrary commands as the FastX service account. The template completes the Engine.IO v3 polling handshake, joins /gritty, and matches on the accept event. It never sends a terminal event and runs no command.
+  impact: |
+    Unauthenticated attackers can run arbitrary commands on the server as the FastX service account.
+  remediation: |
+    Upgrade to a current FastX release. FastX 3.2.60 and later do not mount the /gritty namespace, and FastX 5 removes the terminal subsystem.
+  reference:
+    - https://github.com/bandrel/fastx32shell
+    - https://github.com/cloudcmd/gritty
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: starnet
+    product: fastx
+    shodan-query: http.title:"FastX"
+  tags: starnet,fastx,gritty,socketio,rce,unauth,vuln
+
+http:
+  - raw:
+      - |
+        GET /socket.io/?EIO=3&transport=polling&t=nuclei1 HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/terminal/
+
+      - |
+        POST /socket.io/?EIO=3&transport=polling&sid={{sid}}&t=nuclei2 HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/terminal/
+        Content-Type: text/plain;charset=UTF-8
+
+        10:40/gritty,
+
+      - |
+        GET /socket.io/?EIO=3&transport=polling&sid={{sid}}&t=nuclei3 HTTP/1.1
+        Host: {{Hostname}}
+        Origin: {{RootURL}}
+        Referer: {{RootURL}}/terminal/
+
+    extractors:
+      - type: regex
+        name: sid
+        part: body_1
+        internal: true
+        group: 1
+        regex:
+          - '"sid"\s*:\s*"([A-Za-z0-9_-]+)"'
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code_1 == 200 && status_code_2 == 200 && status_code_3 == 200"
+
+      - type: word
+        part: body_3
+        words:
+          - '42/gritty,["accept"'
