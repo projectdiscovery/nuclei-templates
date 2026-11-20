@@ -20,6 +20,26 @@ javascript:
     code: |
       var m = require("nuclei/smb");
       var c = new m.SMBClient();
+
+      // Canary credential that cannot exist. Servers with "map to guest"
+      // complete SESSION_SETUP for any username and always expose IPC$ to
+      // enumeration, so a successful login alone proves nothing
+      // (issue #17301). If the canary also authenticates AND enumerates,
+      // every payload result here is guest noise and must not be reported.
+      // Constant, not random: ListShares memoizes on
+      // (executionId, host, port, user, password), so a fixed canary
+      // costs one extra dial per host instead of one per payload pair.
+      var CANARY = "nuclei-canary-4f8a2c91b7e6";
+      var acceptsAnything = false;
+      try {
+        c.ListShares(Host, Port, CANARY, CANARY);
+        acceptsAnything = true;
+      } catch (e) {}
+
+      if (acceptsAnything) {
+        throw new Error("server authenticates any credential; the tested login was never validated");
+      }
+
       var response = c.ListShares(Host, Port, User, Pass);
       response;
 
@@ -44,7 +64,5 @@ javascript:
     matchers:
       - type: dsl
         dsl:
-          - 'response != "[]"'
           - 'success == true'
         condition: and
-# digest: 4a0a004730450221008d64d3698d8e32ba8fec5ba7082bed6d4bb27670972573d9c05de0babfad4a55022000d565449a02f505cfceda975181bede834952245042b1a5cc6b763e7a0e97b9:922c64590222798bb761d5b6d8e72950
