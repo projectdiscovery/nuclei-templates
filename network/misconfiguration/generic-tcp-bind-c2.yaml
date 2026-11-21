@@ -1,0 +1,47 @@
+id: generic-tcp-bind-c2
+
+info:
+  name: Unauthenticated TCP Bind Shell - Detect
+  author: Pratham Pawar
+  severity: high
+  description: |
+    Detects an open, unauthenticated TCP bind shell by sending basic OS identification commands ('id' and 'whoami') and matching the deterministic execution output.
+  reference:
+    - https://book.hacktricks.xyz/generic-methodologies-and-resources/shells/linux
+    - https://www.sans.org/blog/pen-test-poster-white-board-post-exploitation-without-a-meterpreter/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+    cvss-score: 10.0
+  metadata:
+    verified: true
+    max-request: 2
+  tags: network,c2,shell,misconfig,detect
+
+network:
+  - inputs:
+      # Hex for 'id\n'
+      - data: "69640a"
+        type: hex
+    host:
+      - "{{Hostname}}"
+    read-size: 1024
+    matchers:
+      - type: regex
+        part: data
+        regex:
+          - "uid=[0-9]+.*gid=[0-9]+"
+
+  - inputs:
+      # Hex for 'whoami\n'
+      - data: "77686f616d690a"
+        type: hex
+    host:
+      - "{{Hostname}}"
+    read-size: 1024
+    matchers:
+      - type: word
+        part: data
+        words:
+          - "nt authority"
+          - "administrator"
+        condition: or
