@@ -1,0 +1,54 @@
+id: apache-roller-xmlrpc-extensions
+
+info:
+  name: Apache Roller < 6.1.6 - XML-RPC Vendor Extension Exposure
+  author: alex700
+  severity: critical
+  description: |
+    Apache Roller accepts XML-RPC vendor extension values before checking authorization. This template safely checks whether the XML-RPC endpoint parses a benign extension value; it does not deserialize an attacker-controlled object or demonstrate code execution. Apache assigned CVE-2026-129448 to versions through 6.1.4 and CVE-2026-82384 to the same issue in 6.1.5.
+  impact: |
+    An unauthenticated attacker may exploit unsafe deserialization in the exposed XML-RPC endpoint to execute code.
+  remediation: |
+    Upgrade to Apache Roller 6.1.6 or later. If immediate upgrade is not possible, disable XML-RPC vendor extensions in web.xml or remove the XML-RPC servlet mapping, then restart Roller.
+  reference:
+    - https://lists.apache.org/thread/lnz4s26tv6hdo03wngtdbpfj4hg4gtds
+    - https://github.com/apache/roller/pull/171
+    - https://www.cve.org/CVERecord?id=CVE-2026-129448
+    - https://www.cve.org/CVERecord?id=CVE-2026-82384
+  classification:
+    cwe-id: CWE-502
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: apache
+    product: roller
+  tags: apache,roller,xmlrpc,deserialization,rce,unauth,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/roller-ui/login.rol"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200"
+          - "contains(body, '/roller_j_security_check')"
+          - "contains(body, '/roller-ui/styles/roller.css')"
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /roller-services/xmlrpc HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/xml
+
+        <?xml version="1.0"?><methodCall xmlns:ex="http://ws.apache.org/xmlrpc/namespaces/extensions"><methodName>blogger.getUsersBlogs</methodName><params><param><value><ex:nil/></value></param></params></methodCall>
+
+    matchers:
+      - type: dsl
+        dsl:
+          - "status_code == 200 && contains(header, 'Content-Type: text/xml') && contains(body, '<methodResponse') && contains(body, 'No method matching arguments: null')"
