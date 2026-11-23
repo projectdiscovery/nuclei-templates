@@ -5,12 +5,7 @@ info:
   author: lama678
   severity: info
   description: |
-    Detects Apache Roller and extracts its version from the "Powered by Apache Roller Weblogger
-    Version X (rREV)" footer (footer.productName, compiled into the WAR, not theme-editable).
-    In 5.2+ the login page layout does NOT render that footer. The error layout does, and
-    /roller-ui/oauthKeys.rol is not covered by Spring Security but requires a user, so an
-    unauthenticated request returns the access-denied page with the footer. login.rol is kept
-    as a fallback for older layouts.
+    Detected Apache Roller and extracted its version from the "Powered by Apache Roller Weblogger Version X (rREV)" footer (footer.productName, compiled into the WAR, not theme-editable). In 5.2+ the login page layout did NOT render that footer. The error layout did, and /roller-ui/oauthKeys.rol was not covered by Spring Security but required a user, so an unauthenticated request returned the access-denied page with the footer. login.rol was kept as a fallback for older layouts.
   reference:
     - https://roller.apache.org/
     - https://roller.apache.org/security.html
@@ -22,7 +17,7 @@ info:
     max-request: 4
     vendor: apache
     product: roller
-    shodan-query: http.html:"Apache Roller Weblogger"
+    shodan-query: html:"/roller-services/"
   tags: tech,apache,roller,detect
 
 http:
@@ -34,6 +29,7 @@ http:
       - "{{BaseURL}}/roller/roller-ui/login.rol"
 
     stop-at-first-match: true
+
     host-redirects: true
     max-redirects: 2
 
@@ -44,16 +40,16 @@ http:
           - 'Apache Roller Weblogger</a>\s*Version\s+[0-9]'
 
     extractors:
-      # e.g. 6.1.7, 5.2.4, 7.0.0-rc1, 7.0.0-SNAPSHOT
       - type: regex
         name: version
+        part: body
         group: 1
         regex:
           - 'Apache Roller Weblogger</a>\s*Version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9.]+)?)'
 
-      # build revision: r<git sha>, r<svn rev>, or rUNKNOWN (5.0+ only)
       - type: regex
         name: revision
+        part: body
         group: 1
         regex:
           - 'Apache Roller Weblogger</a>\s*Version\s+[^\s(<]+\s+\((r[^)<\s]+)\)'
