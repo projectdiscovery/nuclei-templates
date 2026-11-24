@@ -5,7 +5,7 @@ info:
   author: s4e-io
   severity: high
   description: |
-    Kuboard v3 creates the built-in administrator account admin with the default password Kuboard123 on first start unless KUBOARD_ADMIN_DERAULT_PASSWORD is set, and the password stays valid until it is changed. An attacker who logs in with these credentials gets the administrators role, can act on every Kubernetes cluster imported into Kuboard with the access Kuboard holds there, and can manage Kuboard users and roles.
+    Kuboard v3 creates the built-in administrator account admin with the default password Kuboard123 on first start unless KUBOARD_ADMIN_DERAULT_PASSWORD is set, and the password stays valid until it is changed.
   reference:
     - https://kuboard.cn/install/v3/install-built-in.html
     - https://github.com/eip-work/kuboard-press/blob/master/install/v3/install-built-in.md
@@ -15,9 +15,16 @@ info:
     cwe-id: CWE-522
   metadata:
     verified: true
+    max-request: 2
     vendor: kuboard
     product: kuboard
+    shodan-query: http.title:"Kuboard"
+    fofa-query: title="Kuboard"
   tags: kuboard,kubernetes,default-login,vuln
+
+variables:
+  username: "admin"
+  password: "Kuboard123"
 
 flow: http(1) && http(2)
 
@@ -43,22 +50,10 @@ http:
 
         {"username":"{{username}}","password":"{{password}}"}
 
-    attack: pitchfork
-    payloads:
-      username:
-        - admin
-      password:
-        - Kuboard123
-
     matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
-          - 'contains(content_type, "application/json")'
+          - 'contains(content_type, "json")'
           - 'contains_all(body, "\"status\":\"success\"", "\"mfaStatus\":\"NotConfigured\"")'
         condition: and
-
-    extractors:
-      - type: dsl
-        dsl:
-          - username + ":" + password
