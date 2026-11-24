@@ -5,7 +5,7 @@ info:
   author: s4e-io
   severity: high
   description: |
-    Kerberos.io Agent accepts the username root with the password root when the AGENT_USERNAME and AGENT_PASSWORD environment variables are not set, which is the case in the README docker run quick start. An attacker who logs in with these credentials can watch the live camera stream, download recordings, read the camera RTSP/ONVIF credentials and cloud storage keys from the configuration, and change or stop the agent.
+    Kerberos.io Agent accepts the username root with the password root when the AGENT_USERNAME and AGENT_PASSWORD environment variables are not set. An attacker who logs in can watch the live camera stream, download recordings.
   reference:
     - https://github.com/kerberos-io/agent/blob/v3.14.3/README.md#access-the-kerberos-agent
     - https://github.com/kerberos-io/agent/blob/v3.14.3/machinery/src/routers/http/jwt_middleware.go
@@ -15,11 +15,16 @@ info:
     cwe-id: CWE-522
   metadata:
     verified: true
+    max-request: 2
     vendor: kerberos-io
     product: agent
     shodan-query: http.title:"Kerberos Agent"
     fofa-query: title="Kerberos Agent"
   tags: kerberos-agent,kerberos-io,iot,camera,default-login,vuln
+
+variables:
+  username: "root"
+  password: "root"
 
 flow: http(1) && http(2)
 
@@ -45,23 +50,10 @@ http:
 
         {"username":"{{username}}","password":"{{password}}"}
 
-    attack: pitchfork
-    payloads:
-      username:
-        - root
-      password:
-        - root
-
     matchers:
       - type: dsl
         dsl:
           - 'status_code == 200'
-          - 'contains(content_type, "application/json")'
-          - 'regex("\"token\"\\s*:\\s*\"eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\"", body)'
+          - 'contains(content_type, "json")'
           - 'contains_all(body, "\"code\":200", "\"role\":\"admin\"", "\"username\":\"root\"", "\"expire\":")'
         condition: and
-
-    extractors:
-      - type: dsl
-        dsl:
-          - username + ":" + password
