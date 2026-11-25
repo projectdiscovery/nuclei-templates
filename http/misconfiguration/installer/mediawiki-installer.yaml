@@ -1,0 +1,64 @@
+id: mediawiki-installer
+
+info:
+  name: MediaWiki - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    MediaWiki contains an installer exposure caused by the mw-config web installer staying reachable without authentication until LocalSettings.php is created, letting remote attackers finish the setup with SQLite and create the first administrator account.
+  impact: |
+    Attackers can take over an unconfigured wiki, leading to full control of its content, users and configuration.
+  remediation: |
+    Complete the installation and place LocalSettings.php, or restrict access to the site until setup is finished.
+  reference:
+    - https://www.mediawiki.org/wiki/Manual:Installing_MediaWiki
+    - https://www.mediawiki.org/wiki/Manual:Config_script
+  classification:
+    cpe: cpe:2.3:a:mediawiki:mediawiki:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: mediawiki
+    product: mediawiki
+    shodan-query: http.html:"LocalSettings.php not found"
+    fofa-query: body="LocalSettings.php not found"
+  tags: misconfig,exposure,install,mediawiki,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /index.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'regex("<title>MediaWiki [0-9][^<]*</title>", body)'
+          - 'contains_all(body, "LocalSettings.php not found.", "mw-config/index.php")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /mw-config/index.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'regex("<title>[^<]*MediaWiki [0-9][^<]*</title>", body)'
+          - 'contains_all(body, "name=\"LanguageRequestTime\"", "index.php?page=Language", "config-page-list")'
+        condition: and
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '<title>[^<]*MediaWiki ([0-9][0-9a-z.-]*)'
