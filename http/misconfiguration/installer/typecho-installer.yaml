@@ -1,0 +1,36 @@
+id: typecho-installer
+
+info:
+  name: Typecho - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Typecho contains an installer exposure caused by the /install.php setup wizard staying reachable without authentication until the installation is completed, letting remote attackers finish the setup with SQLite and create the administrator account.
+  reference:
+    - https://github.com/typecho/typecho
+    - https://github.com/typecho/typecho/blob/v1.3.0/install.php
+    - https://hub.docker.com/r/joyqi/typecho
+  classification:
+    cpe: cpe:2.3:a:typecho:typecho:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: typecho
+    product: typecho
+    shodan-query: http.title:"Typecho 安装程序"
+    fofa-query: title="Typecho 安装程序"
+  tags: misconfig,exposure,install,typecho,vuln
+
+http:
+  - raw:
+      - |
+        GET /install.php HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "class=\"i-logo\">Typecho</a>", "id=\"typecho-welcome\"", "name=\"step\" value=\"1\"", "css/install.css?v=")'
+        condition: and
