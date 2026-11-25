@@ -1,0 +1,48 @@
+id: go2rtc-unauth
+
+info:
+  name: go2rtc - Unauthenticated API Access
+  author: s4e-io
+  severity: high
+  description: |
+    go2rtc contains a missing authentication caused by the HTTP API on port 1984 running without credentials unless api.username and api.password are set, letting remote attackers read stream sources and configuration, rewrite the configuration and restart or stop the process.
+  impact: |
+    Attackers can access camera streams and change the configuration, leading to command execution through exec sources.
+  remediation: |
+    Set api.username and api.password, or bind api.listen to 127.0.0.1 and restrict access to port 1984.
+  reference:
+    - https://github.com/AlexxIT/go2rtc#security
+    - https://github.com/AlexxIT/go2rtc/blob/v1.9.15/internal/api/api.go
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:L
+    cvss-score: 8.6
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: alexxit
+    product: go2rtc
+    shodan-query: http.title:"go2rtc"
+    fofa-query: title="go2rtc"
+  tags: go2rtc,camera,iot,exposure,misconfig,unauth
+
+http:
+  - raw:
+      - |
+        GET /api HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "json")'
+          - 'contains_all(body, "\"config_path\"", "\"default_query\"", "\"version\"")'
+          - 'regex("\"rtsp\"\\s*:\\s*\\{\\s*\"listen\"", body)'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.version'
