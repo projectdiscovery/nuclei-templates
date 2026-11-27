@@ -1,0 +1,64 @@
+id: confluent-schema-registry-unauth
+
+info:
+  name: Confluent Schema Registry - Unauthenticated API Access
+  author: s4e-io
+  severity: high
+  description: |
+    Confluent Schema Registry contains a missing authentication caused by authentication.method defaulting to NONE on the REST API, letting remote attackers read, register and delete Kafka topic schemas and change compatibility settings.
+  impact: |
+    Attackers can read and change Kafka schemas, leading to data model disclosure and broken producers and consumers.
+  remediation: |
+    Set authentication.method to BASIC or use mTLS, and restrict network access to the Schema Registry listener.
+  reference:
+    - https://docs.confluent.io/platform/current/schema-registry/security/index.html
+    - https://docs.confluent.io/platform/current/schema-registry/develop/api.html
+    - https://github.com/confluentinc/rest-utils/blob/v7.9.1/core/src/main/java/io/confluent/rest/RestConfig.java
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+    cwe-id: CWE-306
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: confluent
+    product: schema_registry
+    shodan-query: "application/vnd.schemaregistry.v1+json"
+    fofa-query: header="application/vnd.schemaregistry.v1+json"
+  tags: confluent,schema-registry,kafka,exposure,misconfig,unauth
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /config HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"compatibilityLevel\"\\s*:\\s*\"(NONE|BACKWARD|FORWARD|FULL)(_TRANSITIVE)?\"", body)'
+          - 'contains(content_type, "application/vnd.schemaregistry")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /subjects HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\\[\\s*(\"|\\])", body)'
+          - 'contains(content_type, "application/vnd.schemaregistry")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '.[]'
