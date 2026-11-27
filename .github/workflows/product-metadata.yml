@@ -1,0 +1,112 @@
+name: 🏷 Product Metadata
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.yaml'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'changed = templates in the last commit, all = whole repo backfill'
+        type: choice
+        default: changed
+        options: [changed, all]
+      mode:
+        description: 'write = fill and commit, check = report only'
+        type: choice
+        default: write
+        options: [write, check]
+
+concurrency:
+  group: product-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    # Every bot commit in this repo ends in 🤖. Signing and checksum runs touch
+    # thousands of templates at once, and re-reading all of them here would do
+    # nothing but spend NVD's rate limit.
+    if: >-
+      github.repository == 'projectdiscovery/nuclei-templates' &&
+      (github.event_name != 'push' ||
+       !contains(github.event.head_commit.message, '🤖'))
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      # Both ProjectDiscovery and NVD rate-limit unauthenticated callers, so
+      # every answer is worth carrying between runs.
+      - name: Restore metadata cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/nt-product-metadata.json
+          key: product-metadata-${{ github.run_id }}
+          restore-keys: product-metadata-
+
+      - name: Collect templates to resolve
+        id: files
+        run: |
+          if [ "${{ github.event.inputs.scope }}" = "all" ]; then
+            echo "args=--all" >> $GITHUB_OUTPUT
+            echo "found=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          git diff --name-only --diff-filter=AM HEAD~1 HEAD \
+            | grep -E '\.yaml$' | grep -v '^\.github/' | head -300 > /tmp/templates.txt || true
+          if [ -s /tmp/templates.txt ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Templates changed in this push:"
+            cat /tmp/templates.txt
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Resolve vendor, product and cpe
+        if: steps.files.outputs.found == 'true'
+        env:
+          # Optional. Products are resolved through ProjectDiscovery's own index
+          # first, and NVD is only asked about what that cannot place, so this
+          # workflow needs no key; an NVD one just raises their limit if the
+          # secret happens to exist.
+          NVD_API_KEY: '${{ secrets.NVD_API_KEY }}'
+          METADATA_CACHE: '/home/runner/.cache/nt-product-metadata.json'
+        run: |
+          MODE=""
+          [ "${{ github.event.inputs.mode }}" = "check" ] && MODE="--check"
+          if [ -n "${{ steps.files.outputs.args }}" ]; then
+            python .github/scripts/enhance-product-metadata.py --all $MODE \
+              --report /tmp/metadata-report.md || true
+          else
+            xargs python .github/scripts/enhance-product-metadata.py < /tmp/templates.txt \
+              $MODE --report /tmp/metadata-report.md || true
+          fi
+
+      - name: Report
+        if: steps.files.outputs.found == 'true'
+        run: |
+          if [ -f /tmp/metadata-report.md ]; then
+            cat /tmp/metadata-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Commit changes
+        if: steps.files.outputs.found == 'true' && github.event.inputs.mode != 'check'
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: add vendor, product and cpe metadata 🤖"
+            git pull origin $GITHUB_REF --rebase
+            git push origin $GITHUB_REF
+          fi

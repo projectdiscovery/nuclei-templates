@@ -1,0 +1,182 @@
+name: 🏷 Product Metadata on PR
+
+on:
+  # pull_request_target, so the job still has a write token on pull requests
+  # from forks. Nothing from the pull request is ever executed: the checkout
+  # stays on the base branch, and only the pull request's template YAML is
+  # copied in, as data for the base branch's own script to read.
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**.yaml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: product-metadata-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository == 'projectdiscovery/nuclei-templates' &&
+      github.event.pull_request.draft == false
+    steps:
+      - name: Check out the base branch
+        uses: actions/checkout@v7
+        with:
+          ref: '${{ github.event.pull_request.base.ref }}'
+          fetch-depth: 0
+          token: '${{ secrets.PDTEAMX_CLASSIC_PAT }}'
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Restore metadata cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/nt-product-metadata.json
+          key: product-metadata-pr-${{ github.run_id }}
+          restore-keys: product-metadata-
+
+      - name: Copy in the pull request's templates
+        id: files
+        env:
+          GH_TOKEN: '${{ secrets.PDTEAMX_CLASSIC_PAT }}'
+          HEAD_REPO: '${{ github.event.pull_request.head.repo.full_name }}'
+          HEAD_SHA: '${{ github.event.pull_request.head.sha }}'
+          PR_NUMBER: '${{ github.event.pull_request.number }}'
+        run: |
+          set -euo pipefail
+          git remote add pr "https://github.com/${HEAD_REPO}.git"
+          git fetch --no-tags pr "$HEAD_SHA"
+          # Stop the push this job makes from triggering the job again.
+          if git log -1 --format=%s FETCH_HEAD | grep -q 'vendor, product and cpe metadata 🤖'; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "Head commit is this workflow's own; nothing to do."
+            exit 0
+          fi
+          # The API gives the exact file list, so a moving base cannot widen it.
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+            --jq '.[] | select(.status != "removed") | .filename' \
+            | grep -E '\.yaml$' | grep -v '^\.github/' > /tmp/pr-files.txt || true
+          if [ ! -s /tmp/pr-files.txt ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Template YAML only, so no workflow, action or script comes from the PR.
+          xargs git checkout FETCH_HEAD -- < /tmp/pr-files.txt
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "Templates in this pull request:"
+          cat /tmp/pr-files.txt
+
+      - name: Resolve vendor, product and cpe
+        if: steps.files.outputs.found == 'true'
+        env:
+          # Optional. Products are resolved through ProjectDiscovery's own index
+          # first, so no key is needed here.
+          NVD_API_KEY: '${{ secrets.NVD_API_KEY }}'
+          METADATA_CACHE: '/home/runner/.cache/nt-product-metadata.json'
+        run: |
+          xargs python .github/scripts/enhance-product-metadata.py < /tmp/pr-files.txt \
+            --report /tmp/metadata-report.md --pr-comment /tmp/metadata-comment.md || true
+          cat /tmp/metadata-report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Keep only the template changes
+        id: diff
+        if: steps.files.outputs.found == 'true'
+        run: |
+          # The base checkout is still in the tree, so stage nothing but templates.
+          xargs git add -- < /tmp/pr-files.txt
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Every template in this pull request already carries its metadata."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --cached > /tmp/metadata.patch
+            {
+              echo '### Product metadata added'
+              echo
+              echo 'Resolved from ProjectDiscovery and NVD and pushed to this branch, so'
+              echo 'it shows up in the diff for review. Revert the commit if a value is wrong.'
+              echo
+              echo '```diff'
+              cat /tmp/metadata.patch
+              echo '```'
+            } > /tmp/applied.md
+          fi
+
+      - name: Push the metadata to the pull request branch
+        id: push
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          PAT: '${{ secrets.PDTEAMX_CLASSIC_PAT }}'
+          HEAD_REPO: '${{ github.event.pull_request.head.repo.full_name }}'
+          HEAD_REF: '${{ github.event.pull_request.head.ref }}'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Park the resolved templates, move onto the pull request's own head so
+          # the new commit sits on top of it rather than on the base branch, and
+          # put them back.
+          rm -rf /tmp/resolved && mkdir -p /tmp/resolved
+          while read -r f; do
+            mkdir -p "/tmp/resolved/$(dirname "$f")"
+            cp "$f" "/tmp/resolved/$f"
+          done < /tmp/pr-files.txt
+          git checkout -q -f FETCH_HEAD
+          while read -r f; do cp "/tmp/resolved/$f" "$f"; done < /tmp/pr-files.txt
+          xargs git add -- < /tmp/pr-files.txt
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing left to commit against the pull request head."
+            exit 0
+          fi
+          git commit -q -m "chore: add vendor, product and cpe metadata 🤖"
+          if git push "https://x-access-token:${PAT}@github.com/${HEAD_REPO}.git" \
+               "HEAD:${HEAD_REF}"; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Could not push to ${HEAD_REPO}; posting the patch instead. A fork needs 'Allow edits by maintainers' for this to land automatically."
+          fi
+
+      # Pushed: say so briefly. Not pushed: post the patch so it is still
+      # reviewable and the author can apply it by hand.
+      - name: Comment on the pull request
+        if: always() && steps.diff.outputs.changed == 'true'
+        uses: actions/github-script@v8
+        env:
+          GITHUB_TOKEN: '${{ secrets.PDTEAMX_CLASSIC_PAT }}'
+          PUSHED: '${{ steps.push.outputs.pushed }}'
+        with:
+          script: |
+            const fs = require('fs');
+            const pushed = process.env.PUSHED === 'true';
+            let body;
+            if (pushed) {
+              body = [
+                '### Product metadata added',
+                '',
+                'A commit on this branch fills in `metadata.vendor`, `metadata.product` and',
+                '`classification.cpe` for the templates below, so the values are in the diff',
+                'for review before merge. Revert that commit if any of them is wrong.',
+                '',
+                fs.readFileSync('/tmp/metadata-report.md', 'utf8'),
+              ].join('\n');
+            } else {
+              body = fs.readFileSync('/tmp/applied.md', 'utf8') +
+                '\n\nThis could not be pushed to the branch, so apply it by hand, or tick' +
+                ' **Allow edits by maintainers** on the pull request and push again.';
+            }
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body.slice(0, 65000),
+            })

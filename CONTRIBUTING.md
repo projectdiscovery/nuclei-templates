@@ -32,6 +32,7 @@ Along with the P.O.C following are the required fields in the info section for s
 4. `severity` : Based on the CVSS score but can vary based on the exploit and real-world impact
 5. `description` : Short description of the vulnerability
 6. `reference` : Please provide the reference to the POC, setup guide or the product details to help the team verify the template.
+7. `metadata.vendor` and `metadata.product` : The vendor and product the template targets, in CPE 2.3 form (lowercase, spaces as underscores), for example `vendor: vmware` and `product: vcenter_server`. For a WordPress plugin or theme, use the wordpress.org slug as the product. Add `classification.cpe` too when the product has a CPE entry. Without these a template for a known product is invisible to every product-keyed lookup, so the **Product Metadata** workflow resolves what it can and pushes it to your pull request branch as a separate commit, where you and the reviewer can check the values before merge. Revert that commit if any of them is wrong. A second pass runs after merge for anything that lands without going through a pull request.
 
 **Do’s**
 
