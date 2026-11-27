@@ -1,0 +1,51 @@
+id: sonicwall-sslvpn-config-exposure
+
+info:
+  name: SonicWall SSL VPN Public Configuration
+  author: m4lwhere
+  severity: info
+  description: |
+    SonicOS exposes SSL VPN status, login domains, the user login port, the management port, and sometimes the authentication type through the unauthenticated /api/sonicos/is-sslvpn-enabled endpoint.
+  impact: |
+    An unauthenticated client can enumerate public SSL VPN configuration details that may help map the appliance's externally reachable services.
+  remediation: |
+    Review Internet exposure of the SSL VPN and management interfaces, restrict management access to trusted networks, and keep sensitive information out of public portal fields.
+  reference:
+    - https://www.greynoise.io/blog/active-reconnaissance-campaign-targets-sonicwall-firewalls-through-commercial-proxy-infrastructure
+  classification:
+    cpe: cpe:2.3:o:sonicwall:sonicos:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: sonicwall
+    product: sonicos
+    shodan-query: 'title:"SonicWall Network Security"'
+    fofa-query: 'title="sonicwall network security login"'
+  tags: sonicwall,sonicos,sslvpn,discovery,exposure
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/sonicos/is-sslvpn-enabled"
+
+    headers:
+      X-Snwl-Timer: no-reset
+      X-Snwl-Api-Scope: extended
+      Accept: application/json
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(tolower(content_type), "application/json")'
+          - 'contains(tolower(all_headers), "server: sonicwall")'
+          - 'regex("\\\"enabled\\\"\\s*:\\s*true", body) && regex("\\\"domains\\\"\\s*:\\s*\\[", body) && regex("\\\"port\\\"\\s*:\\s*[0-9]+", body) && regex("\\\"management_port\\\"\\s*:\\s*[0-9]+", body)'
+        condition: and
+
+    extractors:
+      - type: json
+        name: configuration
+        part: body
+        json:
+          - '. | "domains=" + ([.domains[]?.name] | join(",")) + ";user-login-port=" + (.port | tostring) + ";management-port=" + (.portal_settings.management_port | tostring) + ";auth-type=" + ((.auth_type // "not-advertised") | tostring)'
+# digest: 4b0a0048304602210093174373f14058fc87dab102219d8ab75c799984ee97b1f3b8b818abcb8f82d1022100a41ac56eb1221894ccc7fc378366740adb4d5e3011b1d9da7ed9e5e48583f62a:922c64590222798bb761d5b6d8e72950

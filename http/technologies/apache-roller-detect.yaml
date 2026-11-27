@@ -1,0 +1,56 @@
+id: apache-roller-detect
+
+info:
+  name: Apache Roller - Version Detection
+  author: lama678
+  severity: info
+  description: |
+    Detected Apache Roller and extracted its version from the "Powered by Apache Roller Weblogger Version X (rREV)" footer (footer.productName, compiled into the WAR, not theme-editable). In 5.2+ the login page layout did NOT render that footer. The error layout did, and /roller-ui/oauthKeys.rol was not covered by Spring Security but required a user, so an unauthenticated request returned the access-denied page with the footer. login.rol was kept as a fallback for older layouts.
+  reference:
+    - https://roller.apache.org/
+    - https://roller.apache.org/security.html
+    - https://github.com/apache/roller
+  classification:
+    cpe: cpe:2.3:a:apache:roller:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    max-request: 4
+    vendor: apache
+    product: roller
+    shodan-query: html:"/roller-services/"
+  tags: tech,apache,roller,detect
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/roller-ui/oauthKeys.rol"
+      - "{{BaseURL}}/roller/roller-ui/oauthKeys.rol"
+      - "{{BaseURL}}/roller-ui/login.rol"
+      - "{{BaseURL}}/roller/roller-ui/login.rol"
+
+    stop-at-first-match: true
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'Apache Roller Weblogger</a>\s*Version\s+[0-9]'
+
+    extractors:
+      - type: regex
+        name: version
+        part: body
+        group: 1
+        regex:
+          - 'Apache Roller Weblogger</a>\s*Version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[A-Za-z0-9.]+)?)'
+
+      - type: regex
+        name: revision
+        part: body
+        group: 1
+        regex:
+          - 'Apache Roller Weblogger</a>\s*Version\s+[^\s(<]+\s+\((r[^)<\s]+)\)'
+# digest: 4a0a0047304502200104fe1e774bd2b9225f224c4a5f384ebf3e7436fed6d524159af97f7f2eaeb1022100d77f3f68c840b6ca9534ea3c19afce0ea5f0e463894de7e7ed8caf822873404d:922c64590222798bb761d5b6d8e72950

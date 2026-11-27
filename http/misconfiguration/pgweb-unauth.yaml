@@ -1,0 +1,58 @@
+id: pgweb-unauth
+
+info:
+  name: Pgweb - Unauthenticated Database Access
+  author: s4e-io
+  severity: high
+  description: |
+    Pgweb has no authentication unless both --auth-user and --auth-pass are set. When it is started with a database connection string (--url or PGWEB_DATABASE_URL, as in the official Docker example), the server opens the PostgreSQL connection at startup and every API request runs on that connection. An unauthenticated GET /api/connection returns the connected database, the PostgreSQL role, the server version and internal addresses, and the same access lets anyone browse every table and run arbitrary SQL through /api/query with the privileges of the configured role.
+  remediation: |
+    Set --auth-user and --auth-pass (PGWEB_AUTH_USER and PGWEB_AUTH_PASS) or put pgweb behind an authenticating proxy, use a least-privileged database role with --readonly, and do not expose pgweb to untrusted networks.
+  reference:
+    - https://github.com/sosedoff/pgweb/wiki/Docker
+    - https://github.com/sosedoff/pgweb/blob/v0.17.0/pkg/cli/cli.go#L203-L206
+    - https://github.com/sosedoff/pgweb/blob/v0.17.0/pkg/api/middleware.go
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    verified: true
+    vendor: sosedoff
+    product: pgweb
+    shodan-query: http.title:"pgweb"
+  tags: pgweb,postgresql,database,exposure,misconfig,unauth
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/info"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"app\":", "\"git_sha\":", "\"features\":", "\"session_lock\":")'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/connection"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"current_database\":", "\"session_user\":", "\"inet_server_port\":", "\"session_lock\":")'
+          - 'regex("\"version\"\\s*:\\s*\"PostgreSQL [0-9]", body)'
+        condition: and
+
+    extractors:
+      - type: json
+        part: body
+        json:
+          - '"database=" + .current_database + ", user=" + .current_user'
+# digest: 4b0a00483046022100b5bada6276d600dd5cca3f0b8765d1b5bcd30f98c97480801ad689b6ffd704ef0221008e5524547cf1a267835d91d985c9595719588656b9ff184bdd120919c2307325:922c64590222798bb761d5b6d8e72950

