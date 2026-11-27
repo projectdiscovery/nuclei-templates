@@ -1,0 +1,53 @@
+id: home-assistant-installer
+
+info:
+  name: Home Assistant - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Home Assistant contains an installer exposure caused by the onboarding API accepting a new owner account without authentication until the first user is created, letting remote attackers become the owner and take full control of the smart home and its connected devices.
+  reference:
+    - https://github.com/home-assistant/core/blob/2026.11.2/homeassistant/components/onboarding/views.py
+    - https://www.home-assistant.io/getting-started/onboarding/
+    - https://www.home-assistant.io/installation/linux
+  classification:
+    cpe: cpe:2.3:a:home-assistant:home-assistant:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: home-assistant
+    product: home-assistant
+    shodan-query: http.title:"Home Assistant"
+    fofa-query: title="Home Assistant"
+  tags: misconfig,exposure,install,homeassistant
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /manifest.json HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"name\":\"Home Assistant\"", "Home automation platform that puts local control and privacy first")'
+          - 'contains(content_type, "application/manifest+json")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /api/onboarding HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\\{\\s*\"step\"\\s*:\\s*\"user\"\\s*,\\s*\"done\"\\s*:\\s*false\\s*\\}", body)'
+          - 'contains(body, "\"core_config\"")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
