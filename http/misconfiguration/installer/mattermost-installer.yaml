@@ -1,0 +1,45 @@
+id: mattermost-installer
+
+info:
+  name: Mattermost - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Mattermost contains an installer exposure caused by the first account created on a server without users receiving the system_admin role while email sign-up is enabled by default, letting remote attackers register first and take full control of the server.
+  reference:
+    - https://github.com/mattermost/mattermost
+    - https://docs.mattermost.com/deployment-guide/quick-start-evaluation.html
+    - https://github.com/mattermost/mattermost/blob/v12.1.0/server/channels/app/users/users.go#L49-L55
+  classification:
+    cpe: cpe:2.3:a:mattermost:mattermost_server:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: mattermost
+    product: mattermost_server
+    shodan-query: http.title:"Mattermost"
+    fofa-query: title="Mattermost"
+  tags: misconfig,exposure,install,mattermost
+
+http:
+  - raw:
+      - |
+        GET /api/v4/config/client?format=old HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"NoAccounts\"\\s*:\\s*\"true\"", body)'
+          - 'regex("\"EnableUserCreation\"\\s*:\\s*\"true\"", body)'
+          - 'regex("\"EnableSignUpWithEmail\"\\s*:\\s*\"true\"", body)'
+          - 'contains_all(body, "\"BuildNumber\"", "\"DiagnosticId\"")'
+          - 'contains(to_lower(header), "x-version-id:")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: json
+        json:
+          - '.Version'
