@@ -371,6 +371,28 @@ def coverage(tpl, value):
     return hits / len(words)
 
 
+def lead_token(tpl):
+    """The first word of the template's product phrase, lowercased."""
+    words = [w for w in re.split(r"[^A-Za-z0-9]+", product_phrase(tpl.name)) if w]
+    return words[0].lower() if words else ""
+
+
+def names_the_product(tpl, product):
+    """Does the template's leading word and the product refer to each other?
+
+    A keyword search on a template called "Typesense Dashboard" will happily
+    return somebody else's product literally named `dashboard`, and on
+    "BeyondTrust Panel" it returns `pam`. Requiring the match to touch the
+    first word of the name, which is the one that identifies the software,
+    throws those out while keeping envoy, pypiserver and gatus.
+    """
+    lead = squash(lead_token(tpl))
+    prod = squash(re.sub(r"_(project|software|inc|llc|team)$", "", product or ""))
+    if not lead or not prod:
+        return False
+    return lead in prod or prod in lead
+
+
 def fuzzy_ok(tpl, vendor, product):
     """Guard for the two sources that find a product by name similarity.
 
@@ -379,6 +401,8 @@ def fuzzy_ok(tpl, vendor, product):
     product is only believable when the template names its vendor too; a single
     distinctive token like log4j or pypiserver stands on its own.
     """
+    if not names_the_product(tpl, product):
+        return False
     if affinity(tpl, vendor) > 0:
         return True
     words = [w for w in re.split(r"[^a-z0-9]+", (product or "").lower()) if len(w) > 2]
@@ -539,13 +563,25 @@ def build_lexicon(root=REPO_ROOT):
     # Where the repo has settled on one vendor for a product and proved it with
     # a cpe, that spelling wins: NVD lists xstream under both xstream and
     # xstream_project, and ten templates here already say xstream_project.
+    # CPE escapes punctuation, so NVD calls Joomla `joomla\\!`. That belongs in a
+    # cpe string, not in a field other tooling matches on, and this repo already
+    # holds joomla, joomla\\! and joomla\\\\! as three spellings of one product.
+    house_product = {}
+    squashed_votes = defaultdict(Counter)
+    for product, votes in product_index.items():
+        squashed_votes[squash(product)][product] += sum(votes.values())
+    for key, votes in squashed_votes.items():
+        plain = [s for s in votes if "\\" not in s]
+        if plain:
+            house_product[key] = max(plain, key=lambda s: votes[s])
+
     house_vendor = {}
     for product, votes in attested.items():
         total = sum(votes.values())
         vendor, hits = votes.most_common(1)[0]
         if total >= 2 and hits / total >= 0.8:
             house_vendor[product] = vendor
-    return lexicon, product_index, house_vendor
+    return lexicon, product_index, house_vendor, house_product
 
 
 # --------------------------------------------------------------------------- #
@@ -735,7 +771,9 @@ def from_pd_product_index(tpl, fetcher, cands, budget=8):
     """
     out = []
     asked = 0
+    from_others = {c.product for c in cands if c.product}
     for product in product_candidates(tpl, cands):
+        proposed = product in from_others
         if asked >= budget:
             break
         if coverage(tpl, product) < 0.5:
@@ -759,8 +797,10 @@ def from_pd_product_index(tpl, fetcher, cands, budget=8):
                     cpe = wildcard_cpe(crit)
                     if cpe:
                         break
-                out.append(Candidate(prod["vendor"], product, cpe,
-                                     "pd-product-index", 95))
+                # A product another source proposed, merely confirmed to
+                # exist, is not independent agreement about this template.
+                label = "pd-product-confirm" if proposed else "pd-product-index"
+                out.append(Candidate(prod["vendor"], product, cpe, label, 95))
             if out:
                 break
         if out:
@@ -940,7 +980,8 @@ def resolve(tpl, fetcher, lexicon, product_index):
     return accepted, ranked, sources, best_cpe
 
 
-def enhance(tpl, fetcher, lexicon, product_index, house_vendor, write=True):
+def enhance(tpl, fetcher, lexicon, product_index, house_vendor, house_product,
+            write=True):
     needs_pair = not (tpl.vendor and tpl.product)
     needs_cpe = (not tpl.cpe and not fetcher.offline
                  and tpl.block_bounds("classification") is not None)
@@ -973,6 +1014,16 @@ def enhance(tpl, fetcher, lexicon, product_index, house_vendor, write=True):
                                for k, s in ranked[:4]]}
 
     (vendor, product), score, srcs, cpe = accepted
+    # Keep the cpe exactly as NVD spells it, where the escape is correct, and
+    # write the plain form into the fields people and tooling read.
+    plain = house_product.get(squash(product))
+    if plain and plain != product:
+        product = plain
+        srcs = set(srcs) | {"repo-convention"}
+    elif "\\" in (product or ""):
+        product = product.replace("\\", "")
+    if "\\" in (vendor or ""):
+        vendor = vendor.replace("\\", "")
     house = house_vendor.get(product)
     if house and house != vendor:
         vendor = house
@@ -1065,7 +1116,7 @@ def main():
         print("no templates needing product metadata in the given paths")
         return 0
 
-    lexicon, product_index, house_vendor = build_lexicon()
+    lexicon, product_index, house_vendor, house_product = build_lexicon()
     if not args.quiet:
         print("lexicon: %d product-identifying tags, %d known products"
               % (len(lexicon), len(product_index)), file=sys.stderr)
@@ -1080,7 +1131,7 @@ def main():
                 buckets["error"].append({"file": str(path), "error": str(exc)})
                 continue
             res = enhance(tpl, fetcher, lexicon, product_index, house_vendor,
-                          write=not args.check)
+                          house_product, write=not args.check)
             buckets[res["status"]].append(res)
             if not args.quiet and res["status"] != "complete":
                 if res["status"] in ("filled", "suggested"):
