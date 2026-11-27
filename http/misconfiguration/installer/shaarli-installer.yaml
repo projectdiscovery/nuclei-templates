@@ -1,0 +1,42 @@
+id: shaarli-installer
+
+info:
+  name: Shaarli - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Shaarli contains an installer exposure caused by the /install setup form staying reachable without authentication until the first configuration is saved, letting remote attackers set the administrator credentials and take over the instance.
+  reference:
+    - https://github.com/shaarli/Shaarli
+    - https://shaarli.readthedocs.io/en/master/Installation/
+  classification:
+    cpe: cpe:2.3:a:shaarli_project:shaarli:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: shaarli_project
+    product: shaarli
+    fofa-query: body="Shaarli" && icon_hash="-1588935085"
+  tags: misconfig,exposure,install,shaarli,vuln
+
+http:
+  - raw:
+      - |
+        GET /install HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /?do=install HTTP/1.1
+        Host: {{Hostname}}
+
+    redirects: true
+    max-redirects: 4
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "installform", "setlogin", "setpassword", "Install Shaarli")'
+        condition: and
