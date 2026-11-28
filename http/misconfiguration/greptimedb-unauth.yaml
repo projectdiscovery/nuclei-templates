@@ -1,0 +1,42 @@
+id: greptimedb-unauth
+
+info:
+  name: GreptimeDB - Unauthenticated SQL API Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    GreptimeDB contains an unauthenticated access exposure caused by authentication being disabled until a user provider is configured, letting remote attackers run arbitrary SQL through the HTTP API at /v1/sql and read or change all stored data.
+  remediation: |
+    Configure a user provider (for example static_user_provider) to require authentication on the HTTP, MySQL and gRPC interfaces, and restrict network access to the GreptimeDB instance.
+  reference:
+    - https://docs.greptime.com/getting-started/quick-start/
+    - https://docs.greptime.com/user-guide/deployments-administration/authentication/overview/
+    - https://docs.greptime.com/user-guide/protocols/http/
+  classification:
+    cwe-id: CWE-306
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: greptime
+    product: greptimedb
+    shodan-query: http.title:"GreptimeDB"
+    fofa-query: title="GreptimeDB" || header="greptimedb_v1"
+  tags: misconfig,unauth,greptimedb,database
+
+http:
+  - raw:
+      - |
+        POST /v1/sql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        sql=SHOW TABLES
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"output\":", "\"records\":", "\"schema\":", "\"column_schemas\":", "\"execution_time_ms\":")'
+          - 'contains(header, "greptimedb_v1")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
