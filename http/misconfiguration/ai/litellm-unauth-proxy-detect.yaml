@@ -1,0 +1,31 @@
+id: litellm-unauth-proxy-detect
+
+info:
+  name: LiteLLM Proxy - Unauthenticated Model Endpoint
+  author: amanxplore
+  severity: high
+  description: Detects unauthenticated LiteLLM proxy servers exposing model list and route endpoints (CVE-2026-59822).
+  remediation: Configure master_key authentication in LiteLLM config.
+  reference:
+    - https://github.com/BerriAI/litellm
+  tags: misconfig,litellm,ai,proxy,unauth
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/v1/models"
+      - "{{BaseURL}}/models"
+      - "{{BaseURL}}/health/readiness"
+
+    stop-at-first-match: true
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - '"object": "list"'
+          - '"litellm"'
+        condition: or\n
