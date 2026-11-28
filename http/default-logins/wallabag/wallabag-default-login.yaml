@@ -1,0 +1,93 @@
+id: wallabag-default-login
+
+info:
+  name: wallabag - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    wallabag was found using default credentials. The official Docker image runs the wallabag:install command in non-interactive mode when it creates a new database, and this command adds the super admin account wallabag with the password wallabag. An attacker who logs in can read and change every saved article, create API clients, and manage users and the instance settings.
+  impact: |
+    An attacker with default credentials gains super admin access to wallabag, allowing them to read all saved articles and annotations, create API client credentials and add or change user accounts.
+  remediation: |
+    Change the password of the wallabag account or create a new administrator account and remove the default one.
+  reference:
+    - https://github.com/wallabag/docker#how-to-use-this-image
+    - https://github.com/wallabag/docker/blob/master/root/entrypoint.sh
+    - https://github.com/wallabag/wallabag/blob/2.6.17/src/Wallabag/CoreBundle/Command/InstallCommand.php
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:wallabag:wallabag:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: wallabag
+    product: wallabag
+    shodan-query: http.title:"wallabag"
+    fofa-query: title="wallabag"
+  tags: wallabag,default-login,vuln
+
+variables:
+  username: wallabag
+  password: wallabag
+
+flow: http(1) && http(2) && http(3)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/login"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains_all(body, "wallabag</title>", "/login_check\"", "name=\"_csrf_token\"")'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: regex
+        name: csrf
+        part: body
+        group: 1
+        regex:
+          - 'name="_csrf_token" value="([^"]+)"'
+        internal: true
+
+  - method: POST
+    path:
+      - "{{BaseURL}}/login_check"
+
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+
+    body: "_username={{username}}&_password={{password}}&_csrf_token={{csrf}}"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 302'
+          - 'contains(header, "PHPSESSID=")'
+          - 'regex("(?mi)^location:\\s*\\S", header)'
+          - '!regex("(?mi)^location:.*/login", header)'
+        condition: and
+        internal: true
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/config"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "text/html")'
+          - 'contains_all(body, "wallabag</title>", "/logout\"", "name=\"config[items_per_page]\"", "name=\"config[_token]\"")'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
+# digest: 4a0a0047304502210098474564ad6bd6c24358bbe4d329798d17646c26dd3ff2d60d3a4d76f43a99d702202885c91bec32b24459c9e00fe852d449924fb69c4b59b1ca13e0644990d0f57a:922c64590222798bb761d5b6d8e72950

