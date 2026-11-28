@@ -1,0 +1,65 @@
+id: jellyfin-installer
+
+info:
+  name: Jellyfin - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Jellyfin contains an installer exposure caused by the /Startup endpoints staying reachable without authentication until the startup wizard is completed, letting remote attackers set the administrator credentials and take full control of the server and its media libraries.
+  reference:
+    - https://github.com/jellyfin/jellyfin
+    - https://github.com/jellyfin/jellyfin/blob/v12.4/Jellyfin.Api/Controllers/StartupController.cs
+    - https://github.com/jellyfin/jellyfin/blob/v12.4/Jellyfin.Api/Auth/FirstTimeSetupPolicy/FirstTimeSetupHandler.cs
+  classification:
+    cpe: cpe:2.3:a:jellyfin:jellyfin:*:*:*:*:*:*:*:*
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: jellyfin
+    product: jellyfin
+    shodan-query: http.title:"Jellyfin"
+    fofa-query: title="Jellyfin"
+  tags: misconfig,exposure,install,jellyfin
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET /System/Info/Public HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"ProductName\"\\s*:\\s*\"Jellyfin Server\"", body)'
+          - 'regex("\"StartupWizardCompleted\"\\s*:\\s*false", body)'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+    extractors:
+      - type: json
+        name: version
+        internal: true
+        json:
+          - '.Version'
+
+  - raw:
+      - |
+        GET /Startup/Configuration HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"UICulture\"", "\"MetadataCountryCode\"", "\"PreferredMetadataLanguage\"")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
+
+    extractors:
+      - type: dsl
+        dsl:
+          - version
