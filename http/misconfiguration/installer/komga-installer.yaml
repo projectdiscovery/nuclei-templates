@@ -1,0 +1,50 @@
+id: komga-installer
+
+info:
+  name: Komga - Installer Exposure
+  author: s4e-io
+  severity: high
+  description: |
+    Komga contains an installer exposure caused by the unauthenticated /api/v1/claim endpoint staying open until the first account is created, letting remote attackers claim the server and gain full admin control over libraries, users and settings.
+  reference:
+    - https://github.com/gotson/komga
+    - https://komga.org/docs/openapi/get-claim-status
+    - https://komga.org/docs/openapi/claim-server
+  metadata:
+    max-request: 2
+    verified: true
+    vendor: gotson
+    product: komga
+    shodan-query: http.title:"Komga"
+    fofa-query: title="Komga"
+  tags: misconfig,exposure,install,komga,vuln
+
+flow: http(1) && http(2)
+
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains_all(body, "<title>Komga</title>", "window.resourceBaseUrl")'
+          - 'contains(content_type, "text/html")'
+          - 'status_code == 200'
+        condition: and
+        internal: true
+
+  - raw:
+      - |
+        GET /api/v1/claim HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'regex("\"isClaimed\"\\s*:\\s*false", body)'
+          - 'contains(content_type, "json")'
+          - 'status_code == 200'
+        condition: and
